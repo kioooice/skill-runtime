@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "security_score": 100,
+  "suggestions": [
+    "No blocking issues found."
+  ],
+  "optimized_docstring": "功能描述:\n    Execute the \"codex_integration_merge_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+  "refactored_code": ""
+}

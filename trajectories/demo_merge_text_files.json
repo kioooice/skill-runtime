@@ -1,0 +1,44 @@
+{
+  "task_id": "demo_merge_text_files",
+  "session_id": "session_demo_001",
+  "task_description": "Merge all txt files in a directory into one markdown file.",
+  "steps": [
+    {
+      "step_id": "1",
+      "tool_name": "list_files",
+      "tool_input": {
+        "input_dir": "demo/input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 2 txt files.",
+      "status": "success",
+      "thought_summary": "Collect input files before merging."
+    },
+    {
+      "step_id": "2",
+      "tool_name": "read_text",
+      "tool_input": {
+        "input_dir": "demo/input"
+      },
+      "observation": "Read file contents successfully.",
+      "status": "success",
+      "thought_summary": "Load content for concatenation."
+    },
+    {
+      "step_id": "3",
+      "tool_name": "write_text",
+      "tool_input": {
+        "output_path": "demo/output/merged.md"
+      },
+      "observation": "Wrote merged markdown output.",
+      "status": "success",
+      "thought_summary": "Persist merged artifact."
+    }
+  ],
+  "final_status": "success",
+  "artifacts": [
+    "demo/output/merged.md"
+  ],
+  "started_at": "2026-04-18T10:00:00",
+  "ended_at": "2026-04-18T10:01:00"
+}

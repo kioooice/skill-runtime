@@ -1,0 +1,182 @@
+import ast
+import re
+from dataclasses import dataclass
+from pathlib import Path
+
+from skill_runtime.api.models import Trajectory
+
+
+GENERALIZATION_BLOCKLIST = {"confirm", "retry", "timeout", "sleep", "debug"}
+
+
+@dataclass
+class SemanticIssue:
+    rule_id: str
+    severity: str
+    message: str
+
+
+class SemanticChecks:
+    def run(self, file_path: str | Path, trajectory: Trajectory | None = None) -> list[SemanticIssue]:
+        path = Path(file_path)
+        if not path.exists():
+            raise FileNotFoundError(f"file not found: {path}")
+
+        source = path.read_text(encoding="utf-8")
+        issues: list[SemanticIssue] = []
+        issues.extend(self._check_docstring_structure(source))
+        issues.extend(self._check_atomicity(source))
+
+        if trajectory is not None:
+            issues.extend(self._check_trajectory_alignment(source, trajectory))
+            issues.extend(self._check_parameter_coverage(source, trajectory))
+            issues.extend(self._check_overfit_artifacts(source, trajectory))
+
+        return issues
+
+    def _check_docstring_structure(self, source: str) -> list[SemanticIssue]:
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:
+            return []
+
+        run_node = self._find_run_function(tree)
+        if run_node is None:
+            return []
+
+        docstring = ast.get_docstring(run_node) or ""
+        required_sections = ["功能描述", "输入参数", "输出结果"]
+        missing = [section for section in required_sections if section not in docstring]
+        if missing:
+            return [
+                SemanticIssue(
+                    rule_id="docstring-structure",
+                    severity="medium",
+                    message=f"Docstring is missing semantic sections: {', '.join(missing)}.",
+                )
+            ]
+        return []
+
+    def _check_atomicity(self, source: str) -> list[SemanticIssue]:
+        tool_names = self._tool_names_in_source(source)
+        if len(tool_names) > 4:
+            return [
+                SemanticIssue(
+                    rule_id="semantic-atomicity",
+                    severity="medium",
+                    message=(
+                        "Skill appears to combine too many distinct runtime tool actions; "
+                        "consider splitting it into smaller workflows."
+                    ),
+                )
+            ]
+        return []
+
+    def _check_trajectory_alignment(self, source: str, trajectory: Trajectory) -> list[SemanticIssue]:
+        trajectory_tools = {step.tool_name for step in trajectory.steps if step.status == "success"}
+        source_tools = self._tool_names_in_source(source)
+        if not trajectory_tools:
+            return []
+
+        if source_tools:
+            overlap = trajectory_tools & source_tools
+            if overlap:
+                return []
+            return [
+                SemanticIssue(
+                    rule_id="trajectory-alignment",
+                    severity="high",
+                    message=(
+                        "Skill tool usage does not align with the successful trajectory tools. "
+                        f"Trajectory tools: {sorted(trajectory_tools)}; source tools: {sorted(source_tools)}."
+                    ),
+                )
+            ]
+
+        if trajectory_tools and self._looks_like_template_skill(source):
+            return [
+                SemanticIssue(
+                    rule_id="template-skill",
+                    severity="high",
+                    message=(
+                        "Skill looks like a template or no-op and does not appear to implement the "
+                        "observed successful trajectory."
+                    ),
+                )
+            ]
+
+        return [
+            SemanticIssue(
+                rule_id="trajectory-alignment",
+                severity="medium",
+                message=(
+                    "Skill does not appear to call runtime tools from the successful trajectory. "
+                    "Confirm that the implementation is not overly abstract or incomplete."
+                ),
+            )
+        ]
+
+    def _check_parameter_coverage(self, source: str, trajectory: Trajectory) -> list[SemanticIssue]:
+        expected = {
+            key
+            for step in trajectory.steps
+            for key in step.tool_input.keys()
+            if key.lower() not in GENERALIZATION_BLOCKLIST
+        }
+        if not expected:
+            return []
+
+        kwargs_keys = set(re.findall(r'kwargs\.get\("([A-Za-z0-9_]+)"\)', source))
+        if not kwargs_keys:
+            return [
+                SemanticIssue(
+                    rule_id="parameter-coverage",
+                    severity="medium",
+                    message="Skill does not expose trajectory-derived inputs through kwargs parameters.",
+                )
+            ]
+
+        overlap = expected & kwargs_keys
+        if len(overlap) >= max(1, len(expected) // 2):
+            return []
+
+        return [
+            SemanticIssue(
+                rule_id="parameter-coverage",
+                severity="medium",
+                message=(
+                    "Skill parameters only weakly cover the successful trajectory inputs. "
+                    f"Expected from trajectory: {sorted(expected)}; found in skill: {sorted(kwargs_keys)}."
+                ),
+            )
+        ]
+
+    def _check_overfit_artifacts(self, source: str, trajectory: Trajectory) -> list[SemanticIssue]:
+        artifact_names = {Path(artifact).name for artifact in trajectory.artifacts}
+        hardcoded = sorted(name for name in artifact_names if name and name in source)
+        if not hardcoded:
+            return []
+
+        return [
+            SemanticIssue(
+                rule_id="artifact-overfit",
+                severity="medium",
+                message=(
+                    "Skill appears to hardcode trajectory artifact names instead of parameterizing outputs: "
+                    f"{hardcoded}."
+                ),
+            )
+        ]
+
+    def _tool_names_in_source(self, source: str) -> set[str]:
+        return set(re.findall(r"tools\.([A-Za-z0-9_]+)\(", source))
+
+    def _looks_like_template_skill(self, source: str) -> bool:
+        markers = ['"inputs": inputs', '"steps_executed"', '"summary":', "missing = [key for key, value in inputs.items()"]
+        return sum(marker in source for marker in markers) >= 2
+
+    def _find_run_function(self, tree: ast.AST) -> ast.FunctionDef | None:
+        for node in tree.body:
+            if isinstance(node, ast.FunctionDef) and node.name == "run":
+                return node
+        return None

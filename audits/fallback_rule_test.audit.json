@@ -1,0 +1,18 @@
+{
+  "status": "needs_fix",
+  "security_score": 65,
+  "suggestions": [
+    "Replace template-style placeholder logic with real runtime operations before promotion.",
+    "Expose more trajectory-derived inputs as explicit kwargs so the skill generalizes correctly."
+  ],
+  "optimized_docstring": "功能描述:\n    Execute the \"fallback_rule_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+  "refactored_code": "",
+  "static_score": 100,
+  "semantic_score": 65,
+  "static_findings": [],
+  "semantic_findings": [
+    "Skill looks like a template or no-op and does not appear to implement the observed successful trajectory.",
+    "Skill parameters only weakly cover the successful trajectory inputs. Expected from trajectory: ['input_dir', 'output_path', 'pattern']; found in skill: ['report_name', 'topic']."
+  ],
+  "semantic_summary": "Semantic review found 2 issue(s); highest severity: high."
+}

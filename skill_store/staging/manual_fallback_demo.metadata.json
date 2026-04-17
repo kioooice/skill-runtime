@@ -1,0 +1,40 @@
+{
+  "skill_name": "manual_fallback_demo",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\staging\\manual_fallback_demo.py",
+  "summary": "Generate a report from mixed observations without a known deterministic file rule.",
+  "docstring": "功能描述:\n    Generate a report from mixed observations without a known deterministic file rule.\n\n输入参数:\n        - report_name: str\n        - topic: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+  "input_schema": {
+    "report_name": "str",
+    "topic": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "steps_executed": "int"
+  },
+  "source_trajectory_ids": [
+    "manual_fallback_demo"
+  ],
+  "created_at": "2026-04-17T18:51:16.558667+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "staging",
+  "audit_score": null,
+  "rule_name": "llm_fallback",
+  "rule_priority": 0,
+  "rule_reason": "No deterministic rule matched; fallback provider mock_fallback_provider generated a candidate skill.",
+  "tags": [
+    "deterministic",
+    "file",
+    "from",
+    "generate",
+    "known",
+    "mixed",
+    "observations",
+    "report",
+    "report_name",
+    "rule",
+    "topic",
+    "without"
+  ]
+}

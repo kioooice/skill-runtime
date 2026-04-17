@@ -1,0 +1,36 @@
+{
+  "skill_name": "csv_to_json_rule_test",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\csv_to_json_rule_test.py",
+  "summary": "Convert a CSV file into a JSON array file.",
+  "docstring": "功能描述:\n    Convert a CSV file into a JSON array file.\n\n输入参数:\n        - input_path: str\n        - output_path: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+  "input_schema": {
+    "input_path": "str",
+    "output_path": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "steps_executed": "int"
+  },
+  "source_trajectory_ids": [
+    "csv_to_json_demo"
+  ],
+  "created_at": "2026-04-17T21:01:34.994529+00:00",
+  "last_used_at": "2026-04-17T21:01:35.202243+00:00",
+  "usage_count": 1,
+  "status": "active",
+  "audit_score": null,
+  "rule_name": "csv_to_json",
+  "rule_priority": 75,
+  "rule_reason": "Matched csv_to_json because the trajectory reads text, writes JSON, and the task description mentions CSV and JSON.",
+  "tags": [
+    "array",
+    "convert",
+    "csv",
+    "file",
+    "input_path",
+    "into",
+    "json",
+    "output_path"
+  ]
+}

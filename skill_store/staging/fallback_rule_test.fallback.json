@@ -1,0 +1,18 @@
+{
+  "request": {
+    "skill_name": "fallback_rule_test",
+    "summary": "Generate a report from mixed observations without a known deterministic file rule.",
+    "docstring": "功能描述:\n    Generate a report from mixed observations without a known deterministic file rule.\n\n输入参数:\n        - report_name: str\n        - topic: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+    "input_schema": {
+      "report_name": "str",
+      "topic": "str"
+    },
+    "trajectory_task_id": "fallback_demo",
+    "prompt": "You are generating a reusable Python skill.\nSkill name: fallback_rule_test\nSummary: Generate a report from mixed observations without a known deterministic file rule.\nConstraints:\n- Define run(tools, **kwargs)\n- Keep the code parameterized\n- Do not use dangerous shell commands\n- Return a structured dict\n\nDocstring target:\n功能描述:\n    Generate a report from mixed observations without a known deterministic file rule.\n\n输入参数:\n        - report_name: str\n        - topic: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int\n\nInput schema:\n- report_name: str\n- topic: str\n\nTrajectory:\n- Step 1: tool=observe_state, input={'report_name': 'weekly_report'}, observation=Collected mixed observations.\n- Step 2: tool=summarize_notes, input={'topic': 'weekly_report'}, observation=Summarized notes into a draft.\n"
+  },
+  "response": {
+    "code": "def run(tools, **kwargs):\n    \"\"\"\n    功能描述:\n        Generate a report from mixed observations without a known deterministic file rule.\n\n    输入参数:\n            - report_name: str\n            - topic: str\n\n    输出结果:\n            - status: str\n            - artifacts: list[str]\n            - steps_executed: int\n    \"\"\"\n    inputs = {\"report_name\": kwargs.get(\"report_name\"), \"topic\": kwargs.get(\"topic\")}\n\n    missing = [key for key, value in inputs.items() if value is None]\n    if missing:\n        raise ValueError(f\"Missing required inputs: {missing}\")\n\n    # Step 1: observe_state: Collected mixed observations.\n    # Step 2: summarize_notes: Summarized notes into a draft.\n\n    return {\n        \"status\": \"completed\",\n        \"skill_name\": \"fallback_rule_test\",\n        \"summary\": \"Generate a report from mixed observations without a known deterministic file rule.\",\n        \"artifacts\": ['demo/output/fallback_report.txt'],\n        \"steps_executed\": 2,\n        \"inputs\": inputs,\n        \"generated_by\": \"mock_fallback_provider\",\n    }\n",
+    "provider_name": "mock_fallback_provider",
+    "reason": "No deterministic rule matched, so the mock fallback provider generated a parameterized candidate skill from the trajectory prompt."
+  }
+}

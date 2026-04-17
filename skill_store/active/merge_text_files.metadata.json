@@ -1,0 +1,30 @@
+{
+  "skill_name": "merge_text_files",
+  "file_path": "D:/02-Projects/vibe/skill_store/active/merge_text_files.py",
+  "summary": "Merge all .txt files in an input directory into one markdown output file.",
+  "docstring": "功能描述: Merge all .txt files in an input directory into one markdown output file. 输入参数: input_dir, output_path. 输出结果: status, output_path, merged_files.",
+  "input_schema": {
+    "input_dir": "str",
+    "output_path": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "output_path": "str",
+    "merged_files": "int"
+  },
+  "source_trajectory_ids": [],
+  "created_at": "2026-04-18T00:00:00",
+  "last_used_at": "2026-04-17T21:01:37.035730+00:00",
+  "usage_count": 27,
+  "status": "active",
+  "audit_score": 100,
+  "rule_name": "text_merge",
+  "rule_priority": 70,
+  "rule_reason": "Backfilled text_merge because the skill source lists files, reads text, and writes merged output.",
+  "tags": [
+    "merge",
+    "text",
+    "markdown",
+    "files"
+  ]
+}

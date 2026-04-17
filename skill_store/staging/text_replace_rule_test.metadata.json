@@ -1,0 +1,42 @@
+{
+  "skill_name": "text_replace_rule_test",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\staging\\text_replace_rule_test.py",
+  "summary": "Replace one string with another in a text file and write a new output file.",
+  "docstring": "功能描述:\n    Replace one string with another in a text file and write a new output file.\n\n输入参数:\n        - input_path: str\n        - new_text: str\n        - old_text: str\n        - output_path: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+  "input_schema": {
+    "input_path": "str",
+    "new_text": "str",
+    "old_text": "str",
+    "output_path": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "steps_executed": "int"
+  },
+  "source_trajectory_ids": [
+    "text_replace_demo"
+  ],
+  "created_at": "2026-04-17T21:01:36.645411+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "staging",
+  "audit_score": null,
+  "rule_name": "text_replace",
+  "rule_priority": 90,
+  "rule_reason": "Matched text_replace because the trajectory reads and writes one file, includes old_text/new_text inputs, and the task description mentions replacement.",
+  "tags": [
+    "and",
+    "another",
+    "file",
+    "input_path",
+    "new",
+    "new_text",
+    "old_text",
+    "one",
+    "output",
+    "output_path",
+    "replace",
+    "string"
+  ]
+}

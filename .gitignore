@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Test and local caches
+.pytest_cache/
+.mypy_cache/
+
+# Local exports and generated presentation artifacts
+output/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

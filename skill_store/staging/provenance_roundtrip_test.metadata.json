@@ -1,0 +1,41 @@
+{
+  "skill_name": "provenance_roundtrip_test",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\staging\\provenance_roundtrip_test.py",
+  "summary": "Merge all txt files in a directory into one markdown file.",
+  "docstring": "功能描述:\n    Merge all txt files in a directory into one markdown file.\n\n输入参数:\n        - input_dir: str\n        - output_path: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+  "input_schema": {
+    "input_dir": "str",
+    "output_path": "str",
+    "pattern": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "steps_executed": "int"
+  },
+  "source_trajectory_ids": [
+    "demo_merge_text_files"
+  ],
+  "created_at": "2026-04-17T18:43:31.152026+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "staging",
+  "audit_score": null,
+  "rule_name": "text_merge",
+  "rule_priority": 70,
+  "rule_reason": "Matched text_merge because the trajectory lists files, reads text, writes text, and the task description mentions merging txt files.",
+  "tags": [
+    "all",
+    "directory",
+    "file",
+    "files",
+    "input_dir",
+    "into",
+    "markdown",
+    "merge",
+    "one",
+    "output_path",
+    "pattern",
+    "txt"
+  ]
+}
