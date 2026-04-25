@@ -117,12 +117,7 @@ class SemanticChecks:
         ]
 
     def _check_parameter_coverage(self, source: str, trajectory: Trajectory) -> list[SemanticIssue]:
-        expected = {
-            key
-            for step in trajectory.steps
-            for key in step.tool_input.keys()
-            if key.lower() not in GENERALIZATION_BLOCKLIST
-        }
+        expected = self._expected_trajectory_inputs(trajectory)
         if not expected:
             return []
 
@@ -150,6 +145,58 @@ class SemanticChecks:
                 ),
             )
         ]
+
+    def _expected_trajectory_inputs(self, trajectory: Trajectory) -> set[str]:
+        tool_names = {step.tool_name.lower() for step in trajectory.steps}
+        expected: set[str] = set()
+        for step in trajectory.steps:
+            tool_name = step.tool_name.lower()
+            for key in step.tool_input.keys():
+                normalized_key = self._canonicalize_input_key(tool_name, key, tool_names)
+                if normalized_key and normalized_key.lower() not in GENERALIZATION_BLOCKLIST:
+                    expected.add(normalized_key)
+        return expected
+
+    def _canonicalize_input_key(self, tool_name: str, key: str, tool_names: set[str]) -> str | None:
+        normalized = key.lower()
+        if normalized in GENERALIZATION_BLOCKLIST:
+            return None
+        if normalized in {"input_dir", "output_dir", "input_path", "output_path", "prefix", "pattern"}:
+            return normalized
+        if normalized in {"source_dir", "input_folder", "source_folder"}:
+            return "input_dir"
+        if normalized in {"target_dir", "output_folder", "destination_dir"}:
+            return "output_dir"
+        if normalized in {"input_file", "source_file"}:
+            return "input_path"
+        if normalized in {"output_file", "destination_file", "target_file"}:
+            return "output_path"
+        if normalized == "source_path":
+            return "input_path"
+        if normalized in {"target_path", "destination_path"}:
+            return "output_path"
+        if normalized == "source":
+            if tool_name in {"copy_file", "move_file", "rename_path", "move_path"}:
+                return "input_path"
+            return "input_dir" if "list_files" in tool_names else "input_path"
+        if normalized == "target":
+            if tool_name in {"copy_file", "move_file", "rename_path", "move_path"}:
+                return "output_path"
+            return "output_dir" if "list_files" in tool_names else "output_path"
+        if normalized == "path":
+            if tool_name == "list_files":
+                return "input_dir"
+            if tool_name.startswith("write_"):
+                return "output_path"
+            if tool_name.startswith("read_") and "list_files" not in tool_names:
+                return "input_path"
+            return None
+        if normalized == "file_path":
+            if tool_name.startswith("read_"):
+                return "input_path"
+            if tool_name.startswith("write_"):
+                return "output_path"
+        return normalized
 
     def _check_overfit_artifacts(self, source: str, trajectory: Trajectory) -> list[SemanticIssue]:
         artifact_names = {Path(artifact).name for artifact in trajectory.artifacts}

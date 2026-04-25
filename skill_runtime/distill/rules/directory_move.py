@@ -28,8 +28,17 @@ def augment_input_schema(trajectory: Trajectory, input_schema: dict[str, str]) -
     return updated
 
 
+def _selected_move_tool(trajectory: Trajectory) -> str:
+    observed_tools = [step.tool_name.lower() for step in trajectory.steps if step.status == "success"]
+    for tool_name in ("rename_path", "move_file", "move_path"):
+        if tool_name in observed_tools:
+            return tool_name
+    return "move_file"
+
+
 def build_code(skill_name: str, summary: str, docstring: str, trajectory: Trajectory) -> str:
     default_pattern = "*"
+    move_tool = _selected_move_tool(trajectory)
     for step in trajectory.steps:
         pattern = step.tool_input.get("pattern")
         if pattern:
@@ -62,7 +71,7 @@ def run(tools, **kwargs):
     for file_path in tools.list_files(input_dir, pattern):
         source = Path(file_path)
         target = Path(output_dir) / source.name
-        tools.move_file(file_path, str(target))
+        tools.{move_tool}(file_path, str(target))
         moved.append(str(target))
 
     return {{

@@ -8,35 +8,47 @@ from tests.runtime_test_support import ROOT
 
 class RuntimeGeneratedSkillRegressionTestsMixin:
     def test_full_generated_skill_promotion_flow(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
         generated_name = "merge_text_files_promoted_test"
-        output_path = ROOT / "demo" / "output" / "promoted_generated.md"
-        if output_path.exists():
-            output_path.unlink()
+        output_path = sandbox_root / "demo" / "output" / "promoted_generated.md"
 
         self._run_cli(
             "distill",
             "--trajectory",
-            "trajectories/demo_merge_text_files.json",
+            str(sandbox_root / "trajectories" / "demo_merge_text_files.json"),
             "--skill-name",
             generated_name,
+            root=sandbox_root,
         )
-        self._run_cli("audit", "--file", f"skill_store/staging/{generated_name}.py")
-        self._run_cli("promote", "--file", f"skill_store/staging/{generated_name}.py")
+        self._run_cli(
+            "audit",
+            "--file",
+            str(sandbox_root / "skill_store" / "staging" / f"{generated_name}.py"),
+            root=sandbox_root,
+        )
+        self._run_cli(
+            "promote",
+            "--file",
+            str(sandbox_root / "skill_store" / "staging" / f"{generated_name}.py"),
+            root=sandbox_root,
+        )
 
         args_file = self._write_args_file(
             "promoted_execute_args.json",
             {"input_dir": "demo/input", "output_path": "demo/output/promoted_generated.md"},
+            root=sandbox_root,
         )
-        self._execute_skill_cli(generated_name, args_file=args_file)
+        self._execute_skill_cli(generated_name, args_file=args_file, root=sandbox_root)
         self.assertTrue(output_path.exists())
         self.assertIn("hello from file b", output_path.read_text(encoding="utf-8"))
 
-        promoted = self.index.get(generated_name)
+        promoted = sandbox_index.get(generated_name)
         self.assertIsNotNone(promoted)
         self.assertEqual("text_merge", promoted.rule_name)
         self.assertIsNotNone(promoted.rule_reason)
 
     def test_unmatched_trajectory_uses_llm_fallback_artifact(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
         trajectory = Trajectory(
             task_id="fallback_demo",
             session_id="session_fallback_demo",
@@ -63,7 +75,7 @@ class RuntimeGeneratedSkillRegressionTestsMixin:
             ended_at="2026-04-18T12:01:00",
         )
 
-        generated = SkillGenerator(ROOT / "skill_store" / "staging").generate(
+        generated = SkillGenerator(sandbox_root / "skill_store" / "staging").generate(
             trajectory, skill_name="fallback_rule_test"
         )
         self.assertEqual("llm_fallback", generated["metadata"].rule_name)

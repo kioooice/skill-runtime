@@ -17,7 +17,8 @@ EXIT_NOT_FOUND = 3
 EXIT_VALIDATION_ERROR = 4
 EXIT_POLICY_BLOCKED = 5
 
-SERVICE = RuntimeService(ROOT)
+def service_for_args(args: argparse.Namespace) -> RuntimeService:
+    return RuntimeService(Path(args.root).resolve())
 
 
 def ok(data: dict) -> int:
@@ -47,7 +48,7 @@ def error(
 
 def cmd_search(args: argparse.Namespace) -> int:
     try:
-        return ok(SERVICE.search(args.query, top_k=args.top_k))
+        return ok(service_for_args(args).search(args.query, top_k=args.top_k))
     except RuntimeServiceError as exc:
         return error(exc.message, exc.code, exc.details, exit_code=EXIT_VALIDATION_ERROR)
 
@@ -89,7 +90,7 @@ def cmd_execute(args: argparse.Namespace) -> int:
         )
 
     try:
-        return ok(SERVICE.execute(args.skill, parsed_args))
+        return ok(service_for_args(args).execute(args.skill, parsed_args))
     except RuntimeServiceError as exc:
         exit_code = EXIT_NOT_FOUND if exc.code == "SKILL_NOT_FOUND" else EXIT_RUNTIME_ERROR
         if exc.code == "INVALID_ARGS_OBJECT":
@@ -99,7 +100,7 @@ def cmd_execute(args: argparse.Namespace) -> int:
 
 def cmd_distill(args: argparse.Namespace) -> int:
     try:
-        return ok(SERVICE.distill(args.trajectory, skill_name=args.skill_name))
+        return ok(service_for_args(args).distill(args.trajectory, skill_name=args.skill_name))
     except RuntimeServiceError as exc:
         exit_code = EXIT_NOT_FOUND if exc.code == "TRAJECTORY_NOT_FOUND" else EXIT_VALIDATION_ERROR
         return error(exc.message, exc.code, exc.details, exit_code=exit_code)
@@ -107,14 +108,14 @@ def cmd_distill(args: argparse.Namespace) -> int:
 
 def cmd_audit(args: argparse.Namespace) -> int:
     try:
-        return ok(SERVICE.audit(args.file, trajectory_path=args.trajectory))
+        return ok(service_for_args(args).audit(args.file, trajectory_path=args.trajectory))
     except RuntimeServiceError as exc:
         return error(exc.message, exc.code, exc.details, exit_code=EXIT_NOT_FOUND)
 
 
 def cmd_promote(args: argparse.Namespace) -> int:
     try:
-        return ok(SERVICE.promote(args.file))
+        return ok(service_for_args(args).promote(args.file))
     except RuntimeServiceError as exc:
         exit_code = EXIT_POLICY_BLOCKED if exc.code in {"INVALID_PROMOTION_SOURCE", "AUDIT_NOT_PASSED"} else EXIT_NOT_FOUND
         return error(exc.message, exc.code, exc.details, exit_code=exit_code)
@@ -122,7 +123,7 @@ def cmd_promote(args: argparse.Namespace) -> int:
 
 def cmd_log_trajectory(args: argparse.Namespace) -> int:
     try:
-        return ok(SERVICE.log_trajectory(args.file))
+        return ok(service_for_args(args).log_trajectory(args.file))
     except RuntimeServiceError as exc:
         exit_code = EXIT_NOT_FOUND if exc.code == "TRAJECTORY_NOT_FOUND" else EXIT_VALIDATION_ERROR
         return error(exc.message, exc.code, exc.details, exit_code=exit_code)
@@ -130,7 +131,7 @@ def cmd_log_trajectory(args: argparse.Namespace) -> int:
 
 def cmd_capture_trajectory(args: argparse.Namespace) -> int:
     try:
-        return ok(SERVICE.capture_trajectory(args.file, task_id=args.task_id, session_id=args.session_id))
+        return ok(service_for_args(args).capture_trajectory(args.file, task_id=args.task_id, session_id=args.session_id))
     except RuntimeServiceError as exc:
         exit_code = EXIT_NOT_FOUND if exc.code == "OBSERVED_TASK_NOT_FOUND" else EXIT_VALIDATION_ERROR
         return error(exc.message, exc.code, exc.details, exit_code=exit_code)
@@ -138,28 +139,28 @@ def cmd_capture_trajectory(args: argparse.Namespace) -> int:
 
 def cmd_reindex(args: argparse.Namespace) -> int:
     try:
-        return ok(SERVICE.reindex())
+        return ok(service_for_args(args).reindex())
     except RuntimeServiceError as exc:
         return error(exc.message, exc.code, exc.details, exit_code=EXIT_NOT_FOUND)
 
 
 def cmd_archive_cold(args: argparse.Namespace) -> int:
     try:
-        return ok(SERVICE.archive_cold(args.days))
+        return ok(service_for_args(args).archive_cold(args.days))
     except RuntimeServiceError as exc:
         return error(exc.message, exc.code, exc.details, exit_code=EXIT_ARGUMENT_ERROR)
 
 
 def cmd_backfill_provenance(args: argparse.Namespace) -> int:
-    return ok(SERVICE.backfill_provenance())
+    return ok(service_for_args(args).backfill_provenance())
 
 
 def cmd_governance_report(args: argparse.Namespace) -> int:
-    return ok(SERVICE.governance_report())
+    return ok(service_for_args(args).governance_report())
 
 
 def cmd_archive_duplicate_candidates(args: argparse.Namespace) -> int:
-    return ok(SERVICE.archive_duplicate_candidates(skill_names=args.skill_name, dry_run=args.dry_run))
+    return ok(service_for_args(args).archive_duplicate_candidates(skill_names=args.skill_name, dry_run=args.dry_run))
 
 
 def cmd_distill_and_promote(args: argparse.Namespace) -> int:
@@ -172,7 +173,7 @@ def cmd_distill_and_promote(args: argparse.Namespace) -> int:
 
     try:
         return ok(
-            SERVICE.distill_and_promote(
+            service_for_args(args).distill_and_promote(
                 trajectory_path=args.trajectory,
                 observed_task_path=args.observed_task,
                 skill_name=args.skill_name,
@@ -190,6 +191,7 @@ def cmd_distill_and_promote(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="skill_cli")
+    parser.add_argument("--root", default=str(ROOT))
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     search_parser = subparsers.add_parser("search")

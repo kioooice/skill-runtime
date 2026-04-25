@@ -9,7 +9,8 @@ from tests.runtime_test_support import ROOT
 
 class RuntimeAuditLifecycleTestsMixin:
     def test_audit_detects_shell_true(self) -> None:
-        skill_path = ROOT / "skill_store" / "staging" / "unsafe_skill.py"
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+        skill_path = sandbox_root / "skill_store" / "staging" / "unsafe_skill.py"
         skill_path.parent.mkdir(parents=True, exist_ok=True)
         skill_path.write_text(
             'import subprocess\n'
@@ -20,12 +21,13 @@ class RuntimeAuditLifecycleTestsMixin:
         )
         self.addCleanup(skill_path.unlink)
 
-        report = SkillAuditor().audit(skill_path)
+        report = SkillAuditor(sandbox_root / "audits").audit(skill_path)
         self.assertEqual("needs_fix", report.status)
         self.assertLess(report.security_score, 100)
 
     def test_semantic_audit_flags_template_skill_against_trajectory(self) -> None:
-        skill_path = ROOT / "skill_store" / "staging" / "semantic_template_skill.py"
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+        skill_path = sandbox_root / "skill_store" / "staging" / "semantic_template_skill.py"
         skill_path.parent.mkdir(parents=True, exist_ok=True)
         skill_path.write_text(
             'def run(tools, **kwargs):\n'
@@ -47,8 +49,8 @@ class RuntimeAuditLifecycleTestsMixin:
         )
         self.addCleanup(skill_path.unlink)
 
-        trajectory = TrajectoryStore(ROOT / "trajectories").load("demo_merge_text_files")
-        report = SkillAuditor().audit(skill_path, trajectory=trajectory)
+        trajectory = TrajectoryStore(sandbox_root / "trajectories").load("demo_merge_text_files")
+        report = SkillAuditor(sandbox_root / "audits").audit(skill_path, trajectory=trajectory)
         self.assertEqual("needs_fix", report.status)
         self.assertLess(report.semantic_score, 100)
         self.assertTrue(
@@ -59,9 +61,10 @@ class RuntimeAuditLifecycleTestsMixin:
         self.assertTrue(Path(report.semantic_artifact).exists())
 
     def test_service_audit_with_trajectory_returns_semantic_fields(self) -> None:
-        result = self.service.audit(
-            ROOT / "skill_store" / "active" / "merge_text_files.py",
-            trajectory_path=ROOT / "trajectories" / "demo_merge_text_files.json",
+        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        result = sandbox_service.audit(
+            sandbox_root / "skill_store" / "active" / "merge_text_files.py",
+            trajectory_path=sandbox_root / "trajectories" / "demo_merge_text_files.json",
         )
         report = result["report"]
         self.assertEqual("passed", report["status"])
@@ -73,11 +76,12 @@ class RuntimeAuditLifecycleTestsMixin:
         self.assertTrue(Path(report["semantic_artifact"]).exists())
 
     def test_service_audit_returns_promote_follow_up_on_pass(self) -> None:
-        distill_result = self.service.distill(
-            ROOT / "trajectories" / "demo_merge_text_files.json",
+        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        distill_result = sandbox_service.distill(
+            sandbox_root / "trajectories" / "demo_merge_text_files.json",
             skill_name="service_audit_followup_test",
         )
-        result = self.service.audit(
+        result = sandbox_service.audit(
             distill_result["staging_file"],
             trajectory_path=distill_result["trajectory_path"],
         )
@@ -92,18 +96,50 @@ class RuntimeAuditLifecycleTestsMixin:
         )
         self._assert_operation_role(result["available_host_operations"][0], "primary")
 
+    def test_semantic_audit_accepts_single_file_rename_source_target_aliases(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        trajectory = Trajectory(
+            task_id="single_rename_alias_demo",
+            session_id="session_single_rename_alias",
+            task_description="Rename one text file to a new output path.",
+            steps=[
+                TrajectoryStep(
+                    step_id="1",
+                    tool_name="rename_path",
+                    tool_input={"source": "demo/input/a.txt", "target": "demo/output/renamed_a.txt"},
+                    observation="Renamed the source file.",
+                    status="success",
+                ),
+            ],
+            final_status="success",
+            artifacts=["demo/output/renamed_a.txt"],
+            started_at="2026-04-25T10:00:00",
+            ended_at="2026-04-25T10:01:00",
+        )
+
+        generated = self._generate_and_activate_skill(
+            trajectory,
+            skill_name="single_file_rename_alias_audit_test",
+            root=sandbox_root,
+            index=sandbox_index,
+        )
+        report = SkillAuditor(sandbox_root / "audits").audit(generated["skill_file"], trajectory=trajectory)
+        self.assertEqual("passed", report.status)
+        self.assertEqual([], report.semantic_findings)
+
     def test_service_promote_returns_execute_follow_up(self) -> None:
-        distill_result = self.service.distill(
-            ROOT / "trajectories" / "demo_merge_text_files.json",
+        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        distill_result = sandbox_service.distill(
+            sandbox_root / "trajectories" / "demo_merge_text_files.json",
             skill_name="service_promote_followup_test",
         )
-        audit_result = self.service.audit(
+        audit_result = sandbox_service.audit(
             distill_result["staging_file"],
             trajectory_path=distill_result["trajectory_path"],
         )
         self.assertEqual("promote_skill", audit_result["recommended_next_action"])
 
-        result = self.service.promote(distill_result["staging_file"])
+        result = sandbox_service.promote(distill_result["staging_file"])
         self.assertEqual("execute_skill", result["recommended_next_action"])
         self._assert_host_operation_basics(
             result["recommended_host_operation"],
@@ -117,11 +153,12 @@ class RuntimeAuditLifecycleTestsMixin:
         self._assert_operation_role(result["available_host_operations"][0], "primary")
 
     def test_mcp_promote_returns_execute_follow_up(self) -> None:
-        distill_result = self.service.distill(
-            ROOT / "trajectories" / "demo_merge_text_files.json",
+        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        distill_result = sandbox_service.distill(
+            sandbox_root / "trajectories" / "demo_merge_text_files.json",
             skill_name="mcp_promote_followup_test",
         )
-        self.service.audit(
+        sandbox_service.audit(
             distill_result["staging_file"],
             trajectory_path=distill_result["trajectory_path"],
         )
@@ -129,6 +166,7 @@ class RuntimeAuditLifecycleTestsMixin:
         payload = self._call_mcp_tool(
             "promote_skill",
             {"file_path": distill_result["staging_file"]},
+            root=sandbox_root,
         )
         self.assertEqual("execute_skill", payload["data"]["recommended_next_action"])
         self._assert_host_operation_basics(
@@ -138,6 +176,7 @@ class RuntimeAuditLifecycleTestsMixin:
         self._assert_execute_skill_schema(payload["data"]["recommended_host_operation"])
 
     def test_provider_backed_semantic_review_flags_fallback_generated_skill(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
         trajectory = Trajectory(
             task_id="fallback_semantic_audit_demo",
             session_id="session_fallback_semantic_audit",
@@ -164,10 +203,10 @@ class RuntimeAuditLifecycleTestsMixin:
             ended_at="2026-04-24T14:01:00",
         )
 
-        generated = SkillGenerator(ROOT / "skill_store" / "staging").generate(
+        generated = SkillGenerator(sandbox_root / "skill_store" / "staging").generate(
             trajectory, skill_name="semantic_provider_fallback_test"
         )
-        report = SkillAuditor().audit(generated["skill_file"], trajectory=trajectory)
+        report = SkillAuditor(sandbox_root / "audits").audit(generated["skill_file"], trajectory=trajectory)
         self.assertEqual("mock_semantic_review_provider", report.semantic_provider)
         self.assertIsNotNone(report.semantic_artifact)
         self.assertTrue(Path(report.semantic_artifact).exists())

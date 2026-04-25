@@ -1,8 +1,10 @@
 import asyncio
 import ast
 import json
+import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from dataclasses import asdict
 from pathlib import Path
@@ -24,11 +26,18 @@ class RuntimeTestCase(unittest.TestCase):
         self.index.rebuild_from_directory(ROOT / "skill_store" / "active")
         self.service = RuntimeService(ROOT)
 
-    def _activate_generated_skill(self, generated: dict) -> None:
+    def _activate_generated_skill(
+        self,
+        generated: dict,
+        *,
+        root: Path = ROOT,
+        index: SkillIndex | None = None,
+    ) -> None:
         module_path = generated["skill_file"]
         metadata = generated["metadata"]
 
-        active_dir = ROOT / "skill_store" / "active"
+        target_index = index or self.index
+        active_dir = root / "skill_store" / "active"
         active_dir.mkdir(parents=True, exist_ok=True)
         active_skill = active_dir / module_path.name
         active_skill.write_text(module_path.read_text(encoding="utf-8"), encoding="utf-8")
@@ -40,24 +49,31 @@ class RuntimeTestCase(unittest.TestCase):
             json.dumps(asdict(metadata), ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
-        self.index.upsert(metadata)
+        target_index.upsert(metadata)
 
-    def _generate_and_activate_skill(self, trajectory: Trajectory, *, skill_name: str) -> dict:
-        generated = SkillGenerator(ROOT / "skill_store" / "staging").generate(
+    def _generate_and_activate_skill(
+        self,
+        trajectory: Trajectory,
+        *,
+        skill_name: str,
+        root: Path = ROOT,
+        index: SkillIndex | None = None,
+    ) -> dict:
+        generated = SkillGenerator(root / "skill_store" / "staging").generate(
             trajectory,
             skill_name=skill_name,
         )
-        self._activate_generated_skill(generated)
+        self._activate_generated_skill(generated, root=root, index=index)
         return generated
 
-    def _write_args_file(self, file_name: str, payload: dict) -> Path:
-        args_file = ROOT / "demo" / file_name
+    def _write_args_file(self, file_name: str, payload: dict, *, root: Path = ROOT) -> Path:
+        args_file = root / "demo" / file_name
         args_file.write_text(json.dumps(payload), encoding="utf-8")
         self.addCleanup(args_file.unlink)
         return args_file
 
-    def _write_demo_json(self, file_name: str, payload: dict) -> Path:
-        file_path = ROOT / "demo" / file_name
+    def _write_demo_json(self, file_name: str, payload: dict, *, root: Path = ROOT) -> Path:
+        file_path = root / "demo" / file_name
         file_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -153,8 +169,15 @@ class RuntimeTestCase(unittest.TestCase):
 
         raise ValueError(f"Unsupported observed task variant: {variant}")
 
-    def _write_active_skill_fixture(self, skill_name: str, metadata: dict, *, source: str | None = None) -> tuple[Path, Path]:
-        active_dir = ROOT / "skill_store" / "active"
+    def _write_active_skill_fixture(
+        self,
+        skill_name: str,
+        metadata: dict,
+        *,
+        source: str | None = None,
+        root: Path = ROOT,
+    ) -> tuple[Path, Path]:
+        active_dir = root / "skill_store" / "active"
         skill_path = active_dir / f"{skill_name}.py"
         metadata_path = active_dir / f"{skill_name}.metadata.json"
         skill_source = source or 'def run(tools, **kwargs):\n    return {"status": "completed"}\n'
@@ -166,9 +189,22 @@ class RuntimeTestCase(unittest.TestCase):
         self._write_json_file(metadata_path, payload)
         return skill_path, metadata_path
 
-    def _run_cli(self, *args: str, expect_json: bool = False):
+    def _execute_skill_cli(self, skill_name: str, *, args_file: Path, root: Path = ROOT) -> dict:
+        payload = self._run_cli(
+            "execute",
+            "--skill",
+            skill_name,
+            "--args-file",
+            str(args_file),
+            root=root,
+            expect_json=True,
+        )
+        self.assertEqual("ok", payload["status"])
+        return payload
+
+    def _run_cli(self, *args: str, root: Path = ROOT, expect_json: bool = False):
         result = subprocess.run(
-            [sys.executable, str(CLI), *args],
+            [sys.executable, str(CLI), "--root", str(root), *args],
             capture_output=True,
             text=True,
             cwd=str(ROOT),
@@ -178,23 +214,33 @@ class RuntimeTestCase(unittest.TestCase):
             return json.loads(result.stdout)
         return result
 
-    def _execute_skill_cli(self, skill_name: str, *, args_file: Path) -> dict:
-        payload = self._run_cli(
-            "execute",
-            "--skill",
-            skill_name,
-            "--args-file",
-            str(args_file),
-            expect_json=True,
-        )
-        self.assertEqual("ok", payload["status"])
-        return payload
-
-    def _call_mcp_tool(self, tool_name: str, arguments: dict) -> dict:
-        server = build_mcp_server(ROOT)
+    def _call_mcp_tool(self, tool_name: str, arguments: dict, *, root: Path = ROOT) -> dict:
+        server = build_mcp_server(root)
         _, payload = asyncio.run(server.call_tool(tool_name, arguments))
         self.assertEqual("ok", payload["status"])
         return payload
+
+    def _make_runtime_sandbox(self) -> tuple[Path, RuntimeService, SkillIndex]:
+        temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(temp_dir.cleanup)
+        sandbox_root = Path(temp_dir.name)
+
+        shutil.copytree(ROOT / "demo", sandbox_root / "demo")
+        shutil.copytree(ROOT / "skill_store", sandbox_root / "skill_store")
+        shutil.copytree(ROOT / "trajectories", sandbox_root / "trajectories")
+        (sandbox_root / "audits").mkdir(parents=True, exist_ok=True)
+        (sandbox_root / "observed_tasks").mkdir(parents=True, exist_ok=True)
+
+        for metadata_path in (sandbox_root / "skill_store").rglob("*.metadata.json"):
+            payload = json.loads(metadata_path.read_text(encoding="utf-8-sig"))
+            payload["file_path"] = str(
+                metadata_path.with_name(metadata_path.name.replace(".metadata.json", ".py")).resolve()
+            )
+            metadata_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        index = SkillIndex(sandbox_root / "skill_store" / "index.json")
+        index.rebuild_from_directory(sandbox_root / "skill_store" / "active")
+        return sandbox_root, RuntimeService(sandbox_root), index
 
     def _assert_host_operation_basics(
         self,

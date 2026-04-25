@@ -245,3 +245,64 @@ class RuntimeDirectoryGeneratedSkillTestsMixin:
         self.assertFalse((source_dir / "move_a.txt").exists())
         self.assertFalse((source_dir / "move_b.txt").exists())
         self.assertTrue((source_dir / "stay.md").exists())
+
+    def test_distilled_directory_move_from_rename_path_uses_rename_tool(self) -> None:
+        source_dir = ROOT / "demo" / "rename_move_input"
+        output_dir = ROOT / "demo" / "rename_move_output"
+        source_dir.mkdir(parents=True, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (source_dir / "keep.log").write_text("alpha", encoding="utf-8")
+        (source_dir / "skip.md").write_text("skip", encoding="utf-8")
+        self.addCleanup(lambda: (source_dir / "keep.log").unlink(missing_ok=True))
+        self.addCleanup(lambda: (source_dir / "skip.md").unlink(missing_ok=True))
+        self.addCleanup(lambda: (output_dir / "keep.log").unlink(missing_ok=True))
+        self.addCleanup(lambda: (output_dir / "skip.md").unlink(missing_ok=True))
+
+        trajectory = Trajectory(
+            task_id="directory_move_rename_demo",
+            session_id="session_directory_move_rename",
+            task_description="Move matching log files from one directory into another directory.",
+            steps=[
+                TrajectoryStep(
+                    step_id="1",
+                    tool_name="list_files",
+                    tool_input={
+                        "input_dir": "demo/rename_move_input",
+                        "output_dir": "demo/rename_move_output",
+                        "pattern": "*.log",
+                    },
+                    observation="Found log files to move.",
+                    status="success",
+                ),
+                TrajectoryStep(
+                    step_id="2",
+                    tool_name="rename_path",
+                    tool_input={
+                        "source_path": "demo/rename_move_input/keep.log",
+                        "target_path": "demo/rename_move_output/keep.log",
+                    },
+                    observation="Moved matching files into output directory.",
+                    status="success",
+                ),
+            ],
+            final_status="success",
+            artifacts=[],
+            started_at="2026-04-25T10:04:00",
+            ended_at="2026-04-25T10:05:00",
+        )
+
+        generated = self._generate_and_activate_skill(trajectory, skill_name="directory_move_rename_rule_test")
+        self.assertEqual("directory_move", generated["metadata"].rule_name)
+        self.assertIn("tools.rename_path", generated["skill_file"].read_text(encoding="utf-8"))
+        args_file = self._write_args_file(
+            "directory_move_rename_args.json",
+            {
+                "input_dir": "demo/rename_move_input",
+                "output_dir": "demo/rename_move_output",
+                "pattern": "*.log",
+            },
+        )
+        self._execute_skill_cli("directory_move_rename_rule_test", args_file=args_file)
+        self.assertTrue((output_dir / "keep.log").exists())
+        self.assertFalse((source_dir / "keep.log").exists())
+        self.assertTrue((source_dir / "skip.md").exists())

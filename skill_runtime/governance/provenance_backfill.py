@@ -62,16 +62,34 @@ class ProvenanceBackfill:
         keys = set(metadata.input_schema.keys())
 
         if "tools.copy_file(" in source:
+            if "tools.list_files(" not in source:
+                return (
+                    "single_file_copy",
+                    65,
+                    "Backfilled single_file_copy because the skill source copies one file from an input path to an output path.",
+                )
             return (
                 "directory_copy",
                 85,
                 "Backfilled directory_copy because the skill source copies files from an input directory to an output directory.",
             )
         if "tools.move_file(" in source:
+            if "tools.list_files(" not in source:
+                return (
+                    "single_file_move",
+                    65,
+                    "Backfilled single_file_move because the skill source moves one file from an input path to an output path.",
+                )
             return (
                 "directory_move",
                 85,
                 "Backfilled directory_move because the skill source moves files from an input directory to an output directory.",
+            )
+        if "tools.rename_path(" in source and "prefix" not in source:
+            return (
+                "single_file_move",
+                65,
+                "Backfilled single_file_move because the skill source renames or moves one file from an input path to an output path.",
             )
         if "tools.rename_path(" in source and "prefix" in source:
             return (
@@ -90,6 +108,12 @@ class ProvenanceBackfill:
                 "json_to_csv",
                 75,
                 "Backfilled json_to_csv because the skill source reads JSON rows and writes CSV output.",
+            )
+        if "tools.read_json(" in source and "tools.write_json(" in source:
+            return (
+                "single_json_transform",
+                30,
+                "Backfilled single_json_transform because the skill source reads one JSON file and writes one JSON file.",
             )
         if "tools.list_files(" in source and "old_text" in source and "new_text" in source:
             return (

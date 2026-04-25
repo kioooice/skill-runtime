@@ -194,7 +194,7 @@ class RuntimeService:
                     {"reason": str(exc)},
                 ) from exc
 
-        report = SkillAuditor().audit(file_ref, trajectory=trajectory)
+        report = SkillAuditor(self.audits_dir).audit(file_ref, trajectory=trajectory)
         self.audits_dir.mkdir(parents=True, exist_ok=True)
         report_file = self.audits_dir / f"{file_ref.stem}.audit.json"
         report_file.write_text(json.dumps(asdict(report), ensure_ascii=False, indent=2), encoding="utf-8")

@@ -4,7 +4,8 @@ from tests.runtime_test_support import ROOT
 
 class RuntimeGovernanceTestsMixin:
     def test_backfill_provenance_updates_legacy_skill_metadata(self) -> None:
-        active_dir = ROOT / "skill_store" / "active"
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
         skill_source = (
             'def run(tools, **kwargs):\n'
             '    """legacy"""\n'
@@ -27,19 +28,130 @@ class RuntimeGovernanceTestsMixin:
                 "tags": ["merge", "txt", "input_dir", "output_path"],
             },
             source=skill_source,
+            root=sandbox_root,
         )
-        self.index.rebuild_from_directory(active_dir)
+        sandbox_index.rebuild_from_directory(active_dir)
 
-        updated = ProvenanceBackfill(active_dir, self.index).run()
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
         self.assertTrue(any(item["skill_name"] == "legacy_merge_skill" for item in updated))
 
-        refreshed = self.index.get("legacy_merge_skill")
+        refreshed = sandbox_index.get("legacy_merge_skill")
         self.assertIsNotNone(refreshed)
         self.assertEqual("text_merge", refreshed.rule_name)
         self.assertIsNotNone(refreshed.rule_reason)
 
+    def test_backfill_provenance_detects_single_file_copy(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        self._write_active_skill_fixture(
+            "legacy_single_copy_skill",
+            {
+                "summary": "Copy one file into another path.",
+                "docstring": "legacy",
+                "input_schema": {"input_path": "str", "output_path": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-18T00:00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["copy", "input_path", "output_path"],
+            },
+            source=(
+                'def run(tools, **kwargs):\n'
+                '    """legacy"""\n'
+                '    tools.copy_file(kwargs.get("input_path"), kwargs.get("output_path"))\n'
+                '    return {"status": "completed"}\n'
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
+        self.assertTrue(any(item["skill_name"] == "legacy_single_copy_skill" for item in updated))
+
+        refreshed = sandbox_index.get("legacy_single_copy_skill")
+        self.assertIsNotNone(refreshed)
+        self.assertEqual("single_file_copy", refreshed.rule_name)
+        self.assertIsNotNone(refreshed.rule_reason)
+
+    def test_backfill_provenance_detects_single_file_rename_as_move(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        self._write_active_skill_fixture(
+            "legacy_single_rename_skill",
+            {
+                "summary": "Rename one file to a new path.",
+                "docstring": "legacy",
+                "input_schema": {"input_path": "str", "output_path": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-18T00:00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["rename", "input_path", "output_path"],
+            },
+            source=(
+                'def run(tools, **kwargs):\n'
+                '    """legacy"""\n'
+                '    tools.rename_path(kwargs.get("input_path"), kwargs.get("output_path"))\n'
+                '    return {"status": "completed"}\n'
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
+        self.assertTrue(any(item["skill_name"] == "legacy_single_rename_skill" for item in updated))
+
+        refreshed = sandbox_index.get("legacy_single_rename_skill")
+        self.assertIsNotNone(refreshed)
+        self.assertEqual("single_file_move", refreshed.rule_name)
+        self.assertIsNotNone(refreshed.rule_reason)
+
+    def test_backfill_provenance_detects_single_json_transform(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        self._write_active_skill_fixture(
+            "legacy_single_json_transform_skill",
+            {
+                "summary": "Write a JSON copy to another path.",
+                "docstring": "legacy",
+                "input_schema": {"input_path": "str", "output_path": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-18T00:00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["json", "input_path", "output_path"],
+            },
+            source=(
+                'def run(tools, **kwargs):\n'
+                '    """legacy"""\n'
+                '    payload = tools.read_json(kwargs.get("input_path"))\n'
+                '    tools.write_json(kwargs.get("output_path"), payload)\n'
+                '    return {"status": "completed"}\n'
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
+        self.assertTrue(any(item["skill_name"] == "legacy_single_json_transform_skill" for item in updated))
+
+        refreshed = sandbox_index.get("legacy_single_json_transform_skill")
+        self.assertIsNotNone(refreshed)
+        self.assertEqual("single_json_transform", refreshed.rule_name)
+        self.assertIsNotNone(refreshed.rule_reason)
+
     def test_service_backfill_provenance_returns_governance_follow_up(self) -> None:
-        active_dir = ROOT / "skill_store" / "active"
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
         self._write_active_skill_fixture(
             "legacy_backfill_follow_up_skill",
             {
@@ -61,10 +173,11 @@ class RuntimeGovernanceTestsMixin:
                 '    inputs = {"input_dir": kwargs.get("input_dir"), "output_path": kwargs.get("output_path")}\n'
                 '    return {"status": "completed"}\n'
             ),
+            root=sandbox_root,
         )
-        self.index.rebuild_from_directory(active_dir)
+        sandbox_index.rebuild_from_directory(active_dir)
 
-        payload = self.service.backfill_provenance()
+        payload = sandbox_service.backfill_provenance()
 
         self.assertGreaterEqual(payload["updated_count"], 1)
         self.assertTrue(
@@ -81,7 +194,8 @@ class RuntimeGovernanceTestsMixin:
         self._assert_operation_role(payload["available_host_operations"][0], "primary")
 
     def test_mcp_backfill_skill_provenance_returns_governance_follow_up(self) -> None:
-        active_dir = ROOT / "skill_store" / "active"
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
         self._write_active_skill_fixture(
             "legacy_backfill_mcp_skill",
             {
@@ -103,10 +217,11 @@ class RuntimeGovernanceTestsMixin:
                 '    inputs = {"input_dir": kwargs.get("input_dir"), "output_path": kwargs.get("output_path")}\n'
                 '    return {"status": "completed"}\n'
             ),
+            root=sandbox_root,
         )
-        self.index.rebuild_from_directory(active_dir)
+        sandbox_index.rebuild_from_directory(active_dir)
 
-        payload = self._call_mcp_tool("backfill_skill_provenance", {})
+        payload = self._call_mcp_tool("backfill_skill_provenance", {}, root=sandbox_root)
 
         self.assertIn("updated", payload["data"])
         self.assertIn("updated_count", payload["data"])
@@ -122,7 +237,8 @@ class RuntimeGovernanceTestsMixin:
         self._assert_operation_role(payload["data"]["available_host_operations"][0], "primary")
 
     def test_service_reindex_returns_governance_follow_up(self) -> None:
-        payload = self.service.reindex()
+        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        payload = sandbox_service.reindex()
 
         self.assertIn("index_path", payload)
         self.assertIn("skill_count", payload)
@@ -137,7 +253,8 @@ class RuntimeGovernanceTestsMixin:
         self._assert_operation_role(payload["available_host_operations"][0], "primary")
 
     def test_mcp_reindex_skills_returns_governance_follow_up(self) -> None:
-        payload = self._call_mcp_tool("reindex_skills", {})
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+        payload = self._call_mcp_tool("reindex_skills", {}, root=sandbox_root)
 
         self.assertIn("index_path", payload["data"])
         self.assertIn("skill_count", payload["data"])
@@ -152,8 +269,9 @@ class RuntimeGovernanceTestsMixin:
         self._assert_operation_role(payload["data"]["available_host_operations"][0], "primary")
 
     def test_archive_cold_moves_old_active_skill_out_of_search(self) -> None:
-        active_dir = ROOT / "skill_store" / "active"
-        archive_dir = ROOT / "skill_store" / "archive"
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        archive_dir = sandbox_root / "skill_store" / "archive"
         archive_dir.mkdir(parents=True, exist_ok=True)
         skill_name = "archive_candidate_skill"
         skill_path = active_dir / f"{skill_name}.py"
@@ -176,12 +294,13 @@ class RuntimeGovernanceTestsMixin:
                 "audit_score": 100,
                 "tags": ["archive", "candidate"],
             },
+            root=sandbox_root,
         )
         self.addCleanup(lambda: archived_skill_path.unlink(missing_ok=True))
         self.addCleanup(lambda: archived_metadata_path.unlink(missing_ok=True))
 
-        self.index.rebuild_from_directory(active_dir)
-        result = self.service.archive_cold(days=30)
+        sandbox_index.rebuild_from_directory(active_dir)
+        result = sandbox_service.archive_cold(days=30)
 
         self.assertIn("archive_candidate_skill", result["archived"])
         self.assertFalse(skill_path.exists())
@@ -189,7 +308,7 @@ class RuntimeGovernanceTestsMixin:
         self.assertTrue(archived_skill_path.exists())
         self.assertTrue(archived_metadata_path.exists())
 
-        refreshed = self.index.get("archive_candidate_skill")
+        refreshed = sandbox_index.get("archive_candidate_skill")
         self.assertIsNotNone(refreshed)
         self.assertEqual("archived", refreshed.status)
         self.assertEqual("governance_report", result["recommended_next_action"])
@@ -202,12 +321,13 @@ class RuntimeGovernanceTestsMixin:
         )
         self._assert_operation_role(result["available_host_operations"][0], "primary")
 
-        results = self.index.search("archive candidate skill", top_k=20)
+        results = sandbox_index.search("archive candidate skill", top_k=20)
         self.assertNotIn("archive_candidate_skill", {item["skill_name"] for item in results})
 
     def test_mcp_archive_cold_skills_returns_governance_follow_up(self) -> None:
-        active_dir = ROOT / "skill_store" / "active"
-        archive_dir = ROOT / "skill_store" / "archive"
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        archive_dir = sandbox_root / "skill_store" / "archive"
         archive_dir.mkdir(parents=True, exist_ok=True)
         skill_name = "archive_mcp_candidate_skill"
         archived_skill_path = archive_dir / f"{skill_name}.py"
@@ -228,12 +348,13 @@ class RuntimeGovernanceTestsMixin:
                 "audit_score": 100,
                 "tags": ["archive", "cold", "candidate"],
             },
+            root=sandbox_root,
         )
         self.addCleanup(lambda: archived_skill_path.unlink(missing_ok=True))
         self.addCleanup(lambda: archived_metadata_path.unlink(missing_ok=True))
 
-        self.index.rebuild_from_directory(active_dir)
-        payload = self._call_mcp_tool("archive_cold_skills", {"days": 30})
+        sandbox_index.rebuild_from_directory(active_dir)
+        payload = self._call_mcp_tool("archive_cold_skills", {"days": 30}, root=sandbox_root)
 
         self.assertIn(skill_name, payload["data"]["archived"])
         self.assertEqual("governance_report", payload["data"]["recommended_next_action"])
@@ -324,8 +445,9 @@ class RuntimeGovernanceTestsMixin:
         self._assert_operation_role(payload["data"]["available_host_operations"][preview_count], "default")
 
     def test_archive_duplicate_candidates_keeps_canonical_skill_active(self) -> None:
-        active_dir = ROOT / "skill_store" / "active"
-        archive_dir = ROOT / "skill_store" / "archive"
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        archive_dir = sandbox_root / "skill_store" / "archive"
         archive_dir.mkdir(parents=True, exist_ok=True)
 
         canonical_skill = active_dir / "dup_keep_skill.py"
@@ -367,13 +489,13 @@ class RuntimeGovernanceTestsMixin:
             "rule_reason": "duplicate candidate",
             "tags": ["merge", "markdown", "txt"],
         }
-        self._write_active_skill_fixture("dup_keep_skill", canonical_payload)
-        self._write_active_skill_fixture("dup_test_skill", duplicate_payload)
+        self._write_active_skill_fixture("dup_keep_skill", canonical_payload, root=sandbox_root)
+        self._write_active_skill_fixture("dup_test_skill", duplicate_payload, root=sandbox_root)
         self.addCleanup(lambda: archived_duplicate_skill.unlink(missing_ok=True))
         self.addCleanup(lambda: archived_duplicate_metadata.unlink(missing_ok=True))
 
-        self.index.rebuild_from_directory(active_dir)
-        result = self.service.archive_duplicate_candidates(skill_names=["dup_test_skill"])
+        sandbox_index.rebuild_from_directory(active_dir)
+        result = sandbox_service.archive_duplicate_candidates(skill_names=["dup_test_skill"])
 
         self.assertIn("dup_test_skill", result["archived"])
         self.assertTrue(canonical_skill.exists())
@@ -383,8 +505,8 @@ class RuntimeGovernanceTestsMixin:
         self.assertTrue(archived_duplicate_skill.exists())
         self.assertTrue(archived_duplicate_metadata.exists())
 
-        kept = self.index.get("dup_keep_skill")
-        archived = self.index.get("dup_test_skill")
+        kept = sandbox_index.get("dup_keep_skill")
+        archived = sandbox_index.get("dup_test_skill")
         self.assertIsNotNone(kept)
         self.assertEqual("active", kept.status)
         self.assertIsNotNone(archived)
@@ -397,8 +519,9 @@ class RuntimeGovernanceTestsMixin:
         self._assert_operation_role(result["available_host_operations"][0], "primary")
 
     def test_archive_duplicate_candidates_dry_run_does_not_modify_files(self) -> None:
-        active_dir = ROOT / "skill_store" / "active"
-        archive_dir = ROOT / "skill_store" / "archive"
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        archive_dir = sandbox_root / "skill_store" / "archive"
         archive_dir.mkdir(parents=True, exist_ok=True)
 
         canonical_skill = active_dir / "dup_preview_keep.py"
@@ -438,11 +561,11 @@ class RuntimeGovernanceTestsMixin:
             "rule_reason": "duplicate candidate",
             "tags": ["preview", "merge", "markdown", "txt"],
         }
-        self._write_active_skill_fixture("dup_preview_keep", canonical_payload)
-        self._write_active_skill_fixture("dup_preview_test", duplicate_payload)
+        self._write_active_skill_fixture("dup_preview_keep", canonical_payload, root=sandbox_root)
+        self._write_active_skill_fixture("dup_preview_test", duplicate_payload, root=sandbox_root)
 
-        self.index.rebuild_from_directory(active_dir)
-        result = self.service.archive_duplicate_candidates(skill_names=["dup_preview_test"], dry_run=True)
+        sandbox_index.rebuild_from_directory(active_dir)
+        result = sandbox_service.archive_duplicate_candidates(skill_names=["dup_preview_test"], dry_run=True)
 
         self.assertTrue(result["dry_run"])
         self.assertIn("dup_preview_test", result["planned"])
@@ -461,8 +584,9 @@ class RuntimeGovernanceTestsMixin:
         )
 
     def test_mcp_archive_duplicate_candidates_returns_follow_up_host_operation(self) -> None:
-        active_dir = ROOT / "skill_store" / "active"
-        archive_dir = ROOT / "skill_store" / "archive"
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        archive_dir = sandbox_root / "skill_store" / "archive"
         archive_dir.mkdir(parents=True, exist_ok=True)
 
         canonical_skill = active_dir / "dup_mcp_keep.py"
@@ -502,15 +626,16 @@ class RuntimeGovernanceTestsMixin:
             "rule_reason": "duplicate candidate",
             "tags": ["mcp", "merge", "markdown", "txt"],
         }
-        self._write_active_skill_fixture("dup_mcp_keep", canonical_payload)
-        self._write_active_skill_fixture("dup_mcp_test", duplicate_payload)
+        self._write_active_skill_fixture("dup_mcp_keep", canonical_payload, root=sandbox_root)
+        self._write_active_skill_fixture("dup_mcp_test", duplicate_payload, root=sandbox_root)
         self.addCleanup(lambda: (archive_dir / "dup_mcp_test.py").unlink(missing_ok=True))
         self.addCleanup(lambda: (archive_dir / "dup_mcp_test.metadata.json").unlink(missing_ok=True))
 
-        self.index.rebuild_from_directory(active_dir)
+        sandbox_index.rebuild_from_directory(active_dir)
         payload = self._call_mcp_tool(
             "archive_duplicate_candidates",
             {"skill_names": ["dup_mcp_test"], "dry_run": True},
+            root=sandbox_root,
         )
 
         self.assertEqual("archive_duplicate_candidates", payload["data"]["recommended_next_action"])
