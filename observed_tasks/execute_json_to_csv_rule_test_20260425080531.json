@@ -1,0 +1,36 @@
+{
+  "task": "Convert a JSON array file into CSV format.",
+  "skill_name": "json_to_csv_rule_test",
+  "skill_summary": "Convert a JSON array file into CSV format.",
+  "skill_args": {
+    "input_path": "demo/input/table.json",
+    "output_path": "demo/output/table.csv"
+  },
+  "actions": [
+    {
+      "tool_name": "read_json",
+      "tool_input": {
+        "path": "demo/input/table.json"
+      },
+      "observation": "Read JSON from demo/input/table.json.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "demo/output/table.csv"
+      },
+      "observation": "Wrote text to demo/output/table.csv.",
+      "status": "success",
+      "artifacts": [
+        "demo/output/table.csv"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo/output/table.csv"
+    ]
+  }
+}

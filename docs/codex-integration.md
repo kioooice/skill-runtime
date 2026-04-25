@@ -61,6 +61,8 @@ The runtime currently exposes these MCP tools:
 - `reindex_skills`
 - `backfill_skill_provenance`
 - `governance_report`
+- `archive_duplicate_candidates`
+- `archive_cold_skills`
 
 ## Recommended Codex Workflow
 
@@ -72,7 +74,7 @@ For repetitive or workflow-like tasks:
 4. If no good match exists, let Codex complete the task normally
 5. Preferred short path: call `distill_and_promote_candidate`
 6. Explicit path: call `capture_trajectory`, `log_trajectory`, `distill_trajectory`, `audit_skill`, and `promote_skill`
-7. Use `governance_report` periodically to inspect duplicate candidates and library health
+7. Use `governance_report`, `reindex_skills`, `backfill_skill_provenance`, `archive_duplicate_candidates`, and `archive_cold_skills` for library maintenance
 
 `governance_report` recommendations are now host-call aligned. A Codex host can read
 `recommended_actions[].host_operation` and directly call the named MCP tool with the
@@ -80,6 +82,18 @@ returned arguments, instead of translating a prose suggestion into a separate to
 
 For archive recommendations, the payload also includes a dry-run `preview` call so the
 host can offer "preview" and "apply" from the same recommendation object.
+
+The governance tools now also form one consistent maintenance loop:
+
+1. `reindex_skills`
+2. `governance_report`
+3. `backfill_skill_provenance`
+4. `archive_duplicate_candidates`
+5. `archive_cold_skills`
+
+Any maintenance tool that refreshes or mutates library state now points back to
+`governance_report` as the approved follow-up, so Codex hosts can keep returning to the
+same review surface after each maintenance action.
 
 Search responses now expose the same pattern. Codex can read:
 
@@ -100,6 +114,8 @@ Codex can use:
 That means the host should not synthesize `observed_task_path` itself when the runtime
 has already returned it.
 
+## Host-Call Lifecycle Loop
+
 The explicit lifecycle tools now do the same:
 
 - `log_trajectory` recommends `distill_trajectory`
@@ -116,6 +132,8 @@ recommended action and `distill_and_promote_candidate` as a secondary available 
 The shorter-path operation still exposes both `trajectory_path` and `observed_task_path`
 in `argument_schema`, along with optional `skill_name` and `register_trajectory`, so
 Codex integrations can drive the right input collection flow explicitly.
+The accepted observed-task artifact shapes are documented centrally in
+`docs/mcp-integration.md` under `Observed Task Input Shapes`.
 
 For governance dry runs, `archive_duplicate_candidates(dry_run=true)` now returns the
 apply call as the primary follow-up and leaves `governance_report` in
@@ -153,6 +171,19 @@ New runtime flows should extend those shared builders instead of hand-authoring 
 recommendation dictionaries in service or report code. `source_ref` should also come from
 shared builder helpers so Codex-side logging and reconciliation remain stable across
 refactors.
+Internally, those builders are now separated into `source_refs.py`, `operation_builders.py`,
+`recommendation_builders.py`, and `governance_actions.py`, while
+`skill_runtime.mcp.host_operations` remains the stable import surface for the rest of the
+runtime and any external callers.
+The same contract guard is checked by `python scripts/check_mcp_architecture.py` and is
+also run in `.github/workflows/runtime-contracts.yml`.
+Payload shape invariants are checked separately by `python scripts/check_runtime_contracts.py`.
+That guard now also covers the adjacent runtime layering around `service`, `governance`,
+and `retrieval`, so orchestration and host-contract logic do not drift back into
+cross-layer imports.
+It now also covers the nearby `memory`, `distill`, `audit`, and `execution` layers, so
+trajectory capture, generation, review, and execution helpers stay separated from the
+orchestration layer instead of reacquiring cross-layer dependencies.
 
 This keeps Codex responsible for:
 
@@ -183,8 +214,9 @@ For real repeated work, the shortest useful loop is now:
 1. `search_skill`
 2. `execute_skill`
 3. keep the returned `observed_task_record`
-4. if the task was new or improved, feed that record into `distill_and_promote_candidate`
-5. occasionally call `governance_report`
+4. if the task was new or improved, follow `recommended_host_operation` into `distill_and_promote_candidate`
+5. if an explicit governed path is needed, use the host-call lifecycle loop above
+6. when library state changes, run the governance maintenance loop starting from `governance_report`
 
 That gives Codex a practical `reuse -> observe -> distill -> govern` loop without hand-writing trajectories.
 

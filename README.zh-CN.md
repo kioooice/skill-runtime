@@ -86,6 +86,15 @@ tests/
 docs/
 ```
 
+架构维护 guard：
+
+- 运行 `python scripts/check_mcp_architecture.py` 可验证当前文档化分层和 contract 边界
+- 运行 `python scripts/check_runtime_contracts.py` 可验证 host-operation 和 recommendation payload 不变量
+- 更细的 MCP contract 说明见 [MCP Integration](./docs/mcp-integration.md)
+- Codex 侧 contract 说明见 [Codex Integration](./docs/codex-integration.md)
+- 当前运行时分层 guard 明确覆盖 `service / governance / retrieval`
+- 也覆盖 `memory / distill / audit / execution`
+
 ## 当前能力一览
 
 ### Runtime service
@@ -174,14 +183,14 @@ python scripts/skill_cli.py distill-and-promote --observed-task <observed_task.j
 python scripts/skill_cli.py audit --file <skill.py>
 python scripts/skill_cli.py promote --file <staging_skill.py>
 python scripts/skill_cli.py log-trajectory --file <trajectory.json>
-  python scripts/skill_cli.py capture-trajectory --file <observed_task.json>
-  python scripts/skill_cli.py reindex
-  python scripts/skill_cli.py archive-cold --days 30
-  python scripts/skill_cli.py governance-report
-  python scripts/skill_cli.py archive-duplicate-candidates --dry-run
-  python scripts/skill_cli.py archive-duplicate-candidates --skill-name <name>
-  python scripts/skill_cli.py backfill-provenance
-  ```
+python scripts/skill_cli.py capture-trajectory --file <observed_task.json>
+python scripts/skill_cli.py reindex
+python scripts/skill_cli.py archive-cold --days 30
+python scripts/skill_cli.py governance-report
+python scripts/skill_cli.py archive-duplicate-candidates --dry-run
+python scripts/skill_cli.py archive-duplicate-candidates --skill-name <name>
+python scripts/skill_cli.py backfill-provenance
+```
 
 现在成功执行 `execute` 后，返回值里会带上 `observed_task_record` 路径。  
 这份文件后面可以直接：
@@ -217,6 +226,7 @@ python D:/02-Projects/vibe/scripts/skill_mcp_server.py --root D:/02-Projects/vib
 - `backfill_skill_provenance`
 - `governance_report`
 - `archive_duplicate_candidates`
+- `archive_cold_skills`
 
 `governance_report` 现在返回可直接执行的宿主调用信息，例如：
 
@@ -252,6 +262,17 @@ python D:/02-Projects/vibe/scripts/skill_mcp_server.py --root D:/02-Projects/vib
 
 - 用 `preview` 先做 dry-run 预览
 - 再用主 `host_operation` 正式执行
+
+治理维护闭环：
+
+1. 在 active 库发生变化后先调用 `reindex_skills`
+2. 调用 `governance_report` 查看重复项和维护建议
+3. 需要为旧 metadata 补规则来源时调用 `backfill_skill_provenance`
+4. 用 `archive_duplicate_candidates` 做重复技能的预览或正式归档
+5. 用 `archive_cold_skills` 把长期未使用的 active skill 移入 archive
+
+现在这些会改变或刷新库状态的治理工具都会把 `governance_report` 作为标准后续动作，
+这样宿主侧在每一步维护之后都可以回到同一个稳定的检查入口。
 
 `search_skill` 现在也用了同样的模式：
 
@@ -317,7 +338,7 @@ python D:/02-Projects/vibe/scripts/skill_mcp_server.py --root D:/02-Projects/vib
 - `risk_level`：风险提示等级
 - `requires_confirmation`：是否需要二次确认
 
-显式生命周期路径现在也统一成同一套 contract：
+Host-call 生命周期闭环：
 
 - `log_trajectory` 推荐 `distill_trajectory`
 - `capture_trajectory` 推荐 `distill_trajectory`
@@ -331,25 +352,10 @@ python D:/02-Projects/vibe/scripts/skill_mcp_server.py --root D:/02-Projects/vib
 - 一份完整 trajectory JSON
 - 一份更轻量的 observed task record，系统会先自动 capture 成 trajectory
 
-Observed task record 现在同时支持两种格式：
-
-- 详细格式：
-  - `task_description`
-  - `steps[].tool_name`
-  - `steps[].tool_input`
-  - `steps[].observation`
-- 压缩格式：
-  - `task`
-  - `actions[].tool` 或 `actions[].action`
-  - `actions[].input` 或 `actions[].args`
-  - `actions[].result` 或 `actions[].output`
-
-也支持更接近宿主工具调用日志的嵌套格式，例如：
-
-- `records[].tool.name`
-- `records[].tool.arguments`
-- `records[].result.message` 或 `records[].result.output`
-- `records[].result.success` 或 `records[].result.status`
+Observed task 输入格式现在统一收口在
+[MCP Integration](./docs/mcp-integration.md#observed-task-input-shapes)：
+其中包含 `capture_trajectory` 和 `distill_and_promote_candidate` 支持的详细格式、
+压缩格式和嵌套工具日志格式。
 
 ## Codex 接入方式
 
@@ -359,8 +365,10 @@ Observed task record 现在同时支持两种格式：
 
 1. `search_skill`
 2. 有强命中时，调用 `execute_skill`
-3. 没有强命中时，正常完成任务
-4. 用 `distill_and_promote_candidate` 把任务回灌进技能库
+3. 如果这次任务是新解法或更优解法，沿 `recommended_host_operation` 进入 `distill_and_promote_candidate`
+4. 没有强命中时，正常完成任务
+5. 需要走显式受治理路径时，使用上面的 host-call 生命周期闭环
+6. 库状态变化后，使用治理维护闭环
 
 详细说明见：
 

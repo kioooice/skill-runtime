@@ -14,19 +14,17 @@ from skill_runtime.governance.promotion_guard import PromotionGuard, PromotionGu
 from skill_runtime.governance.provenance_backfill import ProvenanceBackfill
 from skill_runtime.mcp.host_operations import (
     archive_duplicate_candidates_follow_up_recommendation,
-    audit_skill_recommendation,
-    distill_and_promote_recommendation,
-    distill_trajectory_recommendation,
-    execute_skill_recommendation,
+    captured_trajectory_recommendation,
+    distilled_skill_audit_recommendation,
+    executed_skill_promotion_recommendation,
+    governance_report_recommendation,
     no_recommendation,
     promote_skill_recommendation,
+    promoted_skill_execution_recommendation,
     recommendation_from_payload,
+    registered_trajectory_recommendation,
     source_ref_audit,
-    source_ref_distill,
-    source_ref_log_trajectory,
-    source_ref_observed_task,
-    source_ref_promote,
-    source_ref_trajectory,
+    search_response_payload,
     search_recommended_skill_recommendation,
     search_no_match_recommendation,
     with_recommendation,
@@ -66,12 +64,10 @@ class RuntimeService:
             raise RuntimeServiceError("search failed", "SEARCH_FAILED", {"reason": str(exc)}) from exc
 
         if results and results[0]["score"] >= self.RECOMMENDED_EXECUTION_SCORE:
-            return with_recommendation(
-                {
-                    "query": query,
-                    "results": results,
-                    "recommended_skill_name": results[0]["skill_name"],
-                },
+            return search_response_payload(
+                query,
+                results,
+                results[0]["skill_name"],
                 search_recommended_skill_recommendation(
                     results[0]["skill_name"],
                     results[0]["host_operation"]["argument_schema"].get("args", {}).get("properties", {}),
@@ -81,12 +77,10 @@ class RuntimeService:
                 ),
             )
 
-        return with_recommendation(
-            {
-                "query": query,
-                "results": results,
-                "recommended_skill_name": None,
-            },
+        return search_response_payload(
+            query,
+            results,
+            None,
             search_no_match_recommendation(),
         )
 
@@ -125,24 +119,7 @@ class RuntimeService:
                 "result": result,
                 "observed_task_record": str(observed_record.resolve()),
             },
-            distill_and_promote_recommendation(
-                observed_task_path=str(observed_record.resolve()),
-                display_label="Promote this execution",
-                effect_summary=(
-                    "Promote this successful execution by sending its observed task record into "
-                    "distill_and_promote_candidate."
-                ),
-                argument_schema={
-                    "observed_task_path": {"type": "string", "required": True, "prefilled": True},
-                },
-                risk_level="medium",
-                requires_confirmation=False,
-                source_ref=source_ref_observed_task(str(observed_record.resolve())),
-                reason=(
-                    "Execution succeeded and emitted an observed task record that can be sent "
-                    "directly into distill_and_promote_candidate."
-                ),
-            ),
+            executed_skill_promotion_recommendation(str(observed_record.resolve())),
         )
 
     def distill(self, trajectory_path: str | Path, skill_name: str | None = None) -> dict[str, Any]:
@@ -180,15 +157,10 @@ class RuntimeService:
         }
         payload = with_recommendation(
             payload,
-            audit_skill_recommendation(
+            distilled_skill_audit_recommendation(
                 str(generated["skill_file"].resolve()),
-                trajectory_path=resolved_trajectory_path,
-                display_label="Audit distilled skill",
-                effect_summary="Audit the newly distilled staging skill before any promotion step.",
-                risk_level="low",
-                requires_confirmation=False,
-                source_ref=source_ref_distill(generated["skill_name"]),
-                reason="Distillation produced a staging skill. Audit it next before considering promotion.",
+                resolved_trajectory_path,
+                generated["skill_name"],
             ),
         )
         if generated.get("fallback_artifact"):
@@ -332,16 +304,7 @@ class RuntimeService:
                 "audit_score": report.security_score,
                 "index_updated": True,
             },
-            execute_skill_recommendation(
-                skill_name,
-                metadata.input_schema,
-                display_label="Run promoted skill",
-                effect_summary="Execute the newly promoted active skill.",
-                risk_level="low",
-                requires_confirmation=False,
-                source_ref=source_ref_promote(skill_name),
-                reason="The skill is now active and can be executed directly from the active library.",
-            ),
+            promoted_skill_execution_recommendation(skill_name, metadata.input_schema),
         )
 
     def log_trajectory(self, file_path: str | Path) -> dict[str, Any]:
@@ -366,15 +329,7 @@ class RuntimeService:
                 "task_id": trajectory.task_id,
                 "registered": True,
             },
-            distill_trajectory_recommendation(
-                str(saved_path.resolve()),
-                display_label="Distill registered trajectory",
-                effect_summary="Distill the registered trajectory into a staging skill draft.",
-                risk_level="low",
-                requires_confirmation=False,
-                source_ref=source_ref_log_trajectory(trajectory.task_id),
-                reason="The trajectory has been registered and is ready for distillation.",
-            ),
+            registered_trajectory_recommendation(str(saved_path.resolve()), task_id=trajectory.task_id),
         )
 
     def capture_trajectory(
@@ -409,15 +364,7 @@ class RuntimeService:
                 "session_id": trajectory.session_id,
                 "captured": True,
             },
-            distill_trajectory_recommendation(
-                str(saved_path.resolve()),
-                display_label="Distill captured trajectory",
-                effect_summary="Distill the captured trajectory into a staging skill draft.",
-                risk_level="low",
-                requires_confirmation=False,
-                source_ref=source_ref_trajectory(trajectory.task_id),
-                reason="The observed task has been captured into a trajectory and is ready for distillation.",
-            ),
+            captured_trajectory_recommendation(str(saved_path.resolve()), task_id=trajectory.task_id),
         )
 
     def reindex(self) -> dict[str, Any]:
@@ -432,7 +379,18 @@ class RuntimeService:
                 {"path": str(self.active_dir)},
             ) from exc
 
-        return {"index_path": str(index_path.resolve()), "skill_count": skill_count}
+        return with_recommendation(
+            {"index_path": str(index_path.resolve()), "skill_count": skill_count},
+            governance_report_recommendation(
+                display_label="Refresh governance report",
+                effect_summary=(
+                    "Refresh the governance report to review the latest indexed skill inventory and maintenance actions."
+                ),
+                risk_level="low",
+                requires_confirmation=False,
+                reason="Reindex changes the active library snapshot. Refresh governance_report next.",
+            ),
+        )
 
     def archive_cold(self, days: int) -> dict[str, Any]:
         if days < 1:
@@ -458,11 +416,33 @@ class RuntimeService:
                 archived.append(metadata.skill_name)
 
         index.save_all(skills)
-        return {"days": days, "archived": archived}
+        return with_recommendation(
+            {"days": days, "archived": archived},
+            governance_report_recommendation(
+                display_label="Refresh governance report",
+                effect_summary=(
+                    "Refresh the governance report to review the latest archived and active skill counts."
+                ),
+                risk_level="low",
+                requires_confirmation=False,
+                reason="Cold-skill archival changes library state. Refresh governance_report next.",
+            ),
+        )
 
     def backfill_provenance(self) -> dict[str, Any]:
         updated = ProvenanceBackfill(self.active_dir, SkillIndex(self.index_path)).run()
-        return {"updated": updated, "updated_count": len(updated)}
+        return with_recommendation(
+            {"updated": updated, "updated_count": len(updated)},
+            governance_report_recommendation(
+                display_label="Refresh governance report",
+                effect_summary=(
+                    "Refresh the governance report to review the latest rule provenance and active skill counts."
+                ),
+                risk_level="low",
+                requires_confirmation=False,
+                reason="Provenance backfill updates active-skill metadata. Refresh governance_report next.",
+            ),
+        )
 
     def governance_report(self) -> dict[str, Any]:
         return LibraryReport(self.root, SkillIndex(self.index_path)).build()

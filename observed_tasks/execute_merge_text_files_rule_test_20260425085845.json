@@ -1,0 +1,53 @@
+{
+  "task": "Merge all txt files in a directory into one markdown file.",
+  "skill_name": "merge_text_files_rule_test",
+  "skill_summary": "Merge all txt files in a directory into one markdown file.",
+  "skill_args": {
+    "input_dir": "demo/input",
+    "output_path": "demo/output/generated.md"
+  },
+  "actions": [
+    {
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 2 matching files in demo/input.",
+      "status": "success"
+    },
+    {
+      "tool_name": "read_text",
+      "tool_input": {
+        "path": "D:\\02-Projects\\vibe\\demo\\input\\a.txt"
+      },
+      "observation": "Read text from demo/input/a.txt.",
+      "status": "success"
+    },
+    {
+      "tool_name": "read_text",
+      "tool_input": {
+        "path": "D:\\02-Projects\\vibe\\demo\\input\\b.txt"
+      },
+      "observation": "Read text from demo/input/b.txt.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "demo/output/generated.md"
+      },
+      "observation": "Wrote text to demo/output/generated.md.",
+      "status": "success",
+      "artifacts": [
+        "demo/output/generated.md"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo/output/generated.md"
+    ]
+  }
+}

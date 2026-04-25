@@ -1,0 +1,52 @@
+{
+  "task": "Rename all txt files in a directory by prefixing them with a value.",
+  "skill_name": "batch_rename_rule_test",
+  "skill_summary": "Rename all txt files in a directory by prefixing them with a value.",
+  "skill_args": {
+    "input_dir": "demo/rename_input",
+    "pattern": "*.txt",
+    "prefix": "renamed_"
+  },
+  "actions": [
+    {
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/rename_input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 2 matching files in demo/rename_input.",
+      "status": "success"
+    },
+    {
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\rename_input\\one.txt",
+        "target_path": "D:\\02-Projects\\vibe\\demo\\rename_input\\renamed_one.txt"
+      },
+      "observation": "Renamed demo/rename_input/one.txt to demo/rename_input/renamed_one.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/rename_input/renamed_one.txt"
+      ]
+    },
+    {
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\rename_input\\two.txt",
+        "target_path": "D:\\02-Projects\\vibe\\demo\\rename_input\\renamed_two.txt"
+      },
+      "observation": "Renamed demo/rename_input/two.txt to demo/rename_input/renamed_two.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/rename_input/renamed_two.txt"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "D:\\02-Projects\\vibe\\demo\\rename_input\\renamed_one.txt",
+      "D:\\02-Projects\\vibe\\demo\\rename_input\\renamed_two.txt"
+    ]
+  }
+}

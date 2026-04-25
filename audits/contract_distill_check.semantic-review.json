@@ -1,0 +1,19 @@
+{
+  "request": {
+    "file_path": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\tmp13u1crh6\\skill_store\\staging\\contract_distill_check.py",
+    "trajectory_task_id": "demo_merge_text_files",
+    "heuristic_issues": [
+      {
+        "rule_id": "artifact-overfit",
+        "severity": "medium",
+        "message": "Skill appears to hardcode trajectory artifact names instead of parameterizing outputs: ['merged.md']."
+      }
+    ],
+    "prompt": "Review the candidate skill at contract_distill_check.py.\n\nTrajectory context:\nTask: Merge all txt files in a directory into one markdown file.\nFinal status: success\nArtifacts: ['demo/output/merged.md']\nSteps:\n- list_files input={'input_dir': 'demo/input', 'pattern': '*.txt'} observation=Found 2 txt files.\n- read_text input={'input_dir': 'demo/input'} observation=Read file contents successfully.\n- write_text input={'output_path': 'demo/output/merged.md'} observation=Wrote merged markdown output.\n\nHeuristic semantic findings:\n- [medium] artifact-overfit: Skill appears to hardcode trajectory artifact names instead of parameterizing outputs: ['merged.md'].\n\nFocus on:\n- trajectory alignment\n- overfitting or template behavior\n- parameter coverage\n- atomicity and retrievability\n\nSkill source:\nfrom pathlib import Path\n\n\ndef run(tools, **kwargs):\n    \"\"\"\n    功能描述:\n        Merge all txt files in a directory into one markdown file.\n\n    输入参数:\n            - input_dir: str\n            - output_path: str\n            - pattern: str\n\n    输出结果:\n            - status: str\n            - artifacts: list[str]\n            - steps_executed: int\n    \"\"\"\n    input_dir = kwargs.get(\"input_dir\")\n    output_path = kwargs.get(\"output_path\")\n    pattern = kwargs.get(\"pattern\", \"*.txt\")\n\n    missing = [\n        name\n        for name, value in {\"input_dir\": input_dir, \"output_path\": output_path}.items()\n        if not value\n    ]\n    if missing:\n        raise ValueError(f\"Missing required inputs: {missing}\")\n\n    files = tools.list_files(input_dir, pattern)\n    contents = []\n    for file_path in files:\n        name = Path(file_path).name\n        text = tools.read_text(file_path).strip()\n        contents.append(f\"# {name}\\n\\n{text}\\n\")\n\n    merged = \"\\n\".join(contents).strip() + \"\\n\"\n    tools.write_text(output_path, merged)\n\n    return {\n        \"status\": \"completed\",\n        \"skill_name\": \"contract_distill_check\",\n        \"summary\": \"Merge all txt files in a directory into one markdown file.\",\n        \"artifacts\": [output_path or \"demo/output/merged.md\"],\n        \"steps_executed\": 3,\n        \"merged_files\": len(files),\n        \"pattern\": pattern,\n    }\n"
+  },
+  "response": {
+    "provider_name": "mock_semantic_review_provider",
+    "summary": "Provider-backed semantic review found no additional issues.",
+    "issues": []
+  }
+}

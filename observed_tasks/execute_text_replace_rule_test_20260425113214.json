@@ -1,0 +1,38 @@
+{
+  "task": "Replace one string with another in a text file and write a new output file.",
+  "skill_name": "text_replace_rule_test",
+  "skill_summary": "Replace one string with another in a text file and write a new output file.",
+  "skill_args": {
+    "input_path": "demo/input/a.txt",
+    "output_path": "demo/output/replace_output.txt",
+    "old_text": "file",
+    "new_text": "document"
+  },
+  "actions": [
+    {
+      "tool_name": "read_text",
+      "tool_input": {
+        "path": "demo/input/a.txt"
+      },
+      "observation": "Read text from demo/input/a.txt.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "demo/output/replace_output.txt"
+      },
+      "observation": "Wrote text to demo/output/replace_output.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/output/replace_output.txt"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo/output/replace_output.txt"
+    ]
+  }
+}

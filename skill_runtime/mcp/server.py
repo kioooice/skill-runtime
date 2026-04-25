@@ -161,4 +161,12 @@ def build_mcp_server(root: str | Path) -> FastMCP:
             dry_run=dry_run,
         )
 
+    @server.tool(
+        name="archive_cold_skills",
+        description="Archive cold active skills older than the given day threshold and return a governance refresh follow-up.",
+        structured_output=True,
+    )
+    def archive_cold_skills(days: int = 30) -> dict[str, Any]:
+        return _wrap_tool(service, "archive_cold", days=days)
+
     return server

@@ -1,0 +1,54 @@
+name: Runtime Contracts
+
+on:
+  push:
+    paths:
+      - ".github/workflows/runtime-contracts.yml"
+      - "README.md"
+      - "README.zh-CN.md"
+      - "scripts/check_mcp_architecture.py"
+      - "scripts/check_runtime_contracts.py"
+      - "scripts/skill_cli.py"
+      - "scripts/skill_mcp_server.py"
+      - "skill_runtime/**"
+      - "docs/mcp-integration.md"
+      - "docs/codex-integration.md"
+      - "tests/test_runtime.py"
+      - "TESTS.md"
+  pull_request:
+    paths:
+      - ".github/workflows/runtime-contracts.yml"
+      - "README.md"
+      - "README.zh-CN.md"
+      - "scripts/check_mcp_architecture.py"
+      - "scripts/check_runtime_contracts.py"
+      - "scripts/skill_cli.py"
+      - "scripts/skill_mcp_server.py"
+      - "skill_runtime/**"
+      - "docs/mcp-integration.md"
+      - "docs/codex-integration.md"
+      - "tests/test_runtime.py"
+      - "TESTS.md"
+  workflow_dispatch:
+
+jobs:
+  runtime-contracts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify MCP architecture boundaries
+        run: python scripts/check_mcp_architecture.py
+
+      - name: Verify runtime payload contracts
+        run: python scripts/check_runtime_contracts.py
+
+      - name: Run runtime test suite
+        run: python -m unittest tests.test_runtime -v

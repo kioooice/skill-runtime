@@ -4,8 +4,8 @@ import re
 
 from skill_runtime.api.models import SkillMetadata
 from skill_runtime.mcp.host_operations import (
-    action_host_operations,
     archive_duplicate_candidates_action,
+    governance_report_payload,
     review_archive_volume_action,
 )
 from skill_runtime.retrieval.skill_index import SkillIndex
@@ -63,15 +63,14 @@ class LibraryReport:
         status_counts = Counter(skill.status for skill in skills)
         duplicates = self._duplicate_candidates(skills)
         recommended_actions = self._recommended_actions(duplicates, status_counts)
-        return {
-            "status_counts": dict(status_counts),
-            "duplicate_candidates": duplicates,
-            "recommended_actions": recommended_actions,
-            "available_host_operations": self._available_host_operations(recommended_actions),
-            "staging_count": self._count_files(self.root / "skill_store" / "staging"),
-            "archive_count": self._count_files(self.root / "skill_store" / "archive"),
-            "active_count": status_counts.get("active", 0),
-        }
+        return governance_report_payload(
+            dict(status_counts),
+            duplicates,
+            recommended_actions,
+            staging_count=self._count_files(self.root / "skill_store" / "staging"),
+            archive_count=self._count_files(self.root / "skill_store" / "archive"),
+            active_count=status_counts.get("active", 0),
+        )
 
     def _duplicate_candidates(self, skills: list[SkillMetadata]) -> list[dict]:
         groups: dict[tuple, list[str]] = defaultdict(list)
@@ -170,6 +169,3 @@ class LibraryReport:
             actions.append(review_archive_volume_action())
 
         return actions
-
-    def _available_host_operations(self, actions: list[dict]) -> list[dict]:
-        return action_host_operations(actions)

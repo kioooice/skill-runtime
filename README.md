@@ -90,6 +90,15 @@ tests/
 docs/
 ```
 
+Architecture maintenance guard:
+
+- run `python scripts/check_mcp_architecture.py` to verify the documented layering and contract boundaries
+- run `python scripts/check_runtime_contracts.py` to validate host-operation and recommendation payload invariants
+- deeper MCP contract details live in [MCP Integration](./docs/mcp-integration.md)
+- Codex-facing contract details live in [Codex Integration](./docs/codex-integration.md)
+- the current runtime layering guard explicitly covers `service / governance / retrieval`
+- it also covers `memory / distill / audit / execution`
+
 ## Feature Snapshot
 
 ### Runtime service
@@ -214,6 +223,7 @@ Current MCP tools:
 - `backfill_skill_provenance`
 - `governance_report`
 - `archive_duplicate_candidates`
+- `archive_cold_skills`
 
 `governance_report` now returns host-ready recommendations. Example:
 
@@ -249,6 +259,18 @@ That lets a host go directly from recommendation display to:
 
 - preview via the `preview` call
 - execution via the main `host_operation` call
+
+Governance maintenance loop:
+
+1. call `reindex_skills` after active-library changes
+2. call `governance_report` to inspect duplicates and maintenance actions
+3. call `backfill_skill_provenance` when legacy metadata needs rule provenance
+4. call `archive_duplicate_candidates` to preview or apply duplicate cleanup
+5. call `archive_cold_skills` to move stale active skills into the archive
+
+All maintenance tools that mutate or refresh library state now converge back to
+`governance_report` as the approved follow-up, so a host can keep using one stable review
+surface after each maintenance step.
 
 `search_skill` now follows the same pattern:
 
@@ -315,7 +337,7 @@ Hosts can use the extra fields to drive interaction:
 - `risk_level` for visual emphasis
 - `requires_confirmation` for confirmation gating
 
-The explicit lifecycle path now exposes the same contract:
+Host-call lifecycle loop:
 
 - `log_trajectory` recommends `distill_trajectory`
 - `capture_trajectory` recommends `distill_trajectory`
@@ -329,26 +351,10 @@ The orchestration short path can now start from either:
 - a full trajectory JSON
 - a lightweight observed task record that is captured into a trajectory first
 
-Observed task records can now use either the verbose shape:
-
-- `task_description`
-- `steps[].tool_name`
-- `steps[].tool_input`
-- `steps[].observation`
-
-or a compact host-friendly shape:
-
-- `task`
-- `actions[].tool` or `actions[].action`
-- `actions[].input` or `actions[].args`
-- `actions[].result` or `actions[].output`
-
-It also accepts nested tool-call log shapes such as:
-
-- `records[].tool.name`
-- `records[].tool.arguments`
-- `records[].result.message` or `records[].result.output`
-- `records[].result.success` or `records[].result.status`
+Observed task input shapes are documented centrally in
+[MCP Integration](./docs/mcp-integration.md#observed-task-input-shapes), including the
+verbose, compact, and nested tool-log forms accepted by `capture_trajectory` and
+`distill_and_promote_candidate`.
 
 ## Codex Integration
 
@@ -358,8 +364,10 @@ Recommended Codex usage:
 
 1. `search_skill`
 2. if a strong match exists, `execute_skill`
-3. if no strong match exists, complete the task normally
-4. use `distill_and_promote_candidate` for the short path back into the library
+3. if the task was newly solved or improved, follow `recommended_host_operation` into `distill_and_promote_candidate`
+4. if no strong match exists, complete the task normally
+5. use the host-call lifecycle loop for the explicit governed path when needed
+6. use the governance maintenance loop after library changes
 
 See:
 

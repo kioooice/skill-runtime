@@ -1,0 +1,36 @@
+{
+  "task": "Convert a CSV file into a JSON array file.",
+  "skill_name": "csv_to_json_rule_test",
+  "skill_summary": "Convert a CSV file into a JSON array file.",
+  "skill_args": {
+    "input_path": "demo/input/table.csv",
+    "output_path": "demo/output/table.json"
+  },
+  "actions": [
+    {
+      "tool_name": "read_text",
+      "tool_input": {
+        "path": "demo/input/table.csv"
+      },
+      "observation": "Read text from demo/input/table.csv.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_json",
+      "tool_input": {
+        "path": "demo/output/table.json"
+      },
+      "observation": "Wrote JSON to demo/output/table.json.",
+      "status": "success",
+      "artifacts": [
+        "demo/output/table.json"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo/output/table.json"
+    ]
+  }
+}

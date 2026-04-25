@@ -37,6 +37,27 @@ python D:/02-Projects/vibe/scripts/skill_mcp_server.py
 - `backfill_skill_provenance`
 - `governance_report`
 - `archive_duplicate_candidates`
+- `archive_cold_skills`
+
+## Runtime Contract Layout
+
+The host-call contract is now split across internal modules under `skill_runtime/mcp/`:
+
+- `source_refs.py` for stable `source_ref` helpers
+- `operation_builders.py` for single MCP host-call payload builders
+- `recommendation_builders.py` for recommendation envelope builders
+- `governance_actions.py` for governance action payload builders
+- `host_operations.py` as the compatibility export surface
+
+External callers should continue importing from `skill_runtime.mcp.host_operations`.
+The internal split is for maintainability and should not change the public contract shape.
+For maintenance checks, run `python scripts/check_mcp_architecture.py` to verify that
+the internal module boundaries still match the documented import rules.
+Run `python scripts/check_runtime_contracts.py` to validate the runtime-approved host
+operation, recommendation, and governance-action payload shapes.
+The repository also runs the same contract gate in
+`.github/workflows/runtime-contracts.yml`, which covers both the architecture check and
+the payload contract check before `python -m unittest tests.test_runtime -v`.
 
 `distill_and_promote_candidate` can now start from either:
 
@@ -162,6 +183,8 @@ So the host can wire a closed loop:
 3. follow `recommended_host_operation`
 4. call `distill_and_promote_candidate`
 
+## Host-Call Lifecycle Loop
+
 The explicit lifecycle path now uses the same host-call contract. Hosts can follow:
 
 1. `log_trajectory` -> returned `recommended_host_operation` calls `distill_trajectory`
@@ -186,10 +209,52 @@ The fallback `distill_and_promote_candidate` operation advertises both supported
 plus optional `skill_name` and `register_trajectory`, so the host can guide the user
 through the right input mode without guessing hidden parameters.
 
+## Observed Task Input Shapes
+
+Observed-task based flows share one normalized input contract across:
+
+- `capture_trajectory`
+- `distill_and_promote_candidate(observed_task_path=...)`
+- execute follow-ups that emit `observed_task_record`
+
+The runtime accepts three host-friendly shapes:
+
+1. Verbose shape
+   - `task_description`
+   - `steps[].tool_name`
+   - `steps[].tool_input`
+   - `steps[].observation`
+2. Compact shape
+   - `task`
+   - `actions[].tool` or `actions[].action`
+   - `actions[].input` or `actions[].args`
+   - `actions[].result` or `actions[].output`
+3. Nested tool-log shape
+   - `records[].tool.name`
+   - `records[].tool.arguments`
+   - `records[].result.message` or `records[].result.output`
+   - `records[].result.success` or `records[].result.status`
+
+Hosts should prefer keeping the emitted `observed_task_record` and passing it forward
+through `recommended_host_operation` instead of reconstructing a new artifact by hand.
+
 For governance preview flows, `archive_duplicate_candidates(dry_run=true)` now returns
 an apply-ready `recommended_host_operation` for the same archive action, while keeping
 `governance_report` available as a secondary action. After a real archive run, the primary
 follow-up remains `governance_report`.
+
+## Governance Maintenance Loop
+
+The governance-oriented MCP tools are intended to be used as one closed maintenance loop:
+
+1. `reindex_skills` refreshes the active library snapshot and now recommends `governance_report`
+2. `governance_report` surfaces duplicate clusters and maintenance actions
+3. `backfill_skill_provenance` repairs legacy metadata and then recommends `governance_report`
+4. `archive_duplicate_candidates` supports preview/apply cleanup and returns `governance_report` after apply
+5. `archive_cold_skills` archives stale active skills and returns `governance_report`
+
+This means a host can keep one stable review surface for library maintenance instead of
+inventing a different next step for each governance tool.
 
 Current `source_ref` families include:
 
@@ -285,10 +350,10 @@ For Codex-style hosts, the intended flow is:
 1. `search_skill`
 2. If there is a strong match, `execute_skill`
 3. Successful execution now returns an `observed_task_record` path
-4. If no hit, host AI completes the task
-5. Short path: `distill_and_promote_candidate`
-6. Explicit path: `capture_trajectory`, `log_trajectory`, `distill_trajectory`, `audit_skill`, and `promote_skill`
-7. Use `governance_report` and `reindex_skills` for library maintenance
+4. If the task was new or improved, follow `recommended_host_operation` into `distill_and_promote_candidate`
+5. If no hit, host AI completes the task
+6. Explicit path: use the host-call lifecycle loop above
+7. Use the governance maintenance loop for library maintenance
 
 This keeps the host AI responsible for planning and user interaction, while the runtime handles:
 
@@ -302,5 +367,4 @@ This keeps the host AI responsible for planning and user interaction, while the 
 ## Current Limits
 
 - The MCP server currently exposes tools only, not prompts or resources.
-- `archive-cold` is currently CLI-only and not exposed through MCP yet.
 - Fallback distillation still uses the mock provider unless a real provider is added later.
