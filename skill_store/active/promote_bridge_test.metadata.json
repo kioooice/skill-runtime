@@ -1,39 +1,39 @@
-{
-  "skill_name": "promote_bridge_test",
-  "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\promote_bridge_test.py",
-  "summary": "Merge all txt files in a directory into one markdown file.",
-  "docstring": "功能描述:\n    Execute the \"promote_bridge_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
-  "input_schema": {
-    "input_dir": "str",
-    "output_path": "str"
-  },
-  "output_schema": {
-    "status": "str",
-    "artifacts": "list[str]",
-    "steps_executed": "int"
-  },
-  "source_trajectory_ids": [
-    "demo_merge_text_files"
-  ],
-  "created_at": "2026-04-17T18:21:22.043286+00:00",
-  "last_used_at": "2026-04-17T18:21:38.699011+00:00",
-  "usage_count": 1,
-  "status": "active",
-  "audit_score": 100,
-  "rule_name": "text_merge",
-  "rule_priority": 70,
-  "rule_reason": "Backfilled text_merge because the skill source lists files, reads text, and writes merged output.",
-  "tags": [
-    "all",
-    "directory",
-    "file",
-    "files",
-    "input_dir",
-    "into",
-    "markdown",
-    "merge",
-    "one",
-    "output_path",
-    "txt"
-  ]
+﻿{
+    "skill_name":  "promote_bridge_test",
+    "file_path":  "D:\\02-Projects\\vibe\\skill_store\\active\\promote_bridge_test.py",
+    "summary":  "Merge all txt files in a directory into one markdown file.",
+    "docstring":  "功能描述:\n    Execute the \"promote_bridge_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+    "input_schema":  {
+                         "input_dir":  "str",
+                         "output_path":  "str"
+                     },
+    "output_schema":  {
+                          "status":  "str",
+                          "artifacts":  "list[str]",
+                          "steps_executed":  "int"
+                      },
+    "source_trajectory_ids":  [
+                                  "demo_merge_text_files"
+                              ],
+    "created_at":  "2026-04-17T18:21:22.043286+00:00",
+    "last_used_at":  "2026-04-17T18:21:38.699011+00:00",
+    "usage_count":  1,
+    "status":  "active",
+    "audit_score":  100,
+    "rule_name":  "text_merge",
+    "rule_priority":  70,
+    "rule_reason":  "Backfilled text_merge because the skill source lists files, reads text, and writes merged output.",
+    "tags":  [
+                 "all",
+                 "directory",
+                 "file",
+                 "files",
+                 "input_dir",
+                 "into",
+                 "markdown",
+                 "merge",
+                 "one",
+                 "output_path",
+                 "txt"
+             ]
 }

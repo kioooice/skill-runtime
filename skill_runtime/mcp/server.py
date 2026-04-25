@@ -62,7 +62,8 @@ def build_mcp_server(root: str | Path) -> FastMCP:
         structured_output=True,
     )
     def distill_and_promote_candidate(
-        trajectory_path: str,
+        trajectory_path: str | None = None,
+        observed_task_path: str | None = None,
         skill_name: str | None = None,
         register_trajectory: bool = True,
     ) -> dict[str, Any]:
@@ -70,6 +71,7 @@ def build_mcp_server(root: str | Path) -> FastMCP:
             service,
             "distill_and_promote",
             trajectory_path=trajectory_path,
+            observed_task_path=observed_task_path,
             skill_name=skill_name,
             register_trajectory=register_trajectory,
         )
@@ -99,6 +101,27 @@ def build_mcp_server(root: str | Path) -> FastMCP:
         return _wrap_tool(service, "log_trajectory", file_path=file_path)
 
     @server.tool(
+        name="capture_trajectory",
+        description=(
+            "Convert a lightweight observed task record into a full trajectory JSON file "
+            "that can be used for distillation."
+        ),
+        structured_output=True,
+    )
+    def capture_trajectory(
+        file_path: str,
+        task_id: str | None = None,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        return _wrap_tool(
+            service,
+            "capture_trajectory",
+            file_path=file_path,
+            task_id=task_id,
+            session_id=session_id,
+        )
+
+    @server.tool(
         name="reindex_skills",
         description="Rebuild the active skill index from metadata files in the active skill store.",
         structured_output=True,
@@ -113,5 +136,29 @@ def build_mcp_server(root: str | Path) -> FastMCP:
     )
     def backfill_skill_provenance() -> dict[str, Any]:
         return _wrap_tool(service, "backfill_provenance")
+
+    @server.tool(
+        name="governance_report",
+        description="Summarize library status counts and lightweight duplicate candidates for governance work.",
+        structured_output=True,
+    )
+    def governance_report() -> dict[str, Any]:
+        return _wrap_tool(service, "governance_report")
+
+    @server.tool(
+        name="archive_duplicate_candidates",
+        description="Archive duplicate-candidate skills suggested by the governance report while keeping canonical skills active.",
+        structured_output=True,
+    )
+    def archive_duplicate_candidates(
+        skill_names: list[str] | None = None,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        return _wrap_tool(
+            service,
+            "archive_duplicate_candidates",
+            skill_names=skill_names,
+            dry_run=dry_run,
+        )
 
     return server

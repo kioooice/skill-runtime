@@ -10,5 +10,7 @@
   "semantic_score": 100,
   "static_findings": [],
   "semantic_findings": [],
-  "semantic_summary": "Semantic review found no blocking alignment or generalization issues."
+  "semantic_summary": "Semantic review found no blocking alignment or generalization issues. Provider-backed semantic review found no additional issues.",
+  "semantic_provider": "mock_semantic_review_provider",
+  "semantic_artifact": "D:\\02-Projects\\vibe\\audits\\merge_text_files_promoted_test.semantic-review.json"
 }

@@ -12,5 +12,7 @@
   "semantic_findings": [
     "Skill appears to hardcode trajectory artifact names instead of parameterizing outputs: ['merged.md']."
   ],
-  "semantic_summary": "Semantic review found 1 issue(s); highest severity: medium."
+  "semantic_summary": "Semantic review found 1 issue(s); highest severity: medium. Provider-backed semantic review found no additional issues.",
+  "semantic_provider": "mock_semantic_review_provider",
+  "semantic_artifact": "D:\\02-Projects\\vibe\\audits\\mcp_distill_and_promote_test.semantic-review.json"
 }

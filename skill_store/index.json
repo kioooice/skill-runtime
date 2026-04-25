@@ -1,6 +1,45 @@
 {
   "skills": [
     {
+      "skill_name": "archive_log_files_dogfood",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\archive_log_files_dogfood.py",
+      "summary": "Move all log files from inbox to archive.",
+      "docstring": "功能描述:\n    Execute the \"archive_log_files_dogfood\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "dogfood_archive_log_files_20260424"
+      ],
+      "created_at": "2026-04-24T14:14:02.154266+00:00",
+      "last_used_at": "2026-04-24T14:14:34.470384+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "directory_move",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+      "tags": [
+        "all",
+        "archive",
+        "files",
+        "from",
+        "inbox",
+        "input_dir",
+        "log",
+        "move",
+        "output_dir",
+        "pattern"
+      ]
+    },
+    {
       "skill_name": "batch_rename_rule_test",
       "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\batch_rename_rule_test.py",
       "summary": "Rename all txt files in a directory by prefixing them with a value.",
@@ -18,8 +57,8 @@
       "source_trajectory_ids": [
         "batch_rename_demo"
       ],
-      "created_at": "2026-04-17T21:01:34.760786+00:00",
-      "last_used_at": "2026-04-17T21:01:34.967514+00:00",
+      "created_at": "2026-04-25T05:55:13.086085+00:00",
+      "last_used_at": "2026-04-25T05:55:13.240288+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -39,6 +78,45 @@
         "txt",
         "value",
         "with"
+      ]
+    },
+    {
+      "skill_name": "cli_compact_observed_distill_promote_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\cli_compact_observed_distill_promote_test.py",
+      "summary": "Move all log files from inbox to archive.",
+      "docstring": "功能描述:\n    Execute the \"cli_compact_observed_distill_promote_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "move_all_log_files_from_inbox_to_archive_20260425055512"
+      ],
+      "created_at": "2026-04-25T05:55:12.705290+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "directory_move",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+      "tags": [
+        "all",
+        "archive",
+        "files",
+        "from",
+        "inbox",
+        "input_dir",
+        "log",
+        "move",
+        "output_dir",
+        "pattern"
       ]
     },
     {
@@ -80,6 +158,84 @@
         "output_path",
         "pattern",
         "txt"
+      ]
+    },
+    {
+      "skill_name": "cli_nested_observed_distill_promote_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\cli_nested_observed_distill_promote_test.py",
+      "summary": "Move all log files from inbox to archive.",
+      "docstring": "功能描述:\n    Execute the \"cli_nested_observed_distill_promote_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "move_all_log_files_from_inbox_to_archive_20260425055512"
+      ],
+      "created_at": "2026-04-25T05:55:12.880353+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "directory_move",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+      "tags": [
+        "all",
+        "archive",
+        "files",
+        "from",
+        "inbox",
+        "input_dir",
+        "log",
+        "move",
+        "output_dir",
+        "pattern"
+      ]
+    },
+    {
+      "skill_name": "cli_observed_distill_promote_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\cli_observed_distill_promote_test.py",
+      "summary": "Move all log files from inbox to archive.",
+      "docstring": "功能描述:\n    Execute the \"cli_observed_distill_promote_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "move_all_log_files_from_inbox_to_archive_20260425055513"
+      ],
+      "created_at": "2026-04-25T05:55:13.054841+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "directory_move",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+      "tags": [
+        "all",
+        "archive",
+        "files",
+        "from",
+        "inbox",
+        "input_dir",
+        "log",
+        "move",
+        "output_dir",
+        "pattern"
       ]
     },
     {
@@ -181,8 +337,8 @@
       "source_trajectory_ids": [
         "csv_to_json_demo"
       ],
-      "created_at": "2026-04-17T21:01:34.994529+00:00",
-      "last_used_at": "2026-04-17T21:01:35.202243+00:00",
+      "created_at": "2026-04-25T05:55:13.264239+00:00",
+      "last_used_at": "2026-04-25T05:55:13.430373+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -218,8 +374,8 @@
       "source_trajectory_ids": [
         "directory_copy_demo"
       ],
-      "created_at": "2026-04-17T21:01:35.235096+00:00",
-      "last_used_at": "2026-04-17T21:01:35.444219+00:00",
+      "created_at": "2026-04-25T05:55:13.456877+00:00",
+      "last_used_at": "2026-04-25T05:55:13.624283+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -259,8 +415,8 @@
       "source_trajectory_ids": [
         "directory_move_demo"
       ],
-      "created_at": "2026-04-17T21:01:35.482573+00:00",
-      "last_used_at": "2026-04-17T21:01:35.698316+00:00",
+      "created_at": "2026-04-25T05:55:13.654644+00:00",
+      "last_used_at": "2026-04-25T05:55:13.813498+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -302,8 +458,8 @@
       "source_trajectory_ids": [
         "directory_text_replace_demo"
       ],
-      "created_at": "2026-04-17T21:01:35.726788+00:00",
-      "last_used_at": "2026-04-17T21:01:35.948640+00:00",
+      "created_at": "2026-04-25T05:55:13.842805+00:00",
+      "last_used_at": "2026-04-25T05:55:14.005421+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -342,8 +498,8 @@
       "source_trajectory_ids": [
         "json_to_csv_demo"
       ],
-      "created_at": "2026-04-17T21:01:35.985014+00:00",
-      "last_used_at": "2026-04-17T21:01:36.191536+00:00",
+      "created_at": "2026-04-25T05:55:14.032852+00:00",
+      "last_used_at": "2026-04-25T05:55:14.185328+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -380,7 +536,7 @@
       "source_trajectory_ids": [
         "demo_merge_text_files"
       ],
-      "created_at": "2026-04-17T21:01:37.862656+00:00",
+      "created_at": "2026-04-25T05:55:15.666675+00:00",
       "last_used_at": null,
       "usage_count": 0,
       "status": "active",
@@ -401,6 +557,45 @@
         "output_path",
         "pattern",
         "txt"
+      ]
+    },
+    {
+      "skill_name": "mcp_observed_distill_promote_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\mcp_observed_distill_promote_test.py",
+      "summary": "Move all log files from inbox to archive.",
+      "docstring": "功能描述:\n    Execute the \"mcp_observed_distill_promote_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "move_all_log_files_from_inbox_to_archive_20260425055515"
+      ],
+      "created_at": "2026-04-25T05:55:15.629837+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "directory_move",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+      "tags": [
+        "all",
+        "archive",
+        "files",
+        "from",
+        "inbox",
+        "input_dir",
+        "log",
+        "move",
+        "output_dir",
+        "pattern"
       ]
     },
     {
@@ -486,6 +681,47 @@
       ]
     },
     {
+      "skill_name": "mcp_promote_followup_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\mcp_promote_followup_test.py",
+      "summary": "Merge all txt files in a directory into one markdown file.",
+      "docstring": "功能描述:\n    Execute the \"mcp_promote_followup_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+      "input_schema": {
+        "input_dir": "str",
+        "output_path": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "demo_merge_text_files"
+      ],
+      "created_at": "2026-04-25T05:55:15.758741+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 90,
+      "rule_name": "text_merge",
+      "rule_priority": 70,
+      "rule_reason": "Matched text_merge because the trajectory lists files, reads text, writes text, and the task description mentions merging txt files.",
+      "tags": [
+        "all",
+        "directory",
+        "file",
+        "files",
+        "input_dir",
+        "into",
+        "markdown",
+        "merge",
+        "one",
+        "output_path",
+        "pattern",
+        "txt"
+      ]
+    },
+    {
       "skill_name": "merge_text_files",
       "file_path": "D:/02-Projects/vibe/skill_store/active/merge_text_files.py",
       "summary": "Merge all .txt files in an input directory into one markdown output file.",
@@ -501,8 +737,8 @@
       },
       "source_trajectory_ids": [],
       "created_at": "2026-04-18T00:00:00",
-      "last_used_at": "2026-04-17T21:01:37.035730+00:00",
-      "usage_count": 27,
+      "last_used_at": "2026-04-25T05:55:15.970504+00:00",
+      "usage_count": 237,
       "status": "active",
       "audit_score": 100,
       "rule_name": "text_merge",
@@ -572,8 +808,8 @@
       "source_trajectory_ids": [
         "demo_merge_text_files"
       ],
-      "created_at": "2026-04-17T21:01:37.250918+00:00",
-      "last_used_at": "2026-04-17T21:01:37.792794+00:00",
+      "created_at": "2026-04-25T05:55:15.038753+00:00",
+      "last_used_at": "2026-04-25T05:55:15.505709+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": 100,
@@ -652,8 +888,8 @@
       "source_trajectory_ids": [
         "demo_merge_text_files"
       ],
-      "created_at": "2026-04-17T21:01:36.229131+00:00",
-      "last_used_at": "2026-04-17T21:01:36.423670+00:00",
+      "created_at": "2026-04-25T05:55:14.211955+00:00",
+      "last_used_at": "2026-04-25T05:55:14.363495+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -673,6 +909,45 @@
         "output_path",
         "pattern",
         "txt"
+      ]
+    },
+    {
+      "skill_name": "observed_distill_promote_service_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\observed_distill_promote_service_test.py",
+      "summary": "Move all log files from inbox to archive.",
+      "docstring": "功能描述:\n    Execute the \"observed_distill_promote_service_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "move_all_log_files_from_inbox_to_archive_20260425055515"
+      ],
+      "created_at": "2026-04-25T05:55:15.930338+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "directory_move",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+      "tags": [
+        "all",
+        "archive",
+        "files",
+        "from",
+        "inbox",
+        "input_dir",
+        "log",
+        "move",
+        "output_dir",
+        "pattern"
       ]
     },
     {
@@ -773,7 +1048,48 @@
       "source_trajectory_ids": [
         "demo_merge_text_files"
       ],
-      "created_at": "2026-04-17T21:01:37.953020+00:00",
+      "created_at": "2026-04-25T05:55:15.911975+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 90,
+      "rule_name": "text_merge",
+      "rule_priority": 70,
+      "rule_reason": "Matched text_merge because the trajectory lists files, reads text, writes text, and the task description mentions merging txt files.",
+      "tags": [
+        "all",
+        "directory",
+        "file",
+        "files",
+        "input_dir",
+        "into",
+        "markdown",
+        "merge",
+        "one",
+        "output_path",
+        "pattern",
+        "txt"
+      ]
+    },
+    {
+      "skill_name": "service_promote_followup_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\service_promote_followup_test.py",
+      "summary": "Merge all txt files in a directory into one markdown file.",
+      "docstring": "功能描述:\n    Execute the \"service_promote_followup_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+      "input_schema": {
+        "input_dir": "str",
+        "output_path": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "demo_merge_text_files"
+      ],
+      "created_at": "2026-04-25T05:55:15.987506+00:00",
       "last_used_at": null,
       "usage_count": 0,
       "status": "active",
@@ -813,8 +1129,8 @@
       "source_trajectory_ids": [
         "single_transform_demo"
       ],
-      "created_at": "2026-04-17T21:01:36.447456+00:00",
-      "last_used_at": "2026-04-17T21:01:36.615669+00:00",
+      "created_at": "2026-04-25T05:55:14.389328+00:00",
+      "last_used_at": "2026-04-25T05:55:14.541513+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -853,8 +1169,8 @@
       "source_trajectory_ids": [
         "text_replace_demo"
       ],
-      "created_at": "2026-04-17T21:01:36.645411+00:00",
-      "last_used_at": "2026-04-17T21:01:36.837025+00:00",
+      "created_at": "2026-04-25T05:55:14.562002+00:00",
+      "last_used_at": "2026-04-25T05:55:14.707092+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,

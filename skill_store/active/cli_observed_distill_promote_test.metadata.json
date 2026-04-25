@@ -1,0 +1,39 @@
+{
+  "skill_name": "cli_observed_distill_promote_test",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\cli_observed_distill_promote_test.py",
+  "summary": "Move all log files from inbox to archive.",
+  "docstring": "功能描述:\n    Execute the \"cli_observed_distill_promote_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+  "input_schema": {
+    "input_dir": "str",
+    "output_dir": "str",
+    "pattern": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "steps_executed": "int"
+  },
+  "source_trajectory_ids": [
+    "move_all_log_files_from_inbox_to_archive_20260425055513"
+  ],
+  "created_at": "2026-04-25T05:55:13.054841+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "active",
+  "audit_score": 100,
+  "rule_name": "directory_move",
+  "rule_priority": 85,
+  "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+  "tags": [
+    "all",
+    "archive",
+    "files",
+    "from",
+    "inbox",
+    "input_dir",
+    "log",
+    "move",
+    "output_dir",
+    "pattern"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "task_id": "dogfood_capture_demo",
+  "session_id": "dogfood_capture_session",
+  "task_description": "Move all log files from inbox to archive.",
+  "steps": [
+    {
+      "step_id": "1",
+      "tool_name": "list_files",
+      "tool_input": {
+        "input_dir": "output/dogfood-20260424/task3/inbox",
+        "pattern": "*.log"
+      },
+      "observation": "Found matching log files.",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "2",
+      "tool_name": "move_file",
+      "tool_input": {
+        "input_dir": "output/dogfood-20260424/task3/inbox",
+        "output_dir": "output/dogfood-20260424/task3/archive",
+        "pattern": "*.log"
+      },
+      "observation": "Moved matching files into archive.",
+      "status": "success",
+      "thought_summary": null
+    }
+  ],
+  "final_status": "success",
+  "artifacts": [
+    "output/dogfood-20260424/task3/archive/job3.log"
+  ],
+  "started_at": "2026-04-24T14:18:36.125512+00:00",
+  "ended_at": "2026-04-24T14:18:36.125512+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "request": {
+    "file_path": "D:\\02-Projects\\vibe\\skill_store\\staging\\semantic_provider_fallback_test.py",
+    "trajectory_task_id": "fallback_semantic_audit_demo",
+    "heuristic_issues": [
+      {
+        "rule_id": "template-skill",
+        "severity": "high",
+        "message": "Skill looks like a template or no-op and does not appear to implement the observed successful trajectory."
+      },
+      {
+        "rule_id": "artifact-overfit",
+        "severity": "medium",
+        "message": "Skill appears to hardcode trajectory artifact names instead of parameterizing outputs: ['fallback_semantic.txt']."
+      }
+    ],
+    "prompt": "Review the candidate skill at semantic_provider_fallback_test.py.\n\nTrajectory context:\nTask: Generate a report from mixed observations without a deterministic rule.\nFinal status: success\nArtifacts: ['demo/output/fallback_semantic.txt']\nSteps:\n- observe_state input={'report_name': 'weekly_report'} observation=Collected mixed observations.\n- summarize_notes input={'topic': 'weekly_report'} observation=Summarized notes into a draft.\n\nHeuristic semantic findings:\n- [high] template-skill: Skill looks like a template or no-op and does not appear to implement the observed successful trajectory.\n- [medium] artifact-overfit: Skill appears to hardcode trajectory artifact names instead of parameterizing outputs: ['fallback_semantic.txt'].\n\nFocus on:\n- trajectory alignment\n- overfitting or template behavior\n- parameter coverage\n- atomicity and retrievability\n\nSkill source:\ndef run(tools, **kwargs):\n    \"\"\"\n    功能描述:\n        Generate a report from mixed observations without a deterministic rule.\n\n    输入参数:\n            - report_name: str\n            - topic: str\n\n    输出结果:\n            - status: str\n            - artifacts: list[str]\n            - steps_executed: int\n    \"\"\"\n    inputs = {\"report_name\": kwargs.get(\"report_name\"), \"topic\": kwargs.get(\"topic\")}\n\n    missing = [key for key, value in inputs.items() if value is None]\n    if missing:\n        raise ValueError(f\"Missing required inputs: {missing}\")\n\n    # Step 1: observe_state: Collected mixed observations.\n    # Step 2: summarize_notes: Summarized notes into a draft.\n\n    return {\n        \"status\": \"completed\",\n        \"skill_name\": \"semantic_provider_fallback_test\",\n        \"summary\": \"Generate a report from mixed observations without a deterministic rule.\",\n        \"artifacts\": ['demo/output/fallback_semantic.txt'],\n        \"steps_executed\": 2,\n        \"inputs\": inputs,\n        \"generated_by\": \"mock_fallback_provider\",\n    }\n"
+  },
+  "response": {
+    "provider_name": "mock_semantic_review_provider",
+    "summary": "Provider-backed semantic review found 2 additional issue(s).",
+    "issues": [
+      {
+        "rule_id": "provider-template-skill",
+        "severity": "medium",
+        "message": "Provider review flagged the skill as fallback-generated template logic that may still need stronger concrete runtime behavior before promotion."
+      },
+      {
+        "rule_id": "provider-weak-runtime-alignment",
+        "severity": "medium",
+        "message": "Provider review found summary-style output without clear runtime tool execution, which can indicate a partially abstract or template skill."
+      }
+    ]
+  }
+}

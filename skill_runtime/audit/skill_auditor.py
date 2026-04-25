@@ -2,17 +2,27 @@ from pathlib import Path
 
 from skill_runtime.api.models import AuditReport, Trajectory
 from skill_runtime.audit.semantic_checks import SemanticChecks, SemanticIssue
+from skill_runtime.audit.semantic_review_service import SemanticReviewService
 from skill_runtime.audit.static_checks import StaticChecks, StaticIssue
 
 
 class SkillAuditor:
-    def __init__(self) -> None:
+    def __init__(self, audits_dir: str | Path = "audits") -> None:
         self.static_checks = StaticChecks()
         self.semantic_checks = SemanticChecks()
+        self.semantic_review = SemanticReviewService(audits_dir)
 
     def audit(self, file_path: str | Path, trajectory: Trajectory | None = None) -> AuditReport:
+        source = Path(file_path).read_text(encoding="utf-8")
         static_issues = self.static_checks.run(file_path)
-        semantic_issues = self.semantic_checks.run(file_path, trajectory=trajectory)
+        heuristic_semantic_issues = self.semantic_checks.run(file_path, trajectory=trajectory)
+        provider_issues, provider_summary, artifact_path = self.semantic_review.review(
+            file_path,
+            source,
+            heuristic_semantic_issues,
+            trajectory=trajectory,
+        )
+        semantic_issues = [*heuristic_semantic_issues, *provider_issues]
         static_score = self._score_static(static_issues)
         semantic_score = self._score_semantic(semantic_issues)
         return AuditReport(
@@ -25,7 +35,9 @@ class SkillAuditor:
             semantic_score=semantic_score,
             static_findings=[issue.message for issue in static_issues],
             semantic_findings=[issue.message for issue in semantic_issues],
-            semantic_summary=self._semantic_summary(semantic_issues),
+            semantic_summary=self._semantic_summary(semantic_issues, provider_summary),
+            semantic_provider=self.semantic_review.provider.provider_name,
+            semantic_artifact=artifact_path,
         )
 
     def _score_static(self, issues: list[StaticIssue]) -> int:
@@ -103,8 +115,10 @@ class SkillAuditor:
             f"    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n"
         )
 
-    def _semantic_summary(self, issues: list[SemanticIssue]) -> str:
+    def _semantic_summary(self, issues: list[SemanticIssue], provider_summary: str | None = None) -> str:
         if not issues:
-            return "Semantic review found no blocking alignment or generalization issues."
+            summary = "Semantic review found no blocking alignment or generalization issues."
+            return f"{summary} {provider_summary}".strip() if provider_summary else summary
         highest = "high" if any(issue.severity == "high" for issue in issues) else "medium"
-        return f"Semantic review found {len(issues)} issue(s); highest severity: {highest}."
+        summary = f"Semantic review found {len(issues)} issue(s); highest severity: {highest}."
+        return f"{summary} {provider_summary}".strip() if provider_summary else summary

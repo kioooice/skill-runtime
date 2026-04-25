@@ -56,3 +56,5 @@ class AuditReport:
     static_findings: list[str] = field(default_factory=list)
     semantic_findings: list[str] = field(default_factory=list)
     semantic_summary: str | None = None
+    semantic_provider: str | None = None
+    semantic_artifact: str | None = None

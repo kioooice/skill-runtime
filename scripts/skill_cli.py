@@ -128,6 +128,14 @@ def cmd_log_trajectory(args: argparse.Namespace) -> int:
         return error(exc.message, exc.code, exc.details, exit_code=exit_code)
 
 
+def cmd_capture_trajectory(args: argparse.Namespace) -> int:
+    try:
+        return ok(SERVICE.capture_trajectory(args.file, task_id=args.task_id, session_id=args.session_id))
+    except RuntimeServiceError as exc:
+        exit_code = EXIT_NOT_FOUND if exc.code == "OBSERVED_TASK_NOT_FOUND" else EXIT_VALIDATION_ERROR
+        return error(exc.message, exc.code, exc.details, exit_code=exit_code)
+
+
 def cmd_reindex(args: argparse.Namespace) -> int:
     try:
         return ok(SERVICE.reindex())
@@ -146,17 +154,37 @@ def cmd_backfill_provenance(args: argparse.Namespace) -> int:
     return ok(SERVICE.backfill_provenance())
 
 
+def cmd_governance_report(args: argparse.Namespace) -> int:
+    return ok(SERVICE.governance_report())
+
+
+def cmd_archive_duplicate_candidates(args: argparse.Namespace) -> int:
+    return ok(SERVICE.archive_duplicate_candidates(skill_names=args.skill_name, dry_run=args.dry_run))
+
+
 def cmd_distill_and_promote(args: argparse.Namespace) -> int:
+    if bool(args.trajectory) == bool(args.observed_task):
+        return error(
+            "provide exactly one of --trajectory or --observed-task",
+            "INVALID_DISTILL_PROMOTE_INPUT",
+            exit_code=EXIT_ARGUMENT_ERROR,
+        )
+
     try:
         return ok(
             SERVICE.distill_and_promote(
-                args.trajectory,
+                trajectory_path=args.trajectory,
+                observed_task_path=args.observed_task,
                 skill_name=args.skill_name,
                 register_trajectory=not args.skip_log,
             )
         )
     except RuntimeServiceError as exc:
-        exit_code = EXIT_NOT_FOUND if exc.code in {"TRAJECTORY_NOT_FOUND", "SKILL_FILE_NOT_FOUND"} else EXIT_VALIDATION_ERROR
+        exit_code = (
+            EXIT_NOT_FOUND
+            if exc.code in {"TRAJECTORY_NOT_FOUND", "SKILL_FILE_NOT_FOUND", "OBSERVED_TASK_NOT_FOUND"}
+            else EXIT_VALIDATION_ERROR
+        )
         return error(exc.message, exc.code, exc.details, exit_code=exit_code)
 
 
@@ -181,7 +209,8 @@ def build_parser() -> argparse.ArgumentParser:
     distill_parser.set_defaults(func=cmd_distill)
 
     distill_promote_parser = subparsers.add_parser("distill-and-promote")
-    distill_promote_parser.add_argument("--trajectory", required=True)
+    distill_promote_parser.add_argument("--trajectory")
+    distill_promote_parser.add_argument("--observed-task")
     distill_promote_parser.add_argument("--skill-name")
     distill_promote_parser.add_argument("--skip-log", action="store_true")
     distill_promote_parser.set_defaults(func=cmd_distill_and_promote)
@@ -199,6 +228,12 @@ def build_parser() -> argparse.ArgumentParser:
     log_parser.add_argument("--file", required=True)
     log_parser.set_defaults(func=cmd_log_trajectory)
 
+    capture_parser = subparsers.add_parser("capture-trajectory")
+    capture_parser.add_argument("--file", required=True)
+    capture_parser.add_argument("--task-id")
+    capture_parser.add_argument("--session-id")
+    capture_parser.set_defaults(func=cmd_capture_trajectory)
+
     reindex_parser = subparsers.add_parser("reindex")
     reindex_parser.set_defaults(func=cmd_reindex)
 
@@ -208,6 +243,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     backfill_parser = subparsers.add_parser("backfill-provenance")
     backfill_parser.set_defaults(func=cmd_backfill_provenance)
+
+    governance_parser = subparsers.add_parser("governance-report")
+    governance_parser.set_defaults(func=cmd_governance_report)
+
+    archive_duplicates_parser = subparsers.add_parser("archive-duplicate-candidates")
+    archive_duplicates_parser.add_argument("--skill-name", action="append")
+    archive_duplicates_parser.add_argument("--dry-run", action="store_true")
+    archive_duplicates_parser.set_defaults(func=cmd_archive_duplicate_candidates)
 
     return parser
 

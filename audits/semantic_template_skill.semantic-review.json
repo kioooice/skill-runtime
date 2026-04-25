@@ -1,0 +1,25 @@
+{
+  "request": {
+    "file_path": "D:\\02-Projects\\vibe\\skill_store\\staging\\semantic_template_skill.py",
+    "trajectory_task_id": "demo_merge_text_files",
+    "heuristic_issues": [
+      {
+        "rule_id": "template-skill",
+        "severity": "high",
+        "message": "Skill looks like a template or no-op and does not appear to implement the observed successful trajectory."
+      }
+    ],
+    "prompt": "Review the candidate skill at semantic_template_skill.py.\n\nTrajectory context:\nTask: Merge all txt files in a directory into one markdown file.\nFinal status: success\nArtifacts: ['demo/output/merged.md']\nSteps:\n- list_files input={'input_dir': 'demo/input', 'pattern': '*.txt'} observation=Found 2 txt files.\n- read_text input={'input_dir': 'demo/input'} observation=Read file contents successfully.\n- write_text input={'output_path': 'demo/output/merged.md'} observation=Wrote merged markdown output.\n\nHeuristic semantic findings:\n- [high] template-skill: Skill looks like a template or no-op and does not appear to implement the observed successful trajectory.\n\nFocus on:\n- trajectory alignment\n- overfitting or template behavior\n- parameter coverage\n- atomicity and retrievability\n\nSkill source:\ndef run(tools, **kwargs):\n    \"\"\"\n    功能描述:\n        Placeholder skill.\n\n    输入参数:\n        - input_dir: str\n        - output_path: str\n\n    输出结果:\n        - status: str\n    \"\"\"\n    inputs = {\"input_dir\": kwargs.get(\"input_dir\"), \"output_path\": kwargs.get(\"output_path\")}\n    missing = [key for key, value in inputs.items() if value is None]\n    if missing:\n        raise ValueError(missing)\n    return {\"status\": \"completed\", \"inputs\": inputs, \"steps_executed\": 3}\n"
+  },
+  "response": {
+    "provider_name": "mock_semantic_review_provider",
+    "summary": "Provider-backed semantic review found 1 additional issue(s).",
+    "issues": [
+      {
+        "rule_id": "provider-weak-runtime-alignment",
+        "severity": "medium",
+        "message": "Provider review found summary-style output without clear runtime tool execution, which can indicate a partially abstract or template skill."
+      }
+    ]
+  }
+}

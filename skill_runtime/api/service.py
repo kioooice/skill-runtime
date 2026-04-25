@@ -9,8 +9,29 @@ from skill_runtime.audit.skill_auditor import SkillAuditor
 from skill_runtime.distill.skill_generator import SkillGenerationError, SkillGenerator
 from skill_runtime.execution.runtime_tools import RuntimeTools
 from skill_runtime.execution.skill_executor import SkillExecutionError, SkillExecutor
+from skill_runtime.governance.library_report import LibraryReport
 from skill_runtime.governance.promotion_guard import PromotionGuard, PromotionGuardError
 from skill_runtime.governance.provenance_backfill import ProvenanceBackfill
+from skill_runtime.mcp.host_operations import (
+    archive_duplicate_candidates_follow_up_recommendation,
+    audit_skill_recommendation,
+    distill_and_promote_recommendation,
+    distill_trajectory_recommendation,
+    execute_skill_recommendation,
+    no_recommendation,
+    promote_skill_recommendation,
+    recommendation_from_payload,
+    source_ref_audit,
+    source_ref_distill,
+    source_ref_log_trajectory,
+    source_ref_observed_task,
+    source_ref_promote,
+    source_ref_trajectory,
+    search_recommended_skill_recommendation,
+    search_no_match_recommendation,
+    with_recommendation,
+)
+from skill_runtime.memory.trajectory_capture import TrajectoryCapture, TrajectoryCaptureError
 from skill_runtime.memory.trajectory_store import TrajectoryStore, TrajectoryValidationError
 from skill_runtime.retrieval.skill_index import SkillIndex, SkillIndexError
 
@@ -33,6 +54,7 @@ class RuntimeService:
         self.staging_dir = self.root / "skill_store" / "staging"
         self.trajectories_dir = self.root / "trajectories"
         self.audits_dir = self.root / "audits"
+        self.observed_tasks_dir = self.root / "observed_tasks"
 
     def search(self, query: str, top_k: int = 5) -> dict[str, Any]:
         if not query.strip():
@@ -44,19 +66,29 @@ class RuntimeService:
             raise RuntimeServiceError("search failed", "SEARCH_FAILED", {"reason": str(exc)}) from exc
 
         if results and results[0]["score"] >= self.RECOMMENDED_EXECUTION_SCORE:
-            return {
+            return with_recommendation(
+                {
+                    "query": query,
+                    "results": results,
+                    "recommended_skill_name": results[0]["skill_name"],
+                },
+                search_recommended_skill_recommendation(
+                    results[0]["skill_name"],
+                    results[0]["host_operation"]["argument_schema"].get("args", {}).get("properties", {}),
+                    additional_operations=[
+                        {**item["host_operation"], "operation_role": "default"} for item in results[1:]
+                    ],
+                ),
+            )
+
+        return with_recommendation(
+            {
                 "query": query,
                 "results": results,
-                "recommended_next_action": "execute_skill",
-                "recommended_skill_name": results[0]["skill_name"],
-            }
-
-        return {
-            "query": query,
-            "results": results,
-            "recommended_next_action": "distill_and_promote_candidate",
-            "recommended_skill_name": None,
-        }
+                "recommended_skill_name": None,
+            },
+            search_no_match_recommendation(),
+        )
 
     def execute(self, skill_name: str, args: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(args, dict):
@@ -66,10 +98,16 @@ class RuntimeService:
                 {"received_type": type(args).__name__},
             )
 
+        index = SkillIndex(self.index_path)
+        metadata = index.get(skill_name)
+        if metadata is None:
+            raise RuntimeServiceError("skill not found", "SKILL_NOT_FOUND", {"skill_name": skill_name})
+
+        tools = RuntimeTools(self.root)
         try:
             result = SkillExecutor(
-                index=SkillIndex(self.index_path),
-                tools=RuntimeTools(self.root),
+                index=index,
+                tools=tools,
             ).execute(skill_name, args)
         except FileNotFoundError as exc:
             raise RuntimeServiceError("skill not found", "SKILL_NOT_FOUND", {"skill_name": skill_name}) from exc
@@ -80,7 +118,32 @@ class RuntimeService:
                 {"reason": str(exc)},
             ) from exc
 
-        return {"skill_name": skill_name, "result": result}
+        observed_record = self._save_execution_observed_record(metadata, args, result, tools.export_records())
+        return with_recommendation(
+            {
+                "skill_name": skill_name,
+                "result": result,
+                "observed_task_record": str(observed_record.resolve()),
+            },
+            distill_and_promote_recommendation(
+                observed_task_path=str(observed_record.resolve()),
+                display_label="Promote this execution",
+                effect_summary=(
+                    "Promote this successful execution by sending its observed task record into "
+                    "distill_and_promote_candidate."
+                ),
+                argument_schema={
+                    "observed_task_path": {"type": "string", "required": True, "prefilled": True},
+                },
+                risk_level="medium",
+                requires_confirmation=False,
+                source_ref=source_ref_observed_task(str(observed_record.resolve())),
+                reason=(
+                    "Execution succeeded and emitted an observed task record that can be sent "
+                    "directly into distill_and_promote_candidate."
+                ),
+            ),
+        )
 
     def distill(self, trajectory_path: str | Path, skill_name: str | None = None) -> dict[str, Any]:
         try:
@@ -107,13 +170,27 @@ class RuntimeService:
                 {"reason": str(exc)},
             ) from exc
 
+        resolved_trajectory_path = str(Path(trajectory_path).resolve())
         payload = {
-            "trajectory_path": str(Path(trajectory_path).resolve()),
+            "trajectory_path": resolved_trajectory_path,
             "skill_name": generated["skill_name"],
             "staging_file": str(generated["skill_file"].resolve()),
             "metadata_file": str(generated["metadata_file"].resolve()),
             "summary": generated["summary"],
         }
+        payload = with_recommendation(
+            payload,
+            audit_skill_recommendation(
+                str(generated["skill_file"].resolve()),
+                trajectory_path=resolved_trajectory_path,
+                display_label="Audit distilled skill",
+                effect_summary="Audit the newly distilled staging skill before any promotion step.",
+                risk_level="low",
+                requires_confirmation=False,
+                source_ref=source_ref_distill(generated["skill_name"]),
+                reason="Distillation produced a staging skill. Audit it next before considering promotion.",
+            ),
+        )
         if generated.get("fallback_artifact"):
             payload["fallback_artifact"] = str(Path(generated["fallback_artifact"]).resolve())
         return payload
@@ -149,7 +226,26 @@ class RuntimeService:
         self.audits_dir.mkdir(parents=True, exist_ok=True)
         report_file = self.audits_dir / f"{file_ref.stem}.audit.json"
         report_file.write_text(json.dumps(asdict(report), ensure_ascii=False, indent=2), encoding="utf-8")
-        return {"report": asdict(report), "report_file": str(report_file.resolve())}
+        payload = {"report": asdict(report), "report_file": str(report_file.resolve())}
+        if report.status == "passed":
+            payload = with_recommendation(
+                payload,
+                promote_skill_recommendation(
+                    str(file_ref.resolve()),
+                    display_label="Promote audited skill",
+                    effect_summary="Promote this staging skill now that the audit has passed.",
+                    risk_level="medium",
+                    requires_confirmation=False,
+                    source_ref=source_ref_audit(file_ref.stem),
+                    reason="The audit passed, so this staging skill can be promoted.",
+                )
+            )
+        else:
+            payload = with_recommendation(
+                payload,
+                no_recommendation("The audit did not pass, so no promotion action is recommended."),
+            )
+        return payload
 
     def promote(self, file_path: str | Path) -> dict[str, Any]:
         file_ref = Path(file_path)
@@ -228,13 +324,25 @@ class RuntimeService:
         metadata_path.write_text(json.dumps(asdict(metadata), ensure_ascii=False, indent=2), encoding="utf-8")
         SkillIndex(self.index_path).upsert(metadata)
 
-        return {
-            "skill_name": skill_name,
-            "active_file": str(active_file.resolve()),
-            "metadata_file": str(metadata_path.resolve()),
-            "audit_score": report.security_score,
-            "index_updated": True,
-        }
+        return with_recommendation(
+            {
+                "skill_name": skill_name,
+                "active_file": str(active_file.resolve()),
+                "metadata_file": str(metadata_path.resolve()),
+                "audit_score": report.security_score,
+                "index_updated": True,
+            },
+            execute_skill_recommendation(
+                skill_name,
+                metadata.input_schema,
+                display_label="Run promoted skill",
+                effect_summary="Execute the newly promoted active skill.",
+                risk_level="low",
+                requires_confirmation=False,
+                source_ref=source_ref_promote(skill_name),
+                reason="The skill is now active and can be executed directly from the active library.",
+            ),
+        )
 
     def log_trajectory(self, file_path: str | Path) -> dict[str, Any]:
         try:
@@ -252,7 +360,65 @@ class RuntimeService:
                 {"reason": str(exc)},
             ) from exc
 
-        return {"trajectory_path": str(saved_path.resolve()), "task_id": trajectory.task_id, "registered": True}
+        return with_recommendation(
+            {
+                "trajectory_path": str(saved_path.resolve()),
+                "task_id": trajectory.task_id,
+                "registered": True,
+            },
+            distill_trajectory_recommendation(
+                str(saved_path.resolve()),
+                display_label="Distill registered trajectory",
+                effect_summary="Distill the registered trajectory into a staging skill draft.",
+                risk_level="low",
+                requires_confirmation=False,
+                source_ref=source_ref_log_trajectory(trajectory.task_id),
+                reason="The trajectory has been registered and is ready for distillation.",
+            ),
+        )
+
+    def capture_trajectory(
+        self,
+        file_path: str | Path,
+        task_id: str | None = None,
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
+        try:
+            trajectory, saved_path = TrajectoryCapture(self.trajectories_dir).capture(
+                file_path,
+                task_id=task_id,
+                session_id=session_id,
+            )
+        except FileNotFoundError as exc:
+            raise RuntimeServiceError(
+                "observed task file not found",
+                "OBSERVED_TASK_NOT_FOUND",
+                {"path": str(file_path)},
+            ) from exc
+        except (TrajectoryCaptureError, json.JSONDecodeError) as exc:
+            raise RuntimeServiceError(
+                "observed task record is invalid",
+                "INVALID_OBSERVED_TASK",
+                {"reason": str(exc)},
+            ) from exc
+
+        return with_recommendation(
+            {
+                "trajectory_path": str(saved_path.resolve()),
+                "task_id": trajectory.task_id,
+                "session_id": trajectory.session_id,
+                "captured": True,
+            },
+            distill_trajectory_recommendation(
+                str(saved_path.resolve()),
+                display_label="Distill captured trajectory",
+                effect_summary="Distill the captured trajectory into a staging skill draft.",
+                risk_level="low",
+                requires_confirmation=False,
+                source_ref=source_ref_trajectory(trajectory.task_id),
+                reason="The observed task has been captured into a trajectory and is ready for distillation.",
+            ),
+        )
 
     def reindex(self) -> dict[str, Any]:
         try:
@@ -271,37 +437,173 @@ class RuntimeService:
     def archive_cold(self, days: int) -> dict[str, Any]:
         if days < 1:
             raise RuntimeServiceError("days must be >= 1", "INVALID_DAYS", {"days": days})
-        archive_dir = self.root / "skill_store" / "archive"
-        archive_dir.mkdir(parents=True, exist_ok=True)
-        return {"days": days, "archived": []}
+        cutoff = datetime.now(timezone.utc).timestamp() - (days * 86400)
+        index = SkillIndex(self.index_path)
+        skills = index.load_all()
+        archived: list[str] = []
+
+        for metadata in skills:
+            if metadata.status != "active":
+                continue
+
+            reference_time = metadata.last_used_at or metadata.created_at
+            try:
+                reference_timestamp = datetime.fromisoformat(reference_time).timestamp()
+            except ValueError:
+                continue
+
+            if reference_timestamp > cutoff:
+                continue
+            if self._archive_skill_metadata(metadata):
+                archived.append(metadata.skill_name)
+
+        index.save_all(skills)
+        return {"days": days, "archived": archived}
 
     def backfill_provenance(self) -> dict[str, Any]:
         updated = ProvenanceBackfill(self.active_dir, SkillIndex(self.index_path)).run()
         return {"updated": updated, "updated_count": len(updated)}
 
+    def governance_report(self) -> dict[str, Any]:
+        return LibraryReport(self.root, SkillIndex(self.index_path)).build()
+
+    def archive_duplicate_candidates(
+        self,
+        skill_names: list[str] | None = None,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        index = SkillIndex(self.index_path)
+        skills = index.load_all()
+        metadata_by_name = {skill.skill_name: skill for skill in skills}
+        report = LibraryReport(self.root, index).build()
+        archived: list[str] = []
+        planned: list[str] = []
+        target_names = set(skill_names or [])
+
+        for cluster in report["duplicate_candidates"]:
+            for skill_name in cluster["archive_candidates"]:
+                if target_names and skill_name not in target_names:
+                    continue
+                metadata = metadata_by_name.get(skill_name)
+                if metadata is None or metadata.status != "active":
+                    continue
+                planned.append(skill_name)
+                if dry_run:
+                    continue
+                if self._archive_skill_metadata(metadata):
+                    archived.append(skill_name)
+
+        if not dry_run:
+            index.save_all(skills)
+        recommendation = archive_duplicate_candidates_follow_up_recommendation(
+            sorted(set(planned)),
+            dry_run=dry_run,
+        )
+        return with_recommendation(
+            {
+                "dry_run": dry_run,
+                "planned": sorted(set(planned)),
+                "planned_count": len(set(planned)),
+                "archived": archived,
+                "archived_count": len(archived),
+            },
+            recommendation,
+        )
+
     def distill_and_promote(
         self,
-        trajectory_path: str | Path,
+        trajectory_path: str | Path | None = None,
+        observed_task_path: str | Path | None = None,
         skill_name: str | None = None,
         register_trajectory: bool = True,
     ) -> dict[str, Any]:
-        trajectory_result = self.log_trajectory(trajectory_path) if register_trajectory else None
-        distill_result = self.distill(trajectory_path, skill_name=skill_name)
-        audit_result = self.audit(distill_result["staging_file"], trajectory_path=trajectory_path)
+        if bool(trajectory_path) == bool(observed_task_path):
+            raise RuntimeServiceError(
+                "provide exactly one of trajectory_path or observed_task_path",
+                "INVALID_DISTILL_PROMOTE_INPUT",
+            )
+
+        capture_result: dict[str, Any] | None = None
+        resolved_trajectory_path = trajectory_path
+        if observed_task_path:
+            capture_result = self.capture_trajectory(observed_task_path)
+            resolved_trajectory_path = capture_result["trajectory_path"]
+            register_trajectory = False
+
+        trajectory_result = self.log_trajectory(resolved_trajectory_path) if register_trajectory else None
+        distill_result = self.distill(resolved_trajectory_path, skill_name=skill_name)
+        audit_result = self.audit(distill_result["staging_file"], trajectory_path=resolved_trajectory_path)
 
         promoted = audit_result["report"]["status"] == "passed"
         promotion_result: dict[str, Any] | None = None
         skipped_reason: str | None = None
         if promoted:
             promotion_result = self.promote(distill_result["staging_file"])
+            recommendation = recommendation_from_payload(promotion_result)
         else:
             skipped_reason = "promotion skipped because audit did not pass"
+            recommendation = no_recommendation(
+                "The workflow was not promoted, so no execution action is recommended."
+            )
 
-        return {
-            "trajectory": trajectory_result,
-            "distillation": distill_result,
-            "audit": audit_result,
-            "promotion": promotion_result,
-            "promoted": promoted,
-            "skipped_reason": skipped_reason,
+        return with_recommendation(
+            {
+                "capture": capture_result,
+                "trajectory": trajectory_result,
+                "distillation": distill_result,
+                "audit": audit_result,
+                "promotion": promotion_result,
+                "promoted": promoted,
+                "skipped_reason": skipped_reason,
+            },
+            recommendation,
+        )
+
+    def _archive_skill_metadata(self, metadata: SkillMetadata) -> bool:
+        archive_dir = self.root / "skill_store" / "archive"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        source_path = Path(metadata.file_path)
+        metadata_path = source_path.with_name(f"{metadata.skill_name}.metadata.json")
+        if not source_path.exists() or not metadata_path.exists():
+            return False
+
+        archived_skill = archive_dir / source_path.name
+        archived_metadata = archive_dir / metadata_path.name
+        archived_skill.write_text(source_path.read_text(encoding="utf-8"), encoding="utf-8")
+        archived_metadata.write_text(metadata_path.read_text(encoding="utf-8"), encoding="utf-8")
+        source_path.unlink()
+        metadata_path.unlink()
+
+        metadata.file_path = str(archived_skill.resolve())
+        metadata.status = "archived"
+        archived_metadata.write_text(json.dumps(asdict(metadata), ensure_ascii=False, indent=2), encoding="utf-8")
+        return True
+
+    def _save_execution_observed_record(
+        self,
+        metadata: SkillMetadata,
+        args: dict[str, Any],
+        result: dict[str, Any],
+        steps: list[dict[str, Any]],
+    ) -> Path:
+        self.observed_tasks_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        output_path = self.observed_tasks_dir / f"execute_{metadata.skill_name}_{stamp}.json"
+
+        artifacts = result.get("artifacts")
+        if not isinstance(artifacts, list):
+            artifacts = []
+
+        payload = {
+            "task": metadata.summary or f"Execute skill {metadata.skill_name}.",
+            "skill_name": metadata.skill_name,
+            "skill_summary": metadata.summary,
+            "skill_args": args,
+            "actions": steps,
+            "result": {
+                "status": result.get("status", "completed"),
+                "outputs": artifacts,
+            },
         }
+        output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return output_path

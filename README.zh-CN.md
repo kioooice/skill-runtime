@@ -12,6 +12,10 @@
 
 `检索 -> 执行 -> 蒸馏 -> 审计 -> 入库 -> 复用`
 
+现在也支持一条更轻的执行反馈闭环：
+
+`检索 -> 执行 -> observed task record -> capture/distill`
+
 也就是说，宿主 AI 可以：
 
 - 在重做工作流之前，先检索有没有现成 skill
@@ -90,6 +94,17 @@ docs/
 - 搜索结果带顶层推荐字段：
   - `recommended_next_action`
   - `recommended_skill_name`
+  - `recommended_host_operation`
+- 成功执行 `execute` 后也会带：
+  - `recommended_next_action`
+  - `recommended_reason`
+  - `recommended_host_operation`
+- 显式生命周期接口现在也会带宿主后续动作：
+  - `log_trajectory -> distill_trajectory`
+  - `capture_trajectory -> distill_trajectory`
+  - `distill_trajectory -> audit_skill`
+  - `audit_skill -> promote_skill`（通过时）
+  - `promote_skill -> execute_skill`
 
 ### Distillation
 
@@ -113,7 +128,10 @@ docs/
   - shell 调用
   - 缺失入口函数
   - 硬编码路径
-- 语义审计骨架：
+- provider-backed 语义审计：
+  - 默认本地 mock provider
+  - 审计 prompt artifact
+  - provider review summary
   - 轨迹对齐
   - 参数覆盖
   - 模板 skill 检测
@@ -122,18 +140,28 @@ docs/
 ### Retrieval
 
 - 用 `skill_store/index.json` 维护 active skill 索引
-- 当前是轻量关键词检索
+- 当前是轻量混合检索
 - 搜索结果可返回：
+  - `host_operation`
   - `rule_name`
   - `rule_priority`
   - `rule_reason`
   - `why_matched`
+  - `score_breakdown`
+  - `library_tier`
 
 ### Governance
 
 - 严格的 staging -> audit -> promote 流程
 - promote 后保留 provenance
 - 支持 legacy skill provenance 回填
+- `archive-cold` 可用
+- `governance-report` 可查看库状态和重复候选
+  - 重复候选里会直接给 `canonical_skill` 和 `archive_candidates`
+  - 还会给宿主更容易消费的 `recommended_actions`
+  - 每条建议现在还会带 `host_operation`，直接给出 MCP `tool_name`
+    和 `arguments`，方便宿主从“看建议”直接切到“执行建议”
+- `archive-duplicate-candidates` 可按建议安全归档重复候选
 
 ## CLI 快速开始
 
@@ -142,12 +170,24 @@ python scripts/skill_cli.py search --query "<task>"
 python scripts/skill_cli.py execute --skill <skill_name> --args-file <json file>
 python scripts/skill_cli.py distill --trajectory <trajectory.json> --skill-name <optional_name>
 python scripts/skill_cli.py distill-and-promote --trajectory <trajectory.json> --skill-name <optional_name>
+python scripts/skill_cli.py distill-and-promote --observed-task <observed_task.json> --skill-name <optional_name>
 python scripts/skill_cli.py audit --file <skill.py>
 python scripts/skill_cli.py promote --file <staging_skill.py>
 python scripts/skill_cli.py log-trajectory --file <trajectory.json>
-python scripts/skill_cli.py reindex
-python scripts/skill_cli.py backfill-provenance
-```
+  python scripts/skill_cli.py capture-trajectory --file <observed_task.json>
+  python scripts/skill_cli.py reindex
+  python scripts/skill_cli.py archive-cold --days 30
+  python scripts/skill_cli.py governance-report
+  python scripts/skill_cli.py archive-duplicate-candidates --dry-run
+  python scripts/skill_cli.py archive-duplicate-candidates --skill-name <name>
+  python scripts/skill_cli.py backfill-provenance
+  ```
+
+现在成功执行 `execute` 后，返回值里会带上 `observed_task_record` 路径。  
+这份文件后面可以直接：
+
+- 用 `capture-trajectory` 转成标准 trajectory
+- 或直接喂给 `distill-and-promote --observed-task`
 
 ## MCP 快速开始
 
@@ -172,8 +212,144 @@ python D:/02-Projects/vibe/scripts/skill_mcp_server.py --root D:/02-Projects/vib
 - `audit_skill`
 - `promote_skill`
 - `log_trajectory`
+- `capture_trajectory`
 - `reindex_skills`
 - `backfill_skill_provenance`
+- `governance_report`
+- `archive_duplicate_candidates`
+
+`governance_report` 现在返回可直接执行的宿主调用信息，例如：
+
+```json
+{
+  "action": "archive_duplicate_candidates",
+  "reason": "Keep \"merge_text_files\" as canonical and archive lower-priority duplicates.",
+  "host_operation": {
+    "type": "mcp_tool_call",
+    "tool_name": "archive_duplicate_candidates",
+    "display_label": "Archive duplicates",
+    "risk_level": "high",
+    "requires_confirmation": true,
+    "arguments": {
+      "skill_names": ["merge_text_files_generated"],
+      "dry_run": false
+    },
+    "preview": {
+      "tool_name": "archive_duplicate_candidates",
+      "display_label": "Preview archive",
+      "risk_level": "low",
+      "requires_confirmation": false,
+      "arguments": {
+        "skill_names": ["merge_text_files_generated"],
+        "dry_run": true
+      }
+    }
+  }
+}
+```
+
+这样宿主侧可以直接：
+
+- 用 `preview` 先做 dry-run 预览
+- 再用主 `host_operation` 正式执行
+
+`search_skill` 现在也用了同样的模式：
+
+- 每条命中结果都带 `host_operation`
+- 顶层响应带 `recommended_host_operation`
+- 顶层响应也带 `available_host_operations`
+
+例如：
+
+```json
+{
+  "recommended_next_action": "execute_skill",
+  "recommended_skill_name": "merge_text_files",
+  "recommended_host_operation": {
+    "type": "mcp_tool_call",
+    "tool_name": "execute_skill",
+    "display_label": "Run recommended skill",
+    "risk_level": "low",
+    "requires_confirmation": false,
+    "arguments": {
+      "skill_name": "merge_text_files",
+      "args": {}
+    }
+  }
+}
+```
+
+对于没有强命中的查询，`search_skill` 现在会把 `capture_trajectory` 作为主推荐，
+同时把 `distill_and_promote_candidate` 保留在 `available_host_operations`
+里作为更短的次级路径，适合宿主已经拿到了可用 artifact 的情况。
+
+成功执行 `execute_skill` 后也会返回同样的下一跳信息：
+
+```json
+{
+  "skill_name": "merge_text_files",
+  "observed_task_record": "/abs/path.json",
+  "recommended_next_action": "distill_and_promote_candidate",
+  "recommended_reason": "Execution succeeded and emitted an observed task record that can be sent directly into distill_and_promote_candidate.",
+  "recommended_host_operation": {
+    "type": "mcp_tool_call",
+    "tool_name": "distill_and_promote_candidate",
+    "display_label": "Promote this execution",
+    "risk_level": "medium",
+    "requires_confirmation": false,
+    "arguments": {
+      "observed_task_path": "/abs/path.json"
+    }
+  }
+}
+```
+
+这样宿主调用链就能闭环：
+
+- `search_skill`
+- `execute_skill`
+- `recommended_host_operation`
+- `distill_and_promote_candidate`
+
+宿主现在还可以直接用这些字段驱动交互：
+
+- `display_label`：按钮或菜单文案
+- `risk_level`：风险提示等级
+- `requires_confirmation`：是否需要二次确认
+
+显式生命周期路径现在也统一成同一套 contract：
+
+- `log_trajectory` 推荐 `distill_trajectory`
+- `capture_trajectory` 推荐 `distill_trajectory`
+- `distill_trajectory` 推荐 `audit_skill`
+- `audit_skill` 在通过时推荐 `promote_skill`
+- `promote_skill` 推荐 `execute_skill`
+- `distill_and_promote_candidate` 在成功 promote 后也会推荐 `execute_skill`
+
+这条短路径现在可以从两种输入开始：
+
+- 一份完整 trajectory JSON
+- 一份更轻量的 observed task record，系统会先自动 capture 成 trajectory
+
+Observed task record 现在同时支持两种格式：
+
+- 详细格式：
+  - `task_description`
+  - `steps[].tool_name`
+  - `steps[].tool_input`
+  - `steps[].observation`
+- 压缩格式：
+  - `task`
+  - `actions[].tool` 或 `actions[].action`
+  - `actions[].input` 或 `actions[].args`
+  - `actions[].result` 或 `actions[].output`
+
+也支持更接近宿主工具调用日志的嵌套格式，例如：
+
+- `records[].tool.name`
+- `records[].tool.arguments`
+- `records[].result.message` 或 `records[].result.output`
+- `records[].result.success` 或 `records[].result.status`
 
 ## Codex 接入方式
 
@@ -207,6 +383,7 @@ python scripts/skill_cli.py distill --trajectory trajectories/demo_merge_text_fi
 python scripts/skill_cli.py audit --file skill_store/staging/merge_text_files_generated.py
 python scripts/skill_cli.py promote --file skill_store/staging/merge_text_files_generated.py
 python scripts/skill_cli.py distill-and-promote --trajectory trajectories/demo_merge_text_files.json --skill-name merge_text_files_one_shot
+python scripts/skill_cli.py distill-and-promote --observed-task output/observed_task.json --skill-name merge_text_files_from_observed
 python scripts/skill_cli.py search --query "merge txt files into markdown"
 python scripts/skill_cli.py execute --skill merge_text_files_generated --args-file demo/execute_args.json
 ```
@@ -220,10 +397,10 @@ python scripts/skill_cli.py execute --skill merge_text_files_generated --args-fi
 
 ## 当前局限
 
-- 语义审计仍然是 heuristic 骨架，不是真正的 LLM semantic auditor
+- 语义审计已经是 provider-backed，但默认 provider 还是 mock
 - fallback distillation 默认还是 mock provider
-- 检索仍然是轻量版本，还不是混合检索
-- `archive-cold` 还是占位
+- 检索目前是轻量混合版本，但还不是 embedding / 向量检索
+- `archive-cold` 已经可用，但还没有更复杂的重复检测和自动治理
 - 当前最强的是本地文件工作流
 
 ## 当前阶段结论

@@ -1,0 +1,36 @@
+{
+  "task": "Read one text file and write it to a new output file.",
+  "skill_name": "single_file_transform_rule_test",
+  "skill_summary": "Read one text file and write it to a new output file.",
+  "skill_args": {
+    "input_path": "demo/input/a.txt",
+    "output_path": "demo/output/single_transform.txt"
+  },
+  "actions": [
+    {
+      "tool_name": "read_text",
+      "tool_input": {
+        "path": "demo/input/a.txt"
+      },
+      "observation": "Read text from demo/input/a.txt.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "demo/output/single_transform.txt"
+      },
+      "observation": "Wrote text to demo/output/single_transform.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/output/single_transform.txt"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo/output/single_transform.txt"
+    ]
+  }
+}

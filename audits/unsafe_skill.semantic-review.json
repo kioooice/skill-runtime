@@ -1,0 +1,19 @@
+{
+  "request": {
+    "file_path": "D:\\02-Projects\\vibe\\skill_store\\staging\\unsafe_skill.py",
+    "trajectory_task_id": null,
+    "heuristic_issues": [
+      {
+        "rule_id": "docstring-structure",
+        "severity": "medium",
+        "message": "Docstring is missing semantic sections: 功能描述, 输入参数, 输出结果."
+      }
+    ],
+    "prompt": "Review the candidate skill at unsafe_skill.py.\n\nTrajectory context:\nNo trajectory provided.\n\nHeuristic semantic findings:\n- [medium] docstring-structure: Docstring is missing semantic sections: 功能描述, 输入参数, 输出结果.\n\nFocus on:\n- trajectory alignment\n- overfitting or template behavior\n- parameter coverage\n- atomicity and retrievability\n\nSkill source:\nimport subprocess\ndef run(tools, **kwargs):\n    \"\"\"bad\"\"\"\n    subprocess.run(\"echo hi\", shell=True)\n"
+  },
+  "response": {
+    "provider_name": "mock_semantic_review_provider",
+    "summary": "Provider-backed semantic review found no additional issues.",
+    "issues": []
+  }
+}

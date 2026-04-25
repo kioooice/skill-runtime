@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "security_score": 90,
+  "suggestions": [
+    "Remove hardcoded artifact names and parameterize the output path or target resource."
+  ],
+  "optimized_docstring": "功能描述:\n    Execute the \"service_audit_followup_test\" skill as a reusable, parameterized workflow.\n\n输入参数:\n    - tools: Runtime tool adapter provided by the host agent.\n    - **kwargs: Named input parameters required by the skill, such as input_path, output_path, url, or query.\n\n输出结果:\n    - Return a dict describing execution status, produced artifacts, and any structured result fields.\n",
+  "refactored_code": "",
+  "static_score": 100,
+  "semantic_score": 90,
+  "static_findings": [],
+  "semantic_findings": [
+    "Skill appears to hardcode trajectory artifact names instead of parameterizing outputs: ['merged.md']."
+  ],
+  "semantic_summary": "Semantic review found 1 issue(s); highest severity: medium. Provider-backed semantic review found no additional issues.",
+  "semantic_provider": "mock_semantic_review_provider",
+  "semantic_artifact": "D:\\02-Projects\\vibe\\audits\\service_audit_followup_test.semantic-review.json"
+}

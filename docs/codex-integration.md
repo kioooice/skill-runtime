@@ -57,8 +57,10 @@ The runtime currently exposes these MCP tools:
 - `audit_skill`
 - `promote_skill`
 - `log_trajectory`
+- `capture_trajectory`
 - `reindex_skills`
 - `backfill_skill_provenance`
+- `governance_report`
 
 ## Recommended Codex Workflow
 
@@ -66,10 +68,91 @@ For repetitive or workflow-like tasks:
 
 1. Ask Codex to call `search_skill` first
 2. If a good match exists, call `execute_skill`
-3. If no good match exists, let Codex complete the task normally
-4. Save or construct a trajectory JSON
+3. Successful execution now returns an `observed_task_record` path that can be reused later
+4. If no good match exists, let Codex complete the task normally
 5. Preferred short path: call `distill_and_promote_candidate`
-6. Explicit path: call `log_trajectory`, `distill_trajectory`, `audit_skill`, and `promote_skill`
+6. Explicit path: call `capture_trajectory`, `log_trajectory`, `distill_trajectory`, `audit_skill`, and `promote_skill`
+7. Use `governance_report` periodically to inspect duplicate candidates and library health
+
+`governance_report` recommendations are now host-call aligned. A Codex host can read
+`recommended_actions[].host_operation` and directly call the named MCP tool with the
+returned arguments, instead of translating a prose suggestion into a separate tool call.
+
+For archive recommendations, the payload also includes a dry-run `preview` call so the
+host can offer "preview" and "apply" from the same recommendation object.
+
+Search responses now expose the same pattern. Codex can read:
+
+- `results[].host_operation` for per-result execution
+- `recommended_host_operation` for the top-level recommended next step
+- `available_host_operations` for a render-ready action list
+
+When multiple skills match strongly, that list now includes the top recommended run action
+followed by additional matched-skill actions.
+
+Execute responses now continue that same contract. After a successful `execute_skill`,
+Codex can use:
+
+- `observed_task_record` as the runtime-produced artifact
+- `recommended_host_operation` to call `distill_and_promote_candidate`
+- `available_host_operations` to present the approved next actions directly
+
+That means the host should not synthesize `observed_task_path` itself when the runtime
+has already returned it.
+
+The explicit lifecycle tools now do the same:
+
+- `log_trajectory` recommends `distill_trajectory`
+- `capture_trajectory` recommends `distill_trajectory`
+- `distill_trajectory` recommends `audit_skill`
+- `audit_skill` recommends `promote_skill` when the audit passes
+- `promote_skill` recommends `execute_skill` for the newly active skill
+- `distill_and_promote_candidate` recommends `execute_skill` after a successful promotion
+
+That removes most of the remaining host-side sequencing logic for the manual lifecycle path.
+
+For no-strong-match search fallbacks, Codex now gets `capture_trajectory` as the primary
+recommended action and `distill_and_promote_candidate` as a secondary available action.
+The shorter-path operation still exposes both `trajectory_path` and `observed_task_path`
+in `argument_schema`, along with optional `skill_name` and `register_trajectory`, so
+Codex integrations can drive the right input collection flow explicitly.
+
+For governance dry runs, `archive_duplicate_candidates(dry_run=true)` now returns the
+apply call as the primary follow-up and leaves `governance_report` in
+`available_host_operations` as a secondary option. After a real archive run, refresh
+remains the primary follow-up.
+
+Host-operation payloads now also include:
+
+- `operation_id`
+- `operation_role`
+- `source_ref`
+- `display_label`
+- `effect_summary`
+- `argument_schema`
+- `risk_level`
+- `requires_confirmation`
+- `confirmation_message`
+
+So Codex-side integrations can make consistent UX choices for low-risk execution,
+medium-risk promotion flows, and high-risk archive actions.
+Those values are driven by shared runtime presets unless a specific workflow supplies a
+more specific override.
+For `execute_skill`, `argument_schema.args.properties` is now expanded from the skill's
+metadata input schema, which lets Codex-side hosts build parameter UIs from concrete fields
+instead of treating `args` as an undifferentiated object.
+
+For maintainers, the current contract is intentionally split into three layers:
+
+- operation builders emit a single host-call payload
+- recommendation builders emit `recommended_next_action`, `recommended_host_operation`, and
+  `available_host_operations`
+- governance action builders emit `recommended_actions[].host_operation`
+
+New runtime flows should extend those shared builders instead of hand-authoring top-level
+recommendation dictionaries in service or report code. `source_ref` should also come from
+shared builder helpers so Codex-side logging and reconciliation remain stable across
+refactors.
 
 This keeps Codex responsible for:
 
@@ -92,6 +175,18 @@ If you move this runtime project, update the MCP args in:
 `C:/Users/Administrator/.codex/config.toml`
 
 Or keep the same script path and change only the `--root` value.
+
+## Recommended Dogfooding Loop
+
+For real repeated work, the shortest useful loop is now:
+
+1. `search_skill`
+2. `execute_skill`
+3. keep the returned `observed_task_record`
+4. if the task was new or improved, feed that record into `distill_and_promote_candidate`
+5. occasionally call `governance_report`
+
+That gives Codex a practical `reuse -> observe -> distill -> govern` loop without hand-writing trajectories.
 
 ## Current Limits
 

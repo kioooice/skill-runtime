@@ -1,0 +1,13 @@
+{
+  "request": {
+    "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\merge_text_files.py",
+    "trajectory_task_id": "demo_merge_text_files",
+    "heuristic_issues": [],
+    "prompt": "Review the candidate skill at merge_text_files.py.\n\nTrajectory context:\nTask: Merge all txt files in a directory into one markdown file.\nFinal status: success\nArtifacts: ['demo/output/merged.md']\nSteps:\n- list_files input={'input_dir': 'demo/input', 'pattern': '*.txt'} observation=Found 2 txt files.\n- read_text input={'input_dir': 'demo/input'} observation=Read file contents successfully.\n- write_text input={'output_path': 'demo/output/merged.md'} observation=Wrote merged markdown output.\n\nHeuristic semantic findings:\n- No heuristic semantic issues found.\n\nFocus on:\n- trajectory alignment\n- overfitting or template behavior\n- parameter coverage\n- atomicity and retrievability\n\nSkill source:\nfrom pathlib import Path\n\n\ndef run(tools, **kwargs):\n    \"\"\"\n    功能描述:\n        Merge all .txt files in the input directory into one output markdown file.\n\n    输入参数:\n        - input_dir: str\n        - output_path: str\n\n    输出结果:\n        - status: str\n        - output_path: str\n        - merged_files: int\n    \"\"\"\n    input_dir = kwargs.get(\"input_dir\")\n    output_path = kwargs.get(\"output_path\")\n\n    missing = [name for name, value in {\"input_dir\": input_dir, \"output_path\": output_path}.items() if not value]\n    if missing:\n        raise ValueError(f\"Missing required inputs: {missing}\")\n\n    files = tools.list_files(input_dir, \"*.txt\")\n    contents: list[str] = []\n    for file_path in files:\n        name = Path(file_path).name\n        text = tools.read_text(file_path)\n        contents.append(f\"# {name}\\n\\n{text.strip()}\\n\")\n\n    merged = \"\\n\".join(contents).strip() + \"\\n\"\n    tools.write_text(output_path, merged)\n\n    return {\n        \"status\": \"completed\",\n        \"output_path\": output_path,\n        \"merged_files\": len(files),\n    }\n"
+  },
+  "response": {
+    "provider_name": "mock_semantic_review_provider",
+    "summary": "Provider-backed semantic review found no additional issues.",
+    "issues": []
+  }
+}

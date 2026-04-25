@@ -1,0 +1,38 @@
+{
+  "skill_name": "semantic_provider_fallback_test",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\staging\\semantic_provider_fallback_test.py",
+  "summary": "Generate a report from mixed observations without a deterministic rule.",
+  "docstring": "功能描述:\n    Generate a report from mixed observations without a deterministic rule.\n\n输入参数:\n        - report_name: str\n        - topic: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+  "input_schema": {
+    "report_name": "str",
+    "topic": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "steps_executed": "int"
+  },
+  "source_trajectory_ids": [
+    "fallback_semantic_audit_demo"
+  ],
+  "created_at": "2026-04-25T05:55:15.847485+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "staging",
+  "audit_score": null,
+  "rule_name": "llm_fallback",
+  "rule_priority": 0,
+  "rule_reason": "No deterministic rule matched; fallback provider mock_fallback_provider generated a candidate skill.",
+  "tags": [
+    "deterministic",
+    "from",
+    "generate",
+    "mixed",
+    "observations",
+    "report",
+    "report_name",
+    "rule",
+    "topic",
+    "without"
+  ]
+}
