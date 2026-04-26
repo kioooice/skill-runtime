@@ -124,15 +124,16 @@ class SkillGenerator:
         for key in tool_input.keys():
             if key == "path":
                 continue
-            normalized.append(key)
             canonical_key = self._canonicalize_tool_input_key(tool_name, key, tool_names)
+            if self._should_preserve_raw_input_key(key, canonical_key):
+                normalized.append(key)
             if canonical_key and canonical_key not in normalized:
                 normalized.append(canonical_key)
 
         if "path" not in tool_input:
             inferred_prefix = self._infer_prefix_from_paths(
-                tool_input.get("source_path"),
-                tool_input.get("target_path"),
+                self._path_alias_value(tool_input, "source"),
+                self._path_alias_value(tool_input, "target"),
             )
             if inferred_prefix and "prefix" not in normalized:
                 normalized.append("prefix")
@@ -153,24 +154,77 @@ class SkillGenerator:
         key: str,
         tool_names: set[str],
     ) -> str | None:
-        if key in {"input_dir", "output_dir", "input_path", "output_path", "prefix"}:
+        if key in {"input_dir", "output_dir", "input_path", "output_path", "prefix", "delimiter", "pattern"}:
             return None
 
+        if key == "input":
+            if tool_name in {"copy_file", "move_file", "rename_path", "move_path"}:
+                return "input_dir" if "list_files" in tool_names else "input_path"
+            return "input_path" if tool_name.startswith("read_") else None
+        if key == "output":
+            if tool_name in {"copy_file", "move_file", "rename_path", "move_path"}:
+                return "output_dir" if "list_files" in tool_names else "output_path"
+            return "output_path" if tool_name.startswith("write_") else None
+        if key == "file":
+            if tool_name.startswith("read_"):
+                return "input_path"
+            if tool_name.startswith("write_"):
+                return "output_path"
+            return None
+        if key in {"old", "search", "search_text", "find_text", "old_value", "find", "search_value", "needle"}:
+            return "old_text"
+        if key in {
+            "new",
+            "replace",
+            "replace_text",
+            "replacement_text",
+            "new_value",
+            "replacement",
+            "replace_value",
+            "replacement_value",
+        }:
+            return "new_text"
+        if key in {"sep", "separator"}:
+            return "delimiter"
+        if key in {"glob", "file_glob", "match_pattern", "filter", "include", "file_pattern"}:
+            return "pattern"
+        if key in {"name_prefix", "prefix_value", "rename_prefix", "prefix_text"}:
+            return "prefix"
+        if key in {"input_text", "text_file", "input_text_file", "source_text_file"}:
+            return "input_path"
+        if key in {"output_text", "output_text_file", "target_text_file", "destination_text_file"}:
+            return "output_path"
+        if key in {"input_json", "json_file", "source_json"}:
+            return "input_path"
+        if key in {"output_json", "target_json", "destination_json"}:
+            return "output_path"
+        if key in {"input_csv", "csv_file", "source_csv"}:
+            return "input_path"
+        if key in {"output_csv", "target_csv", "destination_csv"}:
+            return "output_path"
+        if key in {"src_dir", "from_dir", "src_directory", "input_directory", "source_directory"}:
+            return "input_dir"
+        if key in {"dst_dir", "to_dir", "dst_directory", "output_directory", "target_directory", "destination_directory"}:
+            return "output_dir"
         if key in {"source_dir", "input_folder", "source_folder"}:
             return "input_dir"
-        if key in {"target_dir", "output_folder", "destination_dir"}:
+        if key in {"target_dir", "output_folder", "destination_dir", "destination"}:
             return "output_dir"
         if key in {"input_file", "source_file"}:
             return "input_path"
         if key in {"output_file", "destination_file", "target_file"}:
             return "output_path"
+        if key == "from":
+            return "input_dir" if "list_files" in tool_names else "input_path"
+        if key == "to":
+            return "output_dir" if "list_files" in tool_names else "output_path"
         if key == "source":
-            if tool_name in {"copy_file", "move_file", "rename_path", "move_path"}:
-                return "input_path"
             return "input_dir" if "list_files" in tool_names else "input_path"
         if key == "target":
-            if tool_name in {"copy_file", "move_file", "rename_path", "move_path"}:
-                return "output_path"
+            return "output_dir" if "list_files" in tool_names else "output_path"
+        if key in {"src", "src_path", "from_path"}:
+            return "input_dir" if "list_files" in tool_names else "input_path"
+        if key in {"dst", "dst_path", "to_path"}:
             return "output_dir" if "list_files" in tool_names else "output_path"
 
         if key == "source_path":
@@ -182,6 +236,100 @@ class SkillGenerator:
         if key == "file_path" and tool_name.startswith("write_"):
             return "output_path"
         return None
+
+    def _should_preserve_raw_input_key(self, key: str, canonical_key: str | None) -> bool:
+        if canonical_key is None:
+            return True
+        semantic_aliases = {
+            "input",
+            "output",
+            "file",
+            "old",
+            "new",
+            "search",
+            "replace",
+            "search_text",
+            "replace_text",
+            "find_text",
+            "replacement_text",
+            "old_value",
+            "new_value",
+            "find",
+            "search_value",
+            "needle",
+            "replacement",
+            "replace_value",
+            "replacement_value",
+            "sep",
+            "separator",
+            "glob",
+            "file_glob",
+            "match_pattern",
+            "filter",
+            "include",
+            "file_pattern",
+            "name_prefix",
+            "prefix_value",
+            "rename_prefix",
+            "prefix_text",
+            "input_text",
+            "output_text",
+            "text_file",
+            "input_text_file",
+            "output_text_file",
+            "source_text_file",
+            "target_text_file",
+            "destination_text_file",
+            "input_json",
+            "output_json",
+            "json_file",
+            "source_json",
+            "target_json",
+            "destination_json",
+            "input_csv",
+            "output_csv",
+            "csv_file",
+            "source_csv",
+            "target_csv",
+            "destination_csv",
+            "src_dir",
+            "dst_dir",
+            "from_dir",
+            "to_dir",
+            "src_directory",
+            "dst_directory",
+            "input_directory",
+            "output_directory",
+            "source_directory",
+            "target_directory",
+            "destination_directory",
+            "from",
+            "to",
+            "source",
+            "target",
+            "src",
+            "dst",
+            "source_dir",
+            "target_dir",
+            "input_folder",
+            "output_folder",
+            "source_folder",
+            "destination_dir",
+            "input_file",
+            "output_file",
+            "source_file",
+            "destination_file",
+            "target_file",
+            "source_path",
+            "target_path",
+            "destination_path",
+            "src_path",
+            "dst_path",
+            "from_path",
+            "to_path",
+            "file_path",
+        }
+        return key not in semantic_aliases
 
     def _infer_prefix_from_paths(self, source_path: str | None, target_path: str | None) -> str | None:
         if not source_path or not target_path:
@@ -199,6 +347,17 @@ class SkillGenerator:
 
         prefix = target_name[: -len(source_name)]
         return prefix or None
+
+    def _path_alias_value(self, tool_input: dict[str, str], direction: str) -> str | None:
+        aliases = {
+            "source": ("source_path", "source", "src_path", "src", "from_path", "from"),
+            "target": ("target_path", "destination_path", "target", "dst_path", "dst", "to_path", "to"),
+        }
+        for key in aliases[direction]:
+            value = tool_input.get(key)
+            if value:
+                return value
+        return None
 
     def _augment_input_schema_for_rules(
         self,

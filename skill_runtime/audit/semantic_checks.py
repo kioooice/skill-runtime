@@ -161,27 +161,80 @@ class SemanticChecks:
         normalized = key.lower()
         if normalized in GENERALIZATION_BLOCKLIST:
             return None
-        if normalized in {"input_dir", "output_dir", "input_path", "output_path", "prefix", "pattern"}:
+        if normalized in {"input_dir", "output_dir", "input_path", "output_path", "prefix", "pattern", "delimiter"}:
             return normalized
+        if normalized == "input":
+            if tool_name in {"copy_file", "move_file", "rename_path", "move_path"}:
+                return "input_dir" if "list_files" in tool_names else "input_path"
+            return "input_path" if tool_name.startswith("read_") else None
+        if normalized == "output":
+            if tool_name in {"copy_file", "move_file", "rename_path", "move_path"}:
+                return "output_dir" if "list_files" in tool_names else "output_path"
+            return "output_path" if tool_name.startswith("write_") else None
+        if normalized == "file":
+            if tool_name.startswith("read_"):
+                return "input_path"
+            if tool_name.startswith("write_"):
+                return "output_path"
+            return None
+        if normalized in {"old", "search", "search_text", "find_text", "old_value", "find", "search_value", "needle"}:
+            return "old_text"
+        if normalized in {
+            "new",
+            "replace",
+            "replace_text",
+            "replacement_text",
+            "new_value",
+            "replacement",
+            "replace_value",
+            "replacement_value",
+        }:
+            return "new_text"
+        if normalized in {"sep", "separator"}:
+            return "delimiter"
+        if normalized in {"glob", "file_glob", "match_pattern", "filter", "include", "file_pattern"}:
+            return "pattern"
+        if normalized in {"name_prefix", "prefix_value", "rename_prefix", "prefix_text"}:
+            return "prefix"
+        if normalized in {"input_text", "text_file", "input_text_file", "source_text_file"}:
+            return "input_path"
+        if normalized in {"output_text", "output_text_file", "target_text_file", "destination_text_file"}:
+            return "output_path"
+        if normalized in {"input_json", "json_file", "source_json"}:
+            return "input_path"
+        if normalized in {"output_json", "target_json", "destination_json"}:
+            return "output_path"
+        if normalized in {"input_csv", "csv_file", "source_csv"}:
+            return "input_path"
+        if normalized in {"output_csv", "target_csv", "destination_csv"}:
+            return "output_path"
+        if normalized in {"src_dir", "from_dir", "src_directory", "input_directory", "source_directory"}:
+            return "input_dir"
+        if normalized in {"dst_dir", "to_dir", "dst_directory", "output_directory", "target_directory", "destination_directory"}:
+            return "output_dir"
         if normalized in {"source_dir", "input_folder", "source_folder"}:
             return "input_dir"
-        if normalized in {"target_dir", "output_folder", "destination_dir"}:
+        if normalized in {"target_dir", "output_folder", "destination_dir", "destination"}:
             return "output_dir"
         if normalized in {"input_file", "source_file"}:
             return "input_path"
         if normalized in {"output_file", "destination_file", "target_file"}:
             return "output_path"
+        if normalized == "from":
+            return "input_dir" if "list_files" in tool_names else "input_path"
+        if normalized == "to":
+            return "output_dir" if "list_files" in tool_names else "output_path"
         if normalized == "source_path":
             return "input_path"
         if normalized in {"target_path", "destination_path"}:
             return "output_path"
         if normalized == "source":
-            if tool_name in {"copy_file", "move_file", "rename_path", "move_path"}:
-                return "input_path"
             return "input_dir" if "list_files" in tool_names else "input_path"
         if normalized == "target":
-            if tool_name in {"copy_file", "move_file", "rename_path", "move_path"}:
-                return "output_path"
+            return "output_dir" if "list_files" in tool_names else "output_path"
+        if normalized in {"src", "src_path", "from_path"}:
+            return "input_dir" if "list_files" in tool_names else "input_path"
+        if normalized in {"dst", "dst_path", "to_path"}:
             return "output_dir" if "list_files" in tool_names else "output_path"
         if normalized == "path":
             if tool_name == "list_files":

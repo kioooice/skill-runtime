@@ -23,11 +23,30 @@ def explain_match(trajectory: Trajectory, input_schema: dict[str, str]) -> str:
 
 
 def augment_input_schema(trajectory: Trajectory, input_schema: dict[str, str]) -> dict[str, str]:
-    return dict(input_schema)
+    updated = dict(input_schema)
+    delimiter = _observed_delimiter(trajectory)
+    if delimiter is not None or "delimiter" in updated:
+        updated["delimiter"] = "str"
+    return updated
+
+
+def _observed_delimiter(trajectory: Trajectory) -> str | None:
+    for step in trajectory.steps:
+        if step.tool_name.lower() != "write_text":
+            continue
+        value = step.tool_input.get("delimiter")
+        if value:
+            return value
+        for alias in ("sep", "separator"):
+            value = step.tool_input.get(alias)
+            if value:
+                return value
+    return None
 
 
 def build_code(skill_name: str, summary: str, docstring: str, trajectory: Trajectory) -> str:
     default_artifact = trajectory.artifacts[0] if trajectory.artifacts else "output.csv"
+    default_delimiter = escape(_observed_delimiter(trajectory) or ",")
     return f'''import csv
 from io import StringIO
 
@@ -38,6 +57,7 @@ def run(tools, **kwargs):
     """
     input_path = kwargs.get("input_path")
     output_path = kwargs.get("output_path")
+    delimiter = kwargs.get("delimiter", "{default_delimiter}")
 
     missing = [
         name
@@ -53,7 +73,7 @@ def run(tools, **kwargs):
 
     fieldnames = list(rows[0].keys()) if rows else []
     buffer = StringIO()
-    writer = csv.DictWriter(buffer, fieldnames=fieldnames)
+    writer = csv.DictWriter(buffer, fieldnames=fieldnames, delimiter=delimiter)
     if fieldnames:
         writer.writeheader()
         writer.writerows(rows)

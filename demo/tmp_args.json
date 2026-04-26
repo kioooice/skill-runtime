@@ -1,0 +1,1 @@
+{"input_dir": "demo/replace_dir_directory_alias_input", "output_dir": "demo/replace_dir_directory_alias_output", "pattern": "*.txt", "old_text": "file", "new_text": "document"}

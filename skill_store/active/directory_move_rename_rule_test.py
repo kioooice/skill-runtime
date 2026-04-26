@@ -9,8 +9,6 @@ def run(tools, **kwargs):
     输入参数:
             - input_dir: str
             - output_dir: str
-            - source_path: str
-            - target_path: str
             - pattern: str
 
     输出结果:

@@ -1,0 +1,41 @@
+{
+  "skill_name": "directory_move_glob_alias_rule_test",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\staging\\directory_move_glob_alias_rule_test.py",
+  "summary": "Move matching log files from one directory into another directory.",
+  "docstring": "功能描述:\n    Move matching log files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+  "input_schema": {
+    "input_dir": "str",
+    "output_dir": "str",
+    "pattern": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "steps_executed": "int"
+  },
+  "source_trajectory_ids": [
+    "directory_move_glob_alias_demo"
+  ],
+  "created_at": "2026-04-25T16:45:40.855174+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "staging",
+  "audit_score": null,
+  "rule_name": "directory_move",
+  "rule_priority": 85,
+  "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+  "tags": [
+    "another",
+    "directory",
+    "files",
+    "from",
+    "input_dir",
+    "into",
+    "log",
+    "matching",
+    "move",
+    "one",
+    "output_dir",
+    "pattern"
+  ]
+}

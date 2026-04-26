@@ -1,0 +1,41 @@
+{
+  "skill_name": "batch_rename_rename_prefix_alias_rule_test",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\staging\\batch_rename_rename_prefix_alias_rule_test.py",
+  "summary": "Rename all txt files in a directory by prefixing them with a value.",
+  "docstring": "功能描述:\n    Rename all txt files in a directory by prefixing them with a value.\n\n输入参数:\n        - input_dir: str\n        - prefix: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+  "input_schema": {
+    "input_dir": "str",
+    "prefix": "str",
+    "pattern": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "steps_executed": "int"
+  },
+  "source_trajectory_ids": [
+    "batch_rename_rename_prefix_alias_demo"
+  ],
+  "created_at": "2026-04-25T16:45:35.427731+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "staging",
+  "audit_score": null,
+  "rule_name": "batch_rename",
+  "rule_priority": 80,
+  "rule_reason": "Matched batch_rename because the trajectory lists files, renames paths, and provides input_dir/prefix inputs.",
+  "tags": [
+    "all",
+    "directory",
+    "files",
+    "input_dir",
+    "pattern",
+    "prefix",
+    "prefixing",
+    "rename",
+    "them",
+    "txt",
+    "value",
+    "with"
+  ]
+}

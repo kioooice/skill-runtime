@@ -1,0 +1,43 @@
+{
+  "skill_name": "directory_text_replace_filter_alias_rule_test",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\staging\\directory_text_replace_filter_alias_rule_test.py",
+  "summary": "Replace one string with another across all txt files in a directory and write outputs to another directory.",
+  "docstring": "功能描述:\n    Replace one string with another across all txt files in a directory and write outputs to another directory.\n\n输入参数:\n        - input_dir: str\n        - new_text: str\n        - old_text: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+  "input_schema": {
+    "input_dir": "str",
+    "new_text": "str",
+    "old_text": "str",
+    "output_dir": "str",
+    "pattern": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "steps_executed": "int"
+  },
+  "source_trajectory_ids": [
+    "directory_text_replace_filter_alias_demo"
+  ],
+  "created_at": "2026-04-25T16:45:41.841530+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "staging",
+  "audit_score": null,
+  "rule_name": "directory_text_replace",
+  "rule_priority": 100,
+  "rule_reason": "Matched directory_text_replace because the trajectory processes multiple files in a directory and replaces text across them.",
+  "tags": [
+    "across",
+    "all",
+    "and",
+    "another",
+    "directory",
+    "files",
+    "input_dir",
+    "new_text",
+    "old_text",
+    "one",
+    "output_dir",
+    "outputs"
+  ]
+}

@@ -40,6 +40,170 @@
       ]
     },
     {
+      "skill_name": "batch_rename_from_to_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\batch_rename_from_to_alias_rule_test.py",
+      "summary": "Rename all txt files in a directory by prefixing them with a value.",
+      "docstring": "功能描述:\n    Rename all txt files in a directory by prefixing them with a value.\n\n输入参数:\n        - input_dir: str\n        - prefix: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "prefix": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "batch_rename_from_to_alias_demo"
+      ],
+      "created_at": "2026-04-25T16:45:34.663553+00:00",
+      "last_used_at": "2026-04-25T16:45:34.884314+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "batch_rename",
+      "rule_priority": 80,
+      "rule_reason": "Matched batch_rename because the trajectory lists files, renames paths, and provides input_dir/prefix inputs.",
+      "tags": [
+        "all",
+        "directory",
+        "files",
+        "input_dir",
+        "pattern",
+        "prefix",
+        "prefixing",
+        "rename",
+        "them",
+        "txt",
+        "value",
+        "with"
+      ]
+    },
+    {
+      "skill_name": "batch_rename_glob_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\batch_rename_glob_alias_rule_test.py",
+      "summary": "Rename all txt files in a directory by prefixing them with a value.",
+      "docstring": "功能描述:\n    Rename all txt files in a directory by prefixing them with a value.\n\n输入参数:\n        - input_dir: str\n        - prefix: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "prefix": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "batch_rename_glob_alias_demo"
+      ],
+      "created_at": "2026-04-25T16:45:34.927630+00:00",
+      "last_used_at": "2026-04-25T16:45:35.148777+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "batch_rename",
+      "rule_priority": 80,
+      "rule_reason": "Matched batch_rename because the trajectory lists files, renames paths, and provides input_dir/prefix inputs.",
+      "tags": [
+        "all",
+        "directory",
+        "files",
+        "input_dir",
+        "pattern",
+        "prefix",
+        "prefixing",
+        "rename",
+        "them",
+        "txt",
+        "value",
+        "with"
+      ]
+    },
+    {
+      "skill_name": "batch_rename_name_prefix_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\batch_rename_name_prefix_alias_rule_test.py",
+      "summary": "Rename all txt files in a directory by prefixing them with a value.",
+      "docstring": "功能描述:\n    Rename all txt files in a directory by prefixing them with a value.\n\n输入参数:\n        - input_dir: str\n        - prefix: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "prefix": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "batch_rename_name_prefix_alias_demo"
+      ],
+      "created_at": "2026-04-25T16:45:35.184639+00:00",
+      "last_used_at": "2026-04-25T16:45:35.392153+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "batch_rename",
+      "rule_priority": 80,
+      "rule_reason": "Matched batch_rename because the trajectory lists files, renames paths, and provides input_dir/prefix inputs.",
+      "tags": [
+        "all",
+        "directory",
+        "files",
+        "input_dir",
+        "pattern",
+        "prefix",
+        "prefixing",
+        "rename",
+        "them",
+        "txt",
+        "value",
+        "with"
+      ]
+    },
+    {
+      "skill_name": "batch_rename_rename_prefix_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\batch_rename_rename_prefix_alias_rule_test.py",
+      "summary": "Rename all txt files in a directory by prefixing them with a value.",
+      "docstring": "功能描述:\n    Rename all txt files in a directory by prefixing them with a value.\n\n输入参数:\n        - input_dir: str\n        - prefix: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "prefix": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "batch_rename_rename_prefix_alias_demo"
+      ],
+      "created_at": "2026-04-25T16:45:35.427731+00:00",
+      "last_used_at": "2026-04-25T16:45:35.647680+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "batch_rename",
+      "rule_priority": 80,
+      "rule_reason": "Matched batch_rename because the trajectory lists files, renames paths, and provides input_dir/prefix inputs.",
+      "tags": [
+        "all",
+        "directory",
+        "files",
+        "input_dir",
+        "pattern",
+        "prefix",
+        "prefixing",
+        "rename",
+        "them",
+        "txt",
+        "value",
+        "with"
+      ]
+    },
+    {
       "skill_name": "batch_rename_rule_test",
       "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\batch_rename_rule_test.py",
       "summary": "Rename all txt files in a directory by prefixing them with a value.",
@@ -57,8 +221,8 @@
       "source_trajectory_ids": [
         "batch_rename_demo"
       ],
-      "created_at": "2026-04-25T14:24:29.867915+00:00",
-      "last_used_at": "2026-04-25T14:24:30.087262+00:00",
+      "created_at": "2026-04-25T16:45:35.689075+00:00",
+      "last_used_at": "2026-04-25T16:45:35.932879+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -357,8 +521,8 @@
       ]
     },
     {
-      "skill_name": "directory_copy_rule_test",
-      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_copy_rule_test.py",
+      "skill_name": "directory_copy_input_output_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_copy_input_output_alias_rule_test.py",
       "summary": "Copy matching txt files from one directory into another directory.",
       "docstring": "功能描述:\n    Copy matching txt files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
       "input_schema": {
@@ -372,10 +536,10 @@
         "steps_executed": "int"
       },
       "source_trajectory_ids": [
-        "directory_copy_demo"
+        "directory_copy_input_output_alias_demo"
       ],
-      "created_at": "2026-04-25T14:24:31.055678+00:00",
-      "last_used_at": "2026-04-25T14:24:31.280508+00:00",
+      "created_at": "2026-04-25T16:45:39.838106+00:00",
+      "last_used_at": "2026-04-25T16:45:40.076719+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -398,15 +562,218 @@
       ]
     },
     {
-      "skill_name": "directory_move_rename_rule_test",
-      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_move_rename_rule_test.py",
-      "summary": "Move matching log files from one directory into another directory.",
-      "docstring": "功能描述:\n    Move matching log files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - source_path: str\n        - target_path: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "skill_name": "directory_copy_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_copy_rule_test.py",
+      "summary": "Copy matching txt files from one directory into another directory.",
+      "docstring": "功能描述:\n    Copy matching txt files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
       "input_schema": {
         "input_dir": "str",
         "output_dir": "str",
-        "source_path": "str",
-        "target_path": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_copy_demo"
+      ],
+      "created_at": "2026-04-25T16:45:39.536314+00:00",
+      "last_used_at": "2026-04-25T16:45:39.781396+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_copy",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_copy because the trajectory lists files, copies files, and targets input_dir/output_dir.",
+      "tags": [
+        "another",
+        "copy",
+        "directory",
+        "files",
+        "from",
+        "input_dir",
+        "into",
+        "matching",
+        "one",
+        "output_dir",
+        "pattern",
+        "txt"
+      ]
+    },
+    {
+      "skill_name": "directory_move_directory_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_move_directory_alias_rule_test.py",
+      "summary": "Move matching log files from one directory into another directory.",
+      "docstring": "功能描述:\n    Move matching log files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_move_directory_alias_demo"
+      ],
+      "created_at": "2026-04-25T16:45:40.111622+00:00",
+      "last_used_at": "2026-04-25T16:45:40.297145+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_move",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+      "tags": [
+        "another",
+        "directory",
+        "files",
+        "from",
+        "input_dir",
+        "into",
+        "log",
+        "matching",
+        "move",
+        "one",
+        "output_dir",
+        "pattern"
+      ]
+    },
+    {
+      "skill_name": "directory_move_from_to_dir_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_move_from_to_dir_alias_rule_test.py",
+      "summary": "Move matching log files from one directory into another directory.",
+      "docstring": "功能描述:\n    Move matching log files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_move_from_to_dir_alias_demo"
+      ],
+      "created_at": "2026-04-25T16:45:40.608301+00:00",
+      "last_used_at": "2026-04-25T16:45:40.821727+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_move",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+      "tags": [
+        "another",
+        "directory",
+        "files",
+        "from",
+        "input_dir",
+        "into",
+        "log",
+        "matching",
+        "move",
+        "one",
+        "output_dir",
+        "pattern"
+      ]
+    },
+    {
+      "skill_name": "directory_move_glob_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_move_glob_alias_rule_test.py",
+      "summary": "Move matching log files from one directory into another directory.",
+      "docstring": "功能描述:\n    Move matching log files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_move_glob_alias_demo"
+      ],
+      "created_at": "2026-04-25T16:45:40.855174+00:00",
+      "last_used_at": "2026-04-25T16:45:41.032913+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_move",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+      "tags": [
+        "another",
+        "directory",
+        "files",
+        "from",
+        "input_dir",
+        "into",
+        "log",
+        "matching",
+        "move",
+        "one",
+        "output_dir",
+        "pattern"
+      ]
+    },
+    {
+      "skill_name": "directory_move_input_output_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_move_input_output_alias_rule_test.py",
+      "summary": "Move matching log files from one directory into another directory.",
+      "docstring": "功能描述:\n    Move matching log files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_move_input_output_alias_demo"
+      ],
+      "created_at": "2026-04-25T16:45:41.065371+00:00",
+      "last_used_at": "2026-04-25T16:45:41.289455+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_move",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+      "tags": [
+        "another",
+        "directory",
+        "files",
+        "from",
+        "input_dir",
+        "into",
+        "log",
+        "matching",
+        "move",
+        "one",
+        "output_dir",
+        "pattern"
+      ]
+    },
+    {
+      "skill_name": "directory_move_rename_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_move_rename_rule_test.py",
+      "summary": "Move matching log files from one directory into another directory.",
+      "docstring": "功能描述:\n    Move matching log files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
         "pattern": "str"
       },
       "output_schema": {
@@ -417,8 +784,8 @@
       "source_trajectory_ids": [
         "directory_move_rename_demo"
       ],
-      "created_at": "2026-04-25T14:24:31.322763+00:00",
-      "last_used_at": "2026-04-25T14:24:31.559458+00:00",
+      "created_at": "2026-04-25T16:45:40.325849+00:00",
+      "last_used_at": "2026-04-25T16:45:40.558974+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -458,8 +825,8 @@
       "source_trajectory_ids": [
         "directory_move_demo"
       ],
-      "created_at": "2026-04-25T14:24:31.598985+00:00",
-      "last_used_at": "2026-04-25T14:24:31.863823+00:00",
+      "created_at": "2026-04-25T16:45:41.341505+00:00",
+      "last_used_at": "2026-04-25T16:45:41.539779+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -482,6 +849,135 @@
       ]
     },
     {
+      "skill_name": "directory_text_replace_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_text_replace_alias_rule_test.py",
+      "summary": "Replace one string with another across all txt files in a directory and write outputs to another directory.",
+      "docstring": "功能描述:\n    Replace one string with another across all txt files in a directory and write outputs to another directory.\n\n输入参数:\n        - input_dir: str\n        - new_text: str\n        - old_text: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "new_text": "str",
+        "old_text": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_text_replace_alias_demo"
+      ],
+      "created_at": "2026-04-25T16:45:42.056695+00:00",
+      "last_used_at": "2026-04-25T16:45:42.249149+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_text_replace",
+      "rule_priority": 100,
+      "rule_reason": "Matched directory_text_replace because the trajectory processes multiple files in a directory and replaces text across them.",
+      "tags": [
+        "across",
+        "all",
+        "and",
+        "another",
+        "directory",
+        "files",
+        "input_dir",
+        "new_text",
+        "old_text",
+        "one",
+        "output_dir",
+        "outputs"
+      ]
+    },
+    {
+      "skill_name": "directory_text_replace_directory_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_text_replace_directory_alias_rule_test.py",
+      "summary": "Replace one string with another across all txt files in a directory and write outputs to another directory.",
+      "docstring": "功能描述:\n    Replace one string with another across all txt files in a directory and write outputs to another directory.\n\n输入参数:\n        - input_dir: str\n        - new_text: str\n        - old_text: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "new_text": "str",
+        "old_text": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_text_replace_directory_alias_demo"
+      ],
+      "created_at": "2026-04-25T16:45:41.572538+00:00",
+      "last_used_at": "2026-04-25T16:45:41.784768+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_text_replace",
+      "rule_priority": 100,
+      "rule_reason": "Matched directory_text_replace because the trajectory processes multiple files in a directory and replaces text across them.",
+      "tags": [
+        "across",
+        "all",
+        "and",
+        "another",
+        "directory",
+        "files",
+        "input_dir",
+        "new_text",
+        "old_text",
+        "one",
+        "output_dir",
+        "outputs"
+      ]
+    },
+    {
+      "skill_name": "directory_text_replace_filter_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_text_replace_filter_alias_rule_test.py",
+      "summary": "Replace one string with another across all txt files in a directory and write outputs to another directory.",
+      "docstring": "功能描述:\n    Replace one string with another across all txt files in a directory and write outputs to another directory.\n\n输入参数:\n        - input_dir: str\n        - new_text: str\n        - old_text: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "new_text": "str",
+        "old_text": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_text_replace_filter_alias_demo"
+      ],
+      "created_at": "2026-04-25T16:45:41.841530+00:00",
+      "last_used_at": "2026-04-25T16:45:42.021545+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_text_replace",
+      "rule_priority": 100,
+      "rule_reason": "Matched directory_text_replace because the trajectory processes multiple files in a directory and replaces text across them.",
+      "tags": [
+        "across",
+        "all",
+        "and",
+        "another",
+        "directory",
+        "files",
+        "input_dir",
+        "new_text",
+        "old_text",
+        "one",
+        "output_dir",
+        "outputs"
+      ]
+    },
+    {
       "skill_name": "directory_text_replace_rule_test",
       "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_text_replace_rule_test.py",
       "summary": "Replace one string with another across all txt files in a directory and write outputs to another directory.",
@@ -501,8 +997,8 @@
       "source_trajectory_ids": [
         "directory_text_replace_demo"
       ],
-      "created_at": "2026-04-25T14:24:31.913978+00:00",
-      "last_used_at": "2026-04-25T14:24:32.154941+00:00",
+      "created_at": "2026-04-25T16:45:42.285630+00:00",
+      "last_used_at": "2026-04-25T16:45:42.489854+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -780,8 +1276,8 @@
       },
       "source_trajectory_ids": [],
       "created_at": "2026-04-18T00:00:00",
-      "last_used_at": "2026-04-25T14:24:16.930449+00:00",
-      "usage_count": 477,
+      "last_used_at": "2026-04-25T16:45:19.745485+00:00",
+      "usage_count": 493,
       "status": "active",
       "audit_score": 100,
       "rule_name": "text_merge",

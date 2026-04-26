@@ -1,0 +1,39 @@
+{
+  "task": "Move matching log files from one directory into another directory.",
+  "skill_name": "directory_move_rename_rule_test",
+  "skill_summary": "Move matching log files from one directory into another directory.",
+  "skill_args": {
+    "input_dir": "demo/rename_move_input",
+    "output_dir": "demo/rename_move_output",
+    "pattern": "*.log"
+  },
+  "actions": [
+    {
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/rename_move_input",
+        "pattern": "*.log"
+      },
+      "observation": "Found 1 matching files in demo/rename_move_input.",
+      "status": "success"
+    },
+    {
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\rename_move_input\\keep.log",
+        "target_path": "demo\\rename_move_output\\keep.log"
+      },
+      "observation": "Renamed demo/rename_move_input/keep.log to demo/rename_move_output/keep.log.",
+      "status": "success",
+      "artifacts": [
+        "demo/rename_move_output/keep.log"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo\\rename_move_output\\keep.log"
+    ]
+  }
+}

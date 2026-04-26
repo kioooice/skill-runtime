@@ -22,9 +22,19 @@ def explain_match(trajectory: Trajectory, input_schema: dict[str, str]) -> str:
     return "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir."
 
 
+def _observed_pattern(trajectory: Trajectory) -> str | None:
+    for step in trajectory.steps:
+        for key in ("pattern", "glob", "file_glob", "match_pattern", "filter", "include", "file_pattern"):
+            pattern = step.tool_input.get(key)
+            if pattern:
+                return pattern
+    return None
+
+
 def augment_input_schema(trajectory: Trajectory, input_schema: dict[str, str]) -> dict[str, str]:
     updated = dict(input_schema)
-    updated.setdefault("pattern", "str")
+    if _observed_pattern(trajectory):
+        updated.setdefault("pattern", "str")
     return updated
 
 
@@ -37,13 +47,8 @@ def _selected_move_tool(trajectory: Trajectory) -> str:
 
 
 def build_code(skill_name: str, summary: str, docstring: str, trajectory: Trajectory) -> str:
-    default_pattern = "*"
+    default_pattern = _observed_pattern(trajectory) or "*"
     move_tool = _selected_move_tool(trajectory)
-    for step in trajectory.steps:
-        pattern = step.tool_input.get("pattern")
-        if pattern:
-            default_pattern = pattern
-            break
 
     return f'''from pathlib import Path
 
