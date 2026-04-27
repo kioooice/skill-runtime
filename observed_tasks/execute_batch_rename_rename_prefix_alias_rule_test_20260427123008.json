@@ -1,0 +1,119 @@
+{
+  "task": "Rename all txt files in a directory by prefixing them with a value.",
+  "skill_name": "batch_rename_rename_prefix_alias_rule_test",
+  "skill_summary": "Rename all txt files in a directory by prefixing them with a value.",
+  "skill_args": {
+    "input_dir": "demo/rename_prefix_alias_input",
+    "pattern": "*.txt",
+    "prefix": "done_"
+  },
+  "actions": [
+    {
+      "operation_id": "op_0001",
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/rename_prefix_alias_input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 2 matching files in demo/rename_prefix_alias_input.",
+      "status": "success",
+      "mutation": false
+    },
+    {
+      "operation_id": "op_0002",
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\rename_prefix_alias_input\\one.txt",
+        "target_path": "D:\\02-Projects\\vibe\\demo\\rename_prefix_alias_input\\done_one.txt"
+      },
+      "observation": "Renamed demo/rename_prefix_alias_input/one.txt to demo/rename_prefix_alias_input/done_one.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/rename_prefix_alias_input/done_one.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "rename_back",
+        "from_path": "demo/rename_prefix_alias_input/done_one.txt",
+        "to_path": "demo/rename_prefix_alias_input/one.txt"
+      }
+    },
+    {
+      "operation_id": "op_0003",
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\rename_prefix_alias_input\\two.txt",
+        "target_path": "D:\\02-Projects\\vibe\\demo\\rename_prefix_alias_input\\done_two.txt"
+      },
+      "observation": "Renamed demo/rename_prefix_alias_input/two.txt to demo/rename_prefix_alias_input/done_two.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/rename_prefix_alias_input/done_two.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "rename_back",
+        "from_path": "demo/rename_prefix_alias_input/done_two.txt",
+        "to_path": "demo/rename_prefix_alias_input/two.txt"
+      }
+    }
+  ],
+  "operation_log": [
+    {
+      "operation_id": "op_0001",
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/rename_prefix_alias_input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 2 matching files in demo/rename_prefix_alias_input.",
+      "status": "success",
+      "mutation": false
+    },
+    {
+      "operation_id": "op_0002",
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\rename_prefix_alias_input\\one.txt",
+        "target_path": "D:\\02-Projects\\vibe\\demo\\rename_prefix_alias_input\\done_one.txt"
+      },
+      "observation": "Renamed demo/rename_prefix_alias_input/one.txt to demo/rename_prefix_alias_input/done_one.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/rename_prefix_alias_input/done_one.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "rename_back",
+        "from_path": "demo/rename_prefix_alias_input/done_one.txt",
+        "to_path": "demo/rename_prefix_alias_input/one.txt"
+      }
+    },
+    {
+      "operation_id": "op_0003",
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\rename_prefix_alias_input\\two.txt",
+        "target_path": "D:\\02-Projects\\vibe\\demo\\rename_prefix_alias_input\\done_two.txt"
+      },
+      "observation": "Renamed demo/rename_prefix_alias_input/two.txt to demo/rename_prefix_alias_input/done_two.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/rename_prefix_alias_input/done_two.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "rename_back",
+        "from_path": "demo/rename_prefix_alias_input/done_two.txt",
+        "to_path": "demo/rename_prefix_alias_input/two.txt"
+      }
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "D:\\02-Projects\\vibe\\demo\\rename_prefix_alias_input\\done_one.txt",
+      "D:\\02-Projects\\vibe\\demo\\rename_prefix_alias_input\\done_two.txt"
+    ]
+  }
+}

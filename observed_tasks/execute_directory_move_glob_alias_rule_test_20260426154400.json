@@ -1,0 +1,39 @@
+{
+  "task": "Move matching log files from one directory into another directory.",
+  "skill_name": "directory_move_glob_alias_rule_test",
+  "skill_summary": "Move matching log files from one directory into another directory.",
+  "skill_args": {
+    "input_dir": "demo/move_glob_input",
+    "output_dir": "demo/move_glob_output",
+    "pattern": "*.log"
+  },
+  "actions": [
+    {
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/move_glob_input",
+        "pattern": "*.log"
+      },
+      "observation": "Found 1 matching files in demo/move_glob_input.",
+      "status": "success"
+    },
+    {
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\move_glob_input\\keep.log",
+        "target_path": "demo\\move_glob_output\\keep.log"
+      },
+      "observation": "Renamed demo/move_glob_input/keep.log to demo/move_glob_output/keep.log.",
+      "status": "success",
+      "artifacts": [
+        "demo/move_glob_output/keep.log"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo\\move_glob_output\\keep.log"
+    ]
+  }
+}

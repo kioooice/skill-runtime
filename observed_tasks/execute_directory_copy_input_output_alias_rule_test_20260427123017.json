@@ -1,0 +1,115 @@
+{
+  "task": "Copy matching txt files from one directory into another directory.",
+  "skill_name": "directory_copy_input_output_alias_rule_test",
+  "skill_summary": "Copy matching txt files from one directory into another directory.",
+  "skill_args": {
+    "input_dir": "demo/copy_input_output_input",
+    "output_dir": "demo/copy_input_output_output",
+    "pattern": "*.txt"
+  },
+  "actions": [
+    {
+      "operation_id": "op_0001",
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/copy_input_output_input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 2 matching files in demo/copy_input_output_input.",
+      "status": "success",
+      "mutation": false
+    },
+    {
+      "operation_id": "op_0002",
+      "tool_name": "copy_file",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\copy_input_output_input\\keep_a.txt",
+        "target_path": "demo\\copy_input_output_output\\keep_a.txt"
+      },
+      "observation": "Copied demo/copy_input_output_input/keep_a.txt to demo/copy_input_output_output/keep_a.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/copy_input_output_output/keep_a.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "delete_copied_file",
+        "target_path": "demo/copy_input_output_output/keep_a.txt"
+      }
+    },
+    {
+      "operation_id": "op_0003",
+      "tool_name": "copy_file",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\copy_input_output_input\\keep_b.txt",
+        "target_path": "demo\\copy_input_output_output\\keep_b.txt"
+      },
+      "observation": "Copied demo/copy_input_output_input/keep_b.txt to demo/copy_input_output_output/keep_b.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/copy_input_output_output/keep_b.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "delete_copied_file",
+        "target_path": "demo/copy_input_output_output/keep_b.txt"
+      }
+    }
+  ],
+  "operation_log": [
+    {
+      "operation_id": "op_0001",
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/copy_input_output_input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 2 matching files in demo/copy_input_output_input.",
+      "status": "success",
+      "mutation": false
+    },
+    {
+      "operation_id": "op_0002",
+      "tool_name": "copy_file",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\copy_input_output_input\\keep_a.txt",
+        "target_path": "demo\\copy_input_output_output\\keep_a.txt"
+      },
+      "observation": "Copied demo/copy_input_output_input/keep_a.txt to demo/copy_input_output_output/keep_a.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/copy_input_output_output/keep_a.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "delete_copied_file",
+        "target_path": "demo/copy_input_output_output/keep_a.txt"
+      }
+    },
+    {
+      "operation_id": "op_0003",
+      "tool_name": "copy_file",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\copy_input_output_input\\keep_b.txt",
+        "target_path": "demo\\copy_input_output_output\\keep_b.txt"
+      },
+      "observation": "Copied demo/copy_input_output_input/keep_b.txt to demo/copy_input_output_output/keep_b.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/copy_input_output_output/keep_b.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "delete_copied_file",
+        "target_path": "demo/copy_input_output_output/keep_b.txt"
+      }
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo\\copy_input_output_output\\keep_a.txt",
+      "demo\\copy_input_output_output\\keep_b.txt"
+    ]
+  }
+}

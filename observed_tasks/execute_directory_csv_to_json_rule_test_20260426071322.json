@@ -1,0 +1,66 @@
+{
+  "task": "Convert matching CSV files in one directory into JSON files in another directory.",
+  "skill_name": "directory_csv_to_json_rule_test",
+  "skill_summary": "Convert matching CSV files in one directory into JSON files in another directory.",
+  "skill_args": {
+    "input_dir": "demo/csv_directory_input",
+    "output_dir": "demo/csv_directory_output",
+    "pattern": "*.csv"
+  },
+  "actions": [
+    {
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/csv_directory_input",
+        "pattern": "*.csv"
+      },
+      "observation": "Found 2 matching files in demo/csv_directory_input.",
+      "status": "success"
+    },
+    {
+      "tool_name": "read_text",
+      "tool_input": {
+        "path": "D:\\02-Projects\\vibe\\demo\\csv_directory_input\\a.csv"
+      },
+      "observation": "Read text from demo/csv_directory_input/a.csv.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_json",
+      "tool_input": {
+        "path": "demo\\csv_directory_output\\a.json"
+      },
+      "observation": "Wrote JSON to demo/csv_directory_output/a.json.",
+      "status": "success",
+      "artifacts": [
+        "demo/csv_directory_output/a.json"
+      ]
+    },
+    {
+      "tool_name": "read_text",
+      "tool_input": {
+        "path": "D:\\02-Projects\\vibe\\demo\\csv_directory_input\\b.csv"
+      },
+      "observation": "Read text from demo/csv_directory_input/b.csv.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_json",
+      "tool_input": {
+        "path": "demo\\csv_directory_output\\b.json"
+      },
+      "observation": "Wrote JSON to demo/csv_directory_output/b.json.",
+      "status": "success",
+      "artifacts": [
+        "demo/csv_directory_output/b.json"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo\\csv_directory_output\\a.json",
+      "demo\\csv_directory_output\\b.json"
+    ]
+  }
+}

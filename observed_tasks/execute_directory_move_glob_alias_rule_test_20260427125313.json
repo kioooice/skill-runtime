@@ -1,0 +1,80 @@
+{
+  "task": "Move matching log files from one directory into another directory.",
+  "skill_name": "directory_move_glob_alias_rule_test",
+  "skill_summary": "Move matching log files from one directory into another directory.",
+  "skill_args": {
+    "input_dir": "demo/move_glob_input",
+    "output_dir": "demo/move_glob_output",
+    "pattern": "*.log"
+  },
+  "actions": [
+    {
+      "operation_id": "op_0001",
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/move_glob_input",
+        "pattern": "*.log"
+      },
+      "observation": "Found 1 matching files in demo/move_glob_input.",
+      "status": "success",
+      "mutation": false
+    },
+    {
+      "operation_id": "op_0002",
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\move_glob_input\\keep.log",
+        "target_path": "demo\\move_glob_output\\keep.log"
+      },
+      "observation": "Renamed demo/move_glob_input/keep.log to demo/move_glob_output/keep.log.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/move_glob_output/keep.log"
+      ],
+      "rollback_hint": {
+        "strategy": "rename_back",
+        "from_path": "demo/move_glob_output/keep.log",
+        "to_path": "demo/move_glob_input/keep.log"
+      }
+    }
+  ],
+  "operation_log": [
+    {
+      "operation_id": "op_0001",
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/move_glob_input",
+        "pattern": "*.log"
+      },
+      "observation": "Found 1 matching files in demo/move_glob_input.",
+      "status": "success",
+      "mutation": false
+    },
+    {
+      "operation_id": "op_0002",
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\move_glob_input\\keep.log",
+        "target_path": "demo\\move_glob_output\\keep.log"
+      },
+      "observation": "Renamed demo/move_glob_input/keep.log to demo/move_glob_output/keep.log.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/move_glob_output/keep.log"
+      ],
+      "rollback_hint": {
+        "strategy": "rename_back",
+        "from_path": "demo/move_glob_output/keep.log",
+        "to_path": "demo/move_glob_input/keep.log"
+      }
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo\\move_glob_output\\keep.log"
+    ]
+  }
+}

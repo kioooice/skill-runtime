@@ -1,0 +1,52 @@
+{
+  "task": "Copy matching txt files from one directory into another directory.",
+  "skill_name": "directory_copy_rule_test",
+  "skill_summary": "Copy matching txt files from one directory into another directory.",
+  "skill_args": {
+    "input_dir": "demo/copy_input",
+    "output_dir": "demo/copy_output",
+    "pattern": "*.txt"
+  },
+  "actions": [
+    {
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/copy_input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 2 matching files in demo/copy_input.",
+      "status": "success"
+    },
+    {
+      "tool_name": "copy_file",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\copy_input\\keep_a.txt",
+        "target_path": "demo\\copy_output\\keep_a.txt"
+      },
+      "observation": "Copied demo/copy_input/keep_a.txt to demo/copy_output/keep_a.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/copy_output/keep_a.txt"
+      ]
+    },
+    {
+      "tool_name": "copy_file",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\copy_input\\keep_b.txt",
+        "target_path": "demo\\copy_output\\keep_b.txt"
+      },
+      "observation": "Copied demo/copy_input/keep_b.txt to demo/copy_output/keep_b.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/copy_output/keep_b.txt"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo\\copy_output\\keep_a.txt",
+      "demo\\copy_output\\keep_b.txt"
+    ]
+  }
+}

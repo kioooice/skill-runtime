@@ -1,0 +1,41 @@
+{
+  "task_id": "execute_text_replace_rule_test_20260425102457",
+  "session_id": "scan",
+  "task_description": "Replace one string with another in a text file and write a new output file.",
+  "steps": [
+    {
+      "step_id": "1",
+      "tool_name": "read_text",
+      "tool_input": {
+        "input_path": "demo/input/a.txt",
+        "output_path": "demo/output/replace_output.txt",
+        "old_text": "file",
+        "new_text": "document",
+        "path": "demo/input/a.txt"
+      },
+      "observation": "Read text from demo/input/a.txt.",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "2",
+      "tool_name": "write_text",
+      "tool_input": {
+        "input_path": "demo/input/a.txt",
+        "output_path": "demo/output/replace_output.txt",
+        "old_text": "file",
+        "new_text": "document",
+        "path": "demo/output/replace_output.txt"
+      },
+      "observation": "Wrote text to demo/output/replace_output.txt.",
+      "status": "success",
+      "thought_summary": null
+    }
+  ],
+  "final_status": "success",
+  "artifacts": [
+    "demo/output/replace_output.txt"
+  ],
+  "started_at": "2026-04-26T14:10:59.820578+00:00",
+  "ended_at": "2026-04-26T14:10:59.820578+00:00"
+}

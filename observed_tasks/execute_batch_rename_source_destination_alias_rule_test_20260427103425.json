@@ -1,0 +1,78 @@
+{
+  "task": "Rename all txt files in a directory by prefixing them with a value.",
+  "skill_name": "batch_rename_source_destination_alias_rule_test",
+  "skill_summary": "Rename all txt files in a directory by prefixing them with a value.",
+  "skill_args": {
+    "input_dir": "demo/rename_source_destination_input",
+    "pattern": "*.txt",
+    "prefix": "done_"
+  },
+  "actions": [
+    {
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/rename_source_destination_input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 4 matching files in demo/rename_source_destination_input.",
+      "status": "success"
+    },
+    {
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_one.txt",
+        "target_path": "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_one.txt"
+      },
+      "observation": "Renamed demo/rename_source_destination_input/done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_one.txt to demo/rename_source_destination_input/done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_one.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/rename_source_destination_input/done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_one.txt"
+      ]
+    },
+    {
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_two.txt",
+        "target_path": "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_two.txt"
+      },
+      "observation": "Renamed demo/rename_source_destination_input/done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_two.txt to demo/rename_source_destination_input/done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_two.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/rename_source_destination_input/done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_two.txt"
+      ]
+    },
+    {
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\one.txt",
+        "target_path": "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\done_one.txt"
+      },
+      "observation": "Renamed demo/rename_source_destination_input/one.txt to demo/rename_source_destination_input/done_one.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/rename_source_destination_input/done_one.txt"
+      ]
+    },
+    {
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\two.txt",
+        "target_path": "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\done_two.txt"
+      },
+      "observation": "Renamed demo/rename_source_destination_input/two.txt to demo/rename_source_destination_input/done_two.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/rename_source_destination_input/done_two.txt"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_one.txt",
+      "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_done_two.txt",
+      "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\done_one.txt",
+      "D:\\02-Projects\\vibe\\demo\\rename_source_destination_input\\done_two.txt"
+    ]
+  }
+}

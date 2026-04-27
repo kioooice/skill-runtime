@@ -1,0 +1,70 @@
+{
+  "task": "Replace one string with another across all txt files in a directory and write outputs to another directory.",
+  "skill_name": "directory_text_replace_filter_alias_rule_test",
+  "skill_summary": "Replace one string with another across all txt files in a directory and write outputs to another directory.",
+  "skill_args": {
+    "input_dir": "demo/replace_dir_filter_input",
+    "output_dir": "demo/replace_dir_filter_output",
+    "pattern": "*.txt",
+    "old_text": "file",
+    "new_text": "document"
+  },
+  "actions": [
+    {
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/replace_dir_filter_input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 2 matching files in demo/replace_dir_filter_input.",
+      "status": "success"
+    },
+    {
+      "tool_name": "read_text",
+      "tool_input": {
+        "path": "D:\\02-Projects\\vibe\\demo\\replace_dir_filter_input\\a.txt"
+      },
+      "observation": "Read text from demo/replace_dir_filter_input/a.txt.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "demo\\replace_dir_filter_output\\a.txt",
+        "newline": null
+      },
+      "observation": "Wrote text to demo/replace_dir_filter_output/a.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/replace_dir_filter_output/a.txt"
+      ]
+    },
+    {
+      "tool_name": "read_text",
+      "tool_input": {
+        "path": "D:\\02-Projects\\vibe\\demo\\replace_dir_filter_input\\b.txt"
+      },
+      "observation": "Read text from demo/replace_dir_filter_input/b.txt.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "demo\\replace_dir_filter_output\\b.txt",
+        "newline": null
+      },
+      "observation": "Wrote text to demo/replace_dir_filter_output/b.txt.",
+      "status": "success",
+      "artifacts": [
+        "demo/replace_dir_filter_output/b.txt"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo\\replace_dir_filter_output\\a.txt",
+      "demo\\replace_dir_filter_output\\b.txt"
+    ]
+  }
+}

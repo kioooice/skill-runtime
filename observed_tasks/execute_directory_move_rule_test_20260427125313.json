@@ -1,0 +1,119 @@
+{
+  "task": "Move matching txt files from one directory into another directory.",
+  "skill_name": "directory_move_rule_test",
+  "skill_summary": "Move matching txt files from one directory into another directory.",
+  "skill_args": {
+    "input_dir": "demo/move_input",
+    "output_dir": "demo/move_output",
+    "pattern": "*.txt"
+  },
+  "actions": [
+    {
+      "operation_id": "op_0001",
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/move_input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 2 matching files in demo/move_input.",
+      "status": "success",
+      "mutation": false
+    },
+    {
+      "operation_id": "op_0002",
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\move_input\\move_a.txt",
+        "target_path": "demo\\move_output\\move_a.txt"
+      },
+      "observation": "Renamed demo/move_input/move_a.txt to demo/move_output/move_a.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/move_output/move_a.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "rename_back",
+        "from_path": "demo/move_output/move_a.txt",
+        "to_path": "demo/move_input/move_a.txt"
+      }
+    },
+    {
+      "operation_id": "op_0003",
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\move_input\\move_b.txt",
+        "target_path": "demo\\move_output\\move_b.txt"
+      },
+      "observation": "Renamed demo/move_input/move_b.txt to demo/move_output/move_b.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/move_output/move_b.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "rename_back",
+        "from_path": "demo/move_output/move_b.txt",
+        "to_path": "demo/move_input/move_b.txt"
+      }
+    }
+  ],
+  "operation_log": [
+    {
+      "operation_id": "op_0001",
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/move_input",
+        "pattern": "*.txt"
+      },
+      "observation": "Found 2 matching files in demo/move_input.",
+      "status": "success",
+      "mutation": false
+    },
+    {
+      "operation_id": "op_0002",
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\move_input\\move_a.txt",
+        "target_path": "demo\\move_output\\move_a.txt"
+      },
+      "observation": "Renamed demo/move_input/move_a.txt to demo/move_output/move_a.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/move_output/move_a.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "rename_back",
+        "from_path": "demo/move_output/move_a.txt",
+        "to_path": "demo/move_input/move_a.txt"
+      }
+    },
+    {
+      "operation_id": "op_0003",
+      "tool_name": "rename_path",
+      "tool_input": {
+        "source_path": "D:\\02-Projects\\vibe\\demo\\move_input\\move_b.txt",
+        "target_path": "demo\\move_output\\move_b.txt"
+      },
+      "observation": "Renamed demo/move_input/move_b.txt to demo/move_output/move_b.txt.",
+      "status": "success",
+      "mutation": true,
+      "artifacts": [
+        "demo/move_output/move_b.txt"
+      ],
+      "rollback_hint": {
+        "strategy": "rename_back",
+        "from_path": "demo/move_output/move_b.txt",
+        "to_path": "demo/move_input/move_b.txt"
+      }
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo\\move_output\\move_a.txt",
+      "demo\\move_output\\move_b.txt"
+    ]
+  }
+}

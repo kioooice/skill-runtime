@@ -1,0 +1,66 @@
+{
+  "task": "Normalize matching JSON files from one directory into another directory.",
+  "skill_name": "directory_json_transform_rule_test",
+  "skill_summary": "Normalize matching JSON files from one directory into another directory.",
+  "skill_args": {
+    "input_dir": "demo/json_transform_input",
+    "output_dir": "demo/json_transform_output",
+    "pattern": "*.json"
+  },
+  "actions": [
+    {
+      "tool_name": "list_files",
+      "tool_input": {
+        "path": "demo/json_transform_input",
+        "pattern": "*.json"
+      },
+      "observation": "Found 2 matching files in demo/json_transform_input.",
+      "status": "success"
+    },
+    {
+      "tool_name": "read_json",
+      "tool_input": {
+        "path": "D:\\02-Projects\\vibe\\demo\\json_transform_input\\a.json"
+      },
+      "observation": "Read JSON from demo/json_transform_input/a.json.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_json",
+      "tool_input": {
+        "path": "demo\\json_transform_output\\a.json"
+      },
+      "observation": "Wrote JSON to demo/json_transform_output/a.json.",
+      "status": "success",
+      "artifacts": [
+        "demo/json_transform_output/a.json"
+      ]
+    },
+    {
+      "tool_name": "read_json",
+      "tool_input": {
+        "path": "D:\\02-Projects\\vibe\\demo\\json_transform_input\\b.json"
+      },
+      "observation": "Read JSON from demo/json_transform_input/b.json.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_json",
+      "tool_input": {
+        "path": "demo\\json_transform_output\\b.json"
+      },
+      "observation": "Wrote JSON to demo/json_transform_output/b.json.",
+      "status": "success",
+      "artifacts": [
+        "demo/json_transform_output/b.json"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo\\json_transform_output\\a.json",
+      "demo\\json_transform_output\\b.json"
+    ]
+  }
+}
