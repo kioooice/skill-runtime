@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from skill_runtime.api.service import RuntimeServiceError
 from skill_runtime.api.models import Trajectory, TrajectoryStep
 from skill_runtime.audit.skill_auditor import SkillAuditor
 from skill_runtime.distill.skill_generator import SkillGenerator
@@ -233,6 +234,84 @@ class RuntimeAuditLifecycleTestsMixin:
         )
         self._assert_execute_skill_schema(result["recommended_host_operation"])
         self._assert_operation_role(result["available_host_operations"][0], "primary")
+
+    def test_service_promote_preserves_scope_policy_into_active_metadata_and_execution(self) -> None:
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        staging_dir = sandbox_root / "skill_store" / "staging"
+        staging_dir.mkdir(parents=True, exist_ok=True)
+        skill_name = "scope_policy_promote_roundtrip_test"
+        skill_path = staging_dir / f"{skill_name}.py"
+        metadata_path = staging_dir / f"{skill_name}.metadata.json"
+        active_path = sandbox_root / "skill_store" / "active" / f"{skill_name}.py"
+        active_metadata_path = sandbox_root / "skill_store" / "active" / f"{skill_name}.metadata.json"
+        promoted_output = sandbox_root / "demo" / "output" / "scope_policy_promote_roundtrip.txt"
+        scope_policy = {
+            "allow_shell": False,
+            "allow_delete": False,
+            "allowed_roots": ["demo/output"],
+            "allowed_extensions": [".txt"],
+            "requires_dry_run": True,
+        }
+
+        skill_path.write_text(
+            "def run(tools, output_path, **kwargs):\n"
+            "    tools.write_text(output_path, 'promoted-scope-policy')\n"
+            "    return {'status': 'completed'}\n",
+            encoding="utf-8",
+        )
+        self.addCleanup(lambda: skill_path.unlink(missing_ok=True))
+        self._write_json_file(
+            metadata_path,
+            {
+                "skill_name": skill_name,
+                "file_path": str(skill_path.resolve()),
+                "summary": "Write output under promoted scope policy.",
+                "docstring": "scope policy promote roundtrip",
+                "input_schema": {"output_path": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-27T00:00:00+00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "staging",
+                "audit_score": None,
+                "tags": ["scope", "promote"],
+                "scope_policy": scope_policy,
+            },
+        )
+        self.addCleanup(lambda: active_path.unlink(missing_ok=True))
+        self.addCleanup(lambda: active_metadata_path.unlink(missing_ok=True))
+        self.addCleanup(lambda: promoted_output.unlink(missing_ok=True))
+
+        audit_result = sandbox_service.audit(skill_path)
+        self.assertEqual("passed", audit_result["report"]["status"])
+
+        promote_result = sandbox_service.promote(skill_path)
+        self.assertEqual("execute_skill", promote_result["recommended_next_action"])
+
+        active_metadata = self._read_json_file(Path(promote_result["metadata_file"]))
+        self.assertEqual(scope_policy, active_metadata["scope_policy"])
+
+        promoted = sandbox_index.get(skill_name)
+        self.assertIsNotNone(promoted)
+        self.assertEqual(scope_policy, promoted.scope_policy)
+
+        with self.assertRaises(RuntimeServiceError) as blocked:
+            sandbox_service.execute(
+                skill_name,
+                {"output_path": "demo/output/scope_policy_promote_roundtrip.txt"},
+            )
+        self.assertEqual("SKILL_EXECUTION_FAILED", blocked.exception.code)
+        self.assertIn("dry-run execution is required", blocked.exception.details["reason"])
+
+        dry_run_result = sandbox_service.execute(
+            skill_name,
+            {"output_path": "demo/output/scope_policy_promote_roundtrip.txt"},
+            dry_run=True,
+        )
+        self.assertTrue(dry_run_result["dry_run"])
+        self.assertEqual("planned", dry_run_result["planned_changes"][0]["status"])
+        self.assertFalse(promoted_output.exists())
 
     def test_mcp_promote_returns_execute_follow_up(self) -> None:
         sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
