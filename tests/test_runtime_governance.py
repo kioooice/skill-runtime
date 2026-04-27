@@ -789,6 +789,16 @@ class RuntimeGovernanceTestsMixin:
             1,
         )
         self.assertGreaterEqual(report["library_tier_counts"]["fixture"], 2)
+        fixture_action = self._find_action(
+            report["recommended_actions"],
+            "review_fixture_noise",
+        )
+        self.assertEqual("governance_report", fixture_action["host_operation"]["tool_name"])
+        self.assertEqual(
+            "governance:fixture_review",
+            fixture_action["host_operation"]["source_ref"],
+        )
+        self.assertIn("fixture-only duplicate clusters are hidden", fixture_action["reason"])
 
     def test_mcp_governance_report_returns_host_ready_recommended_actions(self) -> None:
         payload = self._call_mcp_tool("governance_report", {})

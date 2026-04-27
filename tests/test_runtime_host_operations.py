@@ -27,6 +27,7 @@ class RuntimeHostOperationTestsMixin:
             operation_list,
             refresh_governance_report_operation,
             review_archive_volume_action,
+            review_fixture_noise_action,
             search_response_payload,
             search_result_execute_skill_operation,
             search_result_payload,
@@ -78,6 +79,10 @@ class RuntimeHostOperationTestsMixin:
             ]
         )
         review_action = review_archive_volume_action()
+        fixture_review_action = review_fixture_noise_action(
+            fixture_count=2,
+            hidden_fixture_only_duplicate_clusters=1,
+        )
         refresh_governance_operation = refresh_governance_report_operation()
         search_result_operation = search_result_execute_skill_operation(
             self.HOST_SKILL_NAME,
@@ -123,6 +128,7 @@ class RuntimeHostOperationTestsMixin:
             "archive_action": archive_action,
             "action_operations": action_operations,
             "review_action": review_action,
+            "fixture_review_action": fixture_review_action,
             "refresh_governance_operation": refresh_governance_operation,
             "search_result_operation": search_result_operation,
             "search_result": search_result,
@@ -290,6 +296,7 @@ class RuntimeHostOperationTestsMixin:
             source_ref_distill_coverage_report_refresh,
             source_ref_distill_coverage_report_view,
             source_ref_distill,
+            source_ref_governance_fixture_review,
             source_ref_governance_report_refresh,
             source_ref_observed_task,
             source_ref_observed_task_rollback,
@@ -321,6 +328,7 @@ class RuntimeHostOperationTestsMixin:
             "governance_follow_up_source_ref": source_ref_archive_duplicate_candidates_follow_up(),
             "governance_apply_follow_up_source_ref": source_ref_archive_duplicate_candidates_apply_follow_up(),
             "governance_report_refresh_source_ref": source_ref_governance_report_refresh(),
+            "governance_fixture_review_source_ref": source_ref_governance_fixture_review(),
             "distill_coverage_report_refresh_source_ref": source_ref_distill_coverage_report_refresh(),
             "distill_coverage_report_execution_view_source_ref": source_ref_distill_coverage_report_view("execution"),
         }
@@ -523,6 +531,7 @@ class RuntimeHostOperationTestsMixin:
         samples = self._build_host_operation_samples()
         archive_action = samples["archive_action"]
         review_action = samples["review_action"]
+        fixture_review_action = samples["fixture_review_action"]
         archive_payload = samples["archive_payload"]
         governance_report = samples["governance_report"]
         governance_recommendation = samples["governance_recommendation"]
@@ -536,6 +545,9 @@ class RuntimeHostOperationTestsMixin:
         self.assertEqual("archive_duplicate_candidates", archive_action["host_operation"]["tool_name"])
         self.assertEqual("review_archive_volume", review_action["action"])
         self.assertEqual("governance_report", review_action["host_operation"]["tool_name"])
+        self.assertEqual("review_fixture_noise", fixture_review_action["action"])
+        self.assertEqual("governance_report", fixture_review_action["host_operation"]["tool_name"])
+        self.assertIn("fixture skills are active", fixture_review_action["reason"])
         self.assertEqual("Refresh governance report", refresh_governance_operation["display_label"])
         self.assertEqual(
             f"governance:archive_duplicate_candidates:{self.HOST_SKILL_NAME}",
@@ -551,6 +563,7 @@ class RuntimeHostOperationTestsMixin:
             samples["governance_apply_follow_up_source_ref"],
         )
         self.assertEqual("governance:report_refresh", samples["governance_report_refresh_source_ref"])
+        self.assertEqual("governance:fixture_review", samples["governance_fixture_review_source_ref"])
         self.assertEqual("distill_coverage:report_refresh", samples["distill_coverage_report_refresh_source_ref"])
         self.assertEqual(
             "distill_coverage:view:execution",

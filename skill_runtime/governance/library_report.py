@@ -8,6 +8,7 @@ from skill_runtime.mcp.host_operations import (
     archive_duplicate_candidates_action,
     governance_report_payload,
     review_archive_volume_action,
+    review_fixture_noise_action,
 )
 from skill_runtime.retrieval.skill_index import SkillIndex
 
@@ -52,8 +53,13 @@ class LibraryReport:
         status_counts = Counter(skill.status for skill in skills)
         active_skills = [skill for skill in skills if skill.status == "active"]
         duplicates, hidden_fixture_only_clusters = self._duplicate_candidates(skills)
-        recommended_actions = self._recommended_actions(duplicates, status_counts)
         library_tier_counts = self._library_tier_counts(active_skills)
+        recommended_actions = self._recommended_actions(
+            duplicates,
+            status_counts,
+            library_tier_counts=library_tier_counts,
+            hidden_fixture_only_clusters=hidden_fixture_only_clusters,
+        )
         return governance_report_payload(
             dict(status_counts),
             duplicates,
@@ -162,7 +168,14 @@ class LibraryReport:
             if len(token) >= 3
         }
 
-    def _recommended_actions(self, duplicates: list[dict], status_counts: Counter) -> list[dict]:
+    def _recommended_actions(
+        self,
+        duplicates: list[dict],
+        status_counts: Counter,
+        *,
+        library_tier_counts: dict[str, int],
+        hidden_fixture_only_clusters: int,
+    ) -> list[dict]:
         actions: list[dict] = []
         for cluster in duplicates:
             if not cluster["archive_candidates"]:
@@ -178,5 +191,15 @@ class LibraryReport:
 
         if status_counts.get("archived", 0) > status_counts.get("active", 0):
             actions.append(review_archive_volume_action())
+
+        fixture_count = library_tier_counts["fixture"]
+        stable_count = library_tier_counts["stable"]
+        if hidden_fixture_only_clusters > 0 or (fixture_count > 0 and fixture_count >= stable_count):
+            actions.append(
+                review_fixture_noise_action(
+                    fixture_count=fixture_count,
+                    hidden_fixture_only_duplicate_clusters=hidden_fixture_only_clusters,
+                )
+            )
 
         return actions

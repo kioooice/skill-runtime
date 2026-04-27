@@ -10,6 +10,7 @@ from skill_runtime.mcp.operation_builders import (
 from skill_runtime.mcp.source_refs import (
     source_ref_archive_duplicate_candidates,
     source_ref_archive_duplicate_candidates_preview,
+    source_ref_governance_fixture_review,
     source_ref_governance_report_refresh,
 )
 
@@ -18,6 +19,7 @@ __all__ = [
     "governance_action",
     "archive_duplicate_candidates_action",
     "review_archive_volume_action",
+    "review_fixture_noise_action",
     "governance_report_payload",
 ]
 
@@ -88,6 +90,29 @@ def review_archive_volume_action() -> dict[str, Any]:
         "Archived skills now outnumber active skills; review whether the library is fragmenting.",
         host_operation=refresh_governance_report_operation(
             source_ref=source_ref_governance_report_refresh()
+        ),
+    )
+
+
+def review_fixture_noise_action(
+    *,
+    fixture_count: int,
+    hidden_fixture_only_duplicate_clusters: int,
+) -> dict[str, Any]:
+    reasons: list[str] = []
+    if fixture_count > 0:
+        reasons.append(f"{fixture_count} fixture skills are active")
+    if hidden_fixture_only_duplicate_clusters > 0:
+        reasons.append(
+            f"{hidden_fixture_only_duplicate_clusters} fixture-only duplicate clusters are hidden"
+        )
+    reason = "; ".join(reasons) or "Fixture skills are increasing and should be reviewed."
+    return governance_action(
+        "review_fixture_noise",
+        f"{reason}; review whether fixture skills should stay active or be archived.",
+        cluster_count=hidden_fixture_only_duplicate_clusters,
+        host_operation=refresh_governance_report_operation(
+            source_ref=source_ref_governance_fixture_review()
         ),
     )
 
