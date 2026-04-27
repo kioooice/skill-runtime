@@ -10,12 +10,21 @@ class ToolPolicyError(ValueError):
 
 
 class RuntimeTools:
-    def __init__(self, workspace: str | Path = ".") -> None:
+    def __init__(
+        self,
+        workspace: str | Path = ".",
+        *,
+        scope_policy: dict[str, Any] | None = None,
+    ) -> None:
         self.workspace = Path(workspace).resolve()
         self._records: list[dict[str, Any]] = []
+        self._scope_policy = self._normalize_scope_policy(scope_policy)
+
+    def apply_scope_policy(self, scope_policy: dict[str, Any] | None) -> None:
+        self._scope_policy = self._normalize_scope_policy(scope_policy)
 
     def read_text(self, path: str | Path) -> str:
-        target = self._resolve_path(path)
+        target = self._resolve_path(path, enforce_extension=True)
         content = target.read_text(encoding="utf-8")
         self._record(
             "read_text",
@@ -31,7 +40,7 @@ class RuntimeTools:
         *,
         newline: str | None = None,
     ) -> str:
-        target = self._resolve_path(path)
+        target = self._resolve_path(path, enforce_extension=True)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8", newline=newline)
         self._record(
@@ -43,7 +52,7 @@ class RuntimeTools:
         return str(target)
 
     def read_json(self, path: str | Path) -> Any:
-        target = self._resolve_path(path)
+        target = self._resolve_path(path, enforce_extension=True)
         payload = json.loads(target.read_text(encoding="utf-8"))
         self._record(
             "read_json",
@@ -61,7 +70,7 @@ class RuntimeTools:
         indent: int = 2,
         sort_keys: bool = False,
     ) -> str:
-        target = self._resolve_path(path)
+        target = self._resolve_path(path, enforce_extension=True)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(
             json.dumps(payload, ensure_ascii=ensure_ascii, indent=indent, sort_keys=sort_keys),
@@ -81,7 +90,7 @@ class RuntimeTools:
         return str(target)
 
     def list_files(self, path: str | Path, pattern: str = "*") -> list[str]:
-        target = self._resolve_path(path)
+        target = self._resolve_path(path, enforce_extension=False)
         if not target.exists():
             self._record(
                 "list_files",
@@ -98,8 +107,8 @@ class RuntimeTools:
         return files
 
     def rename_path(self, source_path: str | Path, target_path: str | Path) -> str:
-        source = self._resolve_path(source_path)
-        target = self._resolve_path(target_path)
+        source = self._resolve_path(source_path, enforce_extension=True)
+        target = self._resolve_path(target_path, enforce_extension=True)
         target.parent.mkdir(parents=True, exist_ok=True)
         source.rename(target)
         self._record(
@@ -114,8 +123,8 @@ class RuntimeTools:
         return self.rename_path(source_path, target_path)
 
     def copy_file(self, source_path: str | Path, target_path: str | Path) -> str:
-        source = self._resolve_path(source_path)
-        target = self._resolve_path(target_path)
+        source = self._resolve_path(source_path, enforce_extension=True)
+        target = self._resolve_path(target_path, enforce_extension=True)
         target.parent.mkdir(parents=True, exist_ok=True)
         copy2(source, target)
         self._record(
@@ -145,9 +154,9 @@ class RuntimeTools:
         return [dict(record) for record in self._records]
 
     def resolve_path(self, path: str | Path) -> str:
-        return str(self._resolve_path(path))
+        return str(self._resolve_path(path, enforce_extension=False))
 
-    def _resolve_path(self, path: str | Path) -> Path:
+    def _resolve_path(self, path: str | Path, *, enforce_extension: bool) -> Path:
         target = Path(path)
         if not target.is_absolute():
             target = (self.workspace / target).resolve()
@@ -158,13 +167,26 @@ class RuntimeTools:
             target.relative_to(self.workspace)
         except ValueError as exc:
             raise ToolPolicyError(f"path escapes workspace: {target}") from exc
+        self._validate_scope_path(target, enforce_extension=enforce_extension)
         return target
 
     def _validate_command(self, command: list[str]) -> None:
         if not command:
             raise ToolPolicyError("empty command is not allowed")
-        if command[0].lower() in {"rm", "del", "format", "shutdown", "mkfs"}:
-            raise ToolPolicyError(f"blocked command: {command[0]}")
+        if not self._scope_policy["allow_shell"]:
+            raise ToolPolicyError("shell access is not allowed for this skill")
+        command_name = Path(command[0]).name.lower()
+        if not self._scope_policy["allow_delete"] and command_name in {
+            "rm",
+            "del",
+            "erase",
+            "rmdir",
+            "rd",
+            "format",
+            "shutdown",
+            "mkfs",
+        }:
+            raise ToolPolicyError(f"delete-like shell command is not allowed: {command[0]}")
 
     def _record(
         self,
@@ -189,3 +211,67 @@ class RuntimeTools:
             return str(path.relative_to(self.workspace)).replace("\\", "/")
         except ValueError:
             return str(path)
+
+    def _normalize_scope_policy(self, scope_policy: dict[str, Any] | None) -> dict[str, Any]:
+        policy = {
+            "allow_shell": False,
+            "allow_delete": False,
+            "allowed_roots": None,
+            "allowed_extensions": None,
+            "requires_dry_run": False,
+        }
+        if not isinstance(scope_policy, dict):
+            return policy
+
+        if "allow_shell" in scope_policy:
+            policy["allow_shell"] = bool(scope_policy["allow_shell"])
+        if "allow_delete" in scope_policy:
+            policy["allow_delete"] = bool(scope_policy["allow_delete"])
+        if "requires_dry_run" in scope_policy:
+            policy["requires_dry_run"] = bool(scope_policy["requires_dry_run"])
+
+        allowed_roots = scope_policy.get("allowed_roots")
+        if isinstance(allowed_roots, list):
+            policy["allowed_roots"] = [
+                self._normalize_root(root)
+                for root in allowed_roots
+                if isinstance(root, str) and root.strip()
+            ] or None
+
+        allowed_extensions = scope_policy.get("allowed_extensions")
+        if isinstance(allowed_extensions, list):
+            normalized_extensions = []
+            for extension in allowed_extensions:
+                if not isinstance(extension, str):
+                    continue
+                value = extension.strip().lower()
+                if not value:
+                    continue
+                normalized_extensions.append(value if value.startswith(".") else f".{value}")
+            policy["allowed_extensions"] = normalized_extensions or None
+
+        return policy
+
+    def _normalize_root(self, root: str) -> str:
+        normalized = str(Path(root)).replace("\\", "/").strip("/")
+        return normalized
+
+    def _validate_scope_path(self, target: Path, *, enforce_extension: bool) -> None:
+        allowed_roots = self._scope_policy.get("allowed_roots")
+        if allowed_roots:
+            display_target = self._display_path(target)
+            if not any(
+                display_target == root or display_target.startswith(f"{root}/")
+                for root in allowed_roots
+            ):
+                raise ToolPolicyError(
+                    f"path is outside allowed roots: {display_target}"
+                )
+
+        allowed_extensions = self._scope_policy.get("allowed_extensions")
+        if enforce_extension and allowed_extensions:
+            suffix = target.suffix.lower()
+            if suffix not in allowed_extensions:
+                raise ToolPolicyError(
+                    f"path extension is not allowed: {self._display_path(target)}"
+                )

@@ -239,4 +239,5 @@ class SkillIndex:
             rule_priority=payload.get("rule_priority"),
             rule_reason=payload.get("rule_reason"),
             tags=payload.get("tags", []),
+            scope_policy=payload.get("scope_policy"),
         )

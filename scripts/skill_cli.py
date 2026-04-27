@@ -17,8 +17,13 @@ EXIT_NOT_FOUND = 3
 EXIT_VALIDATION_ERROR = 4
 EXIT_POLICY_BLOCKED = 5
 
+
 def service_for_args(args: argparse.Namespace) -> RuntimeService:
     return RuntimeService(Path(args.root).resolve())
+
+
+def load_json_file(path: str) -> object:
+    return json.loads(Path(path).read_text(encoding="utf-8-sig"))
 
 
 def ok(data: dict) -> int:
@@ -63,7 +68,7 @@ def cmd_execute(args: argparse.Namespace) -> int:
 
     try:
         if args.args_file:
-            parsed_args = json.loads(Path(args.args_file).read_text(encoding="utf-8"))
+            parsed_args = load_json_file(args.args_file)
         else:
             parsed_args = json.loads(args.args)
     except FileNotFoundError:
@@ -149,7 +154,7 @@ def cmd_capture_trajectory(args: argparse.Namespace) -> int:
     if args.observed_task_json or args.observed_task_json_file:
         try:
             if args.observed_task_json_file:
-                observed_task = json.loads(Path(args.observed_task_json_file).read_text(encoding="utf-8"))
+                observed_task = load_json_file(args.observed_task_json_file)
             else:
                 observed_task = json.loads(args.observed_task_json)
         except FileNotFoundError:
@@ -241,7 +246,7 @@ def cmd_distill_and_promote(args: argparse.Namespace) -> int:
     if args.observed_task_json or args.observed_task_json_file:
         try:
             if args.observed_task_json_file:
-                observed_task = json.loads(Path(args.observed_task_json_file).read_text(encoding="utf-8"))
+                observed_task = load_json_file(args.observed_task_json_file)
             else:
                 observed_task = json.loads(args.observed_task_json)
         except FileNotFoundError:

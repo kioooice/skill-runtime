@@ -21,6 +21,8 @@ class SkillExecutor:
             raise FileNotFoundError(f"skill not found: {skill_name}")
         if metadata.status != "active":
             raise SkillExecutionError(f"skill is not executable in status={metadata.status}")
+        if self.tools is not None and hasattr(self.tools, "apply_scope_policy"):
+            self.tools.apply_scope_policy(metadata.scope_policy)
 
         module = self.loader.load_from_file(Path(metadata.file_path), module_name=f"skill_{skill_name}")
         self.loader.validate_entrypoint(module)
