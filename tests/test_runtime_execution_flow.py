@@ -517,6 +517,38 @@ class RuntimeExecutionFlowTestsMixin:
         self.assertTrue(rollback_payload["data"]["dry_run"])
         self.assertEqual("planned", rollback_payload["data"]["results"][0]["status"])
 
+    def test_execute_cli_rollback_operations_from_execute_result_file(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+        payload = self._execute_skill_cli(
+            "merge_text_files",
+            args_file=self._write_args_file(
+                "cli_rollback_execute_result_args.json",
+                {"input_dir": "demo/input", "output_path": "demo/output/cli_rollback_execute_result.md"},
+                root=sandbox_root,
+            ),
+            root=sandbox_root,
+        )
+        execute_result_file = self._write_json_file(
+            sandbox_root / "demo" / "cli_rollback_execute_result.json",
+            payload,
+        )
+        rollback_payload = self._run_cli(
+            "rollback-operations",
+            "--execute-result-file",
+            str(execute_result_file),
+            "--dry-run",
+            root=sandbox_root,
+            expect_json=True,
+        )
+
+        self.assertEqual("ok", rollback_payload["status"])
+        self.assertTrue(rollback_payload["data"]["dry_run"])
+        self.assertEqual("planned", rollback_payload["data"]["results"][0]["status"])
+        self.assertEqual(
+            payload["data"]["available_host_operations"][2]["arguments"]["operation_ids"],
+            rollback_payload["data"]["planned_operation_ids"],
+        )
+
     def test_mcp_execute_tool_returns_follow_up_host_operation(self) -> None:
         sandbox_root, _, _ = self._make_runtime_sandbox()
         output_path = sandbox_root / "demo" / "output" / "mcp_execute_followup.md"

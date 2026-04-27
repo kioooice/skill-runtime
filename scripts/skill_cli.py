@@ -34,6 +34,36 @@ def load_json_arg(raw_value: str | None, *, file_path: str | None, error_flag: s
     return json.loads(raw_value)
 
 
+def extract_execute_data(payload: object) -> dict:
+    if not isinstance(payload, dict):
+        raise ValueError("execute response must decode to a JSON object")
+    if isinstance(payload.get("data"), dict):
+        return payload["data"]
+    return payload
+
+
+def extract_rollback_request(payload: object) -> tuple[object, list[str] | None, bool]:
+    execute_data = extract_execute_data(payload)
+    operations = execute_data.get("available_host_operations")
+    if not isinstance(operations, list):
+        raise ValueError("execute response is missing available_host_operations")
+    for operation in operations:
+        if not isinstance(operation, dict):
+            continue
+        if operation.get("tool_name") != "rollback_operations":
+            continue
+        arguments = operation.get("arguments")
+        if not isinstance(arguments, dict):
+            raise ValueError("rollback host operation is missing arguments")
+        operation_log = arguments.get("operation_log")
+        if operation_log is None:
+            raise ValueError("rollback host operation is missing operation_log")
+        operation_ids = arguments.get("operation_ids")
+        dry_run = bool(arguments.get("dry_run", False))
+        return operation_log, operation_ids, dry_run
+    raise ValueError("execute response does not contain a rollback_operations host operation")
+
+
 def ok(data: dict) -> int:
     print(json.dumps({"status": "ok", "data": data}, ensure_ascii=False))
     return EXIT_OK
@@ -230,25 +260,52 @@ def cmd_distill_coverage_report(args: argparse.Namespace) -> int:
 
 
 def cmd_rollback_operations(args: argparse.Namespace) -> int:
-    try:
-        operation_log = load_json_arg(
+    source_count = sum(
+        1
+        for value in (
             args.operation_log,
-            file_path=args.operation_log_file,
-            error_flag="--operation-log",
+            args.operation_log_file,
+            args.execute_result_json,
+            args.execute_result_file,
         )
+        if value
+    )
+    if source_count != 1:
+        return error(
+            "provide exactly one rollback source: --operation-log, --operation-log-file, --execute-result-json, or --execute-result-file",
+            "INVALID_ROLLBACK_INPUT",
+            exit_code=EXIT_ARGUMENT_ERROR,
+        )
+
+    try:
+        if args.execute_result_json or args.execute_result_file:
+            execute_payload = load_json_arg(
+                args.execute_result_json,
+                file_path=args.execute_result_file,
+                error_flag="--execute-result-json",
+            )
+            operation_log, default_operation_ids, default_dry_run = extract_rollback_request(execute_payload)
+        else:
+            operation_log = load_json_arg(
+                args.operation_log,
+                file_path=args.operation_log_file,
+                error_flag="--operation-log",
+            )
+            default_operation_ids = None
+            default_dry_run = False
     except ValueError as exc:
         return error(str(exc), "INVALID_ROLLBACK_INPUT", exit_code=EXIT_ARGUMENT_ERROR)
     except FileNotFoundError:
         return error(
-            "operation log file not found",
-            "OPERATION_LOG_FILE_NOT_FOUND",
-            details={"path": args.operation_log_file},
+            "rollback input file not found",
+            "ROLLBACK_INPUT_FILE_NOT_FOUND",
+            details={"path": args.operation_log_file or args.execute_result_file},
             exit_code=EXIT_NOT_FOUND,
         )
     except json.JSONDecodeError as exc:
         return error(
-            "invalid JSON for operation log payload",
-            "INVALID_OPERATION_LOG_JSON",
+            "invalid JSON for rollback payload",
+            "INVALID_ROLLBACK_JSON",
             details={"reason": str(exc)},
             exit_code=EXIT_ARGUMENT_ERROR,
         )
@@ -257,8 +314,8 @@ def cmd_rollback_operations(args: argparse.Namespace) -> int:
         return ok(
             service_for_args(args).rollback_operations(
                 operation_log,
-                operation_ids=args.operation_id,
-                dry_run=args.dry_run,
+                operation_ids=args.operation_id or default_operation_ids,
+                dry_run=args.dry_run or default_dry_run,
             )
         )
     except RuntimeServiceError as exc:
@@ -405,6 +462,8 @@ def build_parser() -> argparse.ArgumentParser:
     rollback_parser = subparsers.add_parser("rollback-operations")
     rollback_parser.add_argument("--operation-log")
     rollback_parser.add_argument("--operation-log-file")
+    rollback_parser.add_argument("--execute-result-json")
+    rollback_parser.add_argument("--execute-result-file")
     rollback_parser.add_argument("--operation-id", action="append")
     rollback_parser.add_argument("--dry-run", action="store_true")
     rollback_parser.set_defaults(func=cmd_rollback_operations)

@@ -52,3 +52,10 @@ For this stage, the highest-value next pass is not UI work. It is tightening reu
 
 - `execute` now returns an `operation_log` baseline for applied and planned tool activity.
 - dry-run execution now exposes `planned_changes` plus per-operation rollback hints, which should make the next rollback-focused dogfood pass easier to inspect.
+- rollback-focused dogfooding is now validated on a real `archive_log_files_dogfood` session:
+  - `search` returned the stable archive skill as the top hit
+  - `execute` returned a prefilled `rollback_operations` host action with both `rename_back` operation ids
+  - `rollback-operations --dry-run` and real apply both succeeded and restored the inbox state
+  - `distill-and-promote` still succeeded after rollback, and the promoted skill reused correctly
+- that session exposed one real CLI friction point: rollback was safe, but the CLI originally required manually extracting `operation_log` and `operation_ids` from the `execute` payload.
+- that friction is now reduced: `rollback-operations` accepts `--execute-result-json` and `--execute-result-file`, so dogfooding can hand the full `execute` response straight into rollback without a manual unpack step.

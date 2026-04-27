@@ -9,7 +9,7 @@ Use the runtime the way a host AI such as Codex would use it in day-to-day repea
 ## Default Loop
 
 ```text
-search -> execute -> observed task record -> distill/promote -> reuse -> govern
+search -> execute -> rollback dry-run/apply when needed -> observed task record -> distill/promote -> reuse -> govern
 ```
 
 ## Fast Path
@@ -36,8 +36,18 @@ The same response now also exposes:
 
 - `operation_log` for the full ordered tool trace
 - `planned_changes` for dry-run-only mutation previews
+- `available_host_operations` for direct follow-up actions such as rollback or promotion
 
-4. If the task was new, improved, or worth reusing, send that record back into the library
+4. If the execution changed files, inspect or apply rollback from the `execute` payload
+
+The CLI can now consume the full `execute` response directly instead of making you extract `operation_log` and `operation_ids` by hand.
+
+```bash
+python scripts/skill_cli.py rollback-operations --execute-result-file <execute_result.json> --dry-run
+python scripts/skill_cli.py rollback-operations --execute-result-file <execute_result.json>
+```
+
+5. If the task was new, improved, or worth reusing, send that record back into the library
 
 ```bash
 python scripts/skill_cli.py distill-and-promote --observed-task <observed_task.json> --skill-name <optional_name>
