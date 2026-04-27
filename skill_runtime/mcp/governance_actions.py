@@ -100,6 +100,8 @@ def governance_report_payload(
     staging_count: int,
     archive_count: int,
     active_count: int,
+    library_tier_counts: dict[str, int],
+    library_tier_summary: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "status_counts": status_counts,
@@ -109,4 +111,6 @@ def governance_report_payload(
         "staging_count": staging_count,
         "archive_count": archive_count,
         "active_count": active_count,
+        "library_tier_counts": library_tier_counts,
+        "library_tier_summary": library_tier_summary,
     }

@@ -97,6 +97,13 @@ class RuntimeHostOperationTestsMixin:
             staging_count=1,
             archive_count=3,
             active_count=2,
+            library_tier_counts={"stable": 1, "experimental": 1, "fixture": 0},
+            library_tier_summary={
+                "production_ready_count": 1,
+                "experimental_count": 1,
+                "fixture_count": 0,
+                "fixture_only_duplicate_clusters_hidden": 0,
+            },
         )
         execute_helper_payload = execute_skill_operation(
             self.HOST_SKILL_NAME,
@@ -550,6 +557,9 @@ class RuntimeHostOperationTestsMixin:
             samples["distill_coverage_report_execution_view_source_ref"],
         )
         self.assertEqual({"active": 2}, governance_report["status_counts"])
+        self.assertEqual({"stable": 1, "experimental": 1, "fixture": 0}, governance_report["library_tier_counts"])
+        self.assertEqual(1, governance_report["library_tier_summary"]["production_ready_count"])
+        self.assertEqual(0, governance_report["library_tier_summary"]["fixture_only_duplicate_clusters_hidden"])
         self.assertEqual(2, len(governance_report["recommended_actions"]))
         self.assertGreaterEqual(len(governance_report["available_host_operations"]), 2)
         self.assertEqual("governance_report", governance_recommendation["recommended_next_action"])

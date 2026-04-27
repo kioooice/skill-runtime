@@ -394,6 +394,13 @@ def check_runtime_contracts() -> list[str]:
         staging_count=0,
         archive_count=0,
         active_count=1,
+        library_tier_counts={"stable": 1, "experimental": 0, "fixture": 0},
+        library_tier_summary={
+            "production_ready_count": 1,
+            "experimental_count": 0,
+            "fixture_count": 0,
+            "fixture_only_duplicate_clusters_hidden": 0,
+        },
     )
     available_operations = governance_payload.get("available_host_operations", [])
     if not isinstance(available_operations, list) or not available_operations:

@@ -50,8 +50,10 @@ class LibraryReport:
     def build(self) -> dict:
         skills = self.index.load_all()
         status_counts = Counter(skill.status for skill in skills)
-        duplicates = self._duplicate_candidates(skills)
+        active_skills = [skill for skill in skills if skill.status == "active"]
+        duplicates, hidden_fixture_only_clusters = self._duplicate_candidates(skills)
         recommended_actions = self._recommended_actions(duplicates, status_counts)
+        library_tier_counts = self._library_tier_counts(active_skills)
         return governance_report_payload(
             dict(status_counts),
             duplicates,
@@ -59,9 +61,16 @@ class LibraryReport:
             staging_count=self._count_files(self.root / "skill_store" / "staging"),
             archive_count=self._count_files(self.root / "skill_store" / "archive"),
             active_count=status_counts.get("active", 0),
+            library_tier_counts=library_tier_counts,
+            library_tier_summary={
+                "production_ready_count": library_tier_counts["stable"],
+                "experimental_count": library_tier_counts["experimental"],
+                "fixture_count": library_tier_counts["fixture"],
+                "fixture_only_duplicate_clusters_hidden": hidden_fixture_only_clusters,
+            },
         )
 
-    def _duplicate_candidates(self, skills: list[SkillMetadata]) -> list[dict]:
+    def _duplicate_candidates(self, skills: list[SkillMetadata]) -> tuple[list[dict], int]:
         groups: dict[tuple, list[str]] = defaultdict(list)
         for skill in skills:
             key = (
@@ -71,12 +80,14 @@ class LibraryReport:
             groups[key].append(skill.skill_name)
 
         duplicates: list[dict] = []
+        hidden_fixture_only_clusters = 0
         for (rule_name, family_signature), names in groups.items():
             if len(names) < 2:
                 continue
             group_skills = [skill for skill in skills if skill.skill_name in names]
             group_tiers = {classify_skill_name(skill.skill_name) for skill in group_skills}
             if group_tiers == {"fixture"}:
+                hidden_fixture_only_clusters += 1
                 continue
             canonical_summary = max(
                 (skill.summary.strip().lower() for skill in group_skills),
@@ -104,12 +115,20 @@ class LibraryReport:
             )
 
         duplicates.sort(key=lambda item: item["count"], reverse=True)
-        return duplicates
+        return duplicates, hidden_fixture_only_clusters
 
     def _count_files(self, directory: Path) -> int:
         if not directory.exists():
             return 0
         return len(list(directory.glob("*.py")))
+
+    def _library_tier_counts(self, skills: list[SkillMetadata]) -> dict[str, int]:
+        counts = Counter(classify_skill_name(skill.skill_name) for skill in skills)
+        return {
+            "stable": counts.get("stable", 0),
+            "experimental": counts.get("experimental", 0),
+            "fixture": counts.get("fixture", 0),
+        }
 
     def _governance_rank(self, skill: SkillMetadata) -> tuple[int, int, int, int]:
         library_tier = {

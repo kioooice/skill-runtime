@@ -698,7 +698,14 @@ class RuntimeGovernanceTestsMixin:
         self.assertIn("status_counts", report)
         self.assertIn("duplicate_candidates", report)
         self.assertIn("recommended_actions", report)
+        self.assertIn("library_tier_counts", report)
+        self.assertIn("library_tier_summary", report)
         self.assertGreaterEqual(report["active_count"], 1)
+        self.assertGreaterEqual(report["library_tier_counts"]["stable"], 1)
+        self.assertEqual(
+            report["active_count"],
+            sum(report["library_tier_counts"].values()),
+        )
         duplicate_cluster = next(
             item for item in report["duplicate_candidates"] if "merge_text_files_generated" in item["skill_names"]
         )
@@ -777,11 +784,18 @@ class RuntimeGovernanceTestsMixin:
                 for cluster in report["duplicate_candidates"]
             )
         )
+        self.assertGreaterEqual(
+            report["library_tier_summary"]["fixture_only_duplicate_clusters_hidden"],
+            1,
+        )
+        self.assertGreaterEqual(report["library_tier_counts"]["fixture"], 2)
 
     def test_mcp_governance_report_returns_host_ready_recommended_actions(self) -> None:
         payload = self._call_mcp_tool("governance_report", {})
         self.assertIn("recommended_actions", payload["data"])
         self.assertIn("available_host_operations", payload["data"])
+        self.assertIn("library_tier_counts", payload["data"])
+        self.assertIn("library_tier_summary", payload["data"])
         self.assertGreaterEqual(len(payload["data"]["available_host_operations"]), 2)
         archive_action = self._find_action(payload["data"]["recommended_actions"], "archive_duplicate_candidates")
         self._assert_host_operation_basics(
