@@ -213,6 +213,7 @@ def check_mcp_architecture(root: Path) -> list[str]:
         },
         library_report_path: {
             "skill_runtime.api.models",
+            "skill_runtime.library_tiers",
             "skill_runtime.mcp.host_operations",
             "skill_runtime.retrieval.skill_index",
         },
@@ -223,6 +224,7 @@ def check_mcp_architecture(root: Path) -> list[str]:
         },
         skill_index_path: {
             "skill_runtime.api.models",
+            "skill_runtime.library_tiers",
             "skill_runtime.mcp.host_operations",
         },
         trajectory_capture_path: {"skill_runtime.api.models"},

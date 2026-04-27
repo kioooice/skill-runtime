@@ -105,6 +105,7 @@ class RuntimeArchitectureTestsMixin:
         self.assertEqual(
             {
                 "skill_runtime.api.models",
+                "skill_runtime.library_tiers",
                 "skill_runtime.mcp.host_operations",
                 "skill_runtime.retrieval.skill_index",
             },
@@ -131,7 +132,11 @@ class RuntimeArchitectureTestsMixin:
             },
         )
         self.assertEqual(
-            {"skill_runtime.api.models", "skill_runtime.mcp.host_operations"},
+            {
+                "skill_runtime.api.models",
+                "skill_runtime.library_tiers",
+                "skill_runtime.mcp.host_operations",
+            },
             {
                 name
                 for name in self._module_imports(skill_index_path)

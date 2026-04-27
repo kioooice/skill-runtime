@@ -3,6 +3,7 @@ from pathlib import Path
 import re
 
 from skill_runtime.api.models import SkillMetadata
+from skill_runtime.library_tiers import classify_skill_name
 from skill_runtime.mcp.host_operations import (
     archive_duplicate_candidates_action,
     governance_report_payload,
@@ -12,18 +13,6 @@ from skill_runtime.retrieval.skill_index import SkillIndex
 
 
 class LibraryReport:
-    NON_PRODUCTION_PATTERNS = (
-        "test",
-        "demo",
-        "readme",
-        "bridge",
-        "provenance",
-        "cli_",
-        "mcp_",
-        "service_",
-        "codex_",
-        "generated",
-    )
     FAMILY_STOPWORDS = {
         "all",
         "and",
@@ -86,6 +75,9 @@ class LibraryReport:
             if len(names) < 2:
                 continue
             group_skills = [skill for skill in skills if skill.skill_name in names]
+            group_tiers = {classify_skill_name(skill.skill_name) for skill in group_skills}
+            if group_tiers == {"fixture"}:
+                continue
             canonical_summary = max(
                 (skill.summary.strip().lower() for skill in group_skills),
                 key=len,
@@ -120,7 +112,11 @@ class LibraryReport:
         return len(list(directory.glob("*.py")))
 
     def _governance_rank(self, skill: SkillMetadata) -> tuple[int, int, int, int]:
-        library_tier = 0 if self._is_non_production(skill.skill_name) else 1
+        library_tier = {
+            "fixture": 0,
+            "experimental": 1,
+            "stable": 2,
+        }[classify_skill_name(skill.skill_name)]
         audit_score = skill.audit_score or 0
         return (
             library_tier,
@@ -128,10 +124,6 @@ class LibraryReport:
             audit_score,
             -len(skill.skill_name),
         )
-
-    def _is_non_production(self, skill_name: str) -> bool:
-        lowered = skill_name.lower()
-        return any(pattern in lowered for pattern in self.NON_PRODUCTION_PATTERNS)
 
     def _family_signature(self, skill: SkillMetadata) -> tuple[str, ...]:
         raw_tokens = self._tokenize(" ".join([skill.summary, " ".join(skill.tags)]))

@@ -746,6 +746,38 @@ class RuntimeGovernanceTestsMixin:
         self.assertTrue(archive_action["host_operation"]["preview"]["arguments"]["dry_run"])
         self._assert_operation_role(archive_action["host_operation"]["preview"], "preview")
 
+    def test_governance_report_suppresses_fixture_only_duplicate_clusters(self) -> None:
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        fixture_payload = {
+            "summary": "Merge fixture txt files into one markdown file.",
+            "docstring": "fixture",
+            "input_schema": {"input_dir": "str", "output_path": "str"},
+            "output_schema": {"status": "str"},
+            "source_trajectory_ids": [],
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "last_used_at": None,
+            "usage_count": 0,
+            "status": "active",
+            "audit_score": 90,
+            "rule_name": "text_merge",
+            "rule_priority": 70,
+            "rule_reason": "fixture duplicate",
+            "tags": ["fixture", "merge", "markdown", "txt"],
+        }
+        self._write_active_skill_fixture("fixture_merge_alpha_test", fixture_payload, root=sandbox_root)
+        self._write_active_skill_fixture("fixture_merge_beta_test", fixture_payload, root=sandbox_root)
+        sandbox_index.rebuild_from_directory(sandbox_root / "skill_store" / "active")
+
+        report = sandbox_service.governance_report()
+
+        self.assertFalse(
+            any(
+                "fixture_merge_alpha_test" in cluster["skill_names"]
+                or "fixture_merge_beta_test" in cluster["skill_names"]
+                for cluster in report["duplicate_candidates"]
+            )
+        )
+
     def test_mcp_governance_report_returns_host_ready_recommended_actions(self) -> None:
         payload = self._call_mcp_tool("governance_report", {})
         self.assertIn("recommended_actions", payload["data"])

@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from skill_runtime.api.models import SkillMetadata
+from skill_runtime.library_tiers import classify_skill_name
 from skill_runtime.mcp.host_operations import search_result_payload
 
 
@@ -13,19 +14,6 @@ class SkillIndexError(ValueError):
 
 
 class SkillIndex:
-    NON_PRODUCTION_PATTERNS = (
-        "test",
-        "demo",
-        "readme",
-        "bridge",
-        "provenance",
-        "cli_",
-        "mcp_",
-        "service_",
-        "codex_",
-        "generated",
-    )
-
     def __init__(self, index_path: str | Path) -> None:
         self.index_path = Path(index_path)
         self.index_path.parent.mkdir(parents=True, exist_ok=True)
@@ -177,6 +165,9 @@ class SkillIndex:
         if library_tier == "experimental":
             base_score -= 0.35
             score_breakdown["library_penalty"] = -0.35
+        elif library_tier == "fixture":
+            base_score -= 0.6
+            score_breakdown["library_penalty"] = -0.6
         return max(base_score, 0.0), matched_terms, library_tier, score_breakdown
 
     def _why_matched(self, matched_terms: list[str], score_breakdown: dict[str, float]) -> str:
@@ -198,10 +189,7 @@ class SkillIndex:
         }
 
     def _library_tier(self, skill: SkillMetadata) -> str:
-        name = skill.skill_name.lower()
-        if any(pattern in name for pattern in self.NON_PRODUCTION_PATTERNS):
-            return "experimental"
-        return "stable"
+        return classify_skill_name(skill.skill_name)
 
     def _from_dict(self, payload: dict) -> SkillMetadata:
         required_fields = {

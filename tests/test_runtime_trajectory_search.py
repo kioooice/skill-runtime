@@ -366,6 +366,16 @@ class RuntimeTrajectorySearchTestsMixin:
         self.assertGreater(stable["score"], experimental["score"])
         self.assertLess(experimental["score_breakdown"]["library_penalty"], 0)
 
+    def test_search_deprioritizes_fixture_skills_below_generated_skills(self) -> None:
+        results = self.index.search("merge txt files into markdown", top_k=10)
+        fixture = next(result for result in results if result["skill_name"] == "cli_distill_and_promote_test")
+        experimental = next(result for result in results if result["skill_name"] == "merge_text_files_generated")
+
+        self.assertEqual("fixture", fixture["library_tier"])
+        self.assertEqual("experimental", experimental["library_tier"])
+        self.assertLess(fixture["score"], experimental["score"])
+        self.assertLess(fixture["score_breakdown"]["library_penalty"], experimental["score_breakdown"]["library_penalty"])
+
     def test_mcp_capture_trajectory_tool_returns_structured_payload(self) -> None:
         observed_path = self._write_demo_json(
             "observed_mcp_capture.json",
