@@ -157,6 +157,24 @@ def validate_mcp_tool_result(payload: dict[str, Any] | None, *, label: str) -> l
     return violations
 
 
+def validate_operation_log_entry(entry: dict[str, Any] | None, *, label: str) -> list[str]:
+    if not isinstance(entry, dict):
+        return [f"{label} must be a dict operation log entry"]
+
+    violations: list[str] = []
+    for field_name in ("operation_id", "tool_name", "observation", "status"):
+        if not isinstance(entry.get(field_name), str) or not entry[field_name].strip():
+            violations.append(f"{label} missing required string field: {field_name}")
+    if not isinstance(entry.get("tool_input"), dict):
+        violations.append(f"{label}.tool_input must be a dict")
+    if not isinstance(entry.get("mutation"), bool):
+        violations.append(f"{label}.mutation must be a bool")
+    rollback_hint = entry.get("rollback_hint")
+    if rollback_hint is not None and not isinstance(rollback_hint, dict):
+        violations.append(f"{label}.rollback_hint must be a dict when present")
+    return violations
+
+
 def validate_wrapped_service_payload(
     wrapped_payload: dict[str, Any] | None,
     service_payload: dict[str, Any] | None,
@@ -225,6 +243,20 @@ def validate_execute_skill_equivalence(
             continue
         if not Path(observed_task_record).exists():
             violations.append(f"{label}.{payload_label} observed_task_record must exist on disk")
+        operation_log = payload.get("operation_log")
+        if not isinstance(operation_log, list) or not operation_log:
+            violations.append(f"{label}.{payload_label} must expose non-empty operation_log")
+        else:
+            for index, entry in enumerate(operation_log):
+                violations.extend(
+                    validate_operation_log_entry(
+                        entry,
+                        label=f"{label}.{payload_label}.operation_log[{index}]",
+                    )
+                )
+        planned_changes = payload.get("planned_changes")
+        if not isinstance(planned_changes, list):
+            violations.append(f"{label}.{payload_label} must expose planned_changes as a list")
 
         recommended_operation = payload.get("recommended_host_operation")
         if isinstance(recommended_operation, dict):

@@ -170,9 +170,19 @@ class RuntimeExecutionFlowTestsMixin:
         self.assertEqual("completed", result["result"]["status"])
         self.assertEqual("dry-run", result["result"]["mode"])
         self.assertFalse((sandbox_root / "demo" / "output" / "planned_only.txt").exists())
+        self.assertEqual(result["operation_log"], result["observed_task"]["operation_log"])
         self.assertEqual(1, len(result["planned_changes"]))
         self.assertEqual("write_text", result["planned_changes"][0]["tool_name"])
         self.assertEqual("planned", result["planned_changes"][0]["status"])
+        self.assertEqual("op_0001", result["planned_changes"][0]["operation_id"])
+        self.assertTrue(result["planned_changes"][0]["mutation"])
+        self.assertEqual(
+            {
+                "strategy": "delete_created_file",
+                "target_path": "demo/output/planned_only.txt",
+            },
+            result["planned_changes"][0]["rollback_hint"],
+        )
         self.assertIn("Would write text", result["planned_changes"][0]["observation"])
 
     def test_scope_policy_round_trips_through_skill_index(self) -> None:
@@ -315,6 +325,7 @@ class RuntimeExecutionFlowTestsMixin:
         self.assertEqual("ok", payload["status"])
         self.assertTrue(payload["data"]["dry_run"])
         self.assertFalse(output_path.exists())
+        self.assertEqual(payload["data"]["operation_log"], payload["data"]["planned_changes"])
         self.assertEqual("planned", payload["data"]["planned_changes"][0]["status"])
 
     def test_service_execute_returns_observed_task_record(self) -> None:
@@ -332,11 +343,26 @@ class RuntimeExecutionFlowTestsMixin:
         self.assertTrue(observed_path.exists())
         observed_payload = self._read_json_file(observed_path)
         self.assertEqual(observed_payload, result["observed_task"])
+        self.assertEqual(result["operation_log"], result["observed_task"]["operation_log"])
         self._assert_observed_skill_record(
             observed_payload,
             skill_name="merge_text_files",
             status="completed",
             contains_tool="write_text",
+        )
+        self.assertEqual("op_0001", result["operation_log"][0]["operation_id"])
+        self.assertFalse(result["operation_log"][0]["mutation"])
+        write_record = next(
+            record for record in result["operation_log"] if record["tool_name"] == "write_text"
+        )
+        self.assertEqual("success", write_record["status"])
+        self.assertTrue(write_record["mutation"])
+        self.assertEqual(
+            {
+                "strategy": "delete_created_file",
+                "target_path": "demo/output/service_execute_observed.md",
+            },
+            write_record["rollback_hint"],
         )
 
     def test_service_execute_returns_follow_up_host_operation(self) -> None:

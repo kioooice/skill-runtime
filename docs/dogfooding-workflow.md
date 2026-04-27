@@ -32,6 +32,11 @@ python scripts/skill_cli.py execute --skill <skill_name> --args-file <json file>
 
 Successful `execute` calls now emit a lightweight observed task record automatically. This removes the need to reconstruct the task manually afterward.
 
+The same response now also exposes:
+
+- `operation_log` for the full ordered tool trace
+- `planned_changes` for dry-run-only mutation previews
+
 4. If the task was new, improved, or worth reusing, send that record back into the library
 
 ```bash

@@ -113,20 +113,22 @@ class RuntimeService:
                 {"reason": str(exc)},
             ) from exc
 
+        operation_log = tools.export_records()
         observed_record, observed_payload = self._save_execution_observed_record(
             metadata,
             args,
             result,
-            tools.export_records(),
+            operation_log,
         )
         return with_recommendation(
             {
                 "skill_name": skill_name,
                 "dry_run": dry_run,
                 "result": result,
+                "operation_log": operation_log,
                 "planned_changes": [
                     dict(record)
-                    for record in tools.export_records()
+                    for record in operation_log
                     if record.get("status") == "planned"
                 ],
                 "observed_task_record": str(observed_record.resolve()),
@@ -647,6 +649,7 @@ class RuntimeService:
             "skill_summary": metadata.summary,
             "skill_args": args,
             "actions": steps,
+            "operation_log": steps,
             "result": {
                 "status": result.get("status", "completed"),
                 "outputs": artifacts,

@@ -21,6 +21,7 @@ class RuntimeTools:
         self._records: list[dict[str, Any]] = []
         self._scope_policy = self._normalize_scope_policy(scope_policy)
         self._dry_run = dry_run
+        self._next_operation_number = 1
 
     def apply_scope_policy(self, scope_policy: dict[str, Any] | None) -> None:
         self._scope_policy = self._normalize_scope_policy(scope_policy)
@@ -35,6 +36,7 @@ class RuntimeTools:
             "read_text",
             {"path": str(path)},
             f"Read text from {self._display_path(target)}.",
+            mutation=False,
         )
         return content
 
@@ -46,14 +48,18 @@ class RuntimeTools:
         newline: str | None = None,
     ) -> str:
         target = self._resolve_path(path, enforce_extension=True)
+        target_display = self._display_path(target)
+        rollback_hint = self._build_write_rollback_hint(target)
         self._validate_mutation_allowed("write_text")
         if self._dry_run:
             self._record(
                 "write_text",
                 {"path": str(path), "newline": newline},
-                f"Would write text to {self._display_path(target)}.",
-                artifacts=[self._display_path(target)],
+                f"Would write text to {target_display}.",
+                artifacts=[target_display],
                 status="planned",
+                mutation=True,
+                rollback_hint=rollback_hint,
             )
             return str(target)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -61,8 +67,10 @@ class RuntimeTools:
         self._record(
             "write_text",
             {"path": str(path), "newline": newline},
-            f"Wrote text to {self._display_path(target)}.",
-            artifacts=[self._display_path(target)],
+            f"Wrote text to {target_display}.",
+            artifacts=[target_display],
+            mutation=True,
+            rollback_hint=rollback_hint,
         )
         return str(target)
 
@@ -73,6 +81,7 @@ class RuntimeTools:
             "read_json",
             {"path": str(path)},
             f"Read JSON from {self._display_path(target)}.",
+            mutation=False,
         )
         return payload
 
@@ -86,6 +95,8 @@ class RuntimeTools:
         sort_keys: bool = False,
     ) -> str:
         target = self._resolve_path(path, enforce_extension=True)
+        target_display = self._display_path(target)
+        rollback_hint = self._build_write_rollback_hint(target)
         self._validate_mutation_allowed("write_json")
         if self._dry_run:
             self._record(
@@ -96,9 +107,11 @@ class RuntimeTools:
                     "indent": indent,
                     "sort_keys": sort_keys,
                 },
-                f"Would write JSON to {self._display_path(target)}.",
-                artifacts=[self._display_path(target)],
+                f"Would write JSON to {target_display}.",
+                artifacts=[target_display],
                 status="planned",
+                mutation=True,
+                rollback_hint=rollback_hint,
             )
             return str(target)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -114,8 +127,10 @@ class RuntimeTools:
                 "indent": indent,
                 "sort_keys": sort_keys,
             },
-            f"Wrote JSON to {self._display_path(target)}.",
-            artifacts=[self._display_path(target)],
+            f"Wrote JSON to {target_display}.",
+            artifacts=[target_display],
+            mutation=True,
+            rollback_hint=rollback_hint,
         )
         return str(target)
 
@@ -126,6 +141,7 @@ class RuntimeTools:
                 "list_files",
                 {"path": str(path), "pattern": pattern},
                 f"No files found because {self._display_path(target)} does not exist.",
+                mutation=False,
             )
             return []
         files = [str(p) for p in sorted(target.glob(pattern)) if p.is_file()]
@@ -133,20 +149,26 @@ class RuntimeTools:
             "list_files",
             {"path": str(path), "pattern": pattern},
             f"Found {len(files)} matching files in {self._display_path(target)}.",
+            mutation=False,
         )
         return files
 
     def rename_path(self, source_path: str | Path, target_path: str | Path) -> str:
         source = self._resolve_path(source_path, enforce_extension=True)
         target = self._resolve_path(target_path, enforce_extension=True)
+        source_display = self._display_path(source)
+        target_display = self._display_path(target)
+        rollback_hint = self._build_rename_rollback_hint(source, target)
         self._validate_mutation_allowed("rename_path")
         if self._dry_run:
             self._record(
                 "rename_path",
                 {"source_path": str(source_path), "target_path": str(target_path)},
-                f"Would rename {self._display_path(source)} to {self._display_path(target)}.",
-                artifacts=[self._display_path(target)],
+                f"Would rename {source_display} to {target_display}.",
+                artifacts=[target_display],
                 status="planned",
+                mutation=True,
+                rollback_hint=rollback_hint,
             )
             return str(target)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -154,8 +176,10 @@ class RuntimeTools:
         self._record(
             "rename_path",
             {"source_path": str(source_path), "target_path": str(target_path)},
-            f"Renamed {self._display_path(source)} to {self._display_path(target)}.",
-            artifacts=[self._display_path(target)],
+            f"Renamed {source_display} to {target_display}.",
+            artifacts=[target_display],
+            mutation=True,
+            rollback_hint=rollback_hint,
         )
         return str(target)
 
@@ -165,14 +189,19 @@ class RuntimeTools:
     def copy_file(self, source_path: str | Path, target_path: str | Path) -> str:
         source = self._resolve_path(source_path, enforce_extension=True)
         target = self._resolve_path(target_path, enforce_extension=True)
+        source_display = self._display_path(source)
+        target_display = self._display_path(target)
+        rollback_hint = self._build_copy_rollback_hint(target)
         self._validate_mutation_allowed("copy_file")
         if self._dry_run:
             self._record(
                 "copy_file",
                 {"source_path": str(source_path), "target_path": str(target_path)},
-                f"Would copy {self._display_path(source)} to {self._display_path(target)}.",
-                artifacts=[self._display_path(target)],
+                f"Would copy {source_display} to {target_display}.",
+                artifacts=[target_display],
                 status="planned",
+                mutation=True,
+                rollback_hint=rollback_hint,
             )
             return str(target)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -180,19 +209,27 @@ class RuntimeTools:
         self._record(
             "copy_file",
             {"source_path": str(source_path), "target_path": str(target_path)},
-            f"Copied {self._display_path(source)} to {self._display_path(target)}.",
-            artifacts=[self._display_path(target)],
+            f"Copied {source_display} to {target_display}.",
+            artifacts=[target_display],
+            mutation=True,
+            rollback_hint=rollback_hint,
         )
         return str(target)
 
     def run_shell(self, command: list[str]) -> dict[str, Any]:
         self._validate_command(command)
+        rollback_hint = {
+            "strategy": "manual_only",
+            "reason": "shell side effects are not tracked for automatic rollback",
+        }
         if self._dry_run:
             self._record(
                 "run_shell",
                 {"command": command},
                 f"Would run shell command: {' '.join(command)}.",
                 status="planned",
+                mutation=True,
+                rollback_hint=rollback_hint,
             )
             return {
                 "returncode": 0,
@@ -206,6 +243,14 @@ class RuntimeTools:
             text=True,
             cwd=str(self.workspace),
             shell=False,
+        )
+        self._record(
+            "run_shell",
+            {"command": command},
+            f"Ran shell command: {' '.join(command)}.",
+            status="success" if result.returncode == 0 else "error",
+            mutation=True,
+            rollback_hint=rollback_hint,
         )
         return {
             "returncode": result.returncode,
@@ -259,16 +304,23 @@ class RuntimeTools:
         observation: str,
         artifacts: list[str] | None = None,
         status: str = "success",
+        mutation: bool = False,
+        rollback_hint: dict[str, Any] | None = None,
     ) -> None:
         entry: dict[str, Any] = {
+            "operation_id": f"op_{self._next_operation_number:04d}",
             "tool_name": tool_name,
             "tool_input": tool_input,
             "observation": observation,
             "status": status,
+            "mutation": mutation,
         }
         if artifacts:
             entry["artifacts"] = artifacts
+        if rollback_hint is not None:
+            entry["rollback_hint"] = rollback_hint
         self._records.append(entry)
+        self._next_operation_number += 1
 
     def _display_path(self, path: Path) -> str:
         try:
@@ -319,6 +371,48 @@ class RuntimeTools:
     def _normalize_root(self, root: str) -> str:
         normalized = str(Path(root)).replace("\\", "/").strip("/")
         return normalized
+
+    def _build_write_rollback_hint(self, target: Path) -> dict[str, Any]:
+        target_display = self._display_path(target)
+        if not target.exists():
+            return {
+                "strategy": "delete_created_file",
+                "target_path": target_display,
+            }
+        return {
+            "strategy": "manual_restore_required",
+            "target_path": target_display,
+            "reason": "previous file contents are not snapshotted",
+        }
+
+    def _build_copy_rollback_hint(self, target: Path) -> dict[str, Any]:
+        target_display = self._display_path(target)
+        if not target.exists():
+            return {
+                "strategy": "delete_copied_file",
+                "target_path": target_display,
+            }
+        return {
+            "strategy": "manual_restore_required",
+            "target_path": target_display,
+            "reason": "copy would overwrite an existing target",
+        }
+
+    def _build_rename_rollback_hint(self, source: Path, target: Path) -> dict[str, Any]:
+        target_display = self._display_path(target)
+        source_display = self._display_path(source)
+        if not target.exists():
+            return {
+                "strategy": "rename_back",
+                "from_path": target_display,
+                "to_path": source_display,
+            }
+        return {
+            "strategy": "manual_restore_required",
+            "from_path": target_display,
+            "to_path": source_display,
+            "reason": "rename would replace an existing target",
+        }
 
     def _validate_mutation_allowed(self, tool_name: str) -> None:
         if self._scope_policy.get("requires_dry_run") and not self._dry_run:

@@ -47,3 +47,8 @@ The session-level `governance-report` was actionable, but the duplicate list is 
 ## Minimal Follow-Up Direction
 
 For this stage, the highest-value next pass is not UI work. It is tightening reuse quality at distill time so the first promoted skill comes out with a cleaner input surface and less artifact-name leakage.
+
+## Follow-Up Status
+
+- `execute` now returns an `operation_log` baseline for applied and planned tool activity.
+- dry-run execution now exposes `planned_changes` plus per-operation rollback hints, which should make the next rollback-focused dogfood pass easier to inspect.
