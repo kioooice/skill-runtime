@@ -25,11 +25,18 @@ def augment_input_schema(trajectory: Trajectory, input_schema: dict[str, str]) -
     updated = dict(input_schema)
     updated.setdefault("old_text", "str")
     updated.setdefault("new_text", "str")
+    for step in trajectory.steps:
+        if step.tool_name.lower() == "write_text" and "newline" in step.tool_input:
+            updated.setdefault("newline", "str")
     return updated
 
 
 def build_code(skill_name: str, summary: str, docstring: str, trajectory: Trajectory) -> str:
     default_artifact = trajectory.artifacts[0] if trajectory.artifacts else "output.txt"
+    observed_newline = next(
+        (step.tool_input.get("newline") for step in trajectory.steps if step.tool_name.lower() == "write_text" and "newline" in step.tool_input),
+        None,
+    )
     return f'''def run(tools, **kwargs):
     """
 {indent_docstring(docstring)}
@@ -38,6 +45,7 @@ def build_code(skill_name: str, summary: str, docstring: str, trajectory: Trajec
     output_path = kwargs.get("output_path")
     old_text = kwargs.get("old_text")
     new_text = kwargs.get("new_text")
+    newline = kwargs.get("newline", {repr(observed_newline)})
 
     missing = [
         name
@@ -54,7 +62,7 @@ def build_code(skill_name: str, summary: str, docstring: str, trajectory: Trajec
 
     text = tools.read_text(input_path)
     transformed = text.replace(old_text, new_text)
-    tools.write_text(output_path, transformed)
+    tools.write_text(output_path, transformed, newline=newline)
 
     return {{
         "status": "completed",

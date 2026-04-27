@@ -24,13 +24,19 @@ class RuntimeTools:
         )
         return content
 
-    def write_text(self, path: str | Path, content: str) -> str:
+    def write_text(
+        self,
+        path: str | Path,
+        content: str,
+        *,
+        newline: str | None = None,
+    ) -> str:
         target = self._resolve_path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content, encoding="utf-8")
+        target.write_text(content, encoding="utf-8", newline=newline)
         self._record(
             "write_text",
-            {"path": str(path)},
+            {"path": str(path), "newline": newline},
             f"Wrote text to {self._display_path(target)}.",
             artifacts=[self._display_path(target)],
         )
@@ -46,13 +52,29 @@ class RuntimeTools:
         )
         return payload
 
-    def write_json(self, path: str | Path, payload: Any) -> str:
+    def write_json(
+        self,
+        path: str | Path,
+        payload: Any,
+        *,
+        ensure_ascii: bool = False,
+        indent: int = 2,
+        sort_keys: bool = False,
+    ) -> str:
         target = self._resolve_path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        target.write_text(
+            json.dumps(payload, ensure_ascii=ensure_ascii, indent=indent, sort_keys=sort_keys),
+            encoding="utf-8",
+        )
         self._record(
             "write_json",
-            {"path": str(path)},
+            {
+                "path": str(path),
+                "ensure_ascii": ensure_ascii,
+                "indent": indent,
+                "sort_keys": sort_keys,
+            },
             f"Wrote JSON to {self._display_path(target)}.",
             artifacts=[self._display_path(target)],
         )
@@ -121,6 +143,9 @@ class RuntimeTools:
 
     def export_records(self) -> list[dict[str, Any]]:
         return [dict(record) for record in self._records]
+
+    def resolve_path(self, path: str | Path) -> str:
+        return str(self._resolve_path(path))
 
     def _resolve_path(self, path: str | Path) -> Path:
         target = Path(path)

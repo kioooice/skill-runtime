@@ -47,6 +47,15 @@ def validate_host_operation(operation: dict[str, Any] | None, *, label: str) -> 
     source_ref = operation.get("source_ref")
     if source_ref is not None and not isinstance(source_ref, str):
         violations.append(f"{label} has invalid source_ref")
+    operation_group = operation.get("operation_group")
+    if operation_group is not None and not isinstance(operation_group, str):
+        violations.append(f"{label} has invalid operation_group")
+    delivery_mode = operation.get("delivery_mode")
+    if delivery_mode is not None and not isinstance(delivery_mode, str):
+        violations.append(f"{label} has invalid delivery_mode")
+    variant_role = operation.get("variant_role")
+    if variant_role is not None and variant_role not in {"preferred", "alternate"}:
+        violations.append(f"{label} has invalid variant_role")
 
     preview = operation.get("preview")
     if preview is not None:
@@ -416,6 +425,15 @@ def check_runtime_contracts() -> list[str]:
             governance_mcp_payload,
             governance_service_payload,
             label="governance_report",
+        )
+    )
+    distill_coverage_service_payload = service.distill_coverage_report()
+    _, distill_coverage_mcp_payload = asyncio.run(server.call_tool("distill_coverage_report", {}))
+    violations.extend(
+        validate_wrapped_service_payload(
+            distill_coverage_mcp_payload,
+            distill_coverage_service_payload,
+            label="distill_coverage_report",
         )
     )
 

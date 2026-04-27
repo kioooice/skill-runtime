@@ -8,6 +8,7 @@ from skill_runtime.api.models import SkillMetadata, Trajectory
 from skill_runtime.distill.fallback.service import FallbackService
 from skill_runtime.distill.rules import RULES
 from skill_runtime.distill.rules.common import compact_step, escape, indent_docstring
+from skill_runtime.distill.rules.common import infer_filename_prefix, infer_filename_suffix
 from skill_runtime.distill.rules.registry import explain_match, get_rule_name, get_rule_priority
 
 
@@ -108,6 +109,9 @@ class SkillGenerator:
             for key in self._normalized_input_keys(step.tool_name.lower(), step.tool_input, tool_names):
                 if self._looks_generalizable(key):
                     keys.add(key)
+        if "list_files" in tool_names and self._infer_directory_output_dir(trajectory):
+            keys.discard("output_path")
+            keys.add("output_dir")
         inferred = {key: "str" for key in sorted(keys)}
         return inferred or {"task_input": "str"}
 
@@ -130,13 +134,37 @@ class SkillGenerator:
             if canonical_key and canonical_key not in normalized:
                 normalized.append(canonical_key)
 
-        if "path" not in tool_input:
-            inferred_prefix = self._infer_prefix_from_paths(
-                self._path_alias_value(tool_input, "source"),
-                self._path_alias_value(tool_input, "target"),
-            )
-            if inferred_prefix and "prefix" not in normalized:
+        rename_tools = {"rename_path", "rename_file", "move_file", "move_path"}
+        if "path" not in tool_input and tool_name in rename_tools:
+            source_path = self._path_alias_value(tool_input, "source")
+            target_path = self._path_alias_value(tool_input, "target")
+            inferred_filename_case = self._infer_filename_case_from_paths(source_path, target_path)
+            if inferred_filename_case and "filename_case" not in normalized:
+                normalized.append("filename_case")
+            inferred_stem_replace = self._infer_stem_replace_from_paths(source_path, target_path)
+            if inferred_stem_replace:
+                if "old_text" not in normalized:
+                    normalized.append("old_text")
+                if "new_text" not in normalized:
+                    normalized.append("new_text")
+            inferred_suffix = self._infer_suffix_from_paths(source_path, target_path)
+            if inferred_suffix and "suffix" not in normalized:
+                normalized.append("suffix")
+            inferred_output_extension = self._infer_output_extension_from_paths(source_path, target_path)
+            if inferred_output_extension and "output_extension" not in normalized:
+                normalized.append("output_extension")
+            inferred_prefix = self._infer_prefix_from_paths(source_path, target_path)
+            if (
+                inferred_prefix
+                and not inferred_filename_case
+                and not inferred_stem_replace
+                and not inferred_suffix
+                and not inferred_output_extension
+                and "prefix" not in normalized
+            ):
                 normalized.append("prefix")
+            return normalized
+        if "path" not in tool_input:
             return normalized
 
         if tool_name == "list_files":
@@ -154,7 +182,7 @@ class SkillGenerator:
         key: str,
         tool_names: set[str],
     ) -> str | None:
-        if key in {"input_dir", "output_dir", "input_path", "output_path", "prefix", "delimiter", "pattern"}:
+        if key in {"input_dir", "output_dir", "input_path", "output_path", "prefix", "delimiter", "pattern", "output_extension", "filename_case"}:
             return None
 
         if key == "input":
@@ -190,6 +218,10 @@ class SkillGenerator:
             return "pattern"
         if key in {"name_prefix", "prefix_value", "rename_prefix", "prefix_text"}:
             return "prefix"
+        if key in {"extension", "new_extension", "target_extension", "destination_extension"}:
+            return "output_extension"
+        if key in {"case", "name_case"}:
+            return "filename_case"
         if key in {"input_text", "text_file", "input_text_file", "source_text_file"}:
             return "input_path"
         if key in {"output_text", "output_text_file", "target_text_file", "destination_text_file"}:
@@ -208,8 +240,10 @@ class SkillGenerator:
             return "output_dir"
         if key in {"source_dir", "input_folder", "source_folder"}:
             return "input_dir"
-        if key in {"target_dir", "output_folder", "destination_dir", "destination"}:
+        if key in {"target_dir", "output_folder", "destination_dir"}:
             return "output_dir"
+        if key == "destination":
+            return "output_dir" if "list_files" in tool_names else "output_path"
         if key in {"input_file", "source_file"}:
             return "input_path"
         if key in {"output_file", "destination_file", "target_file"}:
@@ -272,6 +306,12 @@ class SkillGenerator:
             "prefix_value",
             "rename_prefix",
             "prefix_text",
+            "case",
+            "name_case",
+            "extension",
+            "new_extension",
+            "target_extension",
+            "destination_extension",
             "input_text",
             "output_text",
             "text_file",
@@ -315,6 +355,7 @@ class SkillGenerator:
             "output_folder",
             "source_folder",
             "destination_dir",
+            "destination",
             "input_file",
             "output_file",
             "source_file",
@@ -337,26 +378,193 @@ class SkillGenerator:
 
         source = Path(source_path)
         target = Path(target_path)
-        if source.parent != target.parent:
+        if source.parent != target.parent or source.suffix != target.suffix:
             return None
 
-        source_name = source.name
-        target_name = target.name
-        if target_name == source_name or not target_name.endswith(source_name):
+        return infer_filename_prefix(source_path, target_path)
+
+    def _infer_suffix_from_paths(self, source_path: str | None, target_path: str | None) -> str | None:
+        if not source_path or not target_path:
             return None
 
-        prefix = target_name[: -len(source_name)]
-        return prefix or None
+        source = Path(source_path)
+        target = Path(target_path)
+        if source.parent != target.parent or source.suffix != target.suffix:
+            return None
+
+        return infer_filename_suffix(source_path, target_path)
+
+    def _infer_output_extension_from_paths(self, source_path: str | None, target_path: str | None) -> str | None:
+        if not source_path or not target_path:
+            return None
+
+        source = Path(source_path)
+        target = Path(target_path)
+        if source.parent != target.parent or source.stem != target.stem:
+            return None
+        if source.suffix == target.suffix:
+            return None
+
+        return target.suffix or None
+
+    def _infer_filename_case_from_paths(self, source_path: str | None, target_path: str | None) -> str | None:
+        if not source_path or not target_path:
+            return None
+
+        source = Path(source_path)
+        target = Path(target_path)
+        if source.parent != target.parent or source.name == target.name:
+            return None
+        if target.name == source.name.lower():
+            return "lower"
+        if target.name == source.name.upper():
+            return "upper"
+
+        return None
+
+    def _infer_stem_replace_from_paths(
+        self,
+        source_path: str | None,
+        target_path: str | None,
+    ) -> tuple[str, str] | None:
+        if not source_path or not target_path:
+            return None
+
+        source = Path(source_path)
+        target = Path(target_path)
+        if source.parent != target.parent or source.suffix != target.suffix or source.stem == target.stem:
+            return None
+
+        source_stem = source.stem
+        target_stem = target.stem
+
+        prefix_len = 0
+        while (
+            prefix_len < len(source_stem)
+            and prefix_len < len(target_stem)
+            and source_stem[prefix_len] == target_stem[prefix_len]
+        ):
+            prefix_len += 1
+
+        suffix_len = 0
+        max_suffix = min(len(source_stem), len(target_stem)) - prefix_len
+        while (
+            suffix_len < max_suffix
+            and source_stem[len(source_stem) - 1 - suffix_len] == target_stem[len(target_stem) - 1 - suffix_len]
+        ):
+            suffix_len += 1
+
+        source_mid_end = len(source_stem) - suffix_len if suffix_len else len(source_stem)
+        target_mid_end = len(target_stem) - suffix_len if suffix_len else len(target_stem)
+        old_text = source_stem[prefix_len:source_mid_end]
+        new_text = target_stem[prefix_len:target_mid_end]
+        if not old_text:
+            return None
+        if source_stem.replace(old_text, new_text, 1) != target_stem:
+            return None
+
+        return old_text, new_text
 
     def _path_alias_value(self, tool_input: dict[str, str], direction: str) -> str | None:
         aliases = {
-            "source": ("source_path", "source", "src_path", "src", "from_path", "from"),
-            "target": ("target_path", "destination_path", "target", "dst_path", "dst", "to_path", "to"),
+            "source": ("source_path", "source", "src_path", "src", "from_path", "from", "input"),
+            "target": (
+                "target_path",
+                "destination_path",
+                "target",
+                "destination",
+                "dst_path",
+                "dst",
+                "to_path",
+                "to",
+                "output",
+            ),
         }
         for key in aliases[direction]:
             value = tool_input.get(key)
             if value:
                 return value
+        return None
+
+    def _infer_directory_output_dir(self, trajectory: Trajectory) -> str | None:
+        input_dir = self._infer_directory_input_dir(trajectory)
+        candidate_dirs: set[str] = set()
+        for index, step in enumerate(trajectory.steps):
+            output_path = self._step_output_path(step.tool_name.lower(), step.tool_input)
+            if not output_path:
+                continue
+
+            source_path = self._nearest_read_path(trajectory.steps, index)
+            if not source_path:
+                continue
+
+            if (
+                Path(source_path).stem != Path(output_path).stem
+                and not infer_filename_prefix(source_path, output_path)
+                and not infer_filename_suffix(source_path, output_path)
+            ):
+                continue
+
+            candidate_dirs.add(self._infer_common_output_root(source_path, output_path, input_dir))
+
+        if len(candidate_dirs) == 1:
+            return next(iter(candidate_dirs))
+        return None
+
+    def _infer_directory_input_dir(self, trajectory: Trajectory) -> str | None:
+        candidates: set[str] = set()
+        for step in trajectory.steps:
+            if step.tool_name.lower() != "list_files":
+                continue
+            path = step.tool_input.get("path") or self._path_alias_value(step.tool_input, "source")
+            if path:
+                candidates.add(str(Path(path)).replace("\\", "/"))
+
+        if len(candidates) == 1:
+            return next(iter(candidates))
+        return None
+
+    def _infer_common_output_root(self, source_path: str, output_path: str, input_dir: str | None) -> str:
+        output_parent = Path(output_path).parent
+        if not input_dir:
+            return str(output_parent).replace("\\", "/")
+
+        try:
+            relative_parent = Path(source_path).parent.relative_to(Path(input_dir))
+        except ValueError:
+            return str(output_parent).replace("\\", "/")
+
+        if not relative_parent.parts:
+            return str(output_parent).replace("\\", "/")
+        if output_parent.parts[-len(relative_parent.parts) :] != relative_parent.parts:
+            return str(output_parent).replace("\\", "/")
+        return str(output_parent.parents[len(relative_parent.parts) - 1]).replace("\\", "/")
+
+    def _nearest_read_path(self, steps, before_index: int) -> str | None:
+        for step in reversed(steps[:before_index]):
+            tool_name = step.tool_name.lower()
+            if not tool_name.startswith("read_"):
+                continue
+
+            tool_input = step.tool_input
+            path = tool_input.get("path")
+            if path:
+                return path
+
+            aliased = self._path_alias_value(tool_input, "source")
+            if aliased:
+                return aliased
+        return None
+
+    def _step_output_path(self, tool_name: str, tool_input: dict[str, str]) -> str | None:
+        if tool_name.startswith("write_"):
+            path = tool_input.get("path")
+            if path:
+                return path
+
+        aliased = self._path_alias_value(tool_input, "target")
+        if aliased:
+            return aliased
         return None
 
     def _augment_input_schema_for_rules(

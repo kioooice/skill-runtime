@@ -85,11 +85,35 @@ class ProvenanceBackfill:
                 85,
                 "Backfilled directory_move because the skill source moves files from an input directory to an output directory.",
             )
-        if "tools.rename_path(" in source and "prefix" not in source:
+        if "tools.rename_path(" in source and "suffix" in source and ".with_suffix(" not in source:
             return (
-                "single_file_move",
-                65,
-                "Backfilled single_file_move because the skill source renames or moves one file from an input path to an output path.",
+                "batch_rename_suffix",
+                79,
+                "Backfilled batch_rename_suffix because the skill source renames files using a suffix.",
+            )
+        if "tools.rename_path(" in source and ".with_suffix(" in source:
+            return (
+                "batch_rename_extension",
+                78,
+                "Backfilled batch_rename_extension because the skill source renames files by changing their extension.",
+            )
+        if "tools.rename_path(" in source and ".name.lower()" in source:
+            return (
+                "batch_rename_case",
+                76,
+                "Backfilled batch_rename_case because the skill source renames files by normalizing filenames to lowercase.",
+            )
+        if "tools.rename_path(" in source and ".name.upper()" in source:
+            return (
+                "batch_rename_case",
+                76,
+                "Backfilled batch_rename_case because the skill source renames files by normalizing filenames to uppercase.",
+            )
+        if "tools.rename_path(" in source and "source.name.replace(" in source:
+            return (
+                "batch_rename_replace",
+                77,
+                "Backfilled batch_rename_replace because the skill source renames files by replacing part of each filename.",
             )
         if "tools.rename_path(" in source and "prefix" in source:
             return (
@@ -97,19 +121,43 @@ class ProvenanceBackfill:
                 80,
                 "Backfilled batch_rename because the skill source renames files using a prefix.",
             )
+        if "tools.rename_path(" in source and "tools.list_files(" not in source:
+            return (
+                "single_file_move",
+                65,
+                "Backfilled single_file_move because the skill source renames or moves one file from an input path to an output path.",
+            )
         if "csv.DictReader" in source and "tools.write_json(" in source:
+            if "tools.list_files(" in source:
+                return (
+                    "directory_csv_to_json",
+                    74,
+                    "Backfilled directory_csv_to_json because the skill source lists files, parses CSV text, and writes JSON files into an output directory.",
+                )
             return (
                 "csv_to_json",
                 75,
                 "Backfilled csv_to_json because the skill source parses CSV rows and writes JSON output.",
             )
         if "csv.DictWriter" in source and "tools.read_json(" in source:
+            if "tools.list_files(" in source:
+                return (
+                    "directory_json_to_csv",
+                    74,
+                    "Backfilled directory_json_to_csv because the skill source lists files, reads JSON rows, and writes CSV files into an output directory.",
+                )
             return (
                 "json_to_csv",
                 75,
                 "Backfilled json_to_csv because the skill source reads JSON rows and writes CSV output.",
             )
         if "tools.read_json(" in source and "tools.write_json(" in source:
+            if "tools.list_files(" in source:
+                return (
+                    "directory_json_transform",
+                    60,
+                    "Backfilled directory_json_transform because the skill source lists files, reads JSON files, and writes JSON files into an output directory.",
+                )
             return (
                 "single_json_transform",
                 30,
@@ -128,6 +176,12 @@ class ProvenanceBackfill:
                 "Backfilled text_replace because the skill source replaces one string with another in a text file.",
             )
         if "tools.list_files(" in source and "tools.read_text(" in source and "tools.write_text(" in source:
+            if "output_dir" in keys:
+                return (
+                    "directory_text_transform",
+                    50,
+                    "Backfilled directory_text_transform because the skill source iterates directory files, reads text, and writes transformed text files into an output directory.",
+                )
             return (
                 "text_merge",
                 70,

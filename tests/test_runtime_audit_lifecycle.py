@@ -127,6 +127,88 @@ class RuntimeAuditLifecycleTestsMixin:
         self.assertEqual("passed", report.status)
         self.assertEqual([], report.semantic_findings)
 
+    def test_semantic_audit_accepts_directory_move_source_target_path_aliases(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        trajectory = Trajectory(
+            task_id="directory_move_path_alias_demo",
+            session_id="session_directory_move_path_alias",
+            task_description="Move matching log files from one directory into another directory.",
+            steps=[
+                TrajectoryStep(
+                    step_id="1",
+                    tool_name="list_files",
+                    tool_input={"path": "demo/input", "pattern": "*.log"},
+                    observation="Listed matching log files.",
+                    status="success",
+                ),
+                TrajectoryStep(
+                    step_id="2",
+                    tool_name="rename_path",
+                    tool_input={
+                        "source_path": "demo/input/a.log",
+                        "target_path": "demo/output/a.log",
+                    },
+                    observation="Moved the matching file into the output directory.",
+                    status="success",
+                ),
+            ],
+            final_status="success",
+            artifacts=["demo/output/a.log"],
+            started_at="2026-04-26T12:00:00",
+            ended_at="2026-04-26T12:01:00",
+        )
+
+        generated = self._generate_and_activate_skill(
+            trajectory,
+            skill_name="directory_move_path_alias_audit_test",
+            root=sandbox_root,
+            index=sandbox_index,
+        )
+        report = SkillAuditor(sandbox_root / "audits").audit(generated["skill_file"], trajectory=trajectory)
+        self.assertEqual("passed", report.status)
+        self.assertEqual([], report.semantic_findings)
+
+    def test_semantic_audit_accepts_directory_copy_source_destination_path_aliases(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        trajectory = Trajectory(
+            task_id="directory_copy_path_alias_demo",
+            session_id="session_directory_copy_path_alias",
+            task_description="Copy matching text files from one directory into another directory.",
+            steps=[
+                TrajectoryStep(
+                    step_id="1",
+                    tool_name="list_files",
+                    tool_input={"path": "demo/input", "pattern": "*.txt"},
+                    observation="Listed matching text files.",
+                    status="success",
+                ),
+                TrajectoryStep(
+                    step_id="2",
+                    tool_name="copy_file",
+                    tool_input={
+                        "source_path": "demo/input/a.txt",
+                        "destination_path": "demo/output/a.txt",
+                    },
+                    observation="Copied the matching file into the output directory.",
+                    status="success",
+                ),
+            ],
+            final_status="success",
+            artifacts=["demo/output/a.txt"],
+            started_at="2026-04-26T12:02:00",
+            ended_at="2026-04-26T12:03:00",
+        )
+
+        generated = self._generate_and_activate_skill(
+            trajectory,
+            skill_name="directory_copy_path_alias_audit_test",
+            root=sandbox_root,
+            index=sandbox_index,
+        )
+        report = SkillAuditor(sandbox_root / "audits").audit(generated["skill_file"], trajectory=trajectory)
+        self.assertEqual("passed", report.status)
+        self.assertEqual([], report.semantic_findings)
+
     def test_service_promote_returns_execute_follow_up(self) -> None:
         sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
         distill_result = sandbox_service.distill(

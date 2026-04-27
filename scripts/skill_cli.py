@@ -130,8 +130,52 @@ def cmd_log_trajectory(args: argparse.Namespace) -> int:
 
 
 def cmd_capture_trajectory(args: argparse.Namespace) -> int:
+    if sum(
+        1
+        for value in (
+            args.file,
+            args.observed_task_json,
+            args.observed_task_json_file,
+        )
+        if value
+    ) != 1:
+        return error(
+            "provide exactly one of --file, --observed-task-json, or --observed-task-json-file",
+            "INVALID_CAPTURE_INPUT",
+            exit_code=EXIT_ARGUMENT_ERROR,
+        )
+
+    observed_task = None
+    if args.observed_task_json or args.observed_task_json_file:
+        try:
+            if args.observed_task_json_file:
+                observed_task = json.loads(Path(args.observed_task_json_file).read_text(encoding="utf-8"))
+            else:
+                observed_task = json.loads(args.observed_task_json)
+        except FileNotFoundError:
+            return error(
+                "observed task JSON file not found",
+                "OBSERVED_TASK_JSON_FILE_NOT_FOUND",
+                details={"path": args.observed_task_json_file},
+                exit_code=EXIT_NOT_FOUND,
+            )
+        except json.JSONDecodeError as exc:
+            return error(
+                "invalid JSON for observed task payload",
+                "INVALID_OBSERVED_TASK_JSON",
+                details={"reason": str(exc)},
+                exit_code=EXIT_ARGUMENT_ERROR,
+            )
+
     try:
-        return ok(service_for_args(args).capture_trajectory(args.file, task_id=args.task_id, session_id=args.session_id))
+        return ok(
+            service_for_args(args).capture_trajectory(
+                args.file,
+                observed_task=observed_task,
+                task_id=args.task_id,
+                session_id=args.session_id,
+            )
+        )
     except RuntimeServiceError as exc:
         exit_code = EXIT_NOT_FOUND if exc.code == "OBSERVED_TASK_NOT_FOUND" else EXIT_VALIDATION_ERROR
         return error(exc.message, exc.code, exc.details, exit_code=exit_code)
@@ -159,23 +203,68 @@ def cmd_governance_report(args: argparse.Namespace) -> int:
     return ok(service_for_args(args).governance_report())
 
 
+def cmd_distill_coverage_report(args: argparse.Namespace) -> int:
+    try:
+        return ok(
+            service_for_args(args).distill_coverage_report(
+                observed_task_scope=args.observed_task_scope,
+                max_family_items=args.max_family_items,
+                min_family_count=args.min_family_count,
+            )
+        )
+    except RuntimeServiceError as exc:
+        return error(exc.message, exc.code, exc.details, exit_code=EXIT_ARGUMENT_ERROR)
+
+
 def cmd_archive_duplicate_candidates(args: argparse.Namespace) -> int:
     return ok(service_for_args(args).archive_duplicate_candidates(skill_names=args.skill_name, dry_run=args.dry_run))
 
 
 def cmd_distill_and_promote(args: argparse.Namespace) -> int:
-    if bool(args.trajectory) == bool(args.observed_task):
+    if sum(
+        1
+        for value in (
+            args.trajectory,
+            args.observed_task,
+            args.observed_task_json,
+            args.observed_task_json_file,
+        )
+        if value
+    ) != 1:
         return error(
-            "provide exactly one of --trajectory or --observed-task",
+            "provide exactly one of --trajectory, --observed-task, --observed-task-json, or --observed-task-json-file",
             "INVALID_DISTILL_PROMOTE_INPUT",
             exit_code=EXIT_ARGUMENT_ERROR,
         )
+
+    observed_task = None
+    if args.observed_task_json or args.observed_task_json_file:
+        try:
+            if args.observed_task_json_file:
+                observed_task = json.loads(Path(args.observed_task_json_file).read_text(encoding="utf-8"))
+            else:
+                observed_task = json.loads(args.observed_task_json)
+        except FileNotFoundError:
+            return error(
+                "observed task JSON file not found",
+                "OBSERVED_TASK_JSON_FILE_NOT_FOUND",
+                details={"path": args.observed_task_json_file},
+                exit_code=EXIT_NOT_FOUND,
+            )
+        except json.JSONDecodeError as exc:
+            return error(
+                "invalid JSON for observed task payload",
+                "INVALID_OBSERVED_TASK_JSON",
+                details={"reason": str(exc)},
+                exit_code=EXIT_ARGUMENT_ERROR,
+            )
 
     try:
         return ok(
             service_for_args(args).distill_and_promote(
                 trajectory_path=args.trajectory,
                 observed_task_path=args.observed_task,
+                observed_task=observed_task,
                 skill_name=args.skill_name,
                 register_trajectory=not args.skip_log,
             )
@@ -213,6 +302,8 @@ def build_parser() -> argparse.ArgumentParser:
     distill_promote_parser = subparsers.add_parser("distill-and-promote")
     distill_promote_parser.add_argument("--trajectory")
     distill_promote_parser.add_argument("--observed-task")
+    distill_promote_parser.add_argument("--observed-task-json")
+    distill_promote_parser.add_argument("--observed-task-json-file")
     distill_promote_parser.add_argument("--skill-name")
     distill_promote_parser.add_argument("--skip-log", action="store_true")
     distill_promote_parser.set_defaults(func=cmd_distill_and_promote)
@@ -231,7 +322,9 @@ def build_parser() -> argparse.ArgumentParser:
     log_parser.set_defaults(func=cmd_log_trajectory)
 
     capture_parser = subparsers.add_parser("capture-trajectory")
-    capture_parser.add_argument("--file", required=True)
+    capture_parser.add_argument("--file")
+    capture_parser.add_argument("--observed-task-json")
+    capture_parser.add_argument("--observed-task-json-file")
     capture_parser.add_argument("--task-id")
     capture_parser.add_argument("--session-id")
     capture_parser.set_defaults(func=cmd_capture_trajectory)
@@ -248,6 +341,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     governance_parser = subparsers.add_parser("governance-report")
     governance_parser.set_defaults(func=cmd_governance_report)
+
+    distill_coverage_parser = subparsers.add_parser("distill-coverage-report")
+    distill_coverage_parser.add_argument(
+        "--observed-task-scope",
+        choices=("all", "backlog", "execution"),
+        default="all",
+    )
+    distill_coverage_parser.add_argument("--max-family-items", type=int)
+    distill_coverage_parser.add_argument("--min-family-count", type=int, default=1)
+    distill_coverage_parser.set_defaults(func=cmd_distill_coverage_report)
 
     archive_duplicates_parser = subparsers.add_parser("archive-duplicate-candidates")
     archive_duplicates_parser.add_argument("--skill-name", action="append")

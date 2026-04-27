@@ -131,6 +131,7 @@ class RuntimeContractTestsMixin:
         self.assertIn("promote_skill", script_source)
         self.assertIn("archive_duplicate_candidates", script_source)
         self.assertIn("archive_cold_skills", script_source)
+        self.assertIn("distill_coverage_report", script_source)
 
     def test_ci_workflow_runs_mcp_architecture_check_and_runtime_suite(self) -> None:
         workflow_path = ROOT / ".github" / "workflows" / "runtime-contracts.yml"

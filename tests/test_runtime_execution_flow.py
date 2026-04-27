@@ -49,6 +49,7 @@ class RuntimeExecutionFlowTestsMixin:
         self.assertTrue(output_path.exists())
         self.assertTrue(observed_path.exists())
         observed_payload = self._read_json_file(observed_path)
+        self.assertEqual(observed_payload, result["observed_task"])
         self._assert_observed_skill_record(
             observed_payload,
             skill_name="merge_text_files",
@@ -74,10 +75,22 @@ class RuntimeExecutionFlowTestsMixin:
             display_label="Promote this execution",
             risk_level="medium",
         )
+        self.assertEqual("execute_promote", result["recommended_host_operation"]["operation_group"])
+        self.assertEqual("path", result["recommended_host_operation"]["delivery_mode"])
+        self.assertEqual("preferred", result["recommended_host_operation"]["variant_role"])
         self.assertIn("observed task record", result["recommended_host_operation"]["effect_summary"])
         self.assertTrue(result["available_host_operations"])
         self.assertEqual("distill_and_promote_candidate", result["available_host_operations"][0]["tool_name"])
         self._assert_operation_role(result["available_host_operations"][0], "primary")
+        self.assertGreaterEqual(len(result["available_host_operations"]), 2)
+        inline_follow_up = result["available_host_operations"][1]
+        self.assertEqual("distill_and_promote_candidate", inline_follow_up["tool_name"])
+        self.assertEqual(result["observed_task"], inline_follow_up["arguments"]["observed_task"])
+        self.assertEqual("Promote this execution inline", inline_follow_up["display_label"])
+        self.assertEqual("execute_promote", inline_follow_up["operation_group"])
+        self.assertEqual("inline", inline_follow_up["delivery_mode"])
+        self.assertEqual("alternate", inline_follow_up["variant_role"])
+        self._assert_operation_role(inline_follow_up, "default")
 
     def test_mcp_execute_tool_returns_follow_up_host_operation(self) -> None:
         sandbox_root, _, _ = self._make_runtime_sandbox()
@@ -98,6 +111,7 @@ class RuntimeExecutionFlowTestsMixin:
         observed_path = Path(payload["data"]["observed_task_record"])
         self.addCleanup(observed_path.unlink)
 
+        self.assertEqual(self._read_json_file(observed_path), payload["data"]["observed_task"])
         self._assert_observed_task_follow_up(
             payload["data"]["recommended_host_operation"],
             observed_task_path=payload["data"]["observed_task_record"],

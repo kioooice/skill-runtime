@@ -1,0 +1,18 @@
+{
+  "request": {
+    "skill_name": "directory_json_to_csv_rule_test",
+    "summary": "Convert matching JSON files in one directory into CSV files in another directory.",
+    "docstring": "功能描述:\n    Convert matching JSON files in one directory into CSV files in another directory.\n\n输入参数:\n        - input_dir: str\n        - output_path: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+    "input_schema": {
+      "input_dir": "str",
+      "output_path": "str"
+    },
+    "trajectory_task_id": "directory_json_to_csv_demo",
+    "prompt": "You are generating a reusable Python skill.\nSkill name: directory_json_to_csv_rule_test\nSummary: Convert matching JSON files in one directory into CSV files in another directory.\nConstraints:\n- Define run(tools, **kwargs)\n- Keep the code parameterized\n- Do not use dangerous shell commands\n- Return a structured dict\n\nDocstring target:\n功能描述:\n    Convert matching JSON files in one directory into CSV files in another directory.\n\n输入参数:\n        - input_dir: str\n        - output_path: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int\n\nInput schema:\n- input_dir: str\n- output_path: str\n\nTrajectory:\n- Step 1: tool=list_files, input={'path': 'demo/json_directory_input', 'pattern': '*.json'}, observation=Found matching JSON files.\n- Step 2: tool=read_json, input={'path': 'demo/json_directory_input/a.json'}, observation=Read one JSON file.\n- Step 3: tool=write_text, input={'path': 'demo/json_directory_output/a.csv'}, observation=Wrote one CSV file to the output directory.\n"
+  },
+  "response": {
+    "code": "def run(tools, **kwargs):\n    \"\"\"\n    功能描述:\n        Convert matching JSON files in one directory into CSV files in another directory.\n\n    输入参数:\n            - input_dir: str\n            - output_path: str\n\n    输出结果:\n            - status: str\n            - artifacts: list[str]\n            - steps_executed: int\n    \"\"\"\n    inputs = {\"input_dir\": kwargs.get(\"input_dir\"), \"output_path\": kwargs.get(\"output_path\")}\n\n    missing = [key for key, value in inputs.items() if value is None]\n    if missing:\n        raise ValueError(f\"Missing required inputs: {missing}\")\n\n    # Step 1: list_files: Found matching JSON files.\n    # Step 2: read_json: Read one JSON file.\n    # Step 3: write_text: Wrote one CSV file to the output directory.\n\n    return {\n        \"status\": \"completed\",\n        \"skill_name\": \"directory_json_to_csv_rule_test\",\n        \"summary\": \"Convert matching JSON files in one directory into CSV files in another directory.\",\n        \"artifacts\": [],\n        \"steps_executed\": 3,\n        \"inputs\": inputs,\n        \"generated_by\": \"mock_fallback_provider\",\n    }\n",
+    "provider_name": "mock_fallback_provider",
+    "reason": "No deterministic rule matched, so the mock fallback provider generated a parameterized candidate skill from the trajectory prompt."
+  }
+}

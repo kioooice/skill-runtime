@@ -4,7 +4,9 @@ __all__ = [
     "source_ref_skill",
     "source_ref_search_recommended_skill",
     "source_ref_search_no_match",
+    "source_ref_search_no_match_inline_capture",
     "source_ref_search_no_match_distill",
+    "source_ref_search_no_match_inline_distill",
     "source_ref_observed_task",
     "source_ref_distill",
     "source_ref_audit",
@@ -16,6 +18,8 @@ __all__ = [
     "source_ref_archive_duplicate_candidates_follow_up",
     "source_ref_archive_duplicate_candidates_apply_follow_up",
     "source_ref_governance_report_refresh",
+    "source_ref_distill_coverage_report_refresh",
+    "source_ref_distill_coverage_report_view",
 ]
 
 
@@ -31,8 +35,16 @@ def source_ref_search_no_match() -> str:
     return "search:no_strong_match"
 
 
+def source_ref_search_no_match_inline_capture() -> str:
+    return "search:no_strong_match:inline_capture"
+
+
 def source_ref_search_no_match_distill() -> str:
     return "search:no_strong_match:distill"
+
+
+def source_ref_search_no_match_inline_distill() -> str:
+    return "search:no_strong_match:inline_distill"
 
 
 def source_ref_observed_task(observed_task_path: str) -> str:
@@ -77,3 +89,11 @@ def source_ref_archive_duplicate_candidates_apply_follow_up() -> str:
 
 def source_ref_governance_report_refresh() -> str:
     return "governance:report_refresh"
+
+
+def source_ref_distill_coverage_report_refresh() -> str:
+    return "distill_coverage:report_refresh"
+
+
+def source_ref_distill_coverage_report_view(view_name: str) -> str:
+    return f"distill_coverage:view:{view_name}"

@@ -185,6 +185,7 @@ python scripts/skill_cli.py capture-trajectory --file <observed_task.json>
 python scripts/skill_cli.py reindex
 python scripts/skill_cli.py archive-cold --days 30
 python scripts/skill_cli.py governance-report
+python scripts/skill_cli.py distill-coverage-report
 python scripts/skill_cli.py archive-duplicate-candidates --dry-run
 python scripts/skill_cli.py archive-duplicate-candidates --skill-name <name>
 python scripts/skill_cli.py backfill-provenance
@@ -222,8 +223,13 @@ Current MCP tools:
 - `reindex_skills`
 - `backfill_skill_provenance`
 - `governance_report`
+- `distill_coverage_report`
 - `archive_duplicate_candidates`
 - `archive_cold_skills`
+
+`distill_coverage_report` summarizes how many saved successful trajectories currently hit
+deterministic rules versus `llm_fallback`, and clusters the remaining fallback hotspots by
+tool sequence and inferred input schema.
 
 `governance_report` now returns host-ready recommendations. Example:
 

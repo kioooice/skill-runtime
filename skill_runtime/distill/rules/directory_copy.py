@@ -1,5 +1,9 @@
 from skill_runtime.api.models import Trajectory
-from skill_runtime.distill.rules.common import escape, indent_docstring
+from skill_runtime.distill.rules.common import (
+    escape,
+    indent_docstring,
+    infer_observed_path_affix,
+)
 
 RULE_NAME = "directory_copy"
 PRIORITY = 85
@@ -34,11 +38,19 @@ def augment_input_schema(trajectory: Trajectory, input_schema: dict[str, str]) -
     updated = dict(input_schema)
     if _observed_pattern(trajectory):
         updated.setdefault("pattern", "str")
+    observed_prefix = infer_observed_path_affix(trajectory.steps, tool_names={"copy_file"}, mode="prefix")
+    if observed_prefix is not None:
+        updated.setdefault("prefix", "str")
+    observed_suffix = infer_observed_path_affix(trajectory.steps, tool_names={"copy_file"}, mode="suffix")
+    if observed_suffix is not None:
+        updated.setdefault("suffix", "str")
     return updated
 
 
 def build_code(skill_name: str, summary: str, docstring: str, trajectory: Trajectory) -> str:
     default_pattern = _observed_pattern(trajectory) or "*"
+    observed_prefix = infer_observed_path_affix(trajectory.steps, tool_names={"copy_file"}, mode="prefix")
+    observed_suffix = infer_observed_path_affix(trajectory.steps, tool_names={"copy_file"}, mode="suffix")
 
     return f'''from pathlib import Path
 
@@ -50,6 +62,10 @@ def run(tools, **kwargs):
     input_dir = kwargs.get("input_dir")
     output_dir = kwargs.get("output_dir")
     pattern = kwargs.get("pattern", "{escape(default_pattern)}")
+    prefix = kwargs.get("prefix", {repr(observed_prefix)})
+    suffix = kwargs.get("suffix", {repr(observed_suffix)})
+    normalized_prefix = "" if prefix is None else str(prefix)
+    normalized_suffix = "" if suffix is None else str(suffix)
 
     missing = [
         name
@@ -62,10 +78,12 @@ def run(tools, **kwargs):
     if missing:
         raise ValueError(f"Missing required inputs: {{missing}}")
 
+    input_root = Path(tools.resolve_path(input_dir))
     copied = []
     for file_path in tools.list_files(input_dir, pattern):
         source = Path(file_path)
-        target = Path(output_dir) / source.name
+        relative_parent = source.relative_to(input_root).parent
+        target = Path(output_dir) / relative_parent / f"{{normalized_prefix}}{{source.stem}}{{normalized_suffix}}{{source.suffix}}"
         tools.copy_file(file_path, str(target))
         copied.append(str(target))
 

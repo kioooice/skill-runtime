@@ -23,6 +23,7 @@ TOOL_PRESETS = {
         "argument_schema": {
             "trajectory_path": {"type": "string", "required": False, "prefilled": False},
             "observed_task_path": {"type": "string", "required": False, "prefilled": False},
+            "observed_task": {"type": "object", "required": False, "prefilled": False},
             "skill_name": {"type": "string", "required": False, "prefilled": False},
             "register_trajectory": {"type": "boolean", "required": False, "prefilled": False},
         },
@@ -50,11 +51,23 @@ TOOL_PRESETS = {
         "risk_level": "low",
         "requires_confirmation": False,
     },
+    "distill_coverage_report": {
+        "display_label": "Refresh distill coverage report",
+        "effect_summary": "Recompute deterministic coverage and fallback hotspot clusters across trajectories.",
+        "argument_schema": {
+            "observed_task_scope": {"type": "string", "required": False, "prefilled": True},
+            "max_family_items": {"type": "integer", "required": False, "prefilled": True},
+            "min_family_count": {"type": "integer", "required": False, "prefilled": True},
+        },
+        "risk_level": "low",
+        "requires_confirmation": False,
+    },
     "capture_trajectory": {
         "display_label": "Capture trajectory",
         "effect_summary": "Capture an observed task record into a reusable trajectory file.",
         "argument_schema": {
-            "file_path": {"type": "string", "required": True, "prefilled": False},
+            "file_path": {"type": "string", "required": False, "prefilled": False},
+            "observed_task": {"type": "object", "required": False, "prefilled": False},
             "task_id": {"type": "string", "required": False, "prefilled": False},
             "session_id": {"type": "string", "required": False, "prefilled": False},
         },
@@ -119,6 +132,7 @@ __all__ = [
     "audit_skill_operation",
     "promote_skill_operation",
     "governance_report_operation",
+    "distill_coverage_report_operation",
     "refresh_governance_report_operation",
     "archive_duplicate_candidates_operation",
     "distill_and_promote_operation",
@@ -136,6 +150,9 @@ def tool_call(
     confirmation_message: str | None = None,
     operation_role: str = "default",
     source_ref: str | None = None,
+    operation_group: str | None = None,
+    delivery_mode: str | None = None,
+    variant_role: str | None = None,
 ) -> dict[str, Any]:
     preset = TOOL_PRESETS.get(tool_name, {})
     resolved_display_label = display_label or preset.get("display_label") or _default_label(tool_name)
@@ -165,6 +182,9 @@ def tool_call(
             else None
         ),
         "operation_role": operation_role,
+        "operation_group": operation_group,
+        "delivery_mode": delivery_mode,
+        "variant_role": variant_role,
     }
 
 
@@ -186,6 +206,12 @@ def tool_call_with_preview(
     operation_role: str = "default",
     source_ref: str | None = None,
     preview_source_ref: str | None = None,
+    operation_group: str | None = None,
+    delivery_mode: str | None = None,
+    preview_operation_group: str | None = None,
+    preview_delivery_mode: str | None = None,
+    variant_role: str | None = None,
+    preview_variant_role: str | None = None,
 ) -> dict[str, Any]:
     preset = TOOL_PRESETS.get(tool_name, {})
     payload = tool_call(
@@ -199,6 +225,9 @@ def tool_call_with_preview(
         confirmation_message=confirmation_message,
         operation_role=operation_role,
         source_ref=source_ref,
+        operation_group=operation_group,
+        delivery_mode=delivery_mode,
+        variant_role=variant_role,
     )
     payload["preview"] = tool_call(
         tool_name,
@@ -214,6 +243,9 @@ def tool_call_with_preview(
         confirmation_message=preview_confirmation_message,
         operation_role="preview",
         source_ref=preview_source_ref,
+        operation_group=preview_operation_group or operation_group,
+        delivery_mode=preview_delivery_mode,
+        variant_role=preview_variant_role,
     )
     return payload
 
@@ -289,6 +321,9 @@ def execute_skill_operation(
     confirmation_message: str | None = None,
     operation_role: str = "default",
     source_ref: str | None = None,
+    operation_group: str | None = None,
+    delivery_mode: str | None = None,
+    variant_role: str | None = None,
 ) -> dict[str, Any]:
     return tool_call(
         "execute_skill",
@@ -301,25 +336,35 @@ def execute_skill_operation(
         confirmation_message=confirmation_message,
         operation_role=operation_role,
         source_ref=source_ref,
+        operation_group=operation_group,
+        delivery_mode=delivery_mode,
+        variant_role=variant_role,
     )
 
 
 def capture_trajectory_operation(
     *,
     file_path: str | None = None,
+    observed_task: dict[str, Any] | None = None,
     task_id: str | None = None,
     session_id: str | None = None,
     display_label: str | None = None,
     effect_summary: str | None = None,
+    argument_schema: dict[str, Any] | None = None,
     risk_level: str | None = None,
     requires_confirmation: bool | None = None,
     confirmation_message: str | None = None,
     operation_role: str = "default",
     source_ref: str | None = None,
+    operation_group: str | None = None,
+    delivery_mode: str | None = None,
+    variant_role: str | None = None,
 ) -> dict[str, Any]:
     arguments = {}
     if file_path is not None:
         arguments["file_path"] = file_path
+    if observed_task is not None:
+        arguments["observed_task"] = observed_task
     if task_id is not None:
         arguments["task_id"] = task_id
     if session_id is not None:
@@ -329,11 +374,15 @@ def capture_trajectory_operation(
         arguments,
         display_label=display_label,
         effect_summary=effect_summary,
+        argument_schema=argument_schema,
         risk_level=risk_level,
         requires_confirmation=requires_confirmation,
         confirmation_message=confirmation_message,
         operation_role=operation_role,
         source_ref=source_ref,
+        operation_group=operation_group,
+        delivery_mode=delivery_mode,
+        variant_role=variant_role,
     )
 
 
@@ -348,6 +397,9 @@ def distill_trajectory_operation(
     confirmation_message: str | None = None,
     operation_role: str = "default",
     source_ref: str | None = None,
+    operation_group: str | None = None,
+    delivery_mode: str | None = None,
+    variant_role: str | None = None,
 ) -> dict[str, Any]:
     arguments = {"trajectory_path": trajectory_path}
     if skill_name is not None:
@@ -362,6 +414,9 @@ def distill_trajectory_operation(
         confirmation_message=confirmation_message,
         operation_role=operation_role,
         source_ref=source_ref,
+        operation_group=operation_group,
+        delivery_mode=delivery_mode,
+        variant_role=variant_role,
     )
 
 
@@ -430,6 +485,39 @@ def governance_report_operation(
     return tool_call(
         "governance_report",
         {},
+        display_label=display_label,
+        effect_summary=effect_summary,
+        risk_level=risk_level,
+        requires_confirmation=requires_confirmation,
+        confirmation_message=confirmation_message,
+        operation_role=operation_role,
+        source_ref=source_ref,
+    )
+
+
+def distill_coverage_report_operation(
+    observed_task_scope: str | None = None,
+    max_family_items: int | None = None,
+    min_family_count: int | None = None,
+    *,
+    display_label: str | None = None,
+    effect_summary: str | None = None,
+    risk_level: str | None = None,
+    requires_confirmation: bool | None = None,
+    confirmation_message: str | None = None,
+    operation_role: str = "default",
+    source_ref: str | None = None,
+) -> dict[str, Any]:
+    arguments: dict[str, Any] = {}
+    if observed_task_scope is not None:
+        arguments["observed_task_scope"] = observed_task_scope
+    if max_family_items is not None:
+        arguments["max_family_items"] = max_family_items
+    if min_family_count is not None:
+        arguments["min_family_count"] = min_family_count
+    return tool_call(
+        "distill_coverage_report",
+        arguments,
         display_label=display_label,
         effect_summary=effect_summary,
         risk_level=risk_level,
@@ -512,6 +600,7 @@ def distill_and_promote_operation(
     *,
     trajectory_path: str | None = None,
     observed_task_path: str | None = None,
+    observed_task: dict[str, Any] | None = None,
     skill_name: str | None = None,
     register_trajectory: bool | None = None,
     display_label: str | None = None,
@@ -522,12 +611,17 @@ def distill_and_promote_operation(
     confirmation_message: str | None = None,
     operation_role: str = "default",
     source_ref: str | None = None,
+    operation_group: str | None = None,
+    delivery_mode: str | None = None,
+    variant_role: str | None = None,
 ) -> dict[str, Any]:
     arguments = {}
     if trajectory_path is not None:
         arguments["trajectory_path"] = trajectory_path
     if observed_task_path is not None:
         arguments["observed_task_path"] = observed_task_path
+    if observed_task is not None:
+        arguments["observed_task"] = observed_task
     if skill_name is not None:
         arguments["skill_name"] = skill_name
     if register_trajectory is not None:
@@ -543,6 +637,9 @@ def distill_and_promote_operation(
         confirmation_message=confirmation_message,
         operation_role=operation_role,
         source_ref=source_ref,
+        operation_group=operation_group,
+        delivery_mode=delivery_mode,
+        variant_role=variant_role,
     )
 
 

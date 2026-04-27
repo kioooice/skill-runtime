@@ -7,6 +7,7 @@ from skill_runtime.mcp.operation_builders import (
     audit_skill_operation,
     capture_trajectory_operation,
     distill_and_promote_operation,
+    distill_coverage_report_operation,
     distill_trajectory_operation,
     execute_skill_operation,
     governance_report_operation,
@@ -18,11 +19,14 @@ from skill_runtime.mcp.source_refs import (
     source_ref_archive_duplicate_candidates_apply_follow_up,
     source_ref_archive_duplicate_candidates_follow_up,
     source_ref_audit,
+    source_ref_distill_coverage_report_refresh,
     source_ref_distill,
     source_ref_log_trajectory,
     source_ref_observed_task,
     source_ref_promote,
     source_ref_search_no_match,
+    source_ref_search_no_match_inline_capture,
+    source_ref_search_no_match_inline_distill,
     source_ref_search_no_match_distill,
     source_ref_search_recommended_skill,
     source_ref_skill,
@@ -41,6 +45,7 @@ __all__ = [
     "audit_skill_recommendation",
     "promote_skill_recommendation",
     "governance_report_recommendation",
+    "distill_coverage_report_recommendation",
     "archive_duplicate_candidates_recommendation",
     "distill_and_promote_recommendation",
     "search_no_match_recommendation",
@@ -221,6 +226,20 @@ def governance_report_recommendation(
     )
 
 
+def distill_coverage_report_recommendation(
+    *,
+    reason: str | None = None,
+    additional_operations: list[dict[str, Any] | None] | None = None,
+    **operation_kwargs: Any,
+) -> dict[str, Any]:
+    return recommendation_from_operation(
+        "distill_coverage_report",
+        distill_coverage_report_operation(**operation_kwargs),
+        reason=reason,
+        additional_operations=additional_operations,
+    )
+
+
 def archive_duplicate_candidates_recommendation(
     skill_names: list[str],
     *,
@@ -254,11 +273,48 @@ def search_no_match_recommendation(
     *,
     reason: str | None = None,
 ) -> dict[str, Any]:
+    inline_capture_operation = capture_trajectory_operation(
+        display_label="Capture inline workflow",
+        effect_summary=(
+            "Capture the new workflow from an inline observed task payload before distillation."
+        ),
+        argument_schema={
+            "observed_task": {"type": "object", "required": True, "prefilled": False},
+            "task_id": {"type": "string", "required": False, "prefilled": False},
+            "session_id": {"type": "string", "required": False, "prefilled": False},
+        },
+        risk_level="low",
+        requires_confirmation=False,
+        source_ref=source_ref_search_no_match_inline_capture(),
+        operation_group="search_no_match_capture",
+        delivery_mode="inline",
+        variant_role="alternate",
+    )
     secondary_operation = distill_and_promote_operation(
         display_label="Promote new workflow",
         risk_level="low",
         requires_confirmation=False,
         source_ref=source_ref_search_no_match_distill(),
+        operation_group="search_no_match_promote",
+        delivery_mode="path",
+        variant_role="preferred",
+    )
+    inline_distill_operation = distill_and_promote_operation(
+        display_label="Promote inline workflow",
+        effect_summary=(
+            "Capture, distill, audit, and promote a new workflow directly from an inline observed task payload."
+        ),
+        argument_schema={
+            "observed_task": {"type": "object", "required": True, "prefilled": False},
+            "skill_name": {"type": "string", "required": False, "prefilled": False},
+            "register_trajectory": {"type": "boolean", "required": False, "prefilled": False},
+        },
+        risk_level="low",
+        requires_confirmation=False,
+        source_ref=source_ref_search_no_match_inline_distill(),
+        operation_group="search_no_match_promote",
+        delivery_mode="inline",
+        variant_role="alternate",
     )
     return capture_trajectory_recommendation(
         display_label="Capture new workflow",
@@ -268,8 +324,11 @@ def search_no_match_recommendation(
         risk_level="low",
         requires_confirmation=False,
         source_ref=source_ref_search_no_match(),
+        operation_group="search_no_match_capture",
+        delivery_mode="path",
+        variant_role="preferred",
         reason=reason,
-        additional_operations=[secondary_operation],
+        additional_operations=[inline_capture_operation, secondary_operation, inline_distill_operation],
     )
 
 
@@ -350,7 +409,32 @@ def search_response_payload(
     )
 
 
-def executed_skill_promotion_recommendation(observed_task_path: str) -> dict[str, Any]:
+def executed_skill_promotion_recommendation(
+    observed_task_path: str,
+    *,
+    observed_task: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    additional_operations: list[dict[str, Any]] = []
+    if observed_task is not None:
+        additional_operations.append(
+            distill_and_promote_operation(
+                observed_task=observed_task,
+                display_label="Promote this execution inline",
+                effect_summary=(
+                    "Promote this successful execution by sending the inline observed task "
+                    "payload into distill_and_promote_candidate."
+                ),
+                argument_schema={
+                    "observed_task": {"type": "object", "required": True, "prefilled": True},
+                },
+                risk_level="medium",
+                requires_confirmation=False,
+                source_ref=source_ref_observed_task(observed_task_path),
+                operation_group="execute_promote",
+                delivery_mode="inline",
+                variant_role="alternate",
+            )
+        )
     return distill_and_promote_recommendation(
         observed_task_path=observed_task_path,
         display_label="Promote this execution",
@@ -364,10 +448,14 @@ def executed_skill_promotion_recommendation(observed_task_path: str) -> dict[str
         risk_level="medium",
         requires_confirmation=False,
         source_ref=source_ref_observed_task(observed_task_path),
+        operation_group="execute_promote",
+        delivery_mode="path",
+        variant_role="preferred",
         reason=(
             "Execution succeeded and emitted an observed task record that can be sent "
             "directly into distill_and_promote_candidate."
         ),
+        additional_operations=additional_operations,
     )
 
 

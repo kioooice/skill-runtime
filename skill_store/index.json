@@ -57,8 +57,8 @@
       "source_trajectory_ids": [
         "batch_rename_from_to_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:34.663553+00:00",
-      "last_used_at": "2026-04-25T16:45:34.884314+00:00",
+      "created_at": "2026-04-27T11:05:57.768537+00:00",
+      "last_used_at": "2026-04-27T11:05:57.929951+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -98,8 +98,49 @@
       "source_trajectory_ids": [
         "batch_rename_glob_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:34.927630+00:00",
-      "last_used_at": "2026-04-25T16:45:35.148777+00:00",
+      "created_at": "2026-04-27T11:05:57.959051+00:00",
+      "last_used_at": "2026-04-27T11:05:58.118606+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "batch_rename",
+      "rule_priority": 80,
+      "rule_reason": "Matched batch_rename because the trajectory lists files, renames paths, and provides input_dir/prefix inputs.",
+      "tags": [
+        "all",
+        "directory",
+        "files",
+        "input_dir",
+        "pattern",
+        "prefix",
+        "prefixing",
+        "rename",
+        "them",
+        "txt",
+        "value",
+        "with"
+      ]
+    },
+    {
+      "skill_name": "batch_rename_input_output_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\batch_rename_input_output_alias_rule_test.py",
+      "summary": "Rename all txt files in a directory by prefixing them with a value.",
+      "docstring": "功能描述:\n    Rename all txt files in a directory by prefixing them with a value.\n\n输入参数:\n        - input_dir: str\n        - prefix: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "prefix": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "batch_rename_input_output_alias_demo"
+      ],
+      "created_at": "2026-04-27T11:05:58.149167+00:00",
+      "last_used_at": "2026-04-27T11:05:58.938688+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -139,8 +180,8 @@
       "source_trajectory_ids": [
         "batch_rename_name_prefix_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:35.184639+00:00",
-      "last_used_at": "2026-04-25T16:45:35.392153+00:00",
+      "created_at": "2026-04-27T11:05:58.968370+00:00",
+      "last_used_at": "2026-04-27T11:05:59.129756+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -180,8 +221,8 @@
       "source_trajectory_ids": [
         "batch_rename_rename_prefix_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:35.427731+00:00",
-      "last_used_at": "2026-04-25T16:45:35.647680+00:00",
+      "created_at": "2026-04-27T11:05:59.157267+00:00",
+      "last_used_at": "2026-04-27T11:05:59.313734+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -221,8 +262,49 @@
       "source_trajectory_ids": [
         "batch_rename_demo"
       ],
-      "created_at": "2026-04-25T16:45:35.689075+00:00",
-      "last_used_at": "2026-04-25T16:45:35.932879+00:00",
+      "created_at": "2026-04-27T11:05:59.343942+00:00",
+      "last_used_at": "2026-04-27T11:05:59.503342+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "batch_rename",
+      "rule_priority": 80,
+      "rule_reason": "Matched batch_rename because the trajectory lists files, renames paths, and provides input_dir/prefix inputs.",
+      "tags": [
+        "all",
+        "directory",
+        "files",
+        "input_dir",
+        "pattern",
+        "prefix",
+        "prefixing",
+        "rename",
+        "them",
+        "txt",
+        "value",
+        "with"
+      ]
+    },
+    {
+      "skill_name": "batch_rename_source_destination_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\batch_rename_source_destination_alias_rule_test.py",
+      "summary": "Rename all txt files in a directory by prefixing them with a value.",
+      "docstring": "功能描述:\n    Rename all txt files in a directory by prefixing them with a value.\n\n输入参数:\n        - input_dir: str\n        - prefix: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "prefix": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "batch_rename_source_destination_alias_demo"
+      ],
+      "created_at": "2026-04-27T11:06:00.507283+00:00",
+      "last_used_at": "2026-04-27T11:06:00.673604+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -521,6 +603,47 @@
       ]
     },
     {
+      "skill_name": "directory_copy_destination_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_copy_destination_alias_rule_test.py",
+      "summary": "Copy matching txt files from one directory into another directory.",
+      "docstring": "功能描述:\n    Copy matching txt files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_copy_destination_alias_demo"
+      ],
+      "created_at": "2026-04-27T11:06:08.373279+00:00",
+      "last_used_at": "2026-04-27T11:06:08.533393+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_copy",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_copy because the trajectory lists files, copies files, and targets input_dir/output_dir.",
+      "tags": [
+        "another",
+        "copy",
+        "directory",
+        "files",
+        "from",
+        "input_dir",
+        "into",
+        "matching",
+        "one",
+        "output_dir",
+        "pattern",
+        "txt"
+      ]
+    },
+    {
       "skill_name": "directory_copy_input_output_alias_rule_test",
       "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_copy_input_output_alias_rule_test.py",
       "summary": "Copy matching txt files from one directory into another directory.",
@@ -538,8 +661,8 @@
       "source_trajectory_ids": [
         "directory_copy_input_output_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:39.838106+00:00",
-      "last_used_at": "2026-04-25T16:45:40.076719+00:00",
+      "created_at": "2026-04-27T11:06:08.564195+00:00",
+      "last_used_at": "2026-04-27T11:06:08.736738+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -579,8 +702,8 @@
       "source_trajectory_ids": [
         "directory_copy_demo"
       ],
-      "created_at": "2026-04-25T16:45:39.536314+00:00",
-      "last_used_at": "2026-04-25T16:45:39.781396+00:00",
+      "created_at": "2026-04-27T11:06:08.185960+00:00",
+      "last_used_at": "2026-04-27T11:06:08.344673+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -603,6 +726,170 @@
       ]
     },
     {
+      "skill_name": "directory_copy_source_target_alias_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_copy_source_target_alias_rule_test.py",
+      "summary": "Copy matching txt files from one directory into another directory.",
+      "docstring": "功能描述:\n    Copy matching txt files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_copy_source_target_alias_demo"
+      ],
+      "created_at": "2026-04-27T11:06:10.638246+00:00",
+      "last_used_at": "2026-04-27T11:06:10.804796+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_copy",
+      "rule_priority": 85,
+      "rule_reason": "Matched directory_copy because the trajectory lists files, copies files, and targets input_dir/output_dir.",
+      "tags": [
+        "another",
+        "copy",
+        "directory",
+        "files",
+        "from",
+        "input_dir",
+        "into",
+        "matching",
+        "one",
+        "output_dir",
+        "pattern",
+        "txt"
+      ]
+    },
+    {
+      "skill_name": "directory_csv_to_json_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_csv_to_json_rule_test.py",
+      "summary": "Convert matching CSV files in one directory into JSON files in another directory.",
+      "docstring": "功能描述:\n    Convert matching CSV files in one directory into JSON files in another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_csv_to_json_demo"
+      ],
+      "created_at": "2026-04-26T07:14:08.822224+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_csv_to_json",
+      "rule_priority": 74,
+      "rule_reason": "Matched directory_csv_to_json because the trajectory lists files, reads CSV text files, writes JSON files, and the task description mentions CSV and JSON.",
+      "tags": [
+        "another",
+        "convert",
+        "csv",
+        "directory",
+        "files",
+        "input_dir",
+        "into",
+        "json",
+        "matching",
+        "one",
+        "output_dir",
+        "pattern"
+      ]
+    },
+    {
+      "skill_name": "directory_json_to_csv_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_json_to_csv_rule_test.py",
+      "summary": "Convert matching JSON files in one directory into CSV files in another directory.",
+      "docstring": "功能描述:\n    Convert matching JSON files in one directory into CSV files in another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_json_to_csv_demo"
+      ],
+      "created_at": "2026-04-26T07:14:08.810453+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_json_to_csv",
+      "rule_priority": 74,
+      "rule_reason": "Matched directory_json_to_csv because the trajectory lists files, reads JSON files, writes CSV text files, and the task description mentions JSON and CSV.",
+      "tags": [
+        "another",
+        "convert",
+        "csv",
+        "directory",
+        "files",
+        "input_dir",
+        "into",
+        "json",
+        "matching",
+        "one",
+        "output_dir",
+        "pattern"
+      ]
+    },
+    {
+      "skill_name": "directory_json_transform_rule_test",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_json_transform_rule_test.py",
+      "summary": "Normalize matching JSON files from one directory into another directory.",
+      "docstring": "功能描述:\n    Normalize matching JSON files from one directory into another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "directory_json_transform_demo"
+      ],
+      "created_at": "2026-04-26T05:36:32.454691+00:00",
+      "last_used_at": "2026-04-26T05:36:32.613481+00:00",
+      "usage_count": 1,
+      "status": "active",
+      "audit_score": null,
+      "rule_name": "directory_json_transform",
+      "rule_priority": 60,
+      "rule_reason": "Matched directory_json_transform because the trajectory lists files, reads JSON files, and writes JSON files into an output directory.",
+      "tags": [
+        "another",
+        "directory",
+        "files",
+        "from",
+        "input_dir",
+        "into",
+        "json",
+        "matching",
+        "normalize",
+        "one",
+        "output_dir",
+        "pattern"
+      ]
+    },
+    {
       "skill_name": "directory_move_directory_alias_rule_test",
       "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_move_directory_alias_rule_test.py",
       "summary": "Move matching log files from one directory into another directory.",
@@ -620,8 +907,8 @@
       "source_trajectory_ids": [
         "directory_move_directory_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:40.111622+00:00",
-      "last_used_at": "2026-04-25T16:45:40.297145+00:00",
+      "created_at": "2026-04-27T11:06:26.780533+00:00",
+      "last_used_at": "2026-04-27T11:06:26.938790+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -661,8 +948,8 @@
       "source_trajectory_ids": [
         "directory_move_from_to_dir_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:40.608301+00:00",
-      "last_used_at": "2026-04-25T16:45:40.821727+00:00",
+      "created_at": "2026-04-27T11:06:27.159022+00:00",
+      "last_used_at": "2026-04-27T11:06:27.318223+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -702,8 +989,8 @@
       "source_trajectory_ids": [
         "directory_move_glob_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:40.855174+00:00",
-      "last_used_at": "2026-04-25T16:45:41.032913+00:00",
+      "created_at": "2026-04-27T11:06:27.348483+00:00",
+      "last_used_at": "2026-04-27T11:06:27.503000+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -743,8 +1030,8 @@
       "source_trajectory_ids": [
         "directory_move_input_output_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:41.065371+00:00",
-      "last_used_at": "2026-04-25T16:45:41.289455+00:00",
+      "created_at": "2026-04-27T11:06:27.531328+00:00",
+      "last_used_at": "2026-04-27T11:06:27.687516+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -784,8 +1071,8 @@
       "source_trajectory_ids": [
         "directory_move_rename_demo"
       ],
-      "created_at": "2026-04-25T16:45:40.325849+00:00",
-      "last_used_at": "2026-04-25T16:45:40.558974+00:00",
+      "created_at": "2026-04-27T11:06:26.971389+00:00",
+      "last_used_at": "2026-04-27T11:06:27.131514+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -825,8 +1112,8 @@
       "source_trajectory_ids": [
         "directory_move_demo"
       ],
-      "created_at": "2026-04-25T16:45:41.341505+00:00",
-      "last_used_at": "2026-04-25T16:45:41.539779+00:00",
+      "created_at": "2026-04-27T11:06:27.721144+00:00",
+      "last_used_at": "2026-04-27T11:06:27.889338+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -868,8 +1155,8 @@
       "source_trajectory_ids": [
         "directory_text_replace_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:42.056695+00:00",
-      "last_used_at": "2026-04-25T16:45:42.249149+00:00",
+      "created_at": "2026-04-27T11:06:33.945633+00:00",
+      "last_used_at": "2026-04-27T11:06:34.104276+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -911,8 +1198,8 @@
       "source_trajectory_ids": [
         "directory_text_replace_directory_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:41.572538+00:00",
-      "last_used_at": "2026-04-25T16:45:41.784768+00:00",
+      "created_at": "2026-04-27T11:06:29.762156+00:00",
+      "last_used_at": "2026-04-27T11:06:29.916213+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -954,8 +1241,8 @@
       "source_trajectory_ids": [
         "directory_text_replace_filter_alias_demo"
       ],
-      "created_at": "2026-04-25T16:45:41.841530+00:00",
-      "last_used_at": "2026-04-25T16:45:42.021545+00:00",
+      "created_at": "2026-04-27T11:06:29.945232+00:00",
+      "last_used_at": "2026-04-27T11:06:30.130432+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -997,8 +1284,8 @@
       "source_trajectory_ids": [
         "directory_text_replace_demo"
       ],
-      "created_at": "2026-04-25T16:45:42.285630+00:00",
-      "last_used_at": "2026-04-25T16:45:42.489854+00:00",
+      "created_at": "2026-04-27T11:06:34.138588+00:00",
+      "last_used_at": "2026-04-27T11:06:34.307711+00:00",
       "usage_count": 1,
       "status": "active",
       "audit_score": null,
@@ -1276,8 +1563,8 @@
       },
       "source_trajectory_ids": [],
       "created_at": "2026-04-18T00:00:00",
-      "last_used_at": "2026-04-25T16:45:19.745485+00:00",
-      "usage_count": 493,
+      "last_used_at": "2026-04-27T11:05:34.382234+00:00",
+      "usage_count": 559,
       "status": "active",
       "audit_score": 100,
       "rule_name": "text_merge",

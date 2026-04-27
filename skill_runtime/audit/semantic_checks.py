@@ -161,7 +161,7 @@ class SemanticChecks:
         normalized = key.lower()
         if normalized in GENERALIZATION_BLOCKLIST:
             return None
-        if normalized in {"input_dir", "output_dir", "input_path", "output_path", "prefix", "pattern", "delimiter"}:
+        if normalized in {"input_dir", "output_dir", "input_path", "output_path", "prefix", "pattern", "delimiter", "output_extension", "filename_case"}:
             return normalized
         if normalized == "input":
             if tool_name in {"copy_file", "move_file", "rename_path", "move_path"}:
@@ -196,6 +196,10 @@ class SemanticChecks:
             return "pattern"
         if normalized in {"name_prefix", "prefix_value", "rename_prefix", "prefix_text"}:
             return "prefix"
+        if normalized in {"extension", "new_extension", "target_extension", "destination_extension"}:
+            return "output_extension"
+        if normalized in {"case", "name_case"}:
+            return "filename_case"
         if normalized in {"input_text", "text_file", "input_text_file", "source_text_file"}:
             return "input_path"
         if normalized in {"output_text", "output_text_file", "target_text_file", "destination_text_file"}:
@@ -214,8 +218,10 @@ class SemanticChecks:
             return "output_dir"
         if normalized in {"source_dir", "input_folder", "source_folder"}:
             return "input_dir"
-        if normalized in {"target_dir", "output_folder", "destination_dir", "destination"}:
+        if normalized in {"target_dir", "output_folder", "destination_dir"}:
             return "output_dir"
+        if normalized == "destination":
+            return "output_dir" if "list_files" in tool_names else "output_path"
         if normalized in {"input_file", "source_file"}:
             return "input_path"
         if normalized in {"output_file", "destination_file", "target_file"}:
@@ -225,9 +231,9 @@ class SemanticChecks:
         if normalized == "to":
             return "output_dir" if "list_files" in tool_names else "output_path"
         if normalized == "source_path":
-            return "input_path"
+            return "input_dir" if "list_files" in tool_names else "input_path"
         if normalized in {"target_path", "destination_path"}:
-            return "output_path"
+            return "output_dir" if "list_files" in tool_names else "output_path"
         if normalized == "source":
             return "input_dir" if "list_files" in tool_names else "input_path"
         if normalized == "target":

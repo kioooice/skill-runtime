@@ -149,6 +149,335 @@ class RuntimeGovernanceTestsMixin:
         self.assertEqual("single_json_transform", refreshed.rule_name)
         self.assertIsNotNone(refreshed.rule_reason)
 
+    def test_backfill_provenance_detects_directory_json_transform(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        self._write_active_skill_fixture(
+            "legacy_directory_json_transform_skill",
+            {
+                "summary": "Normalize matching JSON files from one directory into another directory.",
+                "docstring": "legacy",
+                "input_schema": {"input_dir": "str", "output_dir": "str", "pattern": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-18T00:00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["json", "input_dir", "output_dir", "pattern"],
+            },
+            source=(
+                'from pathlib import Path\n'
+                'def run(tools, **kwargs):\n'
+                '    """legacy"""\n'
+                '    for file_path in tools.list_files(kwargs.get("input_dir"), kwargs.get("pattern", "*.json")):\n'
+                '        source = Path(file_path)\n'
+                '        payload = tools.read_json(file_path)\n'
+                '        tools.write_json(str(Path(kwargs.get("output_dir")) / source.name), payload)\n'
+                '    return {"status": "completed"}\n'
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
+        self.assertTrue(any(item["skill_name"] == "legacy_directory_json_transform_skill" for item in updated))
+
+        refreshed = sandbox_index.get("legacy_directory_json_transform_skill")
+        self.assertIsNotNone(refreshed)
+        self.assertEqual("directory_json_transform", refreshed.rule_name)
+        self.assertIsNotNone(refreshed.rule_reason)
+
+    def test_backfill_provenance_detects_directory_csv_to_json(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        self._write_active_skill_fixture(
+            "legacy_directory_csv_to_json_skill",
+            {
+                "summary": "Convert matching CSV files in one directory into JSON files in another directory.",
+                "docstring": "legacy",
+                "input_schema": {"input_dir": "str", "output_dir": "str", "pattern": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-18T00:00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["csv", "json", "input_dir", "output_dir", "pattern"],
+            },
+            source=(
+                'import csv\n'
+                'from io import StringIO\n'
+                'from pathlib import Path\n'
+                'def run(tools, **kwargs):\n'
+                '    """legacy"""\n'
+                '    for file_path in tools.list_files(kwargs.get("input_dir"), kwargs.get("pattern", "*.csv")):\n'
+                '        source = Path(file_path)\n'
+                '        rows = list(csv.DictReader(StringIO(tools.read_text(file_path))))\n'
+                '        tools.write_json(str(Path(kwargs.get("output_dir")) / f"{source.stem}.json"), rows)\n'
+                '    return {"status": "completed"}\n'
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
+        self.assertTrue(any(item["skill_name"] == "legacy_directory_csv_to_json_skill" for item in updated))
+
+        refreshed = sandbox_index.get("legacy_directory_csv_to_json_skill")
+        self.assertIsNotNone(refreshed)
+        self.assertEqual("directory_csv_to_json", refreshed.rule_name)
+        self.assertIsNotNone(refreshed.rule_reason)
+
+    def test_backfill_provenance_detects_directory_json_to_csv(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        self._write_active_skill_fixture(
+            "legacy_directory_json_to_csv_skill",
+            {
+                "summary": "Convert matching JSON files in one directory into CSV files in another directory.",
+                "docstring": "legacy",
+                "input_schema": {"input_dir": "str", "output_dir": "str", "pattern": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-18T00:00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["csv", "json", "input_dir", "output_dir", "pattern"],
+            },
+            source=(
+                'import csv\n'
+                'from io import StringIO\n'
+                'from pathlib import Path\n'
+                'def run(tools, **kwargs):\n'
+                '    """legacy"""\n'
+                '    for file_path in tools.list_files(kwargs.get("input_dir"), kwargs.get("pattern", "*.json")):\n'
+                '        source = Path(file_path)\n'
+                '        rows = tools.read_json(file_path)\n'
+                '        fieldnames = list(rows[0].keys()) if rows else []\n'
+                '        buffer = StringIO()\n'
+                '        writer = csv.DictWriter(buffer, fieldnames=fieldnames)\n'
+                '        if fieldnames:\n'
+                '            writer.writeheader()\n'
+                '            writer.writerows(rows)\n'
+                '        tools.write_text(str(Path(kwargs.get("output_dir")) / f"{source.stem}.csv"), buffer.getvalue())\n'
+                '    return {"status": "completed"}\n'
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
+        self.assertTrue(any(item["skill_name"] == "legacy_directory_json_to_csv_skill" for item in updated))
+
+        refreshed = sandbox_index.get("legacy_directory_json_to_csv_skill")
+        self.assertIsNotNone(refreshed)
+        self.assertEqual("directory_json_to_csv", refreshed.rule_name)
+        self.assertIsNotNone(refreshed.rule_reason)
+
+    def test_backfill_provenance_detects_directory_text_transform(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        self._write_active_skill_fixture(
+            "legacy_directory_text_transform_skill",
+            {
+                "summary": "Normalize matching text files from one directory into another directory.",
+                "docstring": "legacy",
+                "input_schema": {"input_dir": "str", "output_dir": "str", "pattern": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-18T00:00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["text", "input_dir", "output_dir", "pattern"],
+            },
+            source=(
+                'from pathlib import Path\n'
+                'def run(tools, **kwargs):\n'
+                '    """legacy"""\n'
+                '    for file_path in tools.list_files(kwargs.get("input_dir"), kwargs.get("pattern", "*.txt")):\n'
+                '        source = Path(file_path)\n'
+                '        text = tools.read_text(file_path)\n'
+                '        tools.write_text(str(Path(kwargs.get("output_dir")) / source.name), text.rstrip() + "\\n")\n'
+                '    return {"status": "completed"}\n'
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
+        self.assertTrue(any(item["skill_name"] == "legacy_directory_text_transform_skill" for item in updated))
+
+        refreshed = sandbox_index.get("legacy_directory_text_transform_skill")
+        self.assertIsNotNone(refreshed)
+        self.assertEqual("directory_text_transform", refreshed.rule_name)
+        self.assertIsNotNone(refreshed.rule_reason)
+
+    def test_backfill_provenance_detects_batch_rename_suffix(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        self._write_active_skill_fixture(
+            "legacy_batch_rename_suffix_skill",
+            {
+                "summary": "Rename all txt files in a directory by suffixing them with a value.",
+                "docstring": "legacy",
+                "input_schema": {"input_dir": "str", "suffix": "str", "pattern": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-18T00:00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["rename", "suffix", "input_dir", "pattern"],
+            },
+            source=(
+                'from pathlib import Path\n'
+                'def run(tools, **kwargs):\n'
+                '    """legacy"""\n'
+                '    for file_path in tools.list_files(kwargs.get("input_dir"), kwargs.get("pattern", "*.txt")):\n'
+                '        source = Path(file_path)\n'
+                '        tools.rename_path(file_path, str(source.with_name(f"{source.stem}{kwargs.get(\'suffix\')}{source.suffix}")))\n'
+                '    return {"status": "completed"}\n'
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
+        self.assertTrue(any(item["skill_name"] == "legacy_batch_rename_suffix_skill" for item in updated))
+
+        refreshed = sandbox_index.get("legacy_batch_rename_suffix_skill")
+        self.assertIsNotNone(refreshed)
+        self.assertEqual("batch_rename_suffix", refreshed.rule_name)
+        self.assertIsNotNone(refreshed.rule_reason)
+
+    def test_backfill_provenance_detects_batch_rename_extension(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        self._write_active_skill_fixture(
+            "legacy_batch_rename_extension_skill",
+            {
+                "summary": "Rename all txt files in a directory by changing their extension to md.",
+                "docstring": "legacy",
+                "input_schema": {"input_dir": "str", "output_extension": "str", "pattern": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-18T00:00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["rename", "output_extension", "input_dir", "pattern"],
+            },
+            source=(
+                'from pathlib import Path\n'
+                'def run(tools, **kwargs):\n'
+                '    """legacy"""\n'
+                '    output_extension = kwargs.get("output_extension")\n'
+                '    normalized_extension = output_extension if output_extension.startswith(".") else f".{output_extension}"\n'
+                '    for file_path in tools.list_files(kwargs.get("input_dir"), kwargs.get("pattern", "*.txt")):\n'
+                '        source = Path(file_path)\n'
+                '        tools.rename_path(file_path, str(source.with_suffix(normalized_extension)))\n'
+                '    return {"status": "completed"}\n'
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
+        self.assertTrue(any(item["skill_name"] == "legacy_batch_rename_extension_skill" for item in updated))
+
+        refreshed = sandbox_index.get("legacy_batch_rename_extension_skill")
+        self.assertIsNotNone(refreshed)
+        self.assertEqual("batch_rename_extension", refreshed.rule_name)
+        self.assertIsNotNone(refreshed.rule_reason)
+
+    def test_backfill_provenance_detects_batch_rename_replace(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        self._write_active_skill_fixture(
+            "legacy_batch_rename_replace_skill",
+            {
+                "summary": "Rename all txt files in a directory by replacing draft with final in each filename.",
+                "docstring": "legacy",
+                "input_schema": {"input_dir": "str", "old_text": "str", "new_text": "str", "pattern": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-18T00:00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["rename", "old_text", "new_text", "input_dir", "pattern"],
+            },
+            source=(
+                'from pathlib import Path\n'
+                'def run(tools, **kwargs):\n'
+                '    """legacy"""\n'
+                '    for file_path in tools.list_files(kwargs.get("input_dir"), kwargs.get("pattern", "*.txt")):\n'
+                '        source = Path(file_path)\n'
+                '        target = source.with_name(source.name.replace(kwargs.get("old_text"), kwargs.get("new_text"), 1))\n'
+                '        tools.rename_path(file_path, str(target))\n'
+                '    return {"status": "completed"}\n'
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
+        self.assertTrue(any(item["skill_name"] == "legacy_batch_rename_replace_skill" for item in updated))
+
+        refreshed = sandbox_index.get("legacy_batch_rename_replace_skill")
+        self.assertIsNotNone(refreshed)
+        self.assertEqual("batch_rename_replace", refreshed.rule_name)
+        self.assertIsNotNone(refreshed.rule_reason)
+
+    def test_backfill_provenance_detects_batch_rename_case(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        self._write_active_skill_fixture(
+            "legacy_batch_rename_case_skill",
+            {
+                "summary": "Rename all files in a directory to lowercase filenames.",
+                "docstring": "legacy",
+                "input_schema": {"input_dir": "str", "filename_case": "str", "pattern": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-18T00:00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["rename", "filename_case", "input_dir", "pattern"],
+            },
+            source=(
+                'from pathlib import Path\n'
+                'def run(tools, **kwargs):\n'
+                '    """legacy"""\n'
+                '    for file_path in tools.list_files(kwargs.get("input_dir"), kwargs.get("pattern", "*.*")):\n'
+                '        source = Path(file_path)\n'
+                '        tools.rename_path(file_path, str(source.with_name(source.name.lower())))\n'
+                '    return {"status": "completed"}\n'
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        updated = ProvenanceBackfill(active_dir, sandbox_index).run()
+        self.assertTrue(any(item["skill_name"] == "legacy_batch_rename_case_skill" for item in updated))
+
+        refreshed = sandbox_index.get("legacy_batch_rename_case_skill")
+        self.assertIsNotNone(refreshed)
+        self.assertEqual("batch_rename_case", refreshed.rule_name)
+        self.assertIsNotNone(refreshed.rule_reason)
+
     def test_service_backfill_provenance_returns_governance_follow_up(self) -> None:
         sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
         active_dir = sandbox_root / "skill_store" / "active"

@@ -23,6 +23,11 @@ def run(tools, **kwargs):
     old_text = kwargs.get("old_text")
     new_text = kwargs.get("new_text")
     pattern = kwargs.get("pattern", "*.txt")
+    newline = kwargs.get("newline", None)
+    prefix = kwargs.get("prefix", None)
+    suffix = kwargs.get("suffix", None)
+    normalized_prefix = "" if prefix is None else str(prefix)
+    normalized_suffix = "" if suffix is None else str(suffix)
 
     missing = [
         name
@@ -37,13 +42,15 @@ def run(tools, **kwargs):
     if missing:
         raise ValueError(f"Missing required inputs: {missing}")
 
+    input_root = Path(tools.resolve_path(input_dir))
     written = []
     for file_path in tools.list_files(input_dir, pattern):
         source = Path(file_path)
-        target = Path(output_dir) / source.name
+        relative_parent = source.relative_to(input_root).parent
+        target = Path(output_dir) / relative_parent / f"{normalized_prefix}{source.stem}{normalized_suffix}{source.suffix}"
         text = tools.read_text(file_path)
         transformed = text.replace(old_text, new_text)
-        tools.write_text(str(target), transformed)
+        tools.write_text(str(target), transformed, newline=newline)
         written.append(str(target))
 
     return {

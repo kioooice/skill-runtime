@@ -4,6 +4,11 @@ class RuntimeHostOperationTestsMixin:
     HOST_TRAJECTORY_PATH = "D:/tmp/demo.json"
     HOST_SKILL_FILE = "D:/tmp/demo.py"
     HOST_OBSERVED_TASK_PATH = "D:/tmp/observed.json"
+    HOST_OBSERVED_TASK_PAYLOAD = {
+        "task": "Merge txt files into markdown.",
+        "actions": [{"tool": "list_files", "input": {"input_dir": "demo/input"}, "result": "Found files."}],
+        "outputs": ["demo/output/merged.md"],
+    }
     HOST_DUPLICATE_SKILL = "merge_text_files_generated"
 
     def _build_host_operation_payload_samples(self) -> dict:
@@ -14,6 +19,7 @@ class RuntimeHostOperationTestsMixin:
             archive_duplicate_candidates_action,
             archive_duplicate_candidates_operation,
             collect_operations,
+            distill_coverage_report_operation,
             distill_trajectory_operation,
             execute_skill_operation,
             governance_report_operation,
@@ -57,6 +63,7 @@ class RuntimeHostOperationTestsMixin:
         distill_payload = distill_trajectory_operation(self.HOST_TRAJECTORY_PATH)
         audit_payload = audit_skill_operation(self.HOST_SKILL_FILE, trajectory_path=self.HOST_TRAJECTORY_PATH)
         governance_payload = governance_report_operation()
+        distill_coverage_payload = distill_coverage_report_operation()
         ordered_payloads = operation_list(execute_payload, [archive_payload["preview"], archive_payload])
         archive_action = archive_duplicate_candidates_action(
             [self.HOST_DUPLICATE_SKILL],
@@ -104,6 +111,7 @@ class RuntimeHostOperationTestsMixin:
             "distill_payload": distill_payload,
             "audit_payload": audit_payload,
             "governance_payload": governance_payload,
+            "distill_coverage_payload": distill_coverage_payload,
             "ordered_payloads": ordered_payloads,
             "archive_action": archive_action,
             "action_operations": action_operations,
@@ -125,6 +133,7 @@ class RuntimeHostOperationTestsMixin:
             archive_duplicate_candidates_follow_up_recommendation,
             archive_duplicate_candidates_recommendation,
             captured_trajectory_recommendation,
+            distill_coverage_report_recommendation,
             distill_trajectory_recommendation,
             distilled_skill_audit_recommendation,
             execute_skill_recommendation,
@@ -208,7 +217,10 @@ class RuntimeHostOperationTestsMixin:
                 include_preview=True,
                 reason="archive next",
             ),
-            "executed_skill_follow_up": executed_skill_promotion_recommendation(self.HOST_OBSERVED_TASK_PATH),
+            "executed_skill_follow_up": executed_skill_promotion_recommendation(
+                self.HOST_OBSERVED_TASK_PATH,
+                observed_task=self.HOST_OBSERVED_TASK_PAYLOAD,
+            ),
             "promoted_skill_follow_up": promoted_skill_execution_recommendation(
                 self.HOST_SKILL_NAME,
                 self.HOST_SKILL_IO_SCHEMA,
@@ -223,6 +235,7 @@ class RuntimeHostOperationTestsMixin:
                 dry_run=False,
             ),
             "governance_recommendation": governance_report_recommendation(reason="refresh next"),
+            "distill_coverage_recommendation": distill_coverage_report_recommendation(reason="coverage next"),
             "search_execute_recommendation": search_execute_recommendation,
             "search_response": search_response,
         }
@@ -234,11 +247,15 @@ class RuntimeHostOperationTestsMixin:
             source_ref_archive_duplicate_candidates_follow_up,
             source_ref_archive_duplicate_candidates_preview,
             source_ref_audit,
+            source_ref_distill_coverage_report_refresh,
+            source_ref_distill_coverage_report_view,
             source_ref_distill,
             source_ref_governance_report_refresh,
             source_ref_observed_task,
             source_ref_promote,
             source_ref_search_no_match,
+            source_ref_search_no_match_inline_capture,
+            source_ref_search_no_match_inline_distill,
             source_ref_search_no_match_distill,
             source_ref_search_recommended_skill,
             source_ref_skill,
@@ -249,7 +266,9 @@ class RuntimeHostOperationTestsMixin:
             "search_recommended_source_ref": source_ref_search_recommended_skill(self.HOST_SKILL_NAME),
             "search_skill_source_ref": source_ref_skill(self.HOST_SKILL_NAME),
             "search_no_match_source_ref": source_ref_search_no_match(),
+            "search_no_match_inline_capture_source_ref": source_ref_search_no_match_inline_capture(),
             "search_no_match_distill_source_ref": source_ref_search_no_match_distill(),
+            "search_no_match_inline_distill_source_ref": source_ref_search_no_match_inline_distill(),
             "observed_task_source_ref": source_ref_observed_task(self.HOST_OBSERVED_TASK_PATH),
             "distill_source_ref": source_ref_distill(self.HOST_SKILL_NAME),
             "audit_source_ref": source_ref_audit(self.HOST_SKILL_NAME),
@@ -260,6 +279,8 @@ class RuntimeHostOperationTestsMixin:
             "governance_follow_up_source_ref": source_ref_archive_duplicate_candidates_follow_up(),
             "governance_apply_follow_up_source_ref": source_ref_archive_duplicate_candidates_apply_follow_up(),
             "governance_report_refresh_source_ref": source_ref_governance_report_refresh(),
+            "distill_coverage_report_refresh_source_ref": source_ref_distill_coverage_report_refresh(),
+            "distill_coverage_report_execution_view_source_ref": source_ref_distill_coverage_report_view("execution"),
         }
 
     def _build_host_operation_samples(self) -> dict:
@@ -275,6 +296,7 @@ class RuntimeHostOperationTestsMixin:
         audit_payload = samples["audit_payload"]
         promote_payload = samples["promote_payload"]
         governance_payload = samples["governance_payload"]
+        distill_coverage_payload = samples["distill_coverage_payload"]
         archive_helper_payload = samples["archive_helper_payload"]
 
         self.assertIn("tool_call", samples["host_operations_exports"])
@@ -310,6 +332,7 @@ class RuntimeHostOperationTestsMixin:
         self.assertEqual("Promote skill", promote_payload["display_label"])
         self.assertEqual(self.HOST_SKILL_FILE, promote_payload["arguments"]["file_path"])
         self.assertEqual("Refresh governance report", governance_payload["display_label"])
+        self.assertEqual("Refresh distill coverage report", distill_coverage_payload["display_label"])
         self.assertEqual("archive_duplicate_candidates", archive_helper_payload["tool_name"])
         self.assertTrue(archive_helper_payload["preview"]["arguments"]["dry_run"])
 
@@ -333,6 +356,7 @@ class RuntimeHostOperationTestsMixin:
         search_recommendation = samples["search_recommendation"]
         archive_dry_run_follow_up = samples["archive_dry_run_follow_up"]
         archive_apply_follow_up = samples["archive_apply_follow_up"]
+        distill_coverage_recommendation = samples["distill_coverage_recommendation"]
         collected = samples["collected"]
 
         self._assert_operation_role(ordered_payloads[0], "primary")
@@ -362,14 +386,48 @@ class RuntimeHostOperationTestsMixin:
         self.assertEqual("audit_skill", distilled_skill_follow_up["recommended_next_action"])
         self.assertEqual("archive_duplicate_candidates", archive_recommendation["recommended_next_action"])
         self.assertEqual("distill_and_promote_candidate", executed_skill_follow_up["recommended_next_action"])
+        self.assertEqual(2, len(executed_skill_follow_up["available_host_operations"]))
+        self.assertEqual(
+            self.HOST_OBSERVED_TASK_PAYLOAD,
+            executed_skill_follow_up["available_host_operations"][1]["arguments"]["observed_task"],
+        )
+        self.assertEqual("execute_promote", executed_skill_follow_up["recommended_host_operation"]["operation_group"])
+        self.assertEqual("path", executed_skill_follow_up["recommended_host_operation"]["delivery_mode"])
+        self.assertEqual("preferred", executed_skill_follow_up["recommended_host_operation"]["variant_role"])
+        self.assertEqual("execute_promote", executed_skill_follow_up["available_host_operations"][1]["operation_group"])
+        self.assertEqual("inline", executed_skill_follow_up["available_host_operations"][1]["delivery_mode"])
+        self.assertEqual("alternate", executed_skill_follow_up["available_host_operations"][1]["variant_role"])
         self.assertEqual("execute_skill", promoted_skill_follow_up["recommended_next_action"])
         self.assertEqual("capture_trajectory", search_recommendation["recommended_next_action"])
+        self.assertEqual(4, len(search_recommendation["available_host_operations"]))
+        self.assertEqual("capture_trajectory", search_recommendation["available_host_operations"][1]["tool_name"])
         self.assertEqual(
             "distill_and_promote_candidate",
-            search_recommendation["available_host_operations"][1]["tool_name"],
+            search_recommendation["available_host_operations"][2]["tool_name"],
+        )
+        self.assertEqual(
+            ["search_no_match_capture", "search_no_match_capture", "search_no_match_promote", "search_no_match_promote"],
+            [item["operation_group"] for item in search_recommendation["available_host_operations"]],
+        )
+        self.assertEqual(
+            {
+                item["display_label"]: (item["delivery_mode"], item["variant_role"])
+                for item in search_recommendation["available_host_operations"]
+            },
+            {
+                "Capture new workflow": ("path", "preferred"),
+                "Capture inline workflow": ("inline", "alternate"),
+                "Promote new workflow": ("path", "preferred"),
+                "Promote inline workflow": ("inline", "alternate"),
+            },
+        )
+        self.assertEqual(
+            "distill_and_promote_candidate",
+            search_recommendation["available_host_operations"][3]["tool_name"],
         )
         self.assertEqual("archive_duplicate_candidates", archive_dry_run_follow_up["recommended_next_action"])
         self.assertEqual("governance_report", archive_apply_follow_up["recommended_next_action"])
+        self.assertEqual("distill_coverage_report", distill_coverage_recommendation["recommended_next_action"])
         self.assertEqual(3, len(collected))
         self._assert_operation_role(collected[0], "preview")
         self._assert_operation_role(collected[1], "default")
@@ -384,7 +442,15 @@ class RuntimeHostOperationTestsMixin:
         self.assertEqual(f"search:recommended_skill:{self.HOST_SKILL_NAME}", samples["search_recommended_source_ref"])
         self.assertEqual(f"skill:{self.HOST_SKILL_NAME}", samples["search_skill_source_ref"])
         self.assertEqual("search:no_strong_match", samples["search_no_match_source_ref"])
+        self.assertEqual(
+            "search:no_strong_match:inline_capture",
+            samples["search_no_match_inline_capture_source_ref"],
+        )
         self.assertEqual("search:no_strong_match:distill", samples["search_no_match_distill_source_ref"])
+        self.assertEqual(
+            "search:no_strong_match:inline_distill",
+            samples["search_no_match_inline_distill_source_ref"],
+        )
         self.assertEqual(f"observed_task:{self.HOST_OBSERVED_TASK_PATH}", samples["observed_task_source_ref"])
         self.assertEqual(f"distill:{self.HOST_SKILL_NAME}", samples["distill_source_ref"])
         self.assertEqual(f"audit:{self.HOST_SKILL_NAME}", samples["audit_source_ref"])
@@ -435,6 +501,11 @@ class RuntimeHostOperationTestsMixin:
             samples["governance_apply_follow_up_source_ref"],
         )
         self.assertEqual("governance:report_refresh", samples["governance_report_refresh_source_ref"])
+        self.assertEqual("distill_coverage:report_refresh", samples["distill_coverage_report_refresh_source_ref"])
+        self.assertEqual(
+            "distill_coverage:view:execution",
+            samples["distill_coverage_report_execution_view_source_ref"],
+        )
         self.assertEqual({"active": 2}, governance_report["status_counts"])
         self.assertEqual(2, len(governance_report["recommended_actions"]))
         self.assertGreaterEqual(len(governance_report["available_host_operations"]), 2)

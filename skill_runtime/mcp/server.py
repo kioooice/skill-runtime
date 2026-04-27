@@ -64,6 +64,7 @@ def build_mcp_server(root: str | Path) -> FastMCP:
     def distill_and_promote_candidate(
         trajectory_path: str | None = None,
         observed_task_path: str | None = None,
+        observed_task: dict[str, Any] | None = None,
         skill_name: str | None = None,
         register_trajectory: bool = True,
     ) -> dict[str, Any]:
@@ -72,6 +73,7 @@ def build_mcp_server(root: str | Path) -> FastMCP:
             "distill_and_promote",
             trajectory_path=trajectory_path,
             observed_task_path=observed_task_path,
+            observed_task=observed_task,
             skill_name=skill_name,
             register_trajectory=register_trajectory,
         )
@@ -109,7 +111,8 @@ def build_mcp_server(root: str | Path) -> FastMCP:
         structured_output=True,
     )
     def capture_trajectory(
-        file_path: str,
+        file_path: str | None = None,
+        observed_task: dict[str, Any] | None = None,
         task_id: str | None = None,
         session_id: str | None = None,
     ) -> dict[str, Any]:
@@ -117,6 +120,7 @@ def build_mcp_server(root: str | Path) -> FastMCP:
             service,
             "capture_trajectory",
             file_path=file_path,
+            observed_task=observed_task,
             task_id=task_id,
             session_id=session_id,
         )
@@ -144,6 +148,24 @@ def build_mcp_server(root: str | Path) -> FastMCP:
     )
     def governance_report() -> dict[str, Any]:
         return _wrap_tool(service, "governance_report")
+
+    @server.tool(
+        name="distill_coverage_report",
+        description="Summarize deterministic rule coverage and remaining fallback hotspots across saved trajectories.",
+        structured_output=True,
+    )
+    def distill_coverage_report(
+        observed_task_scope: str = "all",
+        max_family_items: int | None = None,
+        min_family_count: int = 1,
+    ) -> dict[str, Any]:
+        return _wrap_tool(
+            service,
+            "distill_coverage_report",
+            observed_task_scope=observed_task_scope,
+            max_family_items=max_family_items,
+            min_family_count=min_family_count,
+        )
 
     @server.tool(
         name="archive_duplicate_candidates",

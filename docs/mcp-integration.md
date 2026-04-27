@@ -36,6 +36,7 @@ python D:/02-Projects/vibe/scripts/skill_mcp_server.py
 - `reindex_skills`
 - `backfill_skill_provenance`
 - `governance_report`
+- `distill_coverage_report`
 - `archive_duplicate_candidates`
 - `archive_cold_skills`
 
@@ -126,10 +127,22 @@ That lets a host wire both:
 
 without any extra translation layer.
 
+`distill_coverage_report` now also exposes `view_host_operations`, a host-ready list of
+alternate coverage views and expansion actions for the same report surface. Hosts can use
+those operations to pivot between `all`, `backlog`, and `execution`, or to remove list caps
+and lower family thresholds without inventing MCP arguments by hand.
+When the combined `all` view no longer has fallback hotspots or backlog candidates but still
+has execution-derived observed-task families, the primary recommendation now shifts to the
+execution view so the host can continue into the next highest-signal report surface instead
+of stopping on a no-op summary.
+
 The host-call payload now also includes interaction metadata:
 
 - `operation_id`
 - `operation_role`
+- `operation_group`
+- `delivery_mode`
+- `variant_role`
 - `source_ref`
 - `display_label`
 - `effect_summary`
@@ -145,6 +158,13 @@ the calling workflow take precedence when the context is more specific.
 is intended for host-side reconciliation, rendering keys, and action callbacks.
 `operation_role` indicates how the runtime expects the host to present the action, such as
 `primary`, `default`, or `preview`.
+`operation_group` lets hosts recognize alternate actions that belong to the same user-facing
+workflow choice, such as file-backed versus inline capture/promote variants.
+`delivery_mode` identifies the transport style for that action, such as path-based or inline
+payload delivery.
+`variant_role` marks which member of a grouped action set the runtime prefers a host to
+surface first, such as `preferred` for the default file-backed path and `alternate` for the
+inline fallback or convenience path.
 `source_ref` links the operation back to the runtime object or context that produced it,
 such as a matched skill, a governance recommendation, or an observed task record.
 The runtime now treats `source_ref` as a stable contract field and emits it from shared
@@ -160,6 +180,7 @@ as `input_dir` or `output_path` instead of a single opaque JSON object.
 `execute_skill` now completes that chain. On success it returns:
 
 - `observed_task_record`
+- `observed_task`
 - `recommended_next_action`
 - `recommended_host_operation`
 - `available_host_operations`
@@ -183,6 +204,10 @@ So the host can wire a closed loop:
 3. follow `recommended_host_operation`
 4. call `distill_and_promote_candidate`
 
+When the host does not want to manage a temporary observed-task file itself, the same
+execute response now also includes an inline `observed_task` object plus a secondary
+`distill_and_promote_candidate(observed_task=...)` action in `available_host_operations`.
+
 ## Host-Call Lifecycle Loop
 
 The explicit lifecycle path now uses the same host-call contract. Hosts can follow:
@@ -200,6 +225,9 @@ For `search_skill` with no strong match, the primary recommendation is now
 `capture_trajectory`, with `distill_and_promote_candidate` retained as a secondary action.
 That lets the host guide the user through the most explicit capture-first path while still
 exposing the shorter path when the host already has the needed artifact.
+That fallback action list now also includes inline-object variants for both capture and
+capture-plus-promotion, so hosts can stay entirely in memory when they do not want to
+create intermediate observed-task files.
 
 The fallback `distill_and_promote_candidate` operation advertises both supported entry paths in `argument_schema`:
 
@@ -215,6 +243,7 @@ Observed-task based flows share one normalized input contract across:
 
 - `capture_trajectory`
 - `distill_and_promote_candidate(observed_task_path=...)`
+- `distill_and_promote_candidate(observed_task=...)`
 - execute follow-ups that emit `observed_task_record`
 
 The runtime accepts three host-friendly shapes:
@@ -234,6 +263,11 @@ The runtime accepts three host-friendly shapes:
    - `records[].tool.arguments`
    - `records[].result.message` or `records[].result.output`
    - `records[].result.success` or `records[].result.status`
+
+Hosts can provide those shapes either:
+
+- by file path through `file_path` or `observed_task_path`
+- or inline as an object through `observed_task`
 
 Hosts should prefer keeping the emitted `observed_task_record` and passing it forward
 through `recommended_host_operation` instead of reconstructing a new artifact by hand.
@@ -267,6 +301,7 @@ Current `source_ref` families include:
 - `governance:archive_duplicate_candidates:{canonical_skill}` and `...:preview` for governance archive actions
 - `archive_duplicate_candidates:apply_follow_up`, `archive_duplicate_candidates:follow_up`, and
   `governance:report_refresh` for governance follow-up and refresh actions
+- `distill_coverage:report_refresh` and `distill_coverage:view:{name}` for coverage refresh and focused report views
 
 Hosts should treat these as traceable provenance pointers rather than user-facing labels.
 If the runtime changes the copy shown in `display_label` or `effect_summary`, `source_ref`

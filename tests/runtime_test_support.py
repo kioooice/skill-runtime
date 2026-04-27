@@ -252,6 +252,9 @@ class RuntimeTestCase(unittest.TestCase):
         display_label: str | None = None,
         risk_level: str | None = None,
         requires_confirmation: bool | None = None,
+        operation_group: str | None = None,
+        delivery_mode: str | None = None,
+        variant_role: str | None = None,
     ) -> None:
         self.assertEqual(operation_type, operation["type"])
         self.assertEqual(tool_name, operation["tool_name"])
@@ -269,6 +272,12 @@ class RuntimeTestCase(unittest.TestCase):
                 self.assertTrue(operation["confirmation_message"])
             else:
                 self.assertIsNone(operation["confirmation_message"])
+        if operation_group is not None:
+            self.assertEqual(operation_group, operation["operation_group"])
+        if delivery_mode is not None:
+            self.assertEqual(delivery_mode, operation["delivery_mode"])
+        if variant_role is not None:
+            self.assertEqual(variant_role, operation["variant_role"])
 
     def _assert_operation_role(self, operation: dict, expected_role: str) -> None:
         self.assertEqual(expected_role, operation["operation_role"])

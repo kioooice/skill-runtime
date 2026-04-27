@@ -1,0 +1,41 @@
+{
+  "skill_name": "directory_csv_to_json_rule_test",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_csv_to_json_rule_test.py",
+  "summary": "Convert matching CSV files in one directory into JSON files in another directory.",
+  "docstring": "功能描述:\n    Convert matching CSV files in one directory into JSON files in another directory.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+  "input_schema": {
+    "input_dir": "str",
+    "output_dir": "str",
+    "pattern": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "steps_executed": "int"
+  },
+  "source_trajectory_ids": [
+    "directory_csv_to_json_demo"
+  ],
+  "created_at": "2026-04-26T07:14:08.822224+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "active",
+  "audit_score": null,
+  "rule_name": "directory_csv_to_json",
+  "rule_priority": 74,
+  "rule_reason": "Matched directory_csv_to_json because the trajectory lists files, reads CSV text files, writes JSON files, and the task description mentions CSV and JSON.",
+  "tags": [
+    "another",
+    "convert",
+    "csv",
+    "directory",
+    "files",
+    "input_dir",
+    "into",
+    "json",
+    "matching",
+    "one",
+    "output_dir",
+    "pattern"
+  ]
+}

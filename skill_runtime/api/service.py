@@ -6,6 +6,7 @@ from typing import Any
 
 from skill_runtime.api.models import SkillMetadata
 from skill_runtime.audit.skill_auditor import SkillAuditor
+from skill_runtime.distill.coverage_report import DistillCoverageReport
 from skill_runtime.distill.skill_generator import SkillGenerationError, SkillGenerator
 from skill_runtime.execution.runtime_tools import RuntimeTools
 from skill_runtime.execution.skill_executor import SkillExecutionError, SkillExecutor
@@ -112,14 +113,23 @@ class RuntimeService:
                 {"reason": str(exc)},
             ) from exc
 
-        observed_record = self._save_execution_observed_record(metadata, args, result, tools.export_records())
+        observed_record, observed_payload = self._save_execution_observed_record(
+            metadata,
+            args,
+            result,
+            tools.export_records(),
+        )
         return with_recommendation(
             {
                 "skill_name": skill_name,
                 "result": result,
                 "observed_task_record": str(observed_record.resolve()),
+                "observed_task": observed_payload,
             },
-            executed_skill_promotion_recommendation(str(observed_record.resolve())),
+            executed_skill_promotion_recommendation(
+                str(observed_record.resolve()),
+                observed_task=observed_payload,
+            ),
         )
 
     def distill(self, trajectory_path: str | Path, skill_name: str | None = None) -> dict[str, Any]:
@@ -334,16 +344,30 @@ class RuntimeService:
 
     def capture_trajectory(
         self,
-        file_path: str | Path,
+        file_path: str | Path | None = None,
+        observed_task: dict[str, Any] | None = None,
         task_id: str | None = None,
         session_id: str | None = None,
     ) -> dict[str, Any]:
-        try:
-            trajectory, saved_path = TrajectoryCapture(self.trajectories_dir).capture(
-                file_path,
-                task_id=task_id,
-                session_id=session_id,
+        if bool(file_path) == bool(observed_task):
+            raise RuntimeServiceError(
+                "provide exactly one of file_path or observed_task",
+                "INVALID_CAPTURE_INPUT",
             )
+        try:
+            capturer = TrajectoryCapture(self.trajectories_dir)
+            if observed_task is not None:
+                trajectory, saved_path = capturer.capture_payload(
+                    observed_task,
+                    task_id=task_id,
+                    session_id=session_id,
+                )
+            else:
+                trajectory, saved_path = capturer.capture(
+                    file_path,
+                    task_id=task_id,
+                    session_id=session_id,
+                )
         except FileNotFoundError as exc:
             raise RuntimeServiceError(
                 "observed task file not found",
@@ -447,6 +471,37 @@ class RuntimeService:
     def governance_report(self) -> dict[str, Any]:
         return LibraryReport(self.root, SkillIndex(self.index_path)).build()
 
+    def distill_coverage_report(
+        self,
+        observed_task_scope: str = "all",
+        max_family_items: int | None = None,
+        min_family_count: int = 1,
+    ) -> dict[str, Any]:
+        allowed_scopes = DistillCoverageReport.OBSERVED_TASK_SCOPES
+        if observed_task_scope not in allowed_scopes:
+            raise RuntimeServiceError(
+                "observed_task_scope must be one of all, backlog, or execution",
+                "INVALID_OBSERVED_TASK_SCOPE",
+                {"observed_task_scope": observed_task_scope, "allowed": sorted(allowed_scopes)},
+            )
+        if max_family_items is not None and max_family_items < 1:
+            raise RuntimeServiceError(
+                "max_family_items must be >= 1 when provided",
+                "INVALID_MAX_FAMILY_ITEMS",
+                {"max_family_items": max_family_items},
+            )
+        if min_family_count < 1:
+            raise RuntimeServiceError(
+                "min_family_count must be >= 1",
+                "INVALID_MIN_FAMILY_COUNT",
+                {"min_family_count": min_family_count},
+            )
+        return DistillCoverageReport(self.root).build(
+            observed_task_scope=observed_task_scope,
+            max_family_items=max_family_items,
+            min_family_count=min_family_count,
+        )
+
     def archive_duplicate_candidates(
         self,
         skill_names: list[str] | None = None,
@@ -494,19 +549,25 @@ class RuntimeService:
         self,
         trajectory_path: str | Path | None = None,
         observed_task_path: str | Path | None = None,
+        observed_task: dict[str, Any] | None = None,
         skill_name: str | None = None,
         register_trajectory: bool = True,
     ) -> dict[str, Any]:
-        if bool(trajectory_path) == bool(observed_task_path):
+        provided_inputs = [
+            value
+            for value in (trajectory_path, observed_task_path, observed_task)
+            if value is not None
+        ]
+        if len(provided_inputs) != 1:
             raise RuntimeServiceError(
-                "provide exactly one of trajectory_path or observed_task_path",
+                "provide exactly one of trajectory_path, observed_task_path, or observed_task",
                 "INVALID_DISTILL_PROMOTE_INPUT",
             )
 
         capture_result: dict[str, Any] | None = None
         resolved_trajectory_path = trajectory_path
-        if observed_task_path:
-            capture_result = self.capture_trajectory(observed_task_path)
+        if observed_task_path or observed_task is not None:
+            capture_result = self.capture_trajectory(file_path=observed_task_path, observed_task=observed_task)
             resolved_trajectory_path = capture_result["trajectory_path"]
             register_trajectory = False
 
@@ -565,7 +626,7 @@ class RuntimeService:
         args: dict[str, Any],
         result: dict[str, Any],
         steps: list[dict[str, Any]],
-    ) -> Path:
+    ) -> tuple[Path, dict[str, Any]]:
         self.observed_tasks_dir.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
         output_path = self.observed_tasks_dir / f"execute_{metadata.skill_name}_{stamp}.json"
@@ -586,4 +647,4 @@ class RuntimeService:
             },
         }
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        return output_path
+        return output_path, payload

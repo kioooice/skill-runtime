@@ -36,13 +36,18 @@ class TrajectoryCapture:
             raise FileNotFoundError(f"observed task file not found: {source_ref}")
 
         payload = json.loads(source_ref.read_text(encoding="utf-8"))
+        return self.capture_payload(payload, task_id=task_id, session_id=session_id)
+
+    def capture_payload(
+        self,
+        payload: dict[str, Any],
+        task_id: str | None = None,
+        session_id: str | None = None,
+    ) -> tuple[Trajectory, Path]:
+        if not isinstance(payload, dict):
+            raise TrajectoryCaptureError("observed task payload must be an object")
         trajectory = self._to_trajectory(payload, task_id=task_id, session_id=session_id)
-        output_path = self.output_dir / f"{trajectory.task_id}.json"
-        output_path.write_text(
-            json.dumps(asdict(trajectory), ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-        return trajectory, output_path
+        return trajectory, self._save_trajectory(trajectory)
 
     def _to_trajectory(
         self,
@@ -67,6 +72,8 @@ class TrajectoryCapture:
 
         resolved_task_id = task_id or payload.get("task_id") or self._derive_task_id(task_description)
         resolved_session_id = session_id or payload.get("session_id") or f"capture_{resolved_task_id}"
+        skill_args = payload.get("skill_args")
+        supplemental_inputs = skill_args if isinstance(skill_args, dict) else {}
 
         steps: list[TrajectoryStep] = []
         collected_artifacts: list[str] = []
@@ -83,6 +90,8 @@ class TrajectoryCapture:
                 tool_input = {}
             if not isinstance(tool_input, dict):
                 raise TrajectoryCaptureError(f"step {index}: tool_input must be a dict")
+            if supplemental_inputs:
+                tool_input = {**supplemental_inputs, **tool_input}
 
             observation = self._extract_observation(step)
             if not observation:
@@ -124,6 +133,14 @@ class TrajectoryCapture:
             started_at=str(started_at),
             ended_at=str(ended_at),
         )
+
+    def _save_trajectory(self, trajectory: Trajectory) -> Path:
+        output_path = self.output_dir / f"{trajectory.task_id}.json"
+        output_path.write_text(
+            json.dumps(asdict(trajectory), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        return output_path
 
     def _derive_task_id(self, task_description: str) -> str:
         slug = re.sub(r"[^a-z0-9]+", "_", task_description.lower()).strip("_")

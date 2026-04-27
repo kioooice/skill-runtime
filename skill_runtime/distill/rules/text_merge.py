@@ -35,12 +35,19 @@ def augment_input_schema(trajectory: Trajectory, input_schema: dict[str, str]) -
     updated = dict(input_schema)
     if _observed_pattern(trajectory):
         updated.setdefault("pattern", "str")
+    for step in trajectory.steps:
+        if step.tool_name.lower() == "write_text" and "newline" in step.tool_input:
+            updated.setdefault("newline", "str")
     return updated
 
 
 def build_code(skill_name: str, summary: str, docstring: str, trajectory: Trajectory) -> str:
     default_artifact = trajectory.artifacts[0] if trajectory.artifacts else "output.md"
     default_pattern = _observed_pattern(trajectory) or "*.txt"
+    observed_newline = next(
+        (step.tool_input.get("newline") for step in trajectory.steps if step.tool_name.lower() == "write_text" and "newline" in step.tool_input),
+        None,
+    )
 
     return f'''from pathlib import Path
 
@@ -52,6 +59,7 @@ def run(tools, **kwargs):
     input_dir = kwargs.get("input_dir")
     output_path = kwargs.get("output_path")
     pattern = kwargs.get("pattern", "{escape(default_pattern)}")
+    newline = kwargs.get("newline", {repr(observed_newline)})
 
     missing = [
         name
@@ -69,7 +77,7 @@ def run(tools, **kwargs):
         contents.append(f"# {{name}}\\n\\n{{text}}\\n")
 
     merged = "\\n".join(contents).strip() + "\\n"
-    tools.write_text(output_path, merged)
+    tools.write_text(output_path, merged, newline=newline)
 
     return {{
         "status": "completed",

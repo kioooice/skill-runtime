@@ -84,6 +84,7 @@ class RuntimeArchitectureTestsMixin:
             {
                 "skill_runtime.api.models",
                 "skill_runtime.audit.skill_auditor",
+                "skill_runtime.distill.coverage_report",
                 "skill_runtime.distill.skill_generator",
                 "skill_runtime.execution.runtime_tools",
                 "skill_runtime.execution.skill_executor",
@@ -141,6 +142,7 @@ class RuntimeArchitectureTestsMixin:
     def test_runtime_memory_distill_audit_and_execution_module_boundaries(self) -> None:
         trajectory_capture_path = ROOT / "skill_runtime" / "memory" / "trajectory_capture.py"
         trajectory_store_path = ROOT / "skill_runtime" / "memory" / "trajectory_store.py"
+        coverage_report_path = ROOT / "skill_runtime" / "distill" / "coverage_report.py"
         skill_generator_path = ROOT / "skill_runtime" / "distill" / "skill_generator.py"
         skill_auditor_path = ROOT / "skill_runtime" / "audit" / "skill_auditor.py"
         skill_executor_path = ROOT / "skill_runtime" / "execution" / "skill_executor.py"
@@ -160,6 +162,19 @@ class RuntimeArchitectureTestsMixin:
             {
                 name
                 for name in self._module_imports(trajectory_store_path)
+                if name.startswith("skill_runtime.")
+            },
+        )
+        self.assertEqual(
+            {
+                "skill_runtime.mcp.host_operations",
+                "skill_runtime.distill.skill_generator",
+                "skill_runtime.memory.trajectory_capture",
+                "skill_runtime.memory.trajectory_store",
+            },
+            {
+                name
+                for name in self._module_imports(coverage_report_path)
                 if name.startswith("skill_runtime.")
             },
         )
@@ -274,10 +289,18 @@ class RuntimeArchitectureTestsMixin:
             },
         )
         for rule_name in (
+            "batch_rename_case.py",
+            "batch_rename_extension.py",
+            "batch_rename_replace.py",
             "batch_rename.py",
+            "batch_rename_suffix.py",
             "csv_to_json.py",
+            "directory_csv_to_json.py",
             "directory_copy.py",
+            "directory_json_transform.py",
+            "directory_json_to_csv.py",
             "directory_move.py",
+            "directory_text_transform.py",
             "directory_text_replace.py",
             "json_to_csv.py",
             "single_json_transform.py",

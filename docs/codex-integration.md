@@ -61,6 +61,7 @@ The runtime currently exposes these MCP tools:
 - `reindex_skills`
 - `backfill_skill_provenance`
 - `governance_report`
+- `distill_coverage_report`
 - `archive_duplicate_candidates`
 - `archive_cold_skills`
 
@@ -74,7 +75,7 @@ For repetitive or workflow-like tasks:
 4. If no good match exists, let Codex complete the task normally
 5. Preferred short path: call `distill_and_promote_candidate`
 6. Explicit path: call `capture_trajectory`, `log_trajectory`, `distill_trajectory`, `audit_skill`, and `promote_skill`
-7. Use `governance_report`, `reindex_skills`, `backfill_skill_provenance`, `archive_duplicate_candidates`, and `archive_cold_skills` for library maintenance
+7. Use `governance_report`, `distill_coverage_report`, `reindex_skills`, `backfill_skill_provenance`, `archive_duplicate_candidates`, and `archive_cold_skills` for library maintenance
 
 `governance_report` recommendations are now host-call aligned. A Codex host can read
 `recommended_actions[].host_operation` and directly call the named MCP tool with the
@@ -108,11 +109,19 @@ Execute responses now continue that same contract. After a successful `execute_s
 Codex can use:
 
 - `observed_task_record` as the runtime-produced artifact
+- `observed_task` as the inline artifact payload
 - `recommended_host_operation` to call `distill_and_promote_candidate`
 - `available_host_operations` to present the approved next actions directly
 
 That means the host should not synthesize `observed_task_path` itself when the runtime
-has already returned it.
+has already returned it. If the host prefers not to pass file paths around, it can use
+the secondary inline `observed_task` follow-up action from `available_host_operations`.
+
+`distill_coverage_report` now follows the same idea for observability. Besides
+`view_host_operations`, the combined `all` view will also recommend the execution-only view
+when fallback and backlog work are both clear but execution-derived traffic is still present,
+so Codex can continue drilling into the next useful review surface instead of stopping on an
+empty recommendation.
 
 ## Host-Call Lifecycle Loop
 
@@ -130,8 +139,11 @@ That removes most of the remaining host-side sequencing logic for the manual lif
 For no-strong-match search fallbacks, Codex now gets `capture_trajectory` as the primary
 recommended action and `distill_and_promote_candidate` as a secondary available action.
 The shorter-path operation still exposes both `trajectory_path` and `observed_task_path`
-in `argument_schema`, along with optional `skill_name` and `register_trajectory`, so
+in `argument_schema`, plus inline `observed_task`, along with optional `skill_name` and `register_trajectory`, so
 Codex integrations can drive the right input collection flow explicitly.
+The no-strong-match action list now also includes an inline `capture_trajectory(observed_task=...)`
+variant, so hosts can choose between file-backed and in-memory capture without inventing
+their own contract shape.
 The accepted observed-task artifact shapes are documented centrally in
 `docs/mcp-integration.md` under `Observed Task Input Shapes`.
 
@@ -144,6 +156,9 @@ Host-operation payloads now also include:
 
 - `operation_id`
 - `operation_role`
+- `operation_group`
+- `delivery_mode`
+- `variant_role`
 - `source_ref`
 - `display_label`
 - `effect_summary`
@@ -156,6 +171,10 @@ So Codex-side integrations can make consistent UX choices for low-risk execution
 medium-risk promotion flows, and high-risk archive actions.
 Those values are driven by shared runtime presets unless a specific workflow supplies a
 more specific override.
+For paired host actions, `operation_group` and `delivery_mode` let Codex-side hosts present
+file-backed and inline variants as one grouped choice instead of unrelated buttons.
+`variant_role` then tells the host which grouped variant is the runtime-preferred default
+and which one should be treated as the alternate path.
 For `execute_skill`, `argument_schema.args.properties` is now expanded from the skill's
 metadata input schema, which lets Codex-side hosts build parameter UIs from concrete fields
 instead of treating `args` as an undifferentiated object.

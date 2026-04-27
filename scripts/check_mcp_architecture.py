@@ -69,6 +69,7 @@ def check_mcp_architecture(root: Path) -> list[str]:
     skill_index_path = runtime_root / "retrieval" / "skill_index.py"
     trajectory_capture_path = runtime_root / "memory" / "trajectory_capture.py"
     trajectory_store_path = runtime_root / "memory" / "trajectory_store.py"
+    coverage_report_path = runtime_root / "distill" / "coverage_report.py"
     skill_generator_path = runtime_root / "distill" / "skill_generator.py"
     fallback_service_path = runtime_root / "distill" / "fallback" / "service.py"
     fallback_provider_path = runtime_root / "distill" / "fallback" / "provider.py"
@@ -198,6 +199,7 @@ def check_mcp_architecture(root: Path) -> list[str]:
         service_path: {
             "skill_runtime.api.models",
             "skill_runtime.audit.skill_auditor",
+            "skill_runtime.distill.coverage_report",
             "skill_runtime.distill.skill_generator",
             "skill_runtime.execution.runtime_tools",
             "skill_runtime.execution.skill_executor",
@@ -225,6 +227,12 @@ def check_mcp_architecture(root: Path) -> list[str]:
         },
         trajectory_capture_path: {"skill_runtime.api.models"},
         trajectory_store_path: {"skill_runtime.api.models"},
+        coverage_report_path: {
+            "skill_runtime.mcp.host_operations",
+            "skill_runtime.distill.skill_generator",
+            "skill_runtime.memory.trajectory_capture",
+            "skill_runtime.memory.trajectory_store",
+        },
         skill_generator_path: {
             "skill_runtime.api.models",
             "skill_runtime.distill.fallback.service",

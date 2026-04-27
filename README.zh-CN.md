@@ -187,6 +187,7 @@ python scripts/skill_cli.py capture-trajectory --file <observed_task.json>
 python scripts/skill_cli.py reindex
 python scripts/skill_cli.py archive-cold --days 30
 python scripts/skill_cli.py governance-report
+python scripts/skill_cli.py distill-coverage-report
 python scripts/skill_cli.py archive-duplicate-candidates --dry-run
 python scripts/skill_cli.py archive-duplicate-candidates --skill-name <name>
 python scripts/skill_cli.py backfill-provenance
@@ -225,8 +226,12 @@ python D:/02-Projects/vibe/scripts/skill_mcp_server.py --root D:/02-Projects/vib
 - `reindex_skills`
 - `backfill_skill_provenance`
 - `governance_report`
+- `distill_coverage_report`
 - `archive_duplicate_candidates`
 - `archive_cold_skills`
+
+`distill_coverage_report` 会汇总当前成功 trajectory 中有多少已经命中 deterministic
+rule、有多少仍落到 `llm_fallback`，并按工具序列与推断出的输入 schema 聚合剩余热点。
 
 `governance_report` 现在返回可直接执行的宿主调用信息，例如：
 
