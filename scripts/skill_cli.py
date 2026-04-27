@@ -95,7 +95,7 @@ def cmd_execute(args: argparse.Namespace) -> int:
         )
 
     try:
-        return ok(service_for_args(args).execute(args.skill, parsed_args))
+        return ok(service_for_args(args).execute(args.skill, parsed_args, dry_run=args.dry_run))
     except RuntimeServiceError as exc:
         exit_code = EXIT_NOT_FOUND if exc.code == "SKILL_NOT_FOUND" else EXIT_RUNTIME_ERROR
         if exc.code == "INVALID_ARGS_OBJECT":
@@ -297,6 +297,7 @@ def build_parser() -> argparse.ArgumentParser:
     execute_parser.add_argument("--skill", required=True)
     execute_parser.add_argument("--args")
     execute_parser.add_argument("--args-file")
+    execute_parser.add_argument("--dry-run", action="store_true")
     execute_parser.set_defaults(func=cmd_execute)
 
     distill_parser = subparsers.add_parser("distill")

@@ -89,6 +89,92 @@ class RuntimeExecutionFlowTestsMixin:
         self.assertEqual("SKILL_EXECUTION_FAILED", extension_error.exception.code)
         self.assertIn("path extension is not allowed", extension_error.exception.details["reason"])
 
+    def test_service_execute_blocks_mutation_when_dry_run_is_required(self) -> None:
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        self._write_active_skill_fixture(
+            "scope_requires_dry_run_skill",
+            {
+                "summary": "Write output behind dry-run policy.",
+                "docstring": "scope test",
+                "input_schema": {"output_path": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-27T00:00:00+00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["scope", "dry-run"],
+                "scope_policy": {
+                    "allowed_roots": ["demo/output"],
+                    "allowed_extensions": [".txt"],
+                    "requires_dry_run": True,
+                },
+            },
+            source=(
+                "def run(tools, output_path, **kwargs):\n"
+                "    tools.write_text(output_path, 'dry-run-required')\n"
+                "    return {'status': 'completed'}\n"
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(sandbox_root / "skill_store" / "active")
+
+        with self.assertRaises(RuntimeServiceError) as context:
+            sandbox_service.execute(
+                "scope_requires_dry_run_skill",
+                {"output_path": "demo/output/requires_dry_run.txt"},
+            )
+
+        self.assertEqual("SKILL_EXECUTION_FAILED", context.exception.code)
+        self.assertIn("dry-run execution is required", context.exception.details["reason"])
+
+    def test_service_execute_dry_run_returns_planned_changes_without_writing(self) -> None:
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        self._write_active_skill_fixture(
+            "scope_dry_run_plan_skill",
+            {
+                "summary": "Plan a scoped write.",
+                "docstring": "scope test",
+                "input_schema": {"output_path": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-27T00:00:00+00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["scope", "dry-run"],
+                "scope_policy": {
+                    "allowed_roots": ["demo/output"],
+                    "allowed_extensions": [".txt"],
+                    "requires_dry_run": True,
+                },
+            },
+            source=(
+                "def run(tools, output_path, **kwargs):\n"
+                "    tools.write_text(output_path, 'planned-write')\n"
+                "    return {'status': 'completed', 'mode': 'dry-run'}\n"
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(sandbox_root / "skill_store" / "active")
+
+        result = sandbox_service.execute(
+            "scope_dry_run_plan_skill",
+            {"output_path": "demo/output/planned_only.txt"},
+            dry_run=True,
+        )
+
+        self.assertTrue(result["dry_run"])
+        self.assertEqual("completed", result["result"]["status"])
+        self.assertEqual("dry-run", result["result"]["mode"])
+        self.assertFalse((sandbox_root / "demo" / "output" / "planned_only.txt").exists())
+        self.assertEqual(1, len(result["planned_changes"]))
+        self.assertEqual("write_text", result["planned_changes"][0]["tool_name"])
+        self.assertEqual("planned", result["planned_changes"][0]["status"])
+        self.assertIn("Would write text", result["planned_changes"][0]["observation"])
+
     def test_scope_policy_round_trips_through_skill_index(self) -> None:
         sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
         self._write_active_skill_fixture(
@@ -177,6 +263,59 @@ class RuntimeExecutionFlowTestsMixin:
 
         self.assertEqual("ok", payload["status"])
         self.assertTrue(output_path.exists())
+
+    def test_execute_cli_dry_run_returns_planned_changes(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        self._write_active_skill_fixture(
+            "scope_cli_dry_run_skill",
+            {
+                "summary": "Plan output through CLI dry-run.",
+                "docstring": "scope test",
+                "input_schema": {"output_path": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-27T00:00:00+00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["scope", "dry-run", "cli"],
+                "scope_policy": {
+                    "allowed_roots": ["demo/output"],
+                    "allowed_extensions": [".txt"],
+                    "requires_dry_run": True,
+                },
+            },
+            source=(
+                "def run(tools, output_path, **kwargs):\n"
+                "    tools.write_text(output_path, 'cli-planned-write')\n"
+                "    return {'status': 'completed'}\n"
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(sandbox_root / "skill_store" / "active")
+        output_path = sandbox_root / "demo" / "output" / "cli_planned_only.txt"
+        args_file = self._write_args_file(
+            "cli_dry_run_args.json",
+            {"output_path": "demo/output/cli_planned_only.txt"},
+            root=sandbox_root,
+        )
+
+        payload = self._run_cli(
+            "execute",
+            "--skill",
+            "scope_cli_dry_run_skill",
+            "--args-file",
+            str(args_file),
+            "--dry-run",
+            root=sandbox_root,
+            expect_json=True,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        self.assertTrue(payload["data"]["dry_run"])
+        self.assertFalse(output_path.exists())
+        self.assertEqual("planned", payload["data"]["planned_changes"][0]["status"])
 
     def test_service_execute_returns_observed_task_record(self) -> None:
         sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()

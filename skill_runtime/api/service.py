@@ -85,7 +85,7 @@ class RuntimeService:
             search_no_match_recommendation(),
         )
 
-    def execute(self, skill_name: str, args: dict[str, Any]) -> dict[str, Any]:
+    def execute(self, skill_name: str, args: dict[str, Any], *, dry_run: bool = False) -> dict[str, Any]:
         if not isinstance(args, dict):
             raise RuntimeServiceError(
                 "--args must decode to a JSON object",
@@ -98,7 +98,7 @@ class RuntimeService:
         if metadata is None:
             raise RuntimeServiceError("skill not found", "SKILL_NOT_FOUND", {"skill_name": skill_name})
 
-        tools = RuntimeTools(self.root)
+        tools = RuntimeTools(self.root, dry_run=dry_run)
         try:
             result = SkillExecutor(
                 index=index,
@@ -122,7 +122,13 @@ class RuntimeService:
         return with_recommendation(
             {
                 "skill_name": skill_name,
+                "dry_run": dry_run,
                 "result": result,
+                "planned_changes": [
+                    dict(record)
+                    for record in tools.export_records()
+                    if record.get("status") == "planned"
+                ],
                 "observed_task_record": str(observed_record.resolve()),
                 "observed_task": observed_payload,
             },

@@ -15,13 +15,18 @@ class RuntimeTools:
         workspace: str | Path = ".",
         *,
         scope_policy: dict[str, Any] | None = None,
+        dry_run: bool = False,
     ) -> None:
         self.workspace = Path(workspace).resolve()
         self._records: list[dict[str, Any]] = []
         self._scope_policy = self._normalize_scope_policy(scope_policy)
+        self._dry_run = dry_run
 
     def apply_scope_policy(self, scope_policy: dict[str, Any] | None) -> None:
         self._scope_policy = self._normalize_scope_policy(scope_policy)
+
+    def set_dry_run(self, dry_run: bool) -> None:
+        self._dry_run = dry_run
 
     def read_text(self, path: str | Path) -> str:
         target = self._resolve_path(path, enforce_extension=True)
@@ -41,6 +46,16 @@ class RuntimeTools:
         newline: str | None = None,
     ) -> str:
         target = self._resolve_path(path, enforce_extension=True)
+        self._validate_mutation_allowed("write_text")
+        if self._dry_run:
+            self._record(
+                "write_text",
+                {"path": str(path), "newline": newline},
+                f"Would write text to {self._display_path(target)}.",
+                artifacts=[self._display_path(target)],
+                status="planned",
+            )
+            return str(target)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8", newline=newline)
         self._record(
@@ -71,6 +86,21 @@ class RuntimeTools:
         sort_keys: bool = False,
     ) -> str:
         target = self._resolve_path(path, enforce_extension=True)
+        self._validate_mutation_allowed("write_json")
+        if self._dry_run:
+            self._record(
+                "write_json",
+                {
+                    "path": str(path),
+                    "ensure_ascii": ensure_ascii,
+                    "indent": indent,
+                    "sort_keys": sort_keys,
+                },
+                f"Would write JSON to {self._display_path(target)}.",
+                artifacts=[self._display_path(target)],
+                status="planned",
+            )
+            return str(target)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(
             json.dumps(payload, ensure_ascii=ensure_ascii, indent=indent, sort_keys=sort_keys),
@@ -109,6 +139,16 @@ class RuntimeTools:
     def rename_path(self, source_path: str | Path, target_path: str | Path) -> str:
         source = self._resolve_path(source_path, enforce_extension=True)
         target = self._resolve_path(target_path, enforce_extension=True)
+        self._validate_mutation_allowed("rename_path")
+        if self._dry_run:
+            self._record(
+                "rename_path",
+                {"source_path": str(source_path), "target_path": str(target_path)},
+                f"Would rename {self._display_path(source)} to {self._display_path(target)}.",
+                artifacts=[self._display_path(target)],
+                status="planned",
+            )
+            return str(target)
         target.parent.mkdir(parents=True, exist_ok=True)
         source.rename(target)
         self._record(
@@ -125,6 +165,16 @@ class RuntimeTools:
     def copy_file(self, source_path: str | Path, target_path: str | Path) -> str:
         source = self._resolve_path(source_path, enforce_extension=True)
         target = self._resolve_path(target_path, enforce_extension=True)
+        self._validate_mutation_allowed("copy_file")
+        if self._dry_run:
+            self._record(
+                "copy_file",
+                {"source_path": str(source_path), "target_path": str(target_path)},
+                f"Would copy {self._display_path(source)} to {self._display_path(target)}.",
+                artifacts=[self._display_path(target)],
+                status="planned",
+            )
+            return str(target)
         target.parent.mkdir(parents=True, exist_ok=True)
         copy2(source, target)
         self._record(
@@ -137,6 +187,19 @@ class RuntimeTools:
 
     def run_shell(self, command: list[str]) -> dict[str, Any]:
         self._validate_command(command)
+        if self._dry_run:
+            self._record(
+                "run_shell",
+                {"command": command},
+                f"Would run shell command: {' '.join(command)}.",
+                status="planned",
+            )
+            return {
+                "returncode": 0,
+                "stdout": "",
+                "stderr": "",
+                "planned": True,
+            }
         result = subprocess.run(
             command,
             capture_output=True,
@@ -175,6 +238,7 @@ class RuntimeTools:
             raise ToolPolicyError("empty command is not allowed")
         if not self._scope_policy["allow_shell"]:
             raise ToolPolicyError("shell access is not allowed for this skill")
+        self._validate_mutation_allowed("run_shell")
         command_name = Path(command[0]).name.lower()
         if not self._scope_policy["allow_delete"] and command_name in {
             "rm",
@@ -255,6 +319,12 @@ class RuntimeTools:
     def _normalize_root(self, root: str) -> str:
         normalized = str(Path(root)).replace("\\", "/").strip("/")
         return normalized
+
+    def _validate_mutation_allowed(self, tool_name: str) -> None:
+        if self._scope_policy.get("requires_dry_run") and not self._dry_run:
+            raise ToolPolicyError(
+                f"dry-run execution is required for mutating tool: {tool_name}"
+            )
 
     def _validate_scope_path(self, target: Path, *, enforce_extension: bool) -> None:
         allowed_roots = self._scope_policy.get("allowed_roots")
