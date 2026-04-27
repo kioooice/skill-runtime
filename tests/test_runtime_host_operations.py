@@ -18,6 +18,7 @@ class RuntimeHostOperationTestsMixin:
             audit_skill_operation,
             archive_duplicate_candidates_action,
             archive_duplicate_candidates_operation,
+            archive_fixture_skills_operation,
             collect_operations,
             distill_coverage_report_operation,
             distill_trajectory_operation,
@@ -61,6 +62,11 @@ class RuntimeHostOperationTestsMixin:
             dry_run=False,
             include_preview=True,
         )
+        archive_fixture_payload = archive_fixture_skills_operation(
+            ["cli_merge_fixture_test", "demo_merge_fixture_test"],
+            dry_run=False,
+            include_preview=True,
+        )
         distill_payload = distill_trajectory_operation(self.HOST_TRAJECTORY_PATH)
         audit_payload = audit_skill_operation(self.HOST_SKILL_FILE, trajectory_path=self.HOST_TRAJECTORY_PATH)
         governance_payload = governance_report_operation()
@@ -80,6 +86,7 @@ class RuntimeHostOperationTestsMixin:
         )
         review_action = review_archive_volume_action()
         fixture_review_action = review_fixture_noise_action(
+            skill_names=["cli_merge_fixture_test", "demo_merge_fixture_test"],
             fixture_count=2,
             hidden_fixture_only_duplicate_clusters=1,
         )
@@ -120,6 +127,7 @@ class RuntimeHostOperationTestsMixin:
             "execute_payload": execute_payload,
             "archive_payload": archive_payload,
             "archive_helper_payload": archive_helper_payload,
+            "archive_fixture_payload": archive_fixture_payload,
             "distill_payload": distill_payload,
             "audit_payload": audit_payload,
             "governance_payload": governance_payload,
@@ -292,11 +300,14 @@ class RuntimeHostOperationTestsMixin:
             source_ref_archive_duplicate_candidates_apply_follow_up,
             source_ref_archive_duplicate_candidates_follow_up,
             source_ref_archive_duplicate_candidates_preview,
+            source_ref_archive_fixture_skills,
+            source_ref_archive_fixture_skills_apply_follow_up,
+            source_ref_archive_fixture_skills_follow_up,
+            source_ref_archive_fixture_skills_preview,
             source_ref_audit,
             source_ref_distill_coverage_report_refresh,
             source_ref_distill_coverage_report_view,
             source_ref_distill,
-            source_ref_governance_fixture_review,
             source_ref_governance_report_refresh,
             source_ref_observed_task,
             source_ref_observed_task_rollback,
@@ -327,8 +338,11 @@ class RuntimeHostOperationTestsMixin:
             "governance_preview_source_ref": source_ref_archive_duplicate_candidates_preview(self.HOST_SKILL_NAME),
             "governance_follow_up_source_ref": source_ref_archive_duplicate_candidates_follow_up(),
             "governance_apply_follow_up_source_ref": source_ref_archive_duplicate_candidates_apply_follow_up(),
+            "governance_archive_fixture_source_ref": source_ref_archive_fixture_skills(),
+            "governance_archive_fixture_preview_source_ref": source_ref_archive_fixture_skills_preview(),
+            "governance_archive_fixture_follow_up_source_ref": source_ref_archive_fixture_skills_follow_up(),
+            "governance_archive_fixture_apply_follow_up_source_ref": source_ref_archive_fixture_skills_apply_follow_up(),
             "governance_report_refresh_source_ref": source_ref_governance_report_refresh(),
-            "governance_fixture_review_source_ref": source_ref_governance_fixture_review(),
             "distill_coverage_report_refresh_source_ref": source_ref_distill_coverage_report_refresh(),
             "distill_coverage_report_execution_view_source_ref": source_ref_distill_coverage_report_view("execution"),
         }
@@ -533,6 +547,7 @@ class RuntimeHostOperationTestsMixin:
         review_action = samples["review_action"]
         fixture_review_action = samples["fixture_review_action"]
         archive_payload = samples["archive_payload"]
+        archive_fixture_payload = samples["archive_fixture_payload"]
         governance_report = samples["governance_report"]
         governance_recommendation = samples["governance_recommendation"]
         action_operations = samples["action_operations"]
@@ -546,8 +561,13 @@ class RuntimeHostOperationTestsMixin:
         self.assertEqual("review_archive_volume", review_action["action"])
         self.assertEqual("governance_report", review_action["host_operation"]["tool_name"])
         self.assertEqual("review_fixture_noise", fixture_review_action["action"])
-        self.assertEqual("governance_report", fixture_review_action["host_operation"]["tool_name"])
+        self.assertEqual("archive_fixture_skills", fixture_review_action["host_operation"]["tool_name"])
         self.assertIn("fixture skills are active", fixture_review_action["reason"])
+        self.assertEqual(
+            ["cli_merge_fixture_test", "demo_merge_fixture_test"],
+            fixture_review_action["host_operation"]["arguments"]["skill_names"],
+        )
+        self.assertTrue(fixture_review_action["host_operation"]["preview"]["arguments"]["dry_run"])
         self.assertEqual("Refresh governance report", refresh_governance_operation["display_label"])
         self.assertEqual(
             f"governance:archive_duplicate_candidates:{self.HOST_SKILL_NAME}",
@@ -562,8 +582,20 @@ class RuntimeHostOperationTestsMixin:
             "archive_duplicate_candidates:apply_follow_up",
             samples["governance_apply_follow_up_source_ref"],
         )
+        self.assertEqual("governance:archive_fixture_skills", samples["governance_archive_fixture_source_ref"])
+        self.assertEqual(
+            "governance:archive_fixture_skills:preview",
+            samples["governance_archive_fixture_preview_source_ref"],
+        )
+        self.assertEqual(
+            "archive_fixture_skills:follow_up",
+            samples["governance_archive_fixture_follow_up_source_ref"],
+        )
+        self.assertEqual(
+            "archive_fixture_skills:apply_follow_up",
+            samples["governance_archive_fixture_apply_follow_up_source_ref"],
+        )
         self.assertEqual("governance:report_refresh", samples["governance_report_refresh_source_ref"])
-        self.assertEqual("governance:fixture_review", samples["governance_fixture_review_source_ref"])
         self.assertEqual("distill_coverage:report_refresh", samples["distill_coverage_report_refresh_source_ref"])
         self.assertEqual(
             "distill_coverage:view:execution",
@@ -600,3 +632,16 @@ class RuntimeHostOperationTestsMixin:
         )
         self.assertIsNone(archive_payload["preview"]["source_ref"])
         self._assert_operation_role(archive_payload["preview"], "preview")
+        self._assert_host_operation_basics(
+            archive_fixture_payload,
+            tool_name="archive_fixture_skills",
+            display_label="Archive fixture skills",
+            risk_level="high",
+            requires_confirmation=True,
+        )
+        self._assert_host_operation_basics(
+            archive_fixture_payload["preview"],
+            tool_name="archive_fixture_skills",
+            display_label="Preview fixture archive",
+            requires_confirmation=False,
+        )

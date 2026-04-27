@@ -14,8 +14,10 @@ from skill_runtime.execution.skill_executor import SkillExecutionError, SkillExe
 from skill_runtime.governance.library_report import LibraryReport
 from skill_runtime.governance.promotion_guard import PromotionGuard, PromotionGuardError
 from skill_runtime.governance.provenance_backfill import ProvenanceBackfill
+from skill_runtime.library_tiers import classify_skill_name
 from skill_runtime.mcp.host_operations import (
     archive_duplicate_candidates_follow_up_recommendation,
+    archive_fixture_skills_follow_up_recommendation,
     captured_trajectory_recommendation,
     distilled_skill_audit_recommendation,
     executed_skill_promotion_recommendation,
@@ -731,6 +733,47 @@ class RuntimeService:
         if not dry_run:
             index.save_all(skills)
         recommendation = archive_duplicate_candidates_follow_up_recommendation(
+            sorted(set(planned)),
+            dry_run=dry_run,
+        )
+        return with_recommendation(
+            {
+                "dry_run": dry_run,
+                "planned": sorted(set(planned)),
+                "planned_count": len(set(planned)),
+                "archived": archived,
+                "archived_count": len(archived),
+            },
+            recommendation,
+        )
+
+    def archive_fixture_skills(
+        self,
+        skill_names: list[str] | None = None,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        index = SkillIndex(self.index_path)
+        skills = index.load_all()
+        target_names = set(skill_names or [])
+        archived: list[str] = []
+        planned: list[str] = []
+
+        for metadata in skills:
+            if metadata.status != "active":
+                continue
+            if classify_skill_name(metadata.skill_name) != "fixture":
+                continue
+            if target_names and metadata.skill_name not in target_names:
+                continue
+            planned.append(metadata.skill_name)
+            if dry_run:
+                continue
+            if self._archive_skill_metadata(metadata):
+                archived.append(metadata.skill_name)
+
+        if not dry_run:
+            index.save_all(skills)
+        recommendation = archive_fixture_skills_follow_up_recommendation(
             sorted(set(planned)),
             dry_run=dry_run,
         )

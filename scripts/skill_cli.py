@@ -326,6 +326,10 @@ def cmd_archive_duplicate_candidates(args: argparse.Namespace) -> int:
     return ok(service_for_args(args).archive_duplicate_candidates(skill_names=args.skill_name, dry_run=args.dry_run))
 
 
+def cmd_archive_fixture_skills(args: argparse.Namespace) -> int:
+    return ok(service_for_args(args).archive_fixture_skills(skill_names=args.skill_name, dry_run=args.dry_run))
+
+
 def cmd_distill_and_promote(args: argparse.Namespace) -> int:
     if sum(
         1
@@ -472,6 +476,11 @@ def build_parser() -> argparse.ArgumentParser:
     archive_duplicates_parser.add_argument("--skill-name", action="append")
     archive_duplicates_parser.add_argument("--dry-run", action="store_true")
     archive_duplicates_parser.set_defaults(func=cmd_archive_duplicate_candidates)
+
+    archive_fixture_parser = subparsers.add_parser("archive-fixture-skills")
+    archive_fixture_parser.add_argument("--skill-name", action="append")
+    archive_fixture_parser.add_argument("--dry-run", action="store_true")
+    archive_fixture_parser.set_defaults(func=cmd_archive_fixture_skills)
 
     return parser
 

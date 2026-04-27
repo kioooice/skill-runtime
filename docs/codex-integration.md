@@ -63,6 +63,7 @@ The runtime currently exposes these MCP tools:
 - `governance_report`
 - `distill_coverage_report`
 - `archive_duplicate_candidates`
+- `archive_fixture_skills`
 - `archive_cold_skills`
 
 ## Recommended Codex Workflow
@@ -75,7 +76,7 @@ For repetitive or workflow-like tasks:
 4. If no good match exists, let Codex complete the task normally
 5. Preferred short path: call `distill_and_promote_candidate`
 6. Explicit path: call `capture_trajectory`, `log_trajectory`, `distill_trajectory`, `audit_skill`, and `promote_skill`
-7. Use `governance_report`, `distill_coverage_report`, `reindex_skills`, `backfill_skill_provenance`, `archive_duplicate_candidates`, and `archive_cold_skills` for library maintenance
+7. Use `governance_report`, `distill_coverage_report`, `reindex_skills`, `backfill_skill_provenance`, `archive_duplicate_candidates`, `archive_fixture_skills`, and `archive_cold_skills` for library maintenance
 
 `governance_report` recommendations are now host-call aligned. A Codex host can read
 `recommended_actions[].host_operation` and directly call the named MCP tool with the
@@ -90,7 +91,8 @@ The governance tools now also form one consistent maintenance loop:
 2. `governance_report`
 3. `backfill_skill_provenance`
 4. `archive_duplicate_candidates`
-5. `archive_cold_skills`
+5. `archive_fixture_skills`
+6. `archive_cold_skills`
 
 Any maintenance tool that refreshes or mutates library state now points back to
 `governance_report` as the approved follow-up, so Codex hosts can keep returning to the

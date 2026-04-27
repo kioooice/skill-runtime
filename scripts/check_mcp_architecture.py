@@ -206,6 +206,7 @@ def check_mcp_architecture(root: Path) -> list[str]:
             "skill_runtime.governance.library_report",
             "skill_runtime.governance.promotion_guard",
             "skill_runtime.governance.provenance_backfill",
+            "skill_runtime.library_tiers",
             "skill_runtime.mcp.host_operations",
             "skill_runtime.memory.trajectory_capture",
             "skill_runtime.memory.trajectory_store",

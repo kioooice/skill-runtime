@@ -130,6 +130,7 @@ class RuntimeContractTestsMixin:
         self.assertIn("audit_skill", script_source)
         self.assertIn("promote_skill", script_source)
         self.assertIn("archive_duplicate_candidates", script_source)
+        self.assertIn("archive_fixture_skills", script_source)
         self.assertIn("archive_cold_skills", script_source)
         self.assertIn("distill_coverage_report", script_source)
 

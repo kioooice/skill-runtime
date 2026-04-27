@@ -4,6 +4,7 @@ from typing import Any
 
 from skill_runtime.mcp.operation_builders import (
     archive_duplicate_candidates_operation,
+    archive_fixture_skills_operation,
     audit_skill_operation,
     capture_trajectory_operation,
     distill_and_promote_operation,
@@ -19,6 +20,8 @@ from skill_runtime.mcp.operation_builders import (
 from skill_runtime.mcp.source_refs import (
     source_ref_archive_duplicate_candidates_apply_follow_up,
     source_ref_archive_duplicate_candidates_follow_up,
+    source_ref_archive_fixture_skills_apply_follow_up,
+    source_ref_archive_fixture_skills_follow_up,
     source_ref_audit,
     source_ref_distill_coverage_report_refresh,
     source_ref_distill,
@@ -49,6 +52,7 @@ __all__ = [
     "governance_report_recommendation",
     "distill_coverage_report_recommendation",
     "archive_duplicate_candidates_recommendation",
+    "archive_fixture_skills_recommendation",
     "distill_and_promote_recommendation",
     "search_no_match_recommendation",
     "search_result_execute_skill_operation",
@@ -61,6 +65,7 @@ __all__ = [
     "registered_trajectory_recommendation",
     "captured_trajectory_recommendation",
     "archive_duplicate_candidates_follow_up_recommendation",
+    "archive_fixture_skills_follow_up_recommendation",
     "rollback_operations_recommendation",
 ]
 
@@ -273,6 +278,21 @@ def archive_duplicate_candidates_recommendation(
     return recommendation_from_operation(
         "archive_duplicate_candidates",
         archive_duplicate_candidates_operation(skill_names, **operation_kwargs),
+        reason=reason,
+        additional_operations=additional_operations,
+    )
+
+
+def archive_fixture_skills_recommendation(
+    skill_names: list[str],
+    *,
+    reason: str | None = None,
+    additional_operations: list[dict[str, Any] | None] | None = None,
+    **operation_kwargs: Any,
+) -> dict[str, Any]:
+    return recommendation_from_operation(
+        "archive_fixture_skills",
+        archive_fixture_skills_operation(skill_names, **operation_kwargs),
         reason=reason,
         additional_operations=additional_operations,
     )
@@ -609,5 +629,47 @@ def archive_duplicate_candidates_follow_up_recommendation(
         reason=(
             "The archive operation changes governance state. Refresh governance_report to "
             "inspect the updated duplicate set and next maintenance actions."
+        ),
+    )
+
+
+def archive_fixture_skills_follow_up_recommendation(
+    skill_names: list[str],
+    *,
+    dry_run: bool,
+) -> dict[str, Any]:
+    refresh_operation = refresh_governance_report_operation(
+        source_ref=source_ref_archive_fixture_skills_follow_up()
+    )
+    if dry_run:
+        return archive_fixture_skills_recommendation(
+            skill_names,
+            dry_run=False,
+            display_label="Apply fixture archive",
+            effect_summary="Apply the previewed fixture archive action.",
+            argument_schema={
+                "skill_names": {"type": "array", "required": True, "prefilled": True},
+                "dry_run": {"type": "boolean", "required": True, "prefilled": True},
+            },
+            risk_level="high",
+            requires_confirmation=True,
+            confirmation_message="Archive the previewed fixture skills from the active library?",
+            source_ref=source_ref_archive_fixture_skills_apply_follow_up(),
+            reason=(
+                "The dry run identified fixture skills to archive. Apply the archive action to update the library."
+            ),
+            additional_operations=[refresh_operation],
+        )
+
+    return governance_report_recommendation(
+        display_label="Refresh governance report",
+        effect_summary=(
+            "Refresh the governance report to review the latest fixture inventory and maintenance actions."
+        ),
+        risk_level="low",
+        requires_confirmation=False,
+        source_ref=source_ref_archive_fixture_skills_follow_up(),
+        reason=(
+            "The fixture archive operation changes governance state. Refresh governance_report to inspect the updated library tiers."
         ),
     )

@@ -54,11 +54,17 @@ class LibraryReport:
         active_skills = [skill for skill in skills if skill.status == "active"]
         duplicates, hidden_fixture_only_clusters = self._duplicate_candidates(skills)
         library_tier_counts = self._library_tier_counts(active_skills)
+        fixture_skill_names = sorted(
+            skill.skill_name
+            for skill in active_skills
+            if classify_skill_name(skill.skill_name) == "fixture"
+        )
         recommended_actions = self._recommended_actions(
             duplicates,
             status_counts,
             library_tier_counts=library_tier_counts,
             hidden_fixture_only_clusters=hidden_fixture_only_clusters,
+            fixture_skill_names=fixture_skill_names,
         )
         return governance_report_payload(
             dict(status_counts),
@@ -175,6 +181,7 @@ class LibraryReport:
         *,
         library_tier_counts: dict[str, int],
         hidden_fixture_only_clusters: int,
+        fixture_skill_names: list[str],
     ) -> list[dict]:
         actions: list[dict] = []
         for cluster in duplicates:
@@ -197,6 +204,7 @@ class LibraryReport:
         if hidden_fixture_only_clusters > 0 or (fixture_count > 0 and fixture_count >= stable_count):
             actions.append(
                 review_fixture_noise_action(
+                    skill_names=fixture_skill_names,
                     fixture_count=fixture_count,
                     hidden_fixture_only_duplicate_clusters=hidden_fixture_only_clusters,
                 )

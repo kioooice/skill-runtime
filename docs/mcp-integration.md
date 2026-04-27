@@ -38,6 +38,7 @@ python D:/02-Projects/vibe/scripts/skill_mcp_server.py
 - `governance_report`
 - `distill_coverage_report`
 - `archive_duplicate_candidates`
+- `archive_fixture_skills`
 - `archive_cold_skills`
 
 ## Runtime Contract Layout
@@ -285,7 +286,8 @@ The governance-oriented MCP tools are intended to be used as one closed maintena
 2. `governance_report` surfaces duplicate clusters and maintenance actions
 3. `backfill_skill_provenance` repairs legacy metadata and then recommends `governance_report`
 4. `archive_duplicate_candidates` supports preview/apply cleanup and returns `governance_report` after apply
-5. `archive_cold_skills` archives stale active skills and returns `governance_report`
+5. `archive_fixture_skills` supports preview/apply cleanup for fixture-heavy libraries and returns `governance_report` after apply
+6. `archive_cold_skills` archives stale active skills and returns `governance_report`
 
 This means a host can keep one stable review surface for library maintenance instead of
 inventing a different next step for each governance tool.

@@ -4,13 +4,15 @@ from typing import Any
 
 from skill_runtime.mcp.operation_builders import (
     archive_duplicate_candidates_operation,
+    archive_fixture_skills_operation,
     collect_operations,
     refresh_governance_report_operation,
 )
 from skill_runtime.mcp.source_refs import (
     source_ref_archive_duplicate_candidates,
     source_ref_archive_duplicate_candidates_preview,
-    source_ref_governance_fixture_review,
+    source_ref_archive_fixture_skills,
+    source_ref_archive_fixture_skills_preview,
     source_ref_governance_report_refresh,
 )
 
@@ -96,6 +98,7 @@ def review_archive_volume_action() -> dict[str, Any]:
 
 def review_fixture_noise_action(
     *,
+    skill_names: list[str],
     fixture_count: int,
     hidden_fixture_only_duplicate_clusters: int,
 ) -> dict[str, Any]:
@@ -110,9 +113,14 @@ def review_fixture_noise_action(
     return governance_action(
         "review_fixture_noise",
         f"{reason}; review whether fixture skills should stay active or be archived.",
+        skill_names=skill_names,
         cluster_count=hidden_fixture_only_duplicate_clusters,
-        host_operation=refresh_governance_report_operation(
-            source_ref=source_ref_governance_fixture_review()
+        host_operation=archive_fixture_skills_operation(
+            skill_names,
+            dry_run=False,
+            include_preview=True,
+            source_ref=source_ref_archive_fixture_skills(),
+            preview_source_ref=source_ref_archive_fixture_skills_preview(),
         ),
     )
 

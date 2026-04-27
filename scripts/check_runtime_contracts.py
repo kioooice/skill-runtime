@@ -336,6 +336,7 @@ def check_runtime_contracts() -> list[str]:
     from skill_runtime.mcp.server import build_mcp_server
     from skill_runtime.mcp.host_operations import (
         archive_duplicate_candidates_action,
+        review_fixture_noise_action,
         executed_skill_promotion_recommendation,
         governance_report_payload,
         no_recommendation,
@@ -386,11 +387,17 @@ def check_runtime_contracts() -> list[str]:
         rule_name="text_merge",
     )
     violations.extend(validate_governance_action(governance_action, label="archive_duplicate_candidates_action"))
+    fixture_action = review_fixture_noise_action(
+        skill_names=["cli_merge_fixture_test"],
+        fixture_count=1,
+        hidden_fixture_only_duplicate_clusters=1,
+    )
+    violations.extend(validate_governance_action(fixture_action, label="review_fixture_noise_action"))
 
     governance_payload = governance_report_payload(
         {"active": 1, "archived": 0},
         [],
-        [governance_action],
+        [governance_action, fixture_action],
         staging_count=0,
         archive_count=0,
         active_count=1,
@@ -646,6 +653,31 @@ def check_runtime_contracts() -> list[str]:
                 archive_mcp_payload,
                 archive_service_payload,
                 label="archive_duplicate_candidates",
+            )
+        )
+
+    with isolated_runtime_root(root) as archive_fixture_root:
+        archive_fixture_service = RuntimeService(archive_fixture_root)
+        archive_fixture_server = build_mcp_server(archive_fixture_root)
+        archive_fixture_service.reindex()
+        archive_fixture_service_payload = archive_fixture_service.archive_fixture_skills(
+            ["cli_merge_fixture_test"],
+            dry_run=True,
+        )
+        _, archive_fixture_mcp_payload = asyncio.run(
+            archive_fixture_server.call_tool(
+                "archive_fixture_skills",
+                {
+                    "skill_names": ["cli_merge_fixture_test"],
+                    "dry_run": True,
+                },
+            )
+        )
+        violations.extend(
+            validate_wrapped_service_payload(
+                archive_fixture_mcp_payload,
+                archive_fixture_service_payload,
+                label="archive_fixture_skills",
             )
         )
 

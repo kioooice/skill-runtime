@@ -45,6 +45,21 @@ TOOL_PRESETS = {
         "preview_risk_level": "low",
         "preview_requires_confirmation": False,
     },
+    "archive_fixture_skills": {
+        "display_label": "Archive fixture skills",
+        "effect_summary": "Archive low-priority fixture skills from the active library.",
+        "argument_schema": {
+            "skill_names": {"type": "array", "required": True, "prefilled": True},
+            "dry_run": {"type": "boolean", "required": True, "prefilled": True},
+        },
+        "risk_level": "high",
+        "requires_confirmation": True,
+        "confirmation_message": "Archive the suggested fixture skills from the active library?",
+        "preview_display_label": "Preview fixture archive",
+        "preview_effect_summary": "Preview which fixture skills would be archived without changing the library.",
+        "preview_risk_level": "low",
+        "preview_requires_confirmation": False,
+    },
     "governance_report": {
         "display_label": "Refresh governance report",
         "effect_summary": "Recompute governance recommendations and duplicate clusters.",
@@ -147,6 +162,7 @@ __all__ = [
     "distill_coverage_report_operation",
     "refresh_governance_report_operation",
     "archive_duplicate_candidates_operation",
+    "archive_fixture_skills_operation",
     "distill_and_promote_operation",
     "rollback_operations_operation",
 ]
@@ -636,6 +652,61 @@ def archive_duplicate_candidates_operation(
         )
     return tool_call(
         "archive_duplicate_candidates",
+        arguments,
+        display_label=display_label,
+        effect_summary=effect_summary,
+        argument_schema=argument_schema,
+        risk_level=risk_level,
+        requires_confirmation=requires_confirmation,
+        confirmation_message=confirmation_message,
+        operation_role=operation_role,
+        source_ref=source_ref,
+    )
+
+
+def archive_fixture_skills_operation(
+    skill_names: list[str],
+    *,
+    dry_run: bool = False,
+    include_preview: bool = False,
+    display_label: str | None = None,
+    effect_summary: str | None = None,
+    argument_schema: dict[str, Any] | None = None,
+    risk_level: str | None = None,
+    requires_confirmation: bool | None = None,
+    confirmation_message: str | None = None,
+    preview_display_label: str | None = None,
+    preview_effect_summary: str | None = None,
+    preview_risk_level: str | None = None,
+    preview_requires_confirmation: bool | None = None,
+    preview_confirmation_message: str | None = None,
+    operation_role: str = "default",
+    source_ref: str | None = None,
+    preview_source_ref: str | None = None,
+) -> dict[str, Any]:
+    arguments = {"skill_names": skill_names, "dry_run": dry_run}
+    if include_preview:
+        return tool_call_with_preview(
+            "archive_fixture_skills",
+            arguments,
+            {"skill_names": skill_names, "dry_run": True},
+            display_label=display_label,
+            effect_summary=effect_summary,
+            argument_schema=argument_schema,
+            risk_level=risk_level,
+            requires_confirmation=requires_confirmation,
+            confirmation_message=confirmation_message,
+            preview_display_label=preview_display_label,
+            preview_effect_summary=preview_effect_summary,
+            preview_risk_level=preview_risk_level,
+            preview_requires_confirmation=preview_requires_confirmation,
+            preview_confirmation_message=preview_confirmation_message,
+            operation_role=operation_role,
+            source_ref=source_ref,
+            preview_source_ref=preview_source_ref,
+        )
+    return tool_call(
+        "archive_fixture_skills",
         arguments,
         display_label=display_label,
         effect_summary=effect_summary,

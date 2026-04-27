@@ -793,11 +793,17 @@ class RuntimeGovernanceTestsMixin:
             report["recommended_actions"],
             "review_fixture_noise",
         )
-        self.assertEqual("governance_report", fixture_action["host_operation"]["tool_name"])
+        self.assertEqual("archive_fixture_skills", fixture_action["host_operation"]["tool_name"])
         self.assertEqual(
-            "governance:fixture_review",
+            "governance:archive_fixture_skills",
             fixture_action["host_operation"]["source_ref"],
         )
+        self.assertEqual(
+            "governance:archive_fixture_skills:preview",
+            fixture_action["host_operation"]["preview"]["source_ref"],
+        )
+        self.assertTrue(fixture_action["host_operation"]["preview"]["arguments"]["dry_run"])
+        self.assertIn("fixture_merge_alpha_test", fixture_action["host_operation"]["arguments"]["skill_names"])
         self.assertIn("fixture-only duplicate clusters are hidden", fixture_action["reason"])
 
     def test_mcp_governance_report_returns_host_ready_recommended_actions(self) -> None:
@@ -828,6 +834,165 @@ class RuntimeGovernanceTestsMixin:
             break
         self.assertGreaterEqual(preview_count, 1)
         self._assert_operation_role(payload["data"]["available_host_operations"][preview_count], "default")
+
+    def test_archive_fixture_skills_dry_run_returns_apply_follow_up(self) -> None:
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        archive_dir = sandbox_root / "skill_store" / "archive"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+
+        fixture_payload = {
+            "summary": "Fixture merge txt files into one markdown file.",
+            "docstring": "fixture",
+            "input_schema": {"input_dir": "str", "output_path": "str"},
+            "output_schema": {"status": "str"},
+            "source_trajectory_ids": [],
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "last_used_at": None,
+            "usage_count": 0,
+            "status": "active",
+            "audit_score": 90,
+            "rule_name": "text_merge",
+            "rule_priority": 70,
+            "rule_reason": "fixture duplicate",
+            "tags": ["fixture", "merge", "markdown", "txt"],
+        }
+        self._write_active_skill_fixture("cli_merge_fixture_test", fixture_payload, root=sandbox_root)
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        result = sandbox_service.archive_fixture_skills(skill_names=["cli_merge_fixture_test"], dry_run=True)
+
+        self.assertTrue(result["dry_run"])
+        self.assertEqual(["cli_merge_fixture_test"], result["planned"])
+        self.assertEqual([], result["archived"])
+        self.assertEqual("archive_fixture_skills", result["recommended_next_action"])
+        self._assert_host_operation_basics(
+            result["recommended_host_operation"],
+            tool_name="archive_fixture_skills",
+        )
+        self.assertFalse(result["recommended_host_operation"]["arguments"]["dry_run"])
+        self.assertTrue(
+            any(item["tool_name"] == "governance_report" for item in result["available_host_operations"])
+        )
+
+    def test_archive_fixture_skills_archives_only_fixture_skills(self) -> None:
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        archive_dir = sandbox_root / "skill_store" / "archive"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+
+        fixture_payload = {
+            "summary": "Fixture merge txt files into one markdown file.",
+            "docstring": "fixture",
+            "input_schema": {"input_dir": "str", "output_path": "str"},
+            "output_schema": {"status": "str"},
+            "source_trajectory_ids": [],
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "last_used_at": None,
+            "usage_count": 0,
+            "status": "active",
+            "audit_score": 90,
+            "rule_name": "text_merge",
+            "rule_priority": 70,
+            "rule_reason": "fixture duplicate",
+            "tags": ["fixture", "merge", "markdown", "txt"],
+        }
+        stable_payload = {
+            **fixture_payload,
+            "summary": "Stable merge txt files into one markdown file.",
+            "docstring": "stable",
+            "audit_score": 100,
+        }
+        fixture_skill = active_dir / "cli_merge_fixture_test.py"
+        fixture_metadata = active_dir / "cli_merge_fixture_test.metadata.json"
+        archived_fixture_skill = archive_dir / "cli_merge_fixture_test.py"
+        archived_fixture_metadata = archive_dir / "cli_merge_fixture_test.metadata.json"
+        stable_skill = active_dir / "merge_text_files.py"
+
+        self._write_active_skill_fixture("cli_merge_fixture_test", fixture_payload, root=sandbox_root)
+        self._write_active_skill_fixture("merge_text_files", stable_payload, root=sandbox_root)
+        self.addCleanup(lambda: archived_fixture_skill.unlink(missing_ok=True))
+        self.addCleanup(lambda: archived_fixture_metadata.unlink(missing_ok=True))
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        result = sandbox_service.archive_fixture_skills(skill_names=["cli_merge_fixture_test", "merge_text_files"])
+
+        self.assertEqual(["cli_merge_fixture_test"], result["archived"])
+        self.assertFalse(fixture_skill.exists())
+        self.assertFalse(fixture_metadata.exists())
+        self.assertTrue(archived_fixture_skill.exists())
+        self.assertTrue(archived_fixture_metadata.exists())
+        self.assertTrue(stable_skill.exists())
+        self.assertEqual("governance_report", result["recommended_next_action"])
+
+    def test_mcp_archive_fixture_skills_returns_follow_up_host_operation(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        fixture_payload = {
+            "summary": "Fixture merge txt files into one markdown file.",
+            "docstring": "fixture",
+            "input_schema": {"input_dir": "str", "output_path": "str"},
+            "output_schema": {"status": "str"},
+            "source_trajectory_ids": [],
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "last_used_at": None,
+            "usage_count": 0,
+            "status": "active",
+            "audit_score": 90,
+            "rule_name": "text_merge",
+            "rule_priority": 70,
+            "rule_reason": "fixture duplicate",
+            "tags": ["fixture", "merge", "markdown", "txt"],
+        }
+        self._write_active_skill_fixture("cli_merge_fixture_test", fixture_payload, root=sandbox_root)
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        payload = self._call_mcp_tool(
+            "archive_fixture_skills",
+            {"skill_names": ["cli_merge_fixture_test"], "dry_run": True},
+            root=sandbox_root,
+        )
+
+        self.assertEqual("archive_fixture_skills", payload["data"]["recommended_next_action"])
+        self._assert_host_operation_basics(
+            payload["data"]["recommended_host_operation"],
+            tool_name="archive_fixture_skills",
+        )
+        self._assert_operation_role(payload["data"]["available_host_operations"][0], "primary")
+
+    def test_cli_archive_fixture_skills_dry_run_returns_follow_up(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        fixture_payload = {
+            "summary": "Fixture merge txt files into one markdown file.",
+            "docstring": "fixture",
+            "input_schema": {"input_dir": "str", "output_path": "str"},
+            "output_schema": {"status": "str"},
+            "source_trajectory_ids": [],
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "last_used_at": None,
+            "usage_count": 0,
+            "status": "active",
+            "audit_score": 90,
+            "rule_name": "text_merge",
+            "rule_priority": 70,
+            "rule_reason": "fixture duplicate",
+            "tags": ["fixture", "merge", "markdown", "txt"],
+        }
+        self._write_active_skill_fixture("cli_merge_fixture_test", fixture_payload, root=sandbox_root)
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        payload = self._run_cli(
+            "archive-fixture-skills",
+            "--skill-name",
+            "cli_merge_fixture_test",
+            "--dry-run",
+            root=sandbox_root,
+            expect_json=True,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        self.assertEqual("archive_fixture_skills", payload["data"]["recommended_next_action"])
 
     def test_archive_duplicate_candidates_keeps_canonical_skill_active(self) -> None:
         sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()

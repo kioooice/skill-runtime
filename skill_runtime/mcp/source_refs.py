@@ -18,8 +18,11 @@ __all__ = [
     "source_ref_archive_duplicate_candidates_preview",
     "source_ref_archive_duplicate_candidates_follow_up",
     "source_ref_archive_duplicate_candidates_apply_follow_up",
+    "source_ref_archive_fixture_skills",
+    "source_ref_archive_fixture_skills_preview",
+    "source_ref_archive_fixture_skills_follow_up",
+    "source_ref_archive_fixture_skills_apply_follow_up",
     "source_ref_governance_report_refresh",
-    "source_ref_governance_fixture_review",
     "source_ref_distill_coverage_report_refresh",
     "source_ref_distill_coverage_report_view",
 ]
@@ -93,12 +96,24 @@ def source_ref_archive_duplicate_candidates_apply_follow_up() -> str:
     return "archive_duplicate_candidates:apply_follow_up"
 
 
+def source_ref_archive_fixture_skills() -> str:
+    return "governance:archive_fixture_skills"
+
+
+def source_ref_archive_fixture_skills_preview() -> str:
+    return f"{source_ref_archive_fixture_skills()}:preview"
+
+
+def source_ref_archive_fixture_skills_follow_up() -> str:
+    return "archive_fixture_skills:follow_up"
+
+
+def source_ref_archive_fixture_skills_apply_follow_up() -> str:
+    return "archive_fixture_skills:apply_follow_up"
+
+
 def source_ref_governance_report_refresh() -> str:
     return "governance:report_refresh"
-
-
-def source_ref_governance_fixture_review() -> str:
-    return "governance:fixture_review"
 
 
 def source_ref_distill_coverage_report_refresh() -> str:

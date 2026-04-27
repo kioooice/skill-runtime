@@ -202,6 +202,22 @@ def build_mcp_server(root: str | Path) -> FastMCP:
         )
 
     @server.tool(
+        name="archive_fixture_skills",
+        description="Archive active fixture skills and return a governance follow-up recommendation.",
+        structured_output=True,
+    )
+    def archive_fixture_skills(
+        skill_names: list[str] | None = None,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        return _wrap_tool(
+            service,
+            "archive_fixture_skills",
+            skill_names=skill_names,
+            dry_run=dry_run,
+        )
+
+    @server.tool(
         name="archive_cold_skills",
         description="Archive cold active skills older than the given day threshold and return a governance refresh follow-up.",
         structured_output=True,

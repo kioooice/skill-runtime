@@ -225,6 +225,7 @@ Current MCP tools:
 - `governance_report`
 - `distill_coverage_report`
 - `archive_duplicate_candidates`
+- `archive_fixture_skills`
 - `archive_cold_skills`
 
 `distill_coverage_report` summarizes how many saved successful trajectories currently hit
@@ -272,7 +273,8 @@ Governance maintenance loop:
 2. call `governance_report` to inspect duplicates and maintenance actions
 3. call `backfill_skill_provenance` when legacy metadata needs rule provenance
 4. call `archive_duplicate_candidates` to preview or apply duplicate cleanup
-5. call `archive_cold_skills` to move stale active skills into the archive
+5. call `archive_fixture_skills` to preview or apply fixture-skill cleanup
+6. call `archive_cold_skills` to move stale active skills into the archive
 
 All maintenance tools that mutate or refresh library state now converge back to
 `governance_report` as the approved follow-up, so a host can keep using one stable review
