@@ -8,6 +8,7 @@ __all__ = [
     "source_ref_search_no_match_distill",
     "source_ref_search_no_match_inline_distill",
     "source_ref_observed_task",
+    "source_ref_observed_task_rollback",
     "source_ref_distill",
     "source_ref_audit",
     "source_ref_promote",
@@ -49,6 +50,10 @@ def source_ref_search_no_match_inline_distill() -> str:
 
 def source_ref_observed_task(observed_task_path: str) -> str:
     return f"observed_task:{observed_task_path}"
+
+
+def source_ref_observed_task_rollback(observed_task_path: str) -> str:
+    return f"{source_ref_observed_task(observed_task_path)}:rollback"
 
 
 def source_ref_distill(skill_name: str) -> str:

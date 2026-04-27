@@ -13,6 +13,7 @@ from skill_runtime.mcp.operation_builders import (
     governance_report_operation,
     operation_list,
     promote_skill_operation,
+    rollback_operations_operation,
     refresh_governance_report_operation,
 )
 from skill_runtime.mcp.source_refs import (
@@ -23,6 +24,7 @@ from skill_runtime.mcp.source_refs import (
     source_ref_distill,
     source_ref_log_trajectory,
     source_ref_observed_task,
+    source_ref_observed_task_rollback,
     source_ref_promote,
     source_ref_search_no_match,
     source_ref_search_no_match_inline_capture,
@@ -59,6 +61,7 @@ __all__ = [
     "registered_trajectory_recommendation",
     "captured_trajectory_recommendation",
     "archive_duplicate_candidates_follow_up_recommendation",
+    "rollback_operations_recommendation",
 ]
 
 
@@ -207,6 +210,26 @@ def promote_skill_recommendation(
     return recommendation_from_operation(
         "promote_skill",
         promote_skill_operation(file_path, **operation_kwargs),
+        reason=reason,
+        additional_operations=additional_operations,
+    )
+
+
+def rollback_operations_recommendation(
+    operation_log: list[dict[str, Any]],
+    *,
+    operation_ids: list[str] | None = None,
+    reason: str | None = None,
+    additional_operations: list[dict[str, Any] | None] | None = None,
+    **operation_kwargs: Any,
+) -> dict[str, Any]:
+    return recommendation_from_operation(
+        "rollback_operations",
+        rollback_operations_operation(
+            operation_log,
+            operation_ids=operation_ids,
+            **operation_kwargs,
+        ),
         reason=reason,
         additional_operations=additional_operations,
     )
@@ -413,6 +436,7 @@ def executed_skill_promotion_recommendation(
     observed_task_path: str,
     *,
     observed_task: dict[str, Any] | None = None,
+    operation_log: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     additional_operations: list[dict[str, Any]] = []
     if observed_task is not None:
@@ -433,6 +457,35 @@ def executed_skill_promotion_recommendation(
                 operation_group="execute_promote",
                 delivery_mode="inline",
                 variant_role="alternate",
+            )
+        )
+    rollbackable_operations = [
+        item
+        for item in (operation_log or [])
+        if isinstance(item, dict)
+        and item.get("status") == "success"
+        and isinstance(item.get("rollback_hint"), dict)
+        and item["rollback_hint"].get("strategy") in {"delete_created_file", "rename_back"}
+    ]
+    if rollbackable_operations:
+        additional_operations.append(
+            rollback_operations_operation(
+                rollbackable_operations,
+                operation_ids=[item["operation_id"] for item in rollbackable_operations],
+                dry_run=False,
+                display_label="Rollback this execution",
+                effect_summary=(
+                    "Rollback the safe file changes produced by this execution using its operation log."
+                ),
+                argument_schema={
+                    "operation_log": {"type": "array", "required": True, "prefilled": True},
+                    "operation_ids": {"type": "array", "required": True, "prefilled": True},
+                    "dry_run": {"type": "boolean", "required": False, "prefilled": True},
+                },
+                risk_level="medium",
+                requires_confirmation=True,
+                confirmation_message="Rollback the safe file changes from this execution?",
+                source_ref=source_ref_observed_task_rollback(observed_task_path),
             )
         )
     return distill_and_promote_recommendation(

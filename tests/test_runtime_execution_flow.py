@@ -399,6 +399,123 @@ class RuntimeExecutionFlowTestsMixin:
         self.assertEqual("inline", inline_follow_up["delivery_mode"])
         self.assertEqual("alternate", inline_follow_up["variant_role"])
         self._assert_operation_role(inline_follow_up, "default")
+        rollback_follow_up = result["available_host_operations"][2]
+        self.assertEqual("rollback_operations", rollback_follow_up["tool_name"])
+        self.assertEqual("Rollback this execution", rollback_follow_up["display_label"])
+        rollbackable_records = [
+            record
+            for record in result["operation_log"]
+            if record.get("rollback_hint", {}).get("strategy") == "delete_created_file"
+        ]
+        self.assertEqual(rollbackable_records, rollback_follow_up["arguments"]["operation_log"])
+        self.assertEqual(
+            [record["operation_id"] for record in rollbackable_records],
+            rollback_follow_up["arguments"]["operation_ids"],
+        )
+        self.assertTrue(rollback_follow_up["requires_confirmation"])
+
+    def test_service_rollback_operations_deletes_created_file(self) -> None:
+        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        result = sandbox_service.execute(
+            "merge_text_files",
+            {"input_dir": "demo/input", "output_path": "demo/output/rollback_created.md"},
+        )
+        output_path = sandbox_root / "demo" / "output" / "rollback_created.md"
+        self.assertTrue(output_path.exists())
+
+        rollback_result = sandbox_service.rollback_operations(
+            result["operation_log"],
+            operation_ids=[
+                record["operation_id"]
+                for record in result["operation_log"]
+                if record.get("rollback_hint", {}).get("strategy") == "delete_created_file"
+            ],
+        )
+
+        self.assertFalse(output_path.exists())
+        self.assertTrue(rollback_result["rolled_back_operation_ids"])
+        self.assertEqual("rolled_back", rollback_result["results"][0]["status"])
+
+    def test_service_rollback_operations_renames_file_back(self) -> None:
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        self._write_active_skill_fixture(
+            "rollback_rename_skill",
+            {
+                "summary": "Rename a file for rollback testing.",
+                "docstring": "rollback test",
+                "input_schema": {"source_path": "str", "target_path": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-27T00:00:00+00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["rollback"],
+            },
+            source=(
+                "def run(tools, source_path, target_path, **kwargs):\n"
+                "    tools.rename_path(source_path, target_path)\n"
+                "    return {'status': 'completed'}\n"
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(sandbox_root / "skill_store" / "active")
+        source_path = sandbox_root / "demo" / "input" / "rollback_me.txt"
+        source_path.write_text("rename me", encoding="utf-8")
+        target_rel = "demo/output/rolled_back.txt"
+
+        result = sandbox_service.execute(
+            "rollback_rename_skill",
+            {
+                "source_path": "demo/input/rollback_me.txt",
+                "target_path": target_rel,
+            },
+        )
+
+        self.assertFalse(source_path.exists())
+        self.assertTrue((sandbox_root / target_rel).exists())
+
+        rollback_result = sandbox_service.rollback_operations(result["operation_log"])
+
+        self.assertTrue(source_path.exists())
+        self.assertFalse((sandbox_root / target_rel).exists())
+        self.assertTrue(rollback_result["rolled_back_operation_ids"])
+        self.assertEqual("rename_back", rollback_result["results"][0]["strategy"])
+
+    def test_execute_cli_rollback_operations_dry_run(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+        payload = self._execute_skill_cli(
+            "merge_text_files",
+            args_file=self._write_args_file(
+                "cli_rollback_execute_args.json",
+                {"input_dir": "demo/input", "output_path": "demo/output/cli_rollback.md"},
+                root=sandbox_root,
+            ),
+            root=sandbox_root,
+        )
+        operation_log_file = self._write_json_file(
+            sandbox_root / "demo" / "cli_rollback_operation_log.json",
+            payload["data"]["operation_log"],
+        )
+        rollback_payload = self._run_cli(
+            "rollback-operations",
+            "--operation-log-file",
+            str(operation_log_file),
+            "--operation-id",
+            next(
+                record["operation_id"]
+                for record in payload["data"]["operation_log"]
+                if record.get("rollback_hint", {}).get("strategy") == "delete_created_file"
+            ),
+            "--dry-run",
+            root=sandbox_root,
+            expect_json=True,
+        )
+
+        self.assertEqual("ok", rollback_payload["status"])
+        self.assertTrue(rollback_payload["data"]["dry_run"])
+        self.assertEqual("planned", rollback_payload["data"]["results"][0]["status"])
 
     def test_mcp_execute_tool_returns_follow_up_host_operation(self) -> None:
         sandbox_root, _, _ = self._make_runtime_sandbox()

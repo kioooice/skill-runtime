@@ -103,6 +103,18 @@ TOOL_PRESETS = {
         "risk_level": "medium",
         "requires_confirmation": False,
     },
+    "rollback_operations": {
+        "display_label": "Rollback operations",
+        "effect_summary": "Rollback a safe subset of execution-side file changes from an operation log.",
+        "argument_schema": {
+            "operation_log": {"type": "array", "required": True, "prefilled": True},
+            "operation_ids": {"type": "array", "required": False, "prefilled": True},
+            "dry_run": {"type": "boolean", "required": False, "prefilled": True},
+        },
+        "risk_level": "medium",
+        "requires_confirmation": True,
+        "confirmation_message": "Rollback the selected execution changes?",
+    },
 }
 
 TYPE_ALIASES = {
@@ -136,6 +148,7 @@ __all__ = [
     "refresh_governance_report_operation",
     "archive_duplicate_candidates_operation",
     "distill_and_promote_operation",
+    "rollback_operations_operation",
 ]
 
 
@@ -469,6 +482,45 @@ def promote_skill_operation(
         confirmation_message=confirmation_message,
         operation_role=operation_role,
         source_ref=source_ref,
+    )
+
+
+def rollback_operations_operation(
+    operation_log: list[dict[str, Any]],
+    *,
+    operation_ids: list[str] | None = None,
+    dry_run: bool | None = None,
+    display_label: str | None = None,
+    effect_summary: str | None = None,
+    argument_schema: dict[str, Any] | None = None,
+    risk_level: str | None = None,
+    requires_confirmation: bool | None = None,
+    confirmation_message: str | None = None,
+    operation_role: str = "default",
+    source_ref: str | None = None,
+    operation_group: str | None = None,
+    delivery_mode: str | None = None,
+    variant_role: str | None = None,
+) -> dict[str, Any]:
+    arguments: dict[str, Any] = {"operation_log": operation_log}
+    if operation_ids is not None:
+        arguments["operation_ids"] = operation_ids
+    if dry_run is not None:
+        arguments["dry_run"] = dry_run
+    return tool_call(
+        "rollback_operations",
+        arguments,
+        display_label=display_label,
+        effect_summary=effect_summary,
+        argument_schema=argument_schema,
+        risk_level=risk_level,
+        requires_confirmation=requires_confirmation,
+        confirmation_message=confirmation_message,
+        operation_role=operation_role,
+        source_ref=source_ref,
+        operation_group=operation_group,
+        delivery_mode=delivery_mode,
+        variant_role=variant_role,
     )
 
 

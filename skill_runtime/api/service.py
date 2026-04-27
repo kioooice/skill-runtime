@@ -2,6 +2,7 @@ import json
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
+from shutil import rmtree
 from typing import Any
 
 from skill_runtime.api.models import SkillMetadata
@@ -137,8 +138,199 @@ class RuntimeService:
             executed_skill_promotion_recommendation(
                 str(observed_record.resolve()),
                 observed_task=observed_payload,
+                operation_log=operation_log,
             ),
         )
+
+    def rollback_operations(
+        self,
+        operation_log: list[dict[str, Any]],
+        operation_ids: list[str] | None = None,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        if not isinstance(operation_log, list):
+            raise RuntimeServiceError(
+                "operation_log must be a list",
+                "INVALID_OPERATION_LOG",
+            )
+        target_ids = None
+        if operation_ids is not None:
+            if not isinstance(operation_ids, list) or not all(isinstance(item, str) for item in operation_ids):
+                raise RuntimeServiceError(
+                    "operation_ids must be a list of strings",
+                    "INVALID_OPERATION_IDS",
+                )
+            target_ids = set(operation_ids)
+
+        rollback_results: list[dict[str, Any]] = []
+        rolled_back: list[str] = []
+        planned: list[str] = []
+        for entry in reversed(operation_log):
+            if not isinstance(entry, dict):
+                continue
+            operation_id = entry.get("operation_id")
+            if not isinstance(operation_id, str):
+                continue
+            if target_ids is not None and operation_id not in target_ids:
+                continue
+            if entry.get("status") != "success":
+                rollback_results.append(
+                    {
+                        "operation_id": operation_id,
+                        "status": "skipped",
+                        "reason": "only successful operations can be rolled back",
+                    }
+                )
+                continue
+            rollback_hint = entry.get("rollback_hint")
+            if not isinstance(rollback_hint, dict):
+                rollback_results.append(
+                    {
+                        "operation_id": operation_id,
+                        "status": "unsupported",
+                        "reason": "rollback hint is missing",
+                    }
+                )
+                continue
+
+            strategy = rollback_hint.get("strategy")
+            if strategy == "delete_created_file":
+                target_path = rollback_hint.get("target_path")
+                if not isinstance(target_path, str) or not target_path.strip():
+                    rollback_results.append(
+                        {
+                            "operation_id": operation_id,
+                            "status": "unsupported",
+                            "reason": "delete_created_file requires target_path",
+                        }
+                    )
+                    continue
+                resolved_target = self._resolve_rollback_path(target_path)
+                if dry_run:
+                    planned.append(operation_id)
+                    rollback_results.append(
+                        {
+                            "operation_id": operation_id,
+                            "status": "planned",
+                            "strategy": strategy,
+                            "target_path": str(target_path),
+                        }
+                    )
+                    continue
+                if resolved_target.is_file():
+                    resolved_target.unlink()
+                    rolled_back.append(operation_id)
+                    rollback_results.append(
+                        {
+                            "operation_id": operation_id,
+                            "status": "rolled_back",
+                            "strategy": strategy,
+                            "target_path": str(target_path),
+                        }
+                    )
+                    continue
+                if resolved_target.is_dir():
+                    rmtree(resolved_target)
+                    rolled_back.append(operation_id)
+                    rollback_results.append(
+                        {
+                            "operation_id": operation_id,
+                            "status": "rolled_back",
+                            "strategy": strategy,
+                            "target_path": str(target_path),
+                        }
+                    )
+                    continue
+                rollback_results.append(
+                    {
+                        "operation_id": operation_id,
+                        "status": "skipped",
+                        "strategy": strategy,
+                        "reason": "target path does not exist",
+                        "target_path": str(target_path),
+                    }
+                )
+                continue
+
+            if strategy == "rename_back":
+                from_path = rollback_hint.get("from_path")
+                to_path = rollback_hint.get("to_path")
+                if not isinstance(from_path, str) or not isinstance(to_path, str):
+                    rollback_results.append(
+                        {
+                            "operation_id": operation_id,
+                            "status": "unsupported",
+                            "reason": "rename_back requires from_path and to_path",
+                        }
+                    )
+                    continue
+                resolved_from = self._resolve_rollback_path(from_path)
+                resolved_to = self._resolve_rollback_path(to_path)
+                if dry_run:
+                    planned.append(operation_id)
+                    rollback_results.append(
+                        {
+                            "operation_id": operation_id,
+                            "status": "planned",
+                            "strategy": strategy,
+                            "from_path": from_path,
+                            "to_path": to_path,
+                        }
+                    )
+                    continue
+                if not resolved_from.exists():
+                    rollback_results.append(
+                        {
+                            "operation_id": operation_id,
+                            "status": "skipped",
+                            "strategy": strategy,
+                            "reason": "rollback source does not exist",
+                            "from_path": from_path,
+                            "to_path": to_path,
+                        }
+                    )
+                    continue
+                if resolved_to.exists():
+                    rollback_results.append(
+                        {
+                            "operation_id": operation_id,
+                            "status": "skipped",
+                            "strategy": strategy,
+                            "reason": "rollback destination already exists",
+                            "from_path": from_path,
+                            "to_path": to_path,
+                        }
+                    )
+                    continue
+                resolved_to.parent.mkdir(parents=True, exist_ok=True)
+                resolved_from.rename(resolved_to)
+                rolled_back.append(operation_id)
+                rollback_results.append(
+                    {
+                        "operation_id": operation_id,
+                        "status": "rolled_back",
+                        "strategy": strategy,
+                        "from_path": from_path,
+                        "to_path": to_path,
+                    }
+                )
+                continue
+
+            rollback_results.append(
+                {
+                    "operation_id": operation_id,
+                    "status": "unsupported",
+                    "strategy": strategy,
+                    "reason": "rollback strategy is not supported",
+                }
+            )
+
+        return {
+            "dry_run": dry_run,
+            "rolled_back_operation_ids": rolled_back,
+            "planned_operation_ids": planned,
+            "results": rollback_results,
+        }
 
     def distill(self, trajectory_path: str | Path, skill_name: str | None = None) -> dict[str, Any]:
         try:
@@ -657,3 +849,19 @@ class RuntimeService:
         }
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return output_path, payload
+
+    def _resolve_rollback_path(self, path: str | Path) -> Path:
+        target = Path(path)
+        if not target.is_absolute():
+            target = (self.root / target).resolve()
+        else:
+            target = target.resolve()
+        try:
+            target.relative_to(self.root)
+        except ValueError as exc:
+            raise RuntimeServiceError(
+                "rollback path escapes runtime root",
+                "INVALID_ROLLBACK_PATH",
+                {"path": str(path)},
+            ) from exc
+        return target

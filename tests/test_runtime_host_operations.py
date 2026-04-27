@@ -145,6 +145,7 @@ class RuntimeHostOperationTestsMixin:
             recommendation_fields,
             recommendation_from_payload,
             registered_trajectory_recommendation,
+            rollback_operations_recommendation,
             search_no_match_recommendation,
             search_recommended_skill_recommendation,
         )
@@ -220,6 +221,38 @@ class RuntimeHostOperationTestsMixin:
             "executed_skill_follow_up": executed_skill_promotion_recommendation(
                 self.HOST_OBSERVED_TASK_PATH,
                 observed_task=self.HOST_OBSERVED_TASK_PAYLOAD,
+                operation_log=[
+                    {
+                        "operation_id": "op_0002",
+                        "tool_name": "write_text",
+                        "tool_input": {"path": "demo/output/merged.md"},
+                        "observation": "Wrote text to demo/output/merged.md.",
+                        "status": "success",
+                        "mutation": True,
+                        "rollback_hint": {
+                            "strategy": "delete_created_file",
+                            "target_path": "demo/output/merged.md",
+                        },
+                    }
+                ],
+            ),
+            "rollback_recommendation": rollback_operations_recommendation(
+                [
+                    {
+                        "operation_id": "op_0002",
+                        "tool_name": "write_text",
+                        "tool_input": {"path": "demo/output/merged.md"},
+                        "observation": "Wrote text to demo/output/merged.md.",
+                        "status": "success",
+                        "mutation": True,
+                        "rollback_hint": {
+                            "strategy": "delete_created_file",
+                            "target_path": "demo/output/merged.md",
+                        },
+                    }
+                ],
+                operation_ids=["op_0002"],
+                reason="rollback next",
             ),
             "promoted_skill_follow_up": promoted_skill_execution_recommendation(
                 self.HOST_SKILL_NAME,
@@ -252,6 +285,7 @@ class RuntimeHostOperationTestsMixin:
             source_ref_distill,
             source_ref_governance_report_refresh,
             source_ref_observed_task,
+            source_ref_observed_task_rollback,
             source_ref_promote,
             source_ref_search_no_match,
             source_ref_search_no_match_inline_capture,
@@ -270,6 +304,7 @@ class RuntimeHostOperationTestsMixin:
             "search_no_match_distill_source_ref": source_ref_search_no_match_distill(),
             "search_no_match_inline_distill_source_ref": source_ref_search_no_match_inline_distill(),
             "observed_task_source_ref": source_ref_observed_task(self.HOST_OBSERVED_TASK_PATH),
+            "observed_task_rollback_source_ref": source_ref_observed_task_rollback(self.HOST_OBSERVED_TASK_PATH),
             "distill_source_ref": source_ref_distill(self.HOST_SKILL_NAME),
             "audit_source_ref": source_ref_audit(self.HOST_SKILL_NAME),
             "promote_source_ref": source_ref_promote(self.HOST_SKILL_NAME),
@@ -352,6 +387,7 @@ class RuntimeHostOperationTestsMixin:
         distilled_skill_follow_up = samples["distilled_skill_follow_up"]
         archive_recommendation = samples["archive_recommendation"]
         executed_skill_follow_up = samples["executed_skill_follow_up"]
+        rollback_recommendation = samples["rollback_recommendation"]
         promoted_skill_follow_up = samples["promoted_skill_follow_up"]
         search_recommendation = samples["search_recommendation"]
         archive_dry_run_follow_up = samples["archive_dry_run_follow_up"]
@@ -386,7 +422,7 @@ class RuntimeHostOperationTestsMixin:
         self.assertEqual("audit_skill", distilled_skill_follow_up["recommended_next_action"])
         self.assertEqual("archive_duplicate_candidates", archive_recommendation["recommended_next_action"])
         self.assertEqual("distill_and_promote_candidate", executed_skill_follow_up["recommended_next_action"])
-        self.assertEqual(2, len(executed_skill_follow_up["available_host_operations"]))
+        self.assertEqual(3, len(executed_skill_follow_up["available_host_operations"]))
         self.assertEqual(
             self.HOST_OBSERVED_TASK_PAYLOAD,
             executed_skill_follow_up["available_host_operations"][1]["arguments"]["observed_task"],
@@ -397,6 +433,9 @@ class RuntimeHostOperationTestsMixin:
         self.assertEqual("execute_promote", executed_skill_follow_up["available_host_operations"][1]["operation_group"])
         self.assertEqual("inline", executed_skill_follow_up["available_host_operations"][1]["delivery_mode"])
         self.assertEqual("alternate", executed_skill_follow_up["available_host_operations"][1]["variant_role"])
+        self.assertEqual("rollback_operations", executed_skill_follow_up["available_host_operations"][2]["tool_name"])
+        self.assertTrue(executed_skill_follow_up["available_host_operations"][2]["requires_confirmation"])
+        self.assertEqual("rollback_operations", rollback_recommendation["recommended_next_action"])
         self.assertEqual("execute_skill", promoted_skill_follow_up["recommended_next_action"])
         self.assertEqual("capture_trajectory", search_recommendation["recommended_next_action"])
         self.assertEqual(4, len(search_recommendation["available_host_operations"]))
@@ -452,6 +491,10 @@ class RuntimeHostOperationTestsMixin:
             samples["search_no_match_inline_distill_source_ref"],
         )
         self.assertEqual(f"observed_task:{self.HOST_OBSERVED_TASK_PATH}", samples["observed_task_source_ref"])
+        self.assertEqual(
+            f"observed_task:{self.HOST_OBSERVED_TASK_PATH}:rollback",
+            samples["observed_task_rollback_source_ref"],
+        )
         self.assertEqual(f"distill:{self.HOST_SKILL_NAME}", samples["distill_source_ref"])
         self.assertEqual(f"audit:{self.HOST_SKILL_NAME}", samples["audit_source_ref"])
         self.assertEqual(f"promote:{self.HOST_SKILL_NAME}", samples["promote_source_ref"])

@@ -42,8 +42,26 @@ def build_mcp_server(root: str | Path) -> FastMCP:
         description="Execute an active skill by name with structured keyword arguments.",
         structured_output=True,
     )
-    def execute_skill(skill_name: str, args: dict[str, Any]) -> dict[str, Any]:
-        return _wrap_tool(service, "execute", skill_name=skill_name, args=args)
+    def execute_skill(skill_name: str, args: dict[str, Any], dry_run: bool = False) -> dict[str, Any]:
+        return _wrap_tool(service, "execute", skill_name=skill_name, args=args, dry_run=dry_run)
+
+    @server.tool(
+        name="rollback_operations",
+        description="Rollback safe file changes described by an execution operation log.",
+        structured_output=True,
+    )
+    def rollback_operations(
+        operation_log: list[dict[str, Any]],
+        operation_ids: list[str] | None = None,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        return _wrap_tool(
+            service,
+            "rollback_operations",
+            operation_log=operation_log,
+            operation_ids=operation_ids,
+            dry_run=dry_run,
+        )
 
     @server.tool(
         name="distill_trajectory",

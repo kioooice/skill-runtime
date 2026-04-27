@@ -26,6 +26,14 @@ def load_json_file(path: str) -> object:
     return json.loads(Path(path).read_text(encoding="utf-8-sig"))
 
 
+def load_json_arg(raw_value: str | None, *, file_path: str | None, error_flag: str) -> object:
+    if bool(raw_value) == bool(file_path):
+        raise ValueError(f"provide exactly one of {error_flag} or {error_flag}-file")
+    if file_path:
+        return load_json_file(file_path)
+    return json.loads(raw_value)
+
+
 def ok(data: dict) -> int:
     print(json.dumps({"status": "ok", "data": data}, ensure_ascii=False))
     return EXIT_OK
@@ -221,6 +229,42 @@ def cmd_distill_coverage_report(args: argparse.Namespace) -> int:
         return error(exc.message, exc.code, exc.details, exit_code=EXIT_ARGUMENT_ERROR)
 
 
+def cmd_rollback_operations(args: argparse.Namespace) -> int:
+    try:
+        operation_log = load_json_arg(
+            args.operation_log,
+            file_path=args.operation_log_file,
+            error_flag="--operation-log",
+        )
+    except ValueError as exc:
+        return error(str(exc), "INVALID_ROLLBACK_INPUT", exit_code=EXIT_ARGUMENT_ERROR)
+    except FileNotFoundError:
+        return error(
+            "operation log file not found",
+            "OPERATION_LOG_FILE_NOT_FOUND",
+            details={"path": args.operation_log_file},
+            exit_code=EXIT_NOT_FOUND,
+        )
+    except json.JSONDecodeError as exc:
+        return error(
+            "invalid JSON for operation log payload",
+            "INVALID_OPERATION_LOG_JSON",
+            details={"reason": str(exc)},
+            exit_code=EXIT_ARGUMENT_ERROR,
+        )
+
+    try:
+        return ok(
+            service_for_args(args).rollback_operations(
+                operation_log,
+                operation_ids=args.operation_id,
+                dry_run=args.dry_run,
+            )
+        )
+    except RuntimeServiceError as exc:
+        return error(exc.message, exc.code, exc.details, exit_code=EXIT_RUNTIME_ERROR)
+
+
 def cmd_archive_duplicate_candidates(args: argparse.Namespace) -> int:
     return ok(service_for_args(args).archive_duplicate_candidates(skill_names=args.skill_name, dry_run=args.dry_run))
 
@@ -357,6 +401,13 @@ def build_parser() -> argparse.ArgumentParser:
     distill_coverage_parser.add_argument("--max-family-items", type=int)
     distill_coverage_parser.add_argument("--min-family-count", type=int, default=1)
     distill_coverage_parser.set_defaults(func=cmd_distill_coverage_report)
+
+    rollback_parser = subparsers.add_parser("rollback-operations")
+    rollback_parser.add_argument("--operation-log")
+    rollback_parser.add_argument("--operation-log-file")
+    rollback_parser.add_argument("--operation-id", action="append")
+    rollback_parser.add_argument("--dry-run", action="store_true")
+    rollback_parser.set_defaults(func=cmd_rollback_operations)
 
     archive_duplicates_parser = subparsers.add_parser("archive-duplicate-candidates")
     archive_duplicates_parser.add_argument("--skill-name", action="append")
