@@ -1,0 +1,85 @@
+# Core Readiness Audit
+
+Date: 2026-04-28
+
+## Verdict
+
+Skill Runtime has a usable local MVP, but the core product is not yet complete.
+
+The core loop exists:
+
+`search -> execute -> observed task -> distill -> audit -> promote -> reuse`
+
+The current risk is not that the project cannot run. The risk is that several core quality steps are still only good enough for controlled local workflows, not yet strong enough to call the core finished.
+
+## Current Core Map
+
+| Area | Status | Plain-language meaning | Main gap |
+| --- | --- | --- | --- |
+| Search and retrieval | MVP usable | The system can find active skills and explain why they matched. | Ranking is still lightweight keyword scoring, not a proven quality search layer. |
+| Skill execution | Strong MVP | Active skills can run through one stable `run(tools, **kwargs)` contract and produce operation logs. | Needs more real dogfood cases beyond the two active skills. |
+| Observed task capture | Usable | Successful executions can leave a reusable record for later learning. | Needs an acceptance pack that proves records from real tasks keep working end to end. |
+| Distillation | Partial core | Known local file workflows can become executable skills through deterministic rules. | Unknown workflows still fall back to a mock provider; this is not real autonomous skill creation yet. |
+| Audit | Partial core | Static checks and heuristic semantic checks catch common unsafe or weak skills. | Provider-backed semantic review uses a mock provider by default, so quality judgment is not yet strong enough. |
+| Promotion and governance | Solid MVP | Skills move through staging, audit, promotion, archive, and governance reports. | Governance is credible, but depends on audit quality and a small active library. |
+| MCP integration | Runnable MVP | MCP server can be built, tools are exposed, and smoke coverage exists. | Smoke proves construction, not a full host round trip on real work. |
+| Active skill library | Clean but small | Search is no longer polluted by fixtures and demos. | Only two real active skills remain, so the library does not yet prove broad usefulness. |
+
+## What Is Already Built
+
+- The runtime has a real service layer shared by CLI and MCP.
+- Search returns recommended next actions for the host.
+- Execution records operation logs and observed task records.
+- Distillation has many deterministic file-workflow rules.
+- Audit combines static checks, heuristic semantic checks, and provider-shaped review.
+- Promotion is guarded by audit results.
+- Governance can report duplicates, fixture skills, cold skills, and follow-up operations.
+- Tests cover architecture, contracts, lifecycle, execution, generated skills, governance, MCP smoke, and isolation.
+
+## What Is Not Finished
+
+- Real semantic audit is not wired as the default quality gate.
+- Real fallback distillation is not wired as the default generator for unknown workflows.
+- Search quality is not evaluated against a task set.
+- The active skill library is clean but too small to prove repeat reuse value.
+- MCP is smoke-tested, but not yet proven through a realistic host-style task loop.
+
+## Recommended Mainline
+
+Do not continue by adding unrelated new features.
+
+Recommended next stage:
+
+Build a core dogfood acceptance pack that proves the existing loop on real local tasks.
+
+The acceptance pack should answer:
+
+- Can the runtime find a useful existing skill?
+- Can it execute the skill safely?
+- Can the execution produce a useful observed task?
+- Can that observed task become a candidate skill?
+- Can the candidate pass audit for the right reason?
+- Can promotion avoid polluting active search results?
+- Can the same workflow be reused in a later task?
+
+This should come before heavier search or provider upgrades because it will expose which core gap is actually blocking usefulness.
+
+## Next Options
+
+1. Core dogfood acceptance pack
+   - Benefit: proves the real product loop without adding a large new capability.
+   - Cost: mostly tests, fixtures, and documentation.
+
+2. Real semantic audit and fallback provider path
+   - Benefit: attacks the biggest quality gap directly.
+   - Cost: higher complexity and may require provider configuration decisions.
+
+3. Search quality evaluation
+   - Benefit: makes skill discovery measurable.
+   - Cost: useful only after there are enough real skills and task examples.
+
+## Recommended Choice
+
+Start with option 1: core dogfood acceptance pack.
+
+Reason: it keeps the project focused on core completion, gives a concrete pass/fail signal, and avoids guessing whether search, audit, distillation, or MCP host flow is the biggest remaining blocker.

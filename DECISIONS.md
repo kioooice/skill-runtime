@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-04-28 - 主线从产品化收敛切回核心闭环验收
+
+**Decision**
+
+当前不把安装、CI、README、MCP smoke 和治理清理视为“核心功能完成”。Skill Runtime 只达到可用本地 MVP，下一步主线应回到核心闭环验收，优先证明 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在真实 dogfood 任务上稳定成立。
+
+**Reason**
+
+上一阶段解决的是“别人 clone 后能装、能测、能 smoke、active skill 不被测试数据污染”的产品化基础问题，但这不能替代核心能力完成度判断。当前代码里仍存在默认 mock semantic review、默认 mock fallback distillation、轻量关键词检索、active skill 样本较少等核心缺口。
+
+**Impact**
+
+- 后续主线先做核心 dogfood 验收包，而不是继续扩展外围产品化事项
+- 不新增大功能，先建立真实闭环的通过/失败标准
+- 只有验收暴露出明确短板后，再决定升级真实 provider、搜索质量或 MCP host round-trip
+
 ### 2026-04-28 - Clone 后验证路径优先使用模块入口
 
 **Decision**

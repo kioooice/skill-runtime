@@ -2,11 +2,14 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛：仓库已补齐最小 `pyproject.toml`、README 本地安装说明、CI 中的 `pip install -e .`、最小 MCP smoke 测试，以及 `copy_file` rollback 承诺修复。active skill 治理清理已完成，并已重建 active index，使治理报告与搜索结果同步到真实状态。runtime 测试隔离收敛也已完成，默认验证路径不再继续依赖被污染的 active skill 库，也不再默认把新的执行痕迹写回真实仓库。最近几轮又进一步补齐安装后的正式命令入口、收口本地杂项边界、把 active skill 的 usage 写回迁移到本地 `.skill_runtime/usage.json`，补上治理并行保护，清理历史工作区噪音，并收口 clone 后验证路径：当前同时支持安装后直接使用 `skill-runtime` / `skill-runtime-mcp`，继续兼容仓库内 `scripts/*.py` 入口，也支持更稳定的 `python -m skill_runtime.cli` / `python -m skill_runtime.mcp_stdio` 模块入口；正常执行 skill 仍可保留使用统计，但默认不再改脏版本管理下的 active skill 定义文件；归档和 provenance 回填这类治理动作在保存索引时也不再容易把中途更新盖掉。
+已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度盘点。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能不能算建设完成。主要短板是：真实 dogfood 验收不足、semantic audit 默认仍是 mock provider、未知任务 fallback distillation 默认仍是 mock provider、搜索质量仍是轻量关键词评分、active skill 库干净但样本很少、MCP 仍偏 smoke 而非真实 host round-trip。
 
 ## Last Completed
 
 本轮已完成：
+- 新增 `docs/core-readiness-audit.md`，记录核心完成度盘点
+- 明确当前状态是“可用本地 MVP”，不是“核心功能完成”
+- 将下一阶段主线从产品化收敛切回核心 dogfood 验收
 - 新增 `pyproject.toml`，声明 Python 3.11+ 和 MCP 运行依赖
 - README / README.zh-CN 增加本地安装与最小验证步骤
 - `.github/workflows/runtime-contracts.yml` 先执行 `python -m pip install -e .`
@@ -76,7 +79,7 @@
 
 ## Next Action
 
-如果继续做产品化收敛，优先检查剩余治理写路径是否都使用一致的索引刷新策略；如果更偏基础设施长期稳定，则收敛 GitNexus 本机补丁方案。
+优先建设核心 dogfood 验收包。目标不是新增大功能，而是用真实本地任务证明完整闭环能稳定跑通：搜索已有技能、执行、生成 observed task、从记录生成候选技能、审核、提升、再次复用，并确认不会污染 active 搜索结果。
 
 ## Important Files
 
@@ -85,6 +88,7 @@
 - `DECISIONS.md`
 - `HANDOFF.md`
 - `docs/gitnexus-local-runbook.md`
+- `docs/core-readiness-audit.md`
 - `pyproject.toml`
 - `.github/workflows/runtime-contracts.yml`
 - `skill_runtime/execution/runtime_tools.py`
@@ -107,6 +111,10 @@
 
 ## Known Issues
 
+- 核心功能目前是本地 MVP，不应宣称已经完成。
+- semantic audit 默认仍使用 mock provider，质量判断还不够强。
+- fallback distillation 默认仍使用 mock provider，未知任务自动生成能力还没有真实闭环。
+- active skill 当前只保留少量真实技能，复用价值还需要更多 dogfood 验证。
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
 - 未来新的 dogfood 执行默认不再改写版本管理下的 active metadata 和主索引。
 
@@ -114,6 +122,7 @@
 
 - 当前阶段仍不要开始业务功能开发。
 - 不要开始业务功能开发。
+- 不要把产品化收敛误当成核心功能已经完成。
 - 长期上下文应优先写入项目文件，而不是聊天记录。
 - 自动模式阶段报告必须使用非技术语言，帮助非程序员用户理解项目进展。
 - 不要为了让测试通过而重新把测试技能放回真实 active skill 库。
