@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。验证层已拆分为日常快验和全量慢验：`tests.test_runtime_fast` 当前约 9-10 秒，`tests.test_runtime` 当前约 9 分钟。剩余主要短板是：当前只完成 provider 接入契约，还没有内置 OpenAI 或本地模型 provider；搜索质量仍是轻量关键词评分；active skill 库样本仍少。
+已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。仓库现在包含两个本地 demo provider，可从 fresh clone 直接验证 provider hook，不需要测试临时生成脚本。验证层已拆分为日常快验和全量慢验：`tests.test_runtime_fast` 当前约 9-10 秒，`tests.test_runtime` 当前约 9 分钟。剩余主要短板是：还没有内置 OpenAI 或本地模型 provider；本地 demo provider 只证明 provider 接口和闭环可运行，不是通用生成后端；搜索质量仍是轻量关键词评分；active skill 库样本仍少。
 
 ## Last Completed
 
@@ -120,10 +120,21 @@
   - `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 10`
   - `git diff --check`
   - 结果：contract 检查约 12 秒；快验 7 tests OK，约 9-10 秒；全量耗时分析 353 tests OK，约 9 分钟；`git diff --check` 只有历史 CRLF 提示
+- 新增仓库内本地 provider 示例：
+  - `examples/providers/copy_metadata_fallback_provider.py`
+  - `examples/providers/pass_semantic_review_provider.py`
+- provider dogfood 测试不再临时写 provider 脚本，改为直接使用仓库内示例脚本
+- README / README.zh-CN / provider 文档已补充本地 provider 示例启用方式
+- 已运行：
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+  - `python -m unittest tests.test_runtime_fast -v`
+  - `git diff --check`
+  - 结果：全部通过；快验 7 tests OK，约 10 秒
 
 ## Next Action
 
-下一步建议回到核心主线，优先补一个真实 provider 后端方向的最小可验证方案；如果继续做测试提速，下一批慢点集中在 MCP/provider dogfood 和生成规则组合测试。日常小改动默认先跑 `python -m unittest tests.test_runtime_fast -v`，只有发布级或大范围 runtime 行为变化再跑 full suite，并使用至少 900 秒超时。
+下一步建议继续核心主线：为真实 LLM / 本地模型 provider 做接入方案选择，或先补搜索质量评估集。日常小改动默认先跑 `python -m unittest tests.test_runtime_fast -v`，只有发布级或大范围 runtime 行为变化再跑 full suite，并使用至少 900 秒超时。
 
 ## Important Files
 
@@ -135,6 +146,8 @@
 - `docs/core-readiness-audit.md`
 - `docs/core-dogfood-acceptance.md`
 - `docs/provider-integration.md`
+- `examples/providers/copy_metadata_fallback_provider.py`
+- `examples/providers/pass_semantic_review_provider.py`
 - `TESTS.md`
 - `pyproject.toml`
 - `.github/workflows/runtime-contracts.yml`
@@ -169,7 +182,8 @@
 
 - 核心功能目前是本地 MVP，不应宣称已经完成。
 - semantic audit 默认仍使用 mock provider；已支持外部 provider 命令，但未配置真实模型时质量判断仍不够强。
-- fallback distillation 默认仍使用 mock provider；已支持外部 provider 命令，但当前仓库还没有内置 OpenAI 或本地模型 provider。
+- fallback distillation 默认仍使用 mock provider；已支持外部 provider 命令和本地 demo provider，但当前仓库还没有内置 OpenAI 或本地模型 provider。
+- 本地 demo provider 是窄场景示例，只证明 provider hook 和闭环可运行，不能代表通用自动生成能力。
 - active skill 当前只保留少量真实技能，复用价值还需要更多 dogfood 验证。
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
 - 未来新的 dogfood 执行默认不再改写版本管理下的 active metadata 和主索引。

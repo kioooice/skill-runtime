@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-29 - 先用仓库内本地 demo provider 固化 provider 接口闭环
+
+**Decision**
+
+新增仓库内本地 demo provider：`examples/providers/copy_metadata_fallback_provider.py` 和 `examples/providers/pass_semantic_review_provider.py`。现有 provider dogfood 测试改为直接调用这些示例脚本，而不是在测试过程中临时写 provider 脚本。
+
+**Reason**
+
+上一阶段已经有外部命令 provider 契约，但新用户 clone 后仍看不到一个可直接运行的 provider 后端示例。把最小 provider 示例放进仓库，可以证明真实 provider hook 从配置、生成、审核、入库到复用都可运行，同时不引入云 API key、新依赖或更大的功能面。
+
+**Impact**
+
+- fresh clone 用户可直接按文档配置本地 demo provider
+- 快验中的 provider dogfood 覆盖仓库内真实示例脚本
+- 本地 demo provider 只覆盖窄场景文件复制和 metadata sidecar，不代表通用 LLM 生成能力
+- 下一步仍需选择是否接 OpenAI、本地模型，或继续保持 provider 命令契约由宿主自带
+
 ### 2026-04-29 - Contract 检查沙箱默认不复制历史运行产物
 
 **Decision**

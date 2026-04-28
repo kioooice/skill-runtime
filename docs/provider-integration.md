@@ -2,6 +2,29 @@
 
 Skill Runtime keeps mock providers as the safe default. Real generation or review can be connected through trusted local commands.
 
+## Included Local Demo Providers
+
+This repository includes two minimal command providers that exercise the real provider path without cloud credentials:
+
+- `examples/providers/copy_metadata_fallback_provider.py`: generates an executable skill for copying one file and writing a JSON metadata sidecar.
+- `examples/providers/pass_semantic_review_provider.py`: adds no extra semantic findings and lets the built-in heuristic findings decide the audit result.
+
+Example configuration:
+
+```bash
+export SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/copy_metadata_fallback_provider.py"]'
+export SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_semantic_review_provider.py"]'
+```
+
+PowerShell:
+
+```powershell
+$env:SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/copy_metadata_fallback_provider.py"]'
+$env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_semantic_review_provider.py"]'
+```
+
+These demo providers are intentionally narrow. They prove the provider contract and host loop are runnable from a fresh clone, but they are not a general LLM backend.
+
 ## Environment Variables
 
 - `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD`: command used when no deterministic distillation rule matches a successful trajectory.

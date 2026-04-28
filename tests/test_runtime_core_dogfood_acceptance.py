@@ -1,8 +1,9 @@
 import json
 import os
 import sys
-import textwrap
 from pathlib import Path
+
+from tests.runtime_test_support import ROOT
 
 
 class RuntimeCoreDogfoodAcceptanceTestsMixin:
@@ -154,73 +155,8 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
 
     def test_mcp_external_provider_can_promote_and_reuse_unknown_workflow(self) -> None:
         sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
-        fallback_provider = sandbox_root / "demo" / "external_fallback_provider.py"
-        semantic_provider = sandbox_root / "demo" / "external_semantic_provider.py"
-        fallback_provider.write_text(
-            textwrap.dedent(
-                '''
-                import json
-                import sys
-
-
-                request = json.loads(sys.stdin.read())
-                docstring = request["docstring"].replace("\\\\", "\\\\\\\\").replace('"""', '\\"\\"\\"')
-                code = f"""def run(tools, **kwargs):
-                    \\"\\"\\"
-                {docstring}
-                    \\"\\"\\"
-                    input_path = kwargs.get("input_path")
-                    output_path = kwargs.get("output_path")
-                    metadata_path = kwargs.get("metadata_path")
-                    missing = [
-                        name
-                        for name, value in {{
-                            "input_path": input_path,
-                            "output_path": output_path,
-                            "metadata_path": metadata_path,
-                        }}.items()
-                        if value is None
-                    ]
-                    if missing:
-                        raise ValueError(f"Missing required inputs: {{missing}}")
-
-                    copied_path = tools.copy_file(input_path, output_path)
-                    tools.write_json(metadata_path, {{"source": input_path, "copied_path": copied_path}})
-                    return {{
-                        "status": "completed",
-                        "artifacts": [output_path, metadata_path],
-                        "steps_executed": 3,
-                        "generated_by": "command_fallback_acceptance",
-                    }}
-                """
-                print(json.dumps({
-                    "code": code,
-                    "provider_name": "command_fallback_acceptance",
-                    "reason": "External command provider generated executable runtime-tool code.",
-                }))
-                '''
-            ).strip(),
-            encoding="utf-8",
-        )
-        semantic_provider.write_text(
-            textwrap.dedent(
-                '''
-                import json
-                import sys
-
-
-                json.loads(sys.stdin.read())
-                print(json.dumps({
-                    "provider_name": "command_semantic_acceptance",
-                    "summary": "External semantic provider accepted the generated skill.",
-                    "issues": [],
-                }))
-                '''
-            ).strip(),
-            encoding="utf-8",
-        )
-        self.addCleanup(lambda: fallback_provider.unlink(missing_ok=True))
-        self.addCleanup(lambda: semantic_provider.unlink(missing_ok=True))
+        fallback_provider = ROOT / "examples" / "providers" / "copy_metadata_fallback_provider.py"
+        semantic_provider = ROOT / "examples" / "providers" / "pass_semantic_review_provider.py"
 
         original_fallback = os.environ.get("SKILL_RUNTIME_FALLBACK_PROVIDER_CMD")
         original_semantic = os.environ.get("SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD")
@@ -270,10 +206,10 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
 
         self.assertTrue(data["promoted"])
         self.assertEqual("passed", data["audit"]["report"]["status"])
-        self.assertEqual("command_semantic_acceptance", data["audit"]["report"]["semantic_provider"])
+        self.assertEqual("local_pass_semantic_review_provider", data["audit"]["report"]["semantic_provider"])
         self.assertEqual("llm_fallback", metadata["rule_name"])
-        self.assertIn("command_fallback_acceptance", metadata["rule_reason"])
-        self.assertEqual("command_fallback_acceptance", fallback_artifact["response"]["provider_name"])
+        self.assertIn("local_copy_metadata_fallback_provider", metadata["rule_reason"])
+        self.assertEqual("local_copy_metadata_fallback_provider", fallback_artifact["response"]["provider_name"])
 
         promoted = sandbox_index.get("core_acceptance_external_provider")
         self.assertIsNotNone(promoted)

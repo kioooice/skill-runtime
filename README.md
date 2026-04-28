@@ -124,6 +124,7 @@ Architecture maintenance guard:
 - rule-based executable generation for known local automation patterns
 - fallback provider pipeline for unmatched successful trajectories
 - optional external fallback provider command via `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD`
+- included local demo fallback provider in `examples/providers/copy_metadata_fallback_provider.py`
 - current rule registry includes:
   - text merge
   - text replace
@@ -141,6 +142,7 @@ Architecture maintenance guard:
 - provider-backed semantic review with prompt artifacts and a mock provider by default
 - optional external semantic review command via `SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD`
 - provider command details live in [Provider Integration](./docs/provider-integration.md)
+- included local demo semantic provider in `examples/providers/pass_semantic_review_provider.py`
 - semantic checks for:
   - trajectory alignment
   - parameter coverage
@@ -203,7 +205,7 @@ The full runtime suite is intentionally broader and slower:
 python -m unittest tests.test_runtime -v
 ```
 
-Use it before release-level changes or when broad runtime generation behavior may be affected. On the current Windows development machine it takes about 10 minutes. To inspect slow tests:
+Use it before release-level changes or when broad runtime generation behavior may be affected. On the current Windows development machine it takes about 9 minutes. To inspect slow tests:
 
 ```bash
 python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 20
@@ -495,6 +497,22 @@ Run the fast local validation suite:
 ```bash
 python -m unittest tests.test_runtime_fast -v
 ```
+
+Run the included local provider demo path by setting trusted command providers:
+
+```bash
+export SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/copy_metadata_fallback_provider.py"]'
+export SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_semantic_review_provider.py"]'
+```
+
+PowerShell:
+
+```powershell
+$env:SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/copy_metadata_fallback_provider.py"]'
+$env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_semantic_review_provider.py"]'
+```
+
+These providers are narrow local examples, not a general LLM backend. They are useful for verifying that the real provider hook can generate, audit, promote, and reuse an executable skill without writing ad-hoc scripts.
 
 Run the demo flow:
 
