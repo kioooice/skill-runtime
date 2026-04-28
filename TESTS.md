@@ -6,13 +6,13 @@
 - Full slow runtime suite: `python -m unittest tests.test_runtime -v`
 - Slow-test profiling: `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 20`
 
-Use the fast suite for routine development feedback. Use the full suite before release-level changes or when broad runtime generation behavior may be affected. The full suite currently takes about 10 minutes on the Windows development machine.
+Use the fast suite for routine development feedback. Use the full suite before release-level changes or when broad runtime generation behavior may be affected. The full suite currently takes about 9 minutes on the Windows development machine.
 
 Current slow-test profile from `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 10`:
 
-- Full suite result: 352 tests passed in about 11 minutes.
-- Slowest single test: `test_check_runtime_contracts_script_passes`, about 47 seconds.
-- Other slow areas: generated skill rule combinations, distill coverage reporting, provenance/governance flows, and CLI rollback execution.
+- Full suite result: 353 tests passed in about 9 minutes.
+- Slowest single test: `test_check_runtime_contracts_script_passes`, about 11.5 seconds after contract sandbox copy optimization.
+- Other slow areas: MCP/provider dogfood tests, generated skill rule combinations, distill coverage reporting, provenance/governance flows, and CLI rollback execution.
 
 ## CLI
 
@@ -62,6 +62,7 @@ Current slow-test profile from `python scripts/profile_runtime_tests.py --suite 
 - `README.md` and `README.zh-CN.md` stay aligned with the runtime contract guard entry points
 - `.github/workflows/runtime-contracts.yml` stays aligned with the runtime contract checks and doc coverage
 - modules outside `skill_runtime/mcp/` do not import internal MCP submodules directly; they use `skill_runtime.mcp.host_operations` or `skill_runtime.mcp.server`
+- contract check sandboxes default to empty runtime-history directories instead of copying old `observed_tasks` and `output`
 - `python scripts/check_mcp_architecture.py` passes as a standalone architecture check
 - `python scripts/check_runtime_contracts.py` passes as a standalone payload contract check
 - `.github/workflows/runtime-contracts.yml` runs both the architecture check and `tests.test_runtime`

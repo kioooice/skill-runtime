@@ -304,7 +304,11 @@ class RuntimeTestCase(unittest.TestCase):
         sandbox_root = Path(temp_dir.name)
 
         shutil.copytree(ROOT / "demo", sandbox_root / "demo")
-        shutil.copytree(ROOT / "skill_store", sandbox_root / "skill_store")
+        shutil.copytree(
+            ROOT / "skill_store",
+            sandbox_root / "skill_store",
+            ignore=shutil.ignore_patterns("__pycache__"),
+        )
         shutil.copytree(ROOT / "trajectories", sandbox_root / "trajectories")
         (sandbox_root / "audits").mkdir(parents=True, exist_ok=True)
         (sandbox_root / "observed_tasks").mkdir(parents=True, exist_ok=True)

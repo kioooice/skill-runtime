@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-29 - Contract 检查沙箱默认不复制历史运行产物
+
+**Decision**
+
+`scripts/check_runtime_contracts.py` 的隔离沙箱默认只复制 contract 验证真正需要的 `demo`、`skill_store`、`trajectories`，并创建空的 `audits`、`observed_tasks`、`output` 目录；只有显式传入 `copy_runtime_history=True` 时才复制历史运行产物。测试沙箱复制 `skill_store` 时也跳过 `__pycache__`。
+
+**Reason**
+
+全量测试反复超时的最大慢点不是业务逻辑，而是 contract 检查每次都复制大量历史 observed task、output 和缓存文件。默认不复制这些历史产物，可以保持验证语义不变，同时大幅降低本地文件复制成本。
+
+**Impact**
+
+- `check_runtime_contracts.py` 从约 47-52 秒降到约 12 秒
+- full runtime suite 从约 11 分钟降到约 9 分钟
+- 新增回归测试保证默认隔离沙箱不会把历史运行产物带进验证
+- 如果未来确实需要验证历史运行产物复制行为，可显式启用 `copy_runtime_history=True`
+
 ### 2026-04-29 - Runtime 验证拆分快验和全量慢验
 
 **Decision**

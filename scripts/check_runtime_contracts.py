@@ -192,23 +192,30 @@ def validate_wrapped_service_payload(
 
 
 @contextmanager
-def isolated_runtime_root(source_root: Path):
+def isolated_runtime_root(source_root: Path, *, copy_runtime_history: bool = False):
     with TemporaryDirectory() as temp_dir:
         temp_root = Path(temp_dir)
-        for directory_name in (
-            "audits",
-            "demo",
-            "observed_tasks",
-            "output",
-            "skill_store",
-            "trajectories",
-        ):
+        copied_directories = ("demo", "skill_store", "trajectories")
+        if copy_runtime_history:
+            copied_directories = (
+                "audits",
+                "demo",
+                "observed_tasks",
+                "output",
+                "skill_store",
+                "trajectories",
+            )
+
+        for directory_name in copied_directories:
             source_dir = source_root / directory_name
             target_dir = temp_root / directory_name
             if source_dir.exists():
-                shutil.copytree(source_dir, target_dir)
+                shutil.copytree(source_dir, target_dir, ignore=shutil.ignore_patterns("__pycache__"))
             else:
                 target_dir.mkdir(parents=True, exist_ok=True)
+
+        for directory_name in ("audits", "observed_tasks", "output"):
+            (temp_root / directory_name).mkdir(parents=True, exist_ok=True)
         yield temp_root
 
 

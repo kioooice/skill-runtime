@@ -46,6 +46,16 @@ class RuntimeContractTestsMixin:
 
         self.assertTrue(any("operation_id" in violation for violation in violations))
 
+    def test_contract_isolated_root_omits_runtime_history_by_default(self) -> None:
+        from scripts.check_runtime_contracts import isolated_runtime_root
+
+        with isolated_runtime_root(ROOT) as sandbox_root:
+            self.assertTrue((sandbox_root / "demo").exists())
+            self.assertTrue((sandbox_root / "skill_store").exists())
+            self.assertTrue((sandbox_root / "trajectories").exists())
+            self.assertEqual([], list((sandbox_root / "observed_tasks").glob("*.json")))
+            self.assertEqual([], list((sandbox_root / "output").glob("*")))
+
     def test_check_runtime_contracts_detects_invalid_mcp_wrapper_shape(self) -> None:
         from scripts.check_runtime_contracts import validate_mcp_tool_result
 

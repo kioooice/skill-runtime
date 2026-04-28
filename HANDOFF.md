@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。验证层已拆分为日常快验和全量慢验：`tests.test_runtime_fast` 当前约 10 秒，`tests.test_runtime` 当前约 11 分钟。剩余主要短板是：当前只完成 provider 接入契约，还没有内置 OpenAI 或本地模型 provider；搜索质量仍是轻量关键词评分；active skill 库样本仍少。
+已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。验证层已拆分为日常快验和全量慢验：`tests.test_runtime_fast` 当前约 9-10 秒，`tests.test_runtime` 当前约 9 分钟。剩余主要短板是：当前只完成 provider 接入契约，还没有内置 OpenAI 或本地模型 provider；搜索质量仍是轻量关键词评分；active skill 库样本仍少。
 
 ## Last Completed
 
@@ -110,10 +110,20 @@
   - 结果：快验 7 tests OK，约 10 秒；全量耗时分析 352 tests OK，约 11 分钟
 - 当前最慢单项：
   - `test_check_runtime_contracts_script_passes`，约 47 秒
+- 已优化 contract 检查的隔离沙箱：默认只复制验证真正需要的 `demo`、`skill_store`、`trajectories`，不再反复复制历史 observed task 和 output
+- 已同步优化测试沙箱复制，跳过 `__pycache__`，减少 Windows 本地重复文件复制成本
+- 已新增回归测试，保证 contract 检查默认不会把历史运行产物带进沙箱
+- 已重新运行：
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+  - `python -m unittest tests.test_runtime_fast -v`
+  - `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 10`
+  - `git diff --check`
+  - 结果：contract 检查约 12 秒；快验 7 tests OK，约 9-10 秒；全量耗时分析 353 tests OK，约 9 分钟；`git diff --check` 只有历史 CRLF 提示
 
 ## Next Action
 
-下一步可选择继续优化 full suite 慢点，或回到 provider / 搜索质量主线。日常小改动默认先跑 `python -m unittest tests.test_runtime_fast -v`，只有发布级或大范围 runtime 行为变化再跑 full suite，并使用至少 900 秒超时。
+下一步建议回到核心主线，优先补一个真实 provider 后端方向的最小可验证方案；如果继续做测试提速，下一批慢点集中在 MCP/provider dogfood 和生成规则组合测试。日常小改动默认先跑 `python -m unittest tests.test_runtime_fast -v`，只有发布级或大范围 runtime 行为变化再跑 full suite，并使用至少 900 秒超时。
 
 ## Important Files
 
@@ -129,6 +139,7 @@
 - `pyproject.toml`
 - `.github/workflows/runtime-contracts.yml`
 - `scripts/profile_runtime_tests.py`
+- `scripts/check_runtime_contracts.py`
 - `skill_runtime/execution/runtime_tools.py`
 - `skill_runtime/cli.py`
 - `skill_runtime/mcp_stdio.py`
@@ -163,7 +174,8 @@
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
 - 未来新的 dogfood 执行默认不再改写版本管理下的 active metadata 和主索引。
 - 当前会话尝试 GitNexus MCP 查询时返回 `Transport closed`，本轮已退回普通文件检索。
-- 全量 runtime suite 不是失败，但当前约 11 分钟，不适合作为每次小改动的默认第一验证命令。
+- 全量 runtime suite 不是失败，但当前约 9 分钟，仍不适合作为每次小改动的默认第一验证命令。
+- `git diff --check` 当前仍提示 `skill_store/index.json` 和 `trajectories/demo_merge_text_files.json` 未来会按 LF 写回；这是换行提示，不是本轮新增的失败。
 
 ## Constraints
 

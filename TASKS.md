@@ -3,15 +3,15 @@
 ## Current Focus
 
 - 当前目标：从产品化收敛切回 Skill Runtime 核心功能完成度收敛
-- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径，并完成测试分层：日常快验约 10 秒，全量 runtime suite 约 11 分钟；架构检查、contract 检查、快验和全量耗时分析均已通过
-- 下一步：优先使用 `tests.test_runtime_fast` 做日常验证；后续可选择优化 full suite 慢点，或继续 provider / 搜索质量主线
+- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径，并完成测试分层与第一轮全量测试提速：日常快验约 9-10 秒，全量 runtime suite 约 9 分钟；架构检查、contract 检查、快验和全量耗时分析均已通过
+- 下一步：优先使用 `tests.test_runtime_fast` 做日常验证；后续建议回到 provider / 搜索质量主线，或继续优化剩余 full suite 慢点
 
 ## Todo
 
 - [ ] 决定是否接一个具体真实 provider 后端：OpenAI、本地模型，或继续只保留通用命令契约
 - [ ] 视 provider 后端选择补真实 provider 的端到端 dogfood 验收
 - [ ] 视验收结果决定是否补搜索质量评估集
-- [ ] 视需要优化 full runtime suite 慢点，优先看 `test_check_runtime_contracts_script_passes` 和生成规则组合测试
+- [ ] 视需要继续优化 full runtime suite 剩余慢点，优先看 MCP/provider dogfood 和生成规则组合测试
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
 - [ ] 视需要继续统一其余治理写路径的索引刷新策略，减少未来新增治理入口时出现行为分叉
 
@@ -72,6 +72,9 @@
 - [x] CI 已增加快验步骤，并保留 full runtime suite
 - [x] 已运行快验：7 个测试约 10 秒通过
 - [x] 已运行全量耗时分析：352 个测试约 11 分钟通过，最慢单项约 47 秒
+- [x] 优化 runtime contract 检查沙箱复制，避免默认复制历史 observed task 和 output
+- [x] 新增回归测试，保证 contract 检查默认不带入历史运行产物
+- [x] 已重新运行架构检查、contract 检查、快验和全量耗时分析：353 个测试约 9 分钟通过，contract 检查约 12 秒
 
 ## Blocked
 
