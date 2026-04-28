@@ -102,6 +102,9 @@ This workspace is `vibe`.
 - Long-term context must be written into files in the repository.
 - Before code changes, read only the smallest file set relevant to the current task. Do not scan the full repository without a clear reason.
 - After changes, run relevant tests, type checks, or static checks when possible. If they cannot be run, state why.
+- For routine local validation, prefer the fast runtime suite first: `python -m unittest tests.test_runtime_fast -v`.
+- Treat `python -m unittest tests.test_runtime -v` as the full slow suite; it currently takes about 10 minutes locally, so run it only for release-level validation or when broad runtime behavior may be affected, and use a timeout of at least 900 seconds.
+- To diagnose slow tests, run `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 20`.
 - Do not change business code unless the current task requires it.
 
 ## GitNexus Preference

@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-29 - Runtime 验证拆分快验和全量慢验
+
+**Decision**
+
+新增 `tests.test_runtime_fast` 作为日常快验入口，保留 `tests.test_runtime` 作为发布级全量慢验入口；新增 `scripts/profile_runtime_tests.py` 用于定位慢测试。README、TESTS、AGENTS 和 CI 都明确区分两类验证。
+
+**Reason**
+
+全量 runtime suite 当前约 11 分钟，继续把它当作每次小改动的默认验证会导致本地执行反复撞短超时，也会拖慢反馈。快验保留最关键的用户闭环和安全边界，让日常迭代先得到快速结果。
+
+**Impact**
+
+- 日常验证可先跑 `python -m unittest tests.test_runtime_fast -v`，当前约 10 秒
+- 全量验证仍跑 `python -m unittest tests.test_runtime -v`，当前约 11 分钟
+- 慢测试定位可跑 `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 20`
+- CI 先跑快验，再跑全量，既有快速失败信号，也保留完整保护
+
 ### 2026-04-29 - 真实 provider 路径先采用可信本地命令契约
 
 **Decision**

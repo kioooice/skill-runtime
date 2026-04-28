@@ -1,5 +1,19 @@
 # Minimal Test Checklist
 
+## Runtime Test Tiers
+
+- Fast local validation: `python -m unittest tests.test_runtime_fast -v`
+- Full slow runtime suite: `python -m unittest tests.test_runtime -v`
+- Slow-test profiling: `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 20`
+
+Use the fast suite for routine development feedback. Use the full suite before release-level changes or when broad runtime generation behavior may be affected. The full suite currently takes about 10 minutes on the Windows development machine.
+
+Current slow-test profile from `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 10`:
+
+- Full suite result: 352 tests passed in about 11 minutes.
+- Slowest single test: `test_check_runtime_contracts_script_passes`, about 47 seconds.
+- Other slow areas: generated skill rule combinations, distill coverage reporting, provenance/governance flows, and CLI rollback execution.
+
 ## CLI
 
 - `search` returns an empty list when the index is empty

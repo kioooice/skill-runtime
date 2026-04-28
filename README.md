@@ -184,7 +184,7 @@ python -m pip install --upgrade pip
 python -m pip install -e .
 python scripts/check_mcp_architecture.py
 python scripts/check_runtime_contracts.py
-python -m unittest tests.test_runtime -v
+python -m unittest tests.test_runtime_fast -v
 python -c "from skill_runtime.mcp import build_mcp_server; build_mcp_server('.')"
 python -m skill_runtime.cli search --query "merge txt files into markdown"
 python -m skill_runtime.mcp_stdio --help
@@ -193,9 +193,21 @@ python -m skill_runtime.mcp_stdio --help
 Expected result:
 
 - the architecture and runtime contract checks pass
-- the runtime test suite passes
+- the fast runtime suite passes
 - the MCP smoke command exits without starting a long-running stdio loop
 - the search command returns `merge_text_files` near the top of the results
+
+The full runtime suite is intentionally broader and slower:
+
+```bash
+python -m unittest tests.test_runtime -v
+```
+
+Use it before release-level changes or when broad runtime generation behavior may be affected. On the current Windows development machine it takes about 10 minutes. To inspect slow tests:
+
+```bash
+python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 20
+```
 
 If `skill-runtime` or `skill-runtime-mcp` is not on your shell `PATH` after install, use the portable module commands shown above.
 
@@ -211,7 +223,7 @@ Minimum local verification:
 ```bash
 python scripts/check_mcp_architecture.py
 python scripts/check_runtime_contracts.py
-python -m unittest tests.test_runtime -v
+python -m unittest tests.test_runtime_fast -v
 python -c "from skill_runtime.mcp import build_mcp_server; build_mcp_server('.')"
 ```
 
@@ -478,10 +490,10 @@ See:
 
 ## Demo and Verification
 
-Run the focused test suite:
+Run the fast local validation suite:
 
 ```bash
-python -m unittest tests.test_runtime -v
+python -m unittest tests.test_runtime_fast -v
 ```
 
 Run the demo flow:

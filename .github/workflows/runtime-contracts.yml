@@ -55,5 +55,8 @@ jobs:
       - name: Verify runtime payload contracts
         run: python scripts/check_runtime_contracts.py
 
-      - name: Run runtime test suite
+      - name: Run fast runtime smoke suite
+        run: python -m unittest tests.test_runtime_fast -v
+
+      - name: Run full runtime test suite
         run: python -m unittest tests.test_runtime -v
