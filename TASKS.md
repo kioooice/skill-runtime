@@ -3,13 +3,12 @@
 ## Current Focus
 
 - 当前目标：继续做 Skill Runtime 的产品化收敛，不新增大功能
-- 当前状态：已完成测试运行隔离收敛；`tests.test_runtime` 的 342 个测试已通过，默认验证路径不再依赖被污染的 active skill 库，也不再默认把新的执行痕迹写回真实仓库
-- 下一步：处理仓库里已经存在的历史验证产物和忽略策略，例如清理旧的 `observed_tasks` / `skill_store/staging` 产物，或补一层更明确的本地产物忽略约定
+- 当前状态：已补齐安装后的正式命令入口；当前既支持安装后直接使用 `skill-runtime` / `skill-runtime-mcp`，也继续兼容仓库内 `scripts/*.py` 入口；`tests.test_runtime` 当前为 344 个测试并已通过
+- 下一步：决定是否继续收口“工作区历史产物与本地杂项边界”，或转向治理并行保护这类更深一层的稳定性问题
 
 ## Todo
 
 - [ ] 评估并清理仓库中已有的历史验证产物，避免旧脏数据继续干扰状态判断
-- [ ] 视需要补充本地产物忽略策略，例如 `skill_runtime.egg-info/`
 - [ ] 视需要补一层更稳的治理维护顺序保护，避免并行维护动作覆盖索引状态
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
 
@@ -36,6 +35,11 @@
 - [x] 将 runtime 测试默认运行根切到隔离副本，避免验证过程继续污染真实仓库
 - [x] 为搜索 / 治理 / 生命周期测试补齐自带样本，移除对历史污染 active skill 库的隐式依赖
 - [x] 重新运行 `python -m unittest tests.test_runtime -v` 并通过 342 个测试
+- [x] 为安装配置补齐递归包发现，避免只打进顶层 `skill_runtime`
+- [x] 为安装后使用补齐正式命令入口：`skill-runtime` / `skill-runtime-mcp`
+- [x] 保持仓库内 `python scripts/skill_cli.py` / `python scripts/skill_mcp_server.py` 旧入口继续兼容
+- [x] 更新 README / README.zh-CN，补充安装后命令入口和模块入口说明
+- [x] 运行 `pip install -e .`、两个检查脚本、344 个 runtime 测试，以及安装后入口 help 验证
 
 ## Blocked
 

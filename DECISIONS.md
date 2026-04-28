@@ -2,6 +2,35 @@
 
 ## Decision Log
 
+### 2026-04-28 - 安装入口使用包内模块并同时保留旧脚本兼容
+
+**Decision**
+
+将 CLI 和 MCP stdio 启动逻辑收敛到 `skill_runtime.cli` 与 `skill_runtime.mcp_stdio` 两个包内模块里，通过 `pyproject.toml` 暴露正式命令入口 `skill-runtime` / `skill-runtime-mcp`；同时保留 `scripts/skill_cli.py` 与 `scripts/skill_mcp_server.py` 作为薄包装兼容层，不要求现有仓库内用法一次性迁移。
+
+**Reason**
+
+当前项目已经具备功能，但安装后仍主要依赖仓库脚本路径，产品感不完整，而且 `pyproject.toml` 只列顶层包，对安装产物也不够稳。把正式入口收回包内模块，同时保留旧脚本兼容，是收口成本最小、对现有使用者最不打扰的路径。
+
+**Impact**
+
+- 安装后可直接使用：
+  - `skill-runtime`
+  - `skill-runtime-mcp`
+- 也可用更稳的模块入口：
+  - `python -m skill_runtime.cli`
+  - `python -m skill_runtime.mcp_stdio`
+- 旧入口仍兼容：
+  - `python scripts/skill_cli.py`
+  - `python scripts/skill_mcp_server.py`
+- `pyproject.toml` 已改为递归发现 `skill_runtime*` 包，降低安装缺子包风险
+- 本轮验证已覆盖：
+  - `python -m pip install -e .`
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+  - `python -m unittest tests.test_runtime -v`
+  - 安装后入口 `--help`
+
 ### 2026-04-28 - runtime 测试默认使用隔离副本而不是直接写真实仓库
 
 **Decision**

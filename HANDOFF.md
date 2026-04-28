@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛：仓库已补齐最小 `pyproject.toml`、README 本地安装说明、CI 中的 `pip install -e .`、最小 MCP smoke 测试，以及 `copy_file` rollback 承诺修复。active skill 治理清理已完成，并已重建 active index，使治理报告与搜索结果同步到真实状态。最新一轮还完成了 runtime 测试隔离收敛：`tests.test_runtime` 的 342 个测试已通过，默认验证路径不再继续依赖被污染的 active skill 库，也不再默认把新的执行痕迹写回真实仓库。
+已完成一轮 Skill Runtime 产品化收敛：仓库已补齐最小 `pyproject.toml`、README 本地安装说明、CI 中的 `pip install -e .`、最小 MCP smoke 测试，以及 `copy_file` rollback 承诺修复。active skill 治理清理已完成，并已重建 active index，使治理报告与搜索结果同步到真实状态。runtime 测试隔离收敛也已完成，默认验证路径不再继续依赖被污染的 active skill 库，也不再默认把新的执行痕迹写回真实仓库。最新一轮已进一步把安装后的正式命令入口补齐：当前同时支持安装后直接使用 `skill-runtime` / `skill-runtime-mcp`，并继续兼容仓库内 `scripts/*.py` 入口。
 
 ## Last Completed
 
@@ -32,10 +32,29 @@
 - 已重新运行：
   - `python -m unittest tests.test_runtime -v`
   - 结果：342 tests OK
+- 已补齐安装配置中的递归包发现
+- 已新增正式命令入口：
+  - `skill-runtime`
+  - `skill-runtime-mcp`
+- 已保留旧入口兼容：
+  - `python scripts/skill_cli.py`
+  - `python scripts/skill_mcp_server.py`
+- README / README.zh-CN 已补充：
+  - 安装后命令入口
+  - `python -m skill_runtime...` 模块入口
+- 已再次运行：
+  - `python -m pip install -e .`
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+  - `python -m unittest tests.test_runtime -v`
+  - 安装后入口 `--help`
+  - 结果：344 tests OK
 
 ## Next Action
 
-如果继续做产品化收敛，优先处理“历史验证产物收口”这一层：判断哪些 `observed_tasks`、`skill_store/staging` 元数据和 `skill_runtime.egg-info/` 属于应清理或应忽略的本地产物，并保证工作区状态判断不再被旧脏数据误导。
+如果继续做产品化收敛，优先在两条线里二选一：
+- 线 A：继续收口“工作区历史产物与本地杂项边界”，把剩余旧脏数据、未跟踪目录和本地状态误导问题再压下去
+- 线 B：继续补治理层并行保护，避免多个治理动作并行后出现索引状态被后一次保存覆盖
 
 ## Important Files
 
@@ -47,6 +66,8 @@
 - `pyproject.toml`
 - `.github/workflows/runtime-contracts.yml`
 - `skill_runtime/execution/runtime_tools.py`
+- `skill_runtime/cli.py`
+- `skill_runtime/mcp_stdio.py`
 - `tests/test_runtime_mcp_smoke.py`
 - `tests/runtime_test_support.py`
 - `tests/test_runtime_isolation.py`
@@ -55,7 +76,7 @@
 
 - 如果多个治理维护动作并行执行，可能出现索引状态被后一次保存覆盖的情况；当前已通过顺序清理加重建索引收口，但更稳的顺序保护仍可继续补。
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
-- 工作区里仍有此前验证阶段留下的历史产物与脏状态，需要后续区分“应该清理”“应该忽略”“应该保留”的边界。
+- 工作区里仍有此前阶段留下的本地杂项与未跟踪内容，需要后续区分“应该清理”“应该忽略”“应该保留”的边界。
 
 ## Constraints
 

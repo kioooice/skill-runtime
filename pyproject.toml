@@ -12,5 +12,12 @@ dependencies = [
   "mcp>=1.16.0,<2",
 ]
 
+[project.scripts]
+skill-runtime = "skill_runtime.cli:main"
+skill-runtime-mcp = "skill_runtime.mcp_stdio:main"
+
 [tool.setuptools]
-packages = ["skill_runtime"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["skill_runtime*"]

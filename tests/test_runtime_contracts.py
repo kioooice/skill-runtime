@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import tomllib
 
 from tests.runtime_test_support import ROOT
 
@@ -146,3 +147,24 @@ class RuntimeContractTestsMixin:
         self.assertIn("python scripts/check_mcp_architecture.py", workflow)
         self.assertIn("python scripts/check_runtime_contracts.py", workflow)
         self.assertIn("python -m unittest tests.test_runtime -v", workflow)
+
+    def test_pyproject_declares_recursive_package_discovery_and_console_scripts(self) -> None:
+        pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+        setuptools_config = pyproject["tool"]["setuptools"]
+        find_config = setuptools_config["packages"]["find"]
+        self.assertEqual(["."], find_config["where"])
+        self.assertIn("skill_runtime*", find_config["include"])
+
+        scripts = pyproject["project"]["scripts"]
+        self.assertEqual("skill_runtime.cli:main", scripts["skill-runtime"])
+        self.assertEqual("skill_runtime.mcp_stdio:main", scripts["skill-runtime-mcp"])
+
+    def test_installed_entrypoint_modules_are_importable(self) -> None:
+        from skill_runtime.cli import build_parser, main as cli_main
+        from skill_runtime.mcp_stdio import main as mcp_main, resolve_runtime_root
+
+        self.assertTrue(callable(build_parser))
+        self.assertTrue(callable(cli_main))
+        self.assertTrue(callable(resolve_runtime_root))
+        self.assertTrue(callable(mcp_main))

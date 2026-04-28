@@ -188,7 +188,42 @@ python -m unittest tests.test_runtime -v
 python -c "from skill_runtime.mcp import build_mcp_server; build_mcp_server('.')"
 ```
 
+Installed command entrypoints:
+
+```bash
+skill-runtime search --query "<task>"
+skill-runtime-mcp --root .
+```
+
+Portable module entrypoints:
+
+```bash
+python -m skill_runtime.cli search --query "<task>"
+python -m skill_runtime.mcp_stdio --root .
+```
+
 ## CLI Quick Start
+
+```bash
+skill-runtime search --query "<task>"
+skill-runtime execute --skill <skill_name> --args-file <json file>
+skill-runtime distill --trajectory <trajectory.json> --skill-name <optional_name>
+skill-runtime distill-and-promote --trajectory <trajectory.json> --skill-name <optional_name>
+skill-runtime distill-and-promote --observed-task <observed_task.json> --skill-name <optional_name>
+skill-runtime audit --file <skill.py>
+skill-runtime promote --file <staging_skill.py>
+skill-runtime log-trajectory --file <trajectory.json>
+skill-runtime capture-trajectory --file <observed_task.json>
+skill-runtime reindex
+skill-runtime archive-cold --days 30
+skill-runtime governance-report
+skill-runtime distill-coverage-report
+skill-runtime archive-duplicate-candidates --dry-run
+skill-runtime archive-duplicate-candidates --skill-name <name>
+skill-runtime backfill-provenance
+```
+
+Legacy script path still works from the repo root:
 
 ```bash
 python scripts/skill_cli.py search --query "<task>"
@@ -217,6 +252,18 @@ Successful `execute` calls now return an `observed_task_record` path. That file 
 ## MCP Quick Start
 
 Start the stdio MCP server from the project root:
+
+```bash
+skill-runtime-mcp --root .
+```
+
+Portable module entrypoint:
+
+```bash
+python -m skill_runtime.mcp_stdio --root .
+```
+
+Legacy script path still works from the repo root:
 
 ```bash
 python scripts/skill_mcp_server.py
