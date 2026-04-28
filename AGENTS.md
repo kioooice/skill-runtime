@@ -21,7 +21,24 @@ This workspace is `vibe`.
 - Do not send any confirmation or transition message before acting.
 - After `自动模式开始`, execute the most recent explicit user task already in context. If it contains multiple steps, continue them autonomously.
 - If the goal is clear but implementation is not uniquely specified, choose a reasonable, minimal, verifiable path and continue without asking.
-- In auto mode, keep executing while remaining silent. Do not send progress updates, stage summaries, small-milestone reports, test-pass reports, or “current step” narration.
+- In auto mode, do not interrupt the user for tiny changes, single passing tests, or single-file edits.
+- Auto mode is not silent-only. Continue executing across related work, but after each meaningful stage you must publish a stage report.
+- Stage reports must be written in non-technical language suitable for a user without programming background.
+- Every stage report must include:
+  - what was done in this stage
+  - what new or improved capability the project gained from a user or product perspective
+  - which core files changed, listing only the most important files
+  - current risks, explained in plain language
+  - 2 to 3 next-step options
+  - one explicit recommended option
+  - a decision question for the user if needed, otherwise `无`
+- Do not trap the user into replying only `继续`.
+- If the next step is clear, write exactly in this pattern:
+  - `推荐下一步做 X。如果同意，回复：继续 X。`
+- If there are multiple reasonable directions, explain the benefit and cost of each direction in plain language.
+- After every stage report, update `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md` as needed so the repository stays ahead of chat history.
+- Do not make low-value changes just to show visible activity.
+- Prioritize work that makes the project more runnable, demoable, or verifiable.
 - Do not treat `自动模式开始` as a state-only message that allows waiting for more instructions.
 - Only interrupt auto mode when:
   - required information is missing and execution cannot continue
@@ -66,3 +83,32 @@ This workspace is `vibe`.
 - Projects using `next`: use the Next.js deployment pattern.
 - Backend services using long-running server processes: use the Node service deployment pattern.
 - If the project already contains its own Docker setup, prefer the existing structure unless there is a clear reason to change it.
+
+## Codex Session Handoff
+
+- Do not rely on old chat history as project memory.
+- Do not ask the user to restate prior conversation context when the required state is already available in project files.
+- When the user says `继续`, `继续完成任务`, `继续 HANDOFF`, or `continue`:
+  1. read `HANDOFF.md` first
+  2. then read `TASKS.md` and `DECISIONS.md` only as needed
+  3. continue from the `Next Action` in `HANDOFF.md`
+  4. do not ask for old chat content
+  5. only ask the user if `HANDOFF.md` is missing, clearly stale, contradictory with other project state, or the next step contains a branch that cannot be resolved safely from local context
+- After each important stage completion, design or technical decision, blocker discovery, or when context is becoming long, update the project state files:
+  - `TASKS.md` records task progress
+  - `DECISIONS.md` records design and technical decisions
+  - `HANDOFF.md` records the next handoff point
+- Do not pack long project summaries into chat context.
+- Long-term context must be written into files in the repository.
+- Before code changes, read only the smallest file set relevant to the current task. Do not scan the full repository without a clear reason.
+- After changes, run relevant tests, type checks, or static checks when possible. If they cannot be run, state why.
+- Do not change business code unless the current task requires it.
+
+## GitNexus Preference
+
+- If GitNexus MCP is available in the current environment, prefer it first for module lookup, symbol search, call-chain tracing, and impact analysis before falling back to plain file search.
+- If GitNexus MCP is not available, do not block the task; use normal file inspection and repository search.
+- If this repository does not yet have GitNexus configured, do not auto-install dependencies, do not auto-install from the network, and do not modify global Codex configuration during normal task execution.
+- Optional future setup commands for the user:
+  - `npx gitnexus analyze`
+  - `codex mcp add gitnexus -- npx -y gitnexus@latest mcp`

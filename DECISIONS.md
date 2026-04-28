@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-28 - 提交项目规则并规范化 skill_store 文本文件
+
+**Decision**
+
+将 `AGENTS.md` 中已经生效的新会话接力、自动模式和 GitNexus 使用规则作为正式项目规则提交；同时按 `.gitattributes` 对 `skill_store` 下的文本文件做一次规范化，清理此前长期显示为修改状态的换行噪音。
+
+**Reason**
+
+工作区剩余差异里，`AGENTS.md` 是真实项目规则，不应继续悬空为本地改动；`skill_store/staging` 这批 metadata 则主要是 Windows 换行状态造成的噪音，不处理会持续干扰用户判断仓库是否真的发生了业务变化。
+
+**Impact**
+
+- 项目级接力和自动模式规则成为仓库内正式状态
+- `skill_store` 的文本文件更符合当前 `.gitattributes` 规则
+- 后续 `git status` 更容易暴露真正有意义的改动
+- 没有改变 runtime 行为和业务功能
+
 ### 2026-04-28 - 治理维护动作保存索引时合并最新状态
 
 **Decision**
