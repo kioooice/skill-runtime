@@ -36,3 +36,7 @@ def main() -> int:
 
 
 __all__ = ["ROOT", "build_parser", "main", "resolve_runtime_root"]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

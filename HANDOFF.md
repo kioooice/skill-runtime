@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛：仓库已补齐最小 `pyproject.toml`、README 本地安装说明、CI 中的 `pip install -e .`、最小 MCP smoke 测试，以及 `copy_file` rollback 承诺修复。active skill 治理清理已完成，并已重建 active index，使治理报告与搜索结果同步到真实状态。runtime 测试隔离收敛也已完成，默认验证路径不再继续依赖被污染的 active skill 库，也不再默认把新的执行痕迹写回真实仓库。最近几轮又进一步补齐安装后的正式命令入口、收口本地杂项边界、把 active skill 的 usage 写回迁移到本地 `.skill_runtime/usage.json`，补上治理并行保护，并清理历史工作区噪音：当前同时支持安装后直接使用 `skill-runtime` / `skill-runtime-mcp`，继续兼容仓库内 `scripts/*.py` 入口，正常执行 skill 仍可保留使用统计，但默认不再改脏版本管理下的 active skill 定义文件；归档和 provenance 回填这类治理动作在保存索引时也不再容易把中途更新盖掉；项目规则和 skill_store 文本换行状态已正式收口。
+已完成一轮 Skill Runtime 产品化收敛：仓库已补齐最小 `pyproject.toml`、README 本地安装说明、CI 中的 `pip install -e .`、最小 MCP smoke 测试，以及 `copy_file` rollback 承诺修复。active skill 治理清理已完成，并已重建 active index，使治理报告与搜索结果同步到真实状态。runtime 测试隔离收敛也已完成，默认验证路径不再继续依赖被污染的 active skill 库，也不再默认把新的执行痕迹写回真实仓库。最近几轮又进一步补齐安装后的正式命令入口、收口本地杂项边界、把 active skill 的 usage 写回迁移到本地 `.skill_runtime/usage.json`，补上治理并行保护，清理历史工作区噪音，并收口 clone 后验证路径：当前同时支持安装后直接使用 `skill-runtime` / `skill-runtime-mcp`，继续兼容仓库内 `scripts/*.py` 入口，也支持更稳定的 `python -m skill_runtime.cli` / `python -m skill_runtime.mcp_stdio` 模块入口；正常执行 skill 仍可保留使用统计，但默认不再改脏版本管理下的 active skill 定义文件；归档和 provenance 回填这类治理动作在保存索引时也不再容易把中途更新盖掉。
 
 ## Last Completed
 
@@ -68,10 +68,15 @@
   - 结果：346 tests OK
 - 已将 `AGENTS.md` 中的新会话接力、自动模式、GitNexus 使用规则纳入正式提交
 - 已按 `.gitattributes` 规范化 `skill_store` 文本文件，清理历史换行噪音
+- README / README.zh-CN 已补充 clone 后最短验证路径
+- 已修复模块入口：
+  - `python -m skill_runtime.cli ...`
+  - `python -m skill_runtime.mcp_stdio ...`
+- 已新增模块入口回归测试
 
 ## Next Action
 
-如果继续做产品化收敛，优先检查剩余治理写路径是否都使用一致的索引刷新策略；如果更偏用户上手体验，则收口 README / docs 中的 clone 后验证流程。
+如果继续做产品化收敛，优先检查剩余治理写路径是否都使用一致的索引刷新策略；如果更偏基础设施长期稳定，则收敛 GitNexus 本机补丁方案。
 
 ## Important Files
 
@@ -96,6 +101,9 @@
 - `tests/test_runtime_governance.py`
 - `skill_store/active/merge_text_files.metadata.json`
 - `skill_store/staging/*.metadata.json`
+- `README.md`
+- `README.zh-CN.md`
+- `tests/test_runtime_contracts.py`
 
 ## Known Issues
 

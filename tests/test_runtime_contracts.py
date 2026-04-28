@@ -168,3 +168,34 @@ class RuntimeContractTestsMixin:
         self.assertTrue(callable(cli_main))
         self.assertTrue(callable(resolve_runtime_root))
         self.assertTrue(callable(mcp_main))
+
+    def test_cli_module_entrypoint_runs_main(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "skill_runtime.cli",
+                "search",
+                "--query",
+                "merge txt files into markdown",
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(0, result.returncode, msg=result.stderr or result.stdout)
+        self.assertIn("merge_text_files", result.stdout)
+
+    def test_mcp_stdio_module_help_runs_main(self) -> None:
+        result = subprocess.run(
+            [sys.executable, "-m", "skill_runtime.mcp_stdio", "--help"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(0, result.returncode, msg=result.stderr or result.stdout)
+        self.assertIn("skill-runtime-mcp", result.stdout)

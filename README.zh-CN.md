@@ -174,6 +174,30 @@ docs/
 
 ## 本地安装
 
+### Clone 后最短验证路径
+
+从一个全新 clone 下来的仓库开始，在项目根目录按顺序执行：
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -e .
+python scripts/check_mcp_architecture.py
+python scripts/check_runtime_contracts.py
+python -m unittest tests.test_runtime -v
+python -c "from skill_runtime.mcp import build_mcp_server; build_mcp_server('.')"
+python -m skill_runtime.cli search --query "merge txt files into markdown"
+python -m skill_runtime.mcp_stdio --help
+```
+
+预期结果：
+
+- 架构检查和 runtime contract 检查通过
+- runtime 测试通过
+- MCP smoke 命令能构造 server，不会启动长期运行的 stdio loop
+- search 命令能在靠前结果中看到 `merge_text_files`
+
+如果安装后当前 shell 找不到 `skill-runtime` 或 `skill-runtime-mcp`，请优先使用上面的 `python -m skill_runtime...` 模块入口。
+
 在项目根目录执行可编辑安装：
 
 ```bash

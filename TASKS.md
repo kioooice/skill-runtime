@@ -3,14 +3,13 @@
 ## Current Focus
 
 - 当前目标：继续做 Skill Runtime 的产品化收敛，不新增大功能
-- 当前状态：已收口工作区历史噪音：项目规则文件 `AGENTS.md` 已作为真实项目规则纳入提交，`skill_store` 文本文件已按 `.gitattributes` 统一规范化，避免 staging metadata 因换行差异长期显脏；`tests.test_runtime` 当前为 346 个测试并已通过
-- 下一步：如继续做产品化收敛，可以转向检查剩余治理写路径是否都使用一致的索引刷新策略，或收口文档中的 clone 后验证流程
+- 当前状态：已收口 clone 后验证文档，并修复 `python -m skill_runtime.cli` / `python -m skill_runtime.mcp_stdio` 模块入口未触发 `main()` 的问题；README / README.zh-CN 已给出从安装到 MCP smoke、搜索 smoke、完整测试的顺序；`tests.test_runtime` 当前为 348 个测试并已通过
+- 下一步：如继续做产品化收敛，可以检查剩余治理写路径是否都使用一致的索引刷新策略，或收口 GitNexus 本机补丁的长期方案
 
 ## Todo
 
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
 - [ ] 视需要继续统一其余治理写路径的索引刷新策略，减少未来新增治理入口时出现行为分叉
-- [ ] 视需要收口 README / docs 中的 clone 后验证流程，减少新用户试运行成本
 
 ## In Progress
 
@@ -50,6 +49,9 @@
 - [x] 重新运行 `check_mcp_architecture`、`check_runtime_contracts` 和 `tests.test_runtime`，共通过 346 个测试
 - [x] 将 `AGENTS.md` 中的新会话接力、自动模式、GitNexus 使用规则正式纳入仓库提交
 - [x] 按 `.gitattributes` 对 `skill_store` 文本文件做一次规范化，清理历史换行噪音
+- [x] 收口 README / README.zh-CN 中的 clone 后验证流程，覆盖安装、检查、测试、MCP smoke 和搜索 smoke
+- [x] 修复 `python -m skill_runtime.cli` 与 `python -m skill_runtime.mcp_stdio` 模块入口，确保 README 推荐的模块命令真实可运行
+- [x] 新增模块入口回归测试
 
 ## Blocked
 

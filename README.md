@@ -172,6 +172,30 @@ Architecture maintenance guard:
 
 ## Local Installation
 
+### Clone-to-Verify Path
+
+From a fresh clone, run this sequence from the repository root:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -e .
+python scripts/check_mcp_architecture.py
+python scripts/check_runtime_contracts.py
+python -m unittest tests.test_runtime -v
+python -c "from skill_runtime.mcp import build_mcp_server; build_mcp_server('.')"
+python -m skill_runtime.cli search --query "merge txt files into markdown"
+python -m skill_runtime.mcp_stdio --help
+```
+
+Expected result:
+
+- the architecture and runtime contract checks pass
+- the runtime test suite passes
+- the MCP smoke command exits without starting a long-running stdio loop
+- the search command returns `merge_text_files` near the top of the results
+
+If `skill-runtime` or `skill-runtime-mcp` is not on your shell `PATH` after install, use the portable module commands shown above.
+
 Install the runtime in editable mode from the project root:
 
 ```bash

@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-28 - Clone 后验证路径优先使用模块入口
+
+**Decision**
+
+README / README.zh-CN 中的 clone 后验证流程优先展示 `python -m skill_runtime...` 模块入口，同时保留安装后的 `skill-runtime` / `skill-runtime-mcp` 命令入口和旧脚本入口。为保证文档可执行，补齐 `skill_runtime.cli` 与 `skill_runtime.mcp_stdio` 的 `__main__` 调用，并新增回归测试。
+
+**Reason**
+
+安装后的 console scripts 在部分 Windows shell 中可能因为 Scripts 目录不在 `PATH` 而暂时不可见；模块入口更稳定，适合作为新用户从 clone 到验证的默认路径。但此前模块入口只可 import，直接 `python -m` 不会执行主函数，导致文档路径不可靠。
+
+**Impact**
+
+- 新用户可按 README 从安装一路验证到 MCP smoke 和搜索 smoke
+- `python -m skill_runtime.cli search ...` 会真实输出搜索结果
+- `python -m skill_runtime.mcp_stdio --help` 会真实显示帮助
+- 安装后的 console scripts 和旧脚本入口继续保留
+
 ### 2026-04-28 - 提交项目规则并规范化 skill_store 文本文件
 
 **Decision**

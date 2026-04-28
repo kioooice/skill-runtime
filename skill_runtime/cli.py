@@ -512,3 +512,7 @@ __all__ = [
     "main",
     "service_for_args",
 ]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
