@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛：仓库已补齐最小 `pyproject.toml`、README 本地安装说明、CI 中的 `pip install -e .`、最小 MCP smoke 测试，以及 `copy_file` rollback 承诺修复。active skill 治理清理已完成，并已重建 active index，使治理报告与搜索结果同步到真实状态。runtime 测试隔离收敛也已完成，默认验证路径不再继续依赖被污染的 active skill 库，也不再默认把新的执行痕迹写回真实仓库。最新一轮已进一步把安装后的正式命令入口补齐：当前同时支持安装后直接使用 `skill-runtime` / `skill-runtime-mcp`，并继续兼容仓库内 `scripts/*.py` 入口。
+已完成一轮 Skill Runtime 产品化收敛：仓库已补齐最小 `pyproject.toml`、README 本地安装说明、CI 中的 `pip install -e .`、最小 MCP smoke 测试，以及 `copy_file` rollback 承诺修复。active skill 治理清理已完成，并已重建 active index，使治理报告与搜索结果同步到真实状态。runtime 测试隔离收敛也已完成，默认验证路径不再继续依赖被污染的 active skill 库，也不再默认把新的执行痕迹写回真实仓库。最新两轮已进一步补齐安装后的正式命令入口，并收口本地杂项边界：当前同时支持安装后直接使用 `skill-runtime` / `skill-runtime-mcp`，继续兼容仓库内 `scripts/*.py` 入口，同时新增换行规范、忽略 `.claude/` 本地辅助目录，并将 GitNexus 本机 runbook 正式纳入仓库。
 
 ## Last Completed
 
@@ -49,12 +49,13 @@
   - `python -m unittest tests.test_runtime -v`
   - 安装后入口 `--help`
   - 结果：344 tests OK
+- 已补充 `.gitattributes`，统一仓库文本换行规范
+- 已将 `.claude/` 加入 `.gitignore`
+- 已保留 `docs/gitnexus-local-runbook.md` 作为正式仓库文档
 
 ## Next Action
 
-如果继续做产品化收敛，优先在两条线里二选一：
-- 线 A：继续收口“工作区历史产物与本地杂项边界”，把剩余旧脏数据、未跟踪目录和本地状态误导问题再压下去
-- 线 B：继续补治理层并行保护，避免多个治理动作并行后出现索引状态被后一次保存覆盖
+如果继续做产品化收敛，优先继续补治理层并行保护，避免多个治理动作并行后出现索引状态被后一次保存覆盖。若之后仍要继续收口工作区状态，再处理 active skill 使用统计写回导致的真实仓库显脏问题。
 
 ## Important Files
 
@@ -71,12 +72,14 @@
 - `tests/test_runtime_mcp_smoke.py`
 - `tests/runtime_test_support.py`
 - `tests/test_runtime_isolation.py`
+- `.gitattributes`
+- `.gitignore`
 
 ## Known Issues
 
 - 如果多个治理维护动作并行执行，可能出现索引状态被后一次保存覆盖的情况；当前已通过顺序清理加重建索引收口，但更稳的顺序保护仍可继续补。
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
-- 工作区里仍有此前阶段留下的本地杂项与未跟踪内容，需要后续区分“应该清理”“应该忽略”“应该保留”的边界。
+- 工作区里剩余的主要差异，已收敛到 active skill 使用统计写回和个别历史本地改动；本地辅助目录噪音已通过忽略规则压下去。
 
 ## Constraints
 

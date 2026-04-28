@@ -3,13 +3,13 @@
 ## Current Focus
 
 - 当前目标：继续做 Skill Runtime 的产品化收敛，不新增大功能
-- 当前状态：已补齐安装后的正式命令入口；当前既支持安装后直接使用 `skill-runtime` / `skill-runtime-mcp`，也继续兼容仓库内 `scripts/*.py` 入口；`tests.test_runtime` 当前为 344 个测试并已通过
-- 下一步：决定是否继续收口“工作区历史产物与本地杂项边界”，或转向治理并行保护这类更深一层的稳定性问题
+- 当前状态：已补齐安装后的正式命令入口，并进一步收口仓库边界：新增换行规范、忽略本地 `.claude/` 辅助目录，并将 GitNexus 本机 runbook 作为正式仓库文档保留；`tests.test_runtime` 当前为 344 个测试并已通过
+- 下一步：优先转向治理并行保护，避免多个治理动作并行后出现索引状态被后一次保存覆盖；工作区剩余的主要差异已收敛到真实运行统计和个别历史本地改动
 
 ## Todo
 
-- [ ] 评估并清理仓库中已有的历史验证产物，避免旧脏数据继续干扰状态判断
 - [ ] 视需要补一层更稳的治理维护顺序保护，避免并行维护动作覆盖索引状态
+- [ ] 视需要进一步收敛 active skill 使用统计写回策略，避免真实仓库因 dogfood 执行而持续显脏
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
 
 ## In Progress
@@ -40,6 +40,8 @@
 - [x] 保持仓库内 `python scripts/skill_cli.py` / `python scripts/skill_mcp_server.py` 旧入口继续兼容
 - [x] 更新 README / README.zh-CN，补充安装后命令入口和模块入口说明
 - [x] 运行 `pip install -e .`、两个检查脚本、344 个 runtime 测试，以及安装后入口 help 验证
+- [x] 为仓库补充 `.gitattributes` 换行规范，减少 Windows 下的伪脏改动噪音
+- [x] 忽略本地 `.claude/` 辅助目录，并将 GitNexus 本机 runbook 作为正式仓库文档保留
 
 ## Blocked
 

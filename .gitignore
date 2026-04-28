@@ -12,5 +12,6 @@ output/
 # OS/editor noise
 .DS_Store
 Thumbs.db
+.claude/
 .gitnexus
 skill_runtime.egg-info/
