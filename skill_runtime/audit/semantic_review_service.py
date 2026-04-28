@@ -1,8 +1,10 @@
 import json
+import os
 from dataclasses import asdict
 from pathlib import Path
 
 from skill_runtime.api.models import Trajectory
+from skill_runtime.audit.command_semantic_provider import CommandSemanticReviewProvider
 from skill_runtime.audit.mock_semantic_provider import MockSemanticReviewProvider
 from skill_runtime.audit.semantic_checks import SemanticIssue
 from skill_runtime.audit.semantic_prompt_builder import build_semantic_review_prompt
@@ -16,7 +18,13 @@ class SemanticReviewService:
     def __init__(self, audits_dir: str | Path, provider=None) -> None:
         self.audits_dir = Path(audits_dir)
         self.audits_dir.mkdir(parents=True, exist_ok=True)
-        self.provider = provider or MockSemanticReviewProvider()
+        self.provider = provider or self._default_provider()
+
+    def _default_provider(self):
+        command = os.environ.get("SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD")
+        if command:
+            return CommandSemanticReviewProvider(command)
+        return MockSemanticReviewProvider()
 
     def review(
         self,

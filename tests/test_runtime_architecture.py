@@ -225,6 +225,7 @@ class RuntimeArchitectureTestsMixin:
     def test_runtime_distill_fallback_rules_and_audit_sublayer_boundaries(self) -> None:
         fallback_service_path = ROOT / "skill_runtime" / "distill" / "fallback" / "service.py"
         fallback_provider_path = ROOT / "skill_runtime" / "distill" / "fallback" / "provider.py"
+        fallback_command_provider_path = ROOT / "skill_runtime" / "distill" / "fallback" / "command_provider.py"
         fallback_mock_provider_path = ROOT / "skill_runtime" / "distill" / "fallback" / "mock_provider.py"
         fallback_prompt_builder_path = ROOT / "skill_runtime" / "distill" / "fallback" / "prompt_builder.py"
         rules_registry_path = ROOT / "skill_runtime" / "distill" / "rules" / "registry.py"
@@ -232,6 +233,7 @@ class RuntimeArchitectureTestsMixin:
         rules_init_path = ROOT / "skill_runtime" / "distill" / "rules" / "__init__.py"
         semantic_review_service_path = ROOT / "skill_runtime" / "audit" / "semantic_review_service.py"
         semantic_provider_path = ROOT / "skill_runtime" / "audit" / "semantic_provider.py"
+        command_semantic_provider_path = ROOT / "skill_runtime" / "audit" / "command_semantic_provider.py"
         semantic_prompt_builder_path = ROOT / "skill_runtime" / "audit" / "semantic_prompt_builder.py"
         mock_semantic_provider_path = ROOT / "skill_runtime" / "audit" / "mock_semantic_provider.py"
         semantic_checks_path = ROOT / "skill_runtime" / "audit" / "semantic_checks.py"
@@ -240,6 +242,7 @@ class RuntimeArchitectureTestsMixin:
         self.assertEqual(
             {
                 "skill_runtime.api.models",
+                "skill_runtime.distill.fallback.command_provider",
                 "skill_runtime.distill.fallback.mock_provider",
                 "skill_runtime.distill.fallback.prompt_builder",
                 "skill_runtime.distill.fallback.provider",
@@ -255,6 +258,16 @@ class RuntimeArchitectureTestsMixin:
             {
                 name
                 for name in self._module_imports(fallback_provider_path)
+                if name.startswith("skill_runtime.")
+            },
+        )
+        self.assertEqual(
+            {
+                "skill_runtime.distill.fallback.provider",
+            },
+            {
+                name
+                for name in self._module_imports(fallback_command_provider_path)
                 if name.startswith("skill_runtime.")
             },
         )
@@ -330,6 +343,7 @@ class RuntimeArchitectureTestsMixin:
         self.assertEqual(
             {
                 "skill_runtime.api.models",
+                "skill_runtime.audit.command_semantic_provider",
                 "skill_runtime.audit.mock_semantic_provider",
                 "skill_runtime.audit.semantic_checks",
                 "skill_runtime.audit.semantic_prompt_builder",
@@ -338,6 +352,17 @@ class RuntimeArchitectureTestsMixin:
             {
                 name
                 for name in self._module_imports(semantic_review_service_path)
+                if name.startswith("skill_runtime.")
+            },
+        )
+        self.assertEqual(
+            {
+                "skill_runtime.audit.semantic_checks",
+                "skill_runtime.audit.semantic_provider",
+            },
+            {
+                name
+                for name in self._module_imports(command_semantic_provider_path)
                 if name.startswith("skill_runtime.")
             },
         )

@@ -119,6 +119,7 @@ docs/
 
 - 已知本地工作流走规则蒸馏
 - 未命中的成功轨迹可走 fallback provider
+- 可通过 `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD` 接入外部 fallback provider 命令
 - 当前规则库包括：
   - 文本合并
   - 文本替换
@@ -139,6 +140,8 @@ docs/
   - 硬编码路径
 - provider-backed 语义审计：
   - 默认本地 mock provider
+  - 可通过 `SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD` 接入外部语义审核命令
+  - provider 命令契约见 [Provider Integration](./docs/provider-integration.md)
   - 审计 prompt artifact
   - provider review summary
   - 轨迹对齐

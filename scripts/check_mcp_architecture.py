@@ -73,6 +73,7 @@ def check_mcp_architecture(root: Path) -> list[str]:
     skill_generator_path = runtime_root / "distill" / "skill_generator.py"
     fallback_service_path = runtime_root / "distill" / "fallback" / "service.py"
     fallback_provider_path = runtime_root / "distill" / "fallback" / "provider.py"
+    fallback_command_provider_path = runtime_root / "distill" / "fallback" / "command_provider.py"
     fallback_mock_provider_path = runtime_root / "distill" / "fallback" / "mock_provider.py"
     fallback_prompt_builder_path = runtime_root / "distill" / "fallback" / "prompt_builder.py"
     rules_registry_path = runtime_root / "distill" / "rules" / "registry.py"
@@ -81,6 +82,7 @@ def check_mcp_architecture(root: Path) -> list[str]:
     skill_auditor_path = runtime_root / "audit" / "skill_auditor.py"
     semantic_review_service_path = runtime_root / "audit" / "semantic_review_service.py"
     semantic_provider_path = runtime_root / "audit" / "semantic_provider.py"
+    command_semantic_provider_path = runtime_root / "audit" / "command_semantic_provider.py"
     semantic_prompt_builder_path = runtime_root / "audit" / "semantic_prompt_builder.py"
     mock_semantic_provider_path = runtime_root / "audit" / "mock_semantic_provider.py"
     semantic_checks_path = runtime_root / "audit" / "semantic_checks.py"
@@ -245,11 +247,15 @@ def check_mcp_architecture(root: Path) -> list[str]:
         },
         fallback_service_path: {
             "skill_runtime.api.models",
+            "skill_runtime.distill.fallback.command_provider",
             "skill_runtime.distill.fallback.mock_provider",
             "skill_runtime.distill.fallback.prompt_builder",
             "skill_runtime.distill.fallback.provider",
         },
         fallback_provider_path: {"skill_runtime.api.models"},
+        fallback_command_provider_path: {
+            "skill_runtime.distill.fallback.provider",
+        },
         fallback_mock_provider_path: {
             "skill_runtime.distill.fallback.provider",
             "skill_runtime.distill.rules.common",
@@ -269,6 +275,7 @@ def check_mcp_architecture(root: Path) -> list[str]:
         },
         semantic_review_service_path: {
             "skill_runtime.api.models",
+            "skill_runtime.audit.command_semantic_provider",
             "skill_runtime.audit.mock_semantic_provider",
             "skill_runtime.audit.semantic_checks",
             "skill_runtime.audit.semantic_prompt_builder",
@@ -277,6 +284,10 @@ def check_mcp_architecture(root: Path) -> list[str]:
         semantic_provider_path: {
             "skill_runtime.api.models",
             "skill_runtime.audit.semantic_checks",
+        },
+        command_semantic_provider_path: {
+            "skill_runtime.audit.semantic_checks",
+            "skill_runtime.audit.semantic_provider",
         },
         semantic_prompt_builder_path: {
             "skill_runtime.api.models",

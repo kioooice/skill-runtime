@@ -1,3 +1,7 @@
+import json
+import os
+import sys
+import textwrap
 from pathlib import Path
 
 
@@ -147,3 +151,155 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         self.assertIsNone(data["recommended_host_operation"])
         self.assertEqual([], data["available_host_operations"])
         self.assertIsNone(sandbox_index.get("core_acceptance_unknown_workflow"))
+
+    def test_mcp_external_provider_can_promote_and_reuse_unknown_workflow(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        fallback_provider = sandbox_root / "demo" / "external_fallback_provider.py"
+        semantic_provider = sandbox_root / "demo" / "external_semantic_provider.py"
+        fallback_provider.write_text(
+            textwrap.dedent(
+                '''
+                import json
+                import sys
+
+
+                request = json.loads(sys.stdin.read())
+                docstring = request["docstring"].replace("\\\\", "\\\\\\\\").replace('"""', '\\"\\"\\"')
+                code = f"""def run(tools, **kwargs):
+                    \\"\\"\\"
+                {docstring}
+                    \\"\\"\\"
+                    input_path = kwargs.get("input_path")
+                    output_path = kwargs.get("output_path")
+                    metadata_path = kwargs.get("metadata_path")
+                    missing = [
+                        name
+                        for name, value in {{
+                            "input_path": input_path,
+                            "output_path": output_path,
+                            "metadata_path": metadata_path,
+                        }}.items()
+                        if value is None
+                    ]
+                    if missing:
+                        raise ValueError(f"Missing required inputs: {{missing}}")
+
+                    copied_path = tools.copy_file(input_path, output_path)
+                    tools.write_json(metadata_path, {{"source": input_path, "copied_path": copied_path}})
+                    return {{
+                        "status": "completed",
+                        "artifacts": [output_path, metadata_path],
+                        "steps_executed": 3,
+                        "generated_by": "command_fallback_acceptance",
+                    }}
+                """
+                print(json.dumps({
+                    "code": code,
+                    "provider_name": "command_fallback_acceptance",
+                    "reason": "External command provider generated executable runtime-tool code.",
+                }))
+                '''
+            ).strip(),
+            encoding="utf-8",
+        )
+        semantic_provider.write_text(
+            textwrap.dedent(
+                '''
+                import json
+                import sys
+
+
+                json.loads(sys.stdin.read())
+                print(json.dumps({
+                    "provider_name": "command_semantic_acceptance",
+                    "summary": "External semantic provider accepted the generated skill.",
+                    "issues": [],
+                }))
+                '''
+            ).strip(),
+            encoding="utf-8",
+        )
+        self.addCleanup(lambda: fallback_provider.unlink(missing_ok=True))
+        self.addCleanup(lambda: semantic_provider.unlink(missing_ok=True))
+
+        original_fallback = os.environ.get("SKILL_RUNTIME_FALLBACK_PROVIDER_CMD")
+        original_semantic = os.environ.get("SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD")
+        os.environ["SKILL_RUNTIME_FALLBACK_PROVIDER_CMD"] = json.dumps(
+            [sys.executable, str(fallback_provider)]
+        )
+        os.environ["SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD"] = json.dumps(
+            [sys.executable, str(semantic_provider)]
+        )
+        self.addCleanup(self._restore_env, "SKILL_RUNTIME_FALLBACK_PROVIDER_CMD", original_fallback)
+        self.addCleanup(self._restore_env, "SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD", original_semantic)
+
+        input_path = sandbox_root / "demo" / "input" / "provider_source.txt"
+        input_path.write_text("external provider path", encoding="utf-8")
+        payload = self._call_mcp_tool(
+            "distill_and_promote_candidate",
+            {
+                "observed_task": {
+                    "task": "Mirror one text file and write a metadata sidecar.",
+                    "actions": [
+                        {
+                            "tool": "copy_file",
+                            "input": {
+                                "source_path": "demo/input/provider_source.txt",
+                                "destination_path": "demo/output/provider_result.txt",
+                            },
+                            "result": "Mirrored source text.",
+                        },
+                        {
+                            "tool": "write_json",
+                            "input": {"metadata_path": "demo/output/provider_result.json"},
+                            "result": "Wrote metadata sidecar.",
+                        },
+                    ],
+                    "outputs": [
+                        "demo/output/provider_result.txt",
+                        "demo/output/provider_result.json",
+                    ],
+                },
+                "skill_name": "core_acceptance_external_provider",
+            },
+            root=sandbox_root,
+        )
+        data = payload["data"]
+        metadata = self._read_json_file(Path(data["distillation"]["metadata_file"]))
+        fallback_artifact = self._read_json_file(Path(data["distillation"]["fallback_artifact"]))
+
+        self.assertTrue(data["promoted"])
+        self.assertEqual("passed", data["audit"]["report"]["status"])
+        self.assertEqual("command_semantic_acceptance", data["audit"]["report"]["semantic_provider"])
+        self.assertEqual("llm_fallback", metadata["rule_name"])
+        self.assertIn("command_fallback_acceptance", metadata["rule_reason"])
+        self.assertEqual("command_fallback_acceptance", fallback_artifact["response"]["provider_name"])
+
+        promoted = sandbox_index.get("core_acceptance_external_provider")
+        self.assertIsNotNone(promoted)
+        self.assertEqual("active", promoted.status)
+
+        execute_payload = self._call_mcp_tool(
+            "execute_skill",
+            {
+                "skill_name": "core_acceptance_external_provider",
+                "args": {
+                    "input_path": "demo/input/provider_source.txt",
+                    "output_path": "demo/output/provider_reuse.txt",
+                    "metadata_path": "demo/output/provider_reuse.json",
+                },
+            },
+            root=sandbox_root,
+        )
+        self.assertEqual("completed", execute_payload["data"]["result"]["status"])
+        self.assertEqual(
+            "external provider path",
+            (sandbox_root / "demo" / "output" / "provider_reuse.txt").read_text(encoding="utf-8"),
+        )
+        self.assertTrue((sandbox_root / "demo" / "output" / "provider_reuse.json").exists())
+
+    def _restore_env(self, name: str, value: str | None) -> None:
+        if value is None:
+            os.environ.pop(name, None)
+            return
+        os.environ[name] = value

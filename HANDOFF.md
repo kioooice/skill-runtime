@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能不能算建设完成。两条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active。剩余主要短板是：semantic audit 默认仍是 mock provider、未知任务 fallback distillation 默认仍是 mock provider 且只能作为候选/提示产物、搜索质量仍是轻量关键词评分、active skill 库样本仍少。
+已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。剩余主要短板是：当前只完成 provider 接入契约，还没有内置 OpenAI 或本地模型 provider；搜索质量仍是轻量关键词评分；active skill 库样本仍少。
 
 ## Last Completed
 
@@ -86,10 +86,22 @@
   - `python -m skill_runtime.cli ...`
   - `python -m skill_runtime.mcp_stdio ...`
 - 已新增模块入口回归测试
+- 新增外部命令型 fallback provider：
+  - `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD`
+- 新增外部命令型 semantic provider：
+  - `SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD`
+- 新增 provider dogfood 验收：未知工作流经外部 provider 生成、审核、promote、reuse
+- 新增 semantic provider 阻断测试：外部审核器返回 high issue 时禁止 promote
+- 新增 `docs/provider-integration.md`
+- 已运行：
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+  - `python -m unittest tests.test_runtime -v`
+  - 结果：352 tests OK
 
 ## Next Action
 
-下一步围绕 provider 做明确决策并推进：要么接入真实 semantic audit / fallback provider 路径，让未知工作流生成能力进入真实闭环；要么把 mock fallback 默认不可晋级正式文档化为安全边界，并先转向搜索质量评估。
+下一步围绕 provider 后端做明确决策并推进：要么接一个具体真实 provider 命令（如 OpenAI 或本地模型包装脚本）做真实模型端到端 dogfood；要么先保持通用 provider 契约，转向搜索质量评估集。
 
 ## Important Files
 
@@ -100,11 +112,16 @@
 - `docs/gitnexus-local-runbook.md`
 - `docs/core-readiness-audit.md`
 - `docs/core-dogfood-acceptance.md`
+- `docs/provider-integration.md`
 - `pyproject.toml`
 - `.github/workflows/runtime-contracts.yml`
 - `skill_runtime/execution/runtime_tools.py`
 - `skill_runtime/cli.py`
 - `skill_runtime/mcp_stdio.py`
+- `skill_runtime/distill/fallback/command_provider.py`
+- `skill_runtime/distill/fallback/service.py`
+- `skill_runtime/audit/command_semantic_provider.py`
+- `skill_runtime/audit/semantic_review_service.py`
 - `tests/test_runtime_mcp_smoke.py`
 - `tests/runtime_test_support.py`
 - `tests/test_runtime_isolation.py`
@@ -120,15 +137,17 @@
 - `README.zh-CN.md`
 - `tests/test_runtime_contracts.py`
 - `tests/test_runtime_core_dogfood_acceptance.py`
+- `tests/test_runtime_audit_lifecycle.py`
 
 ## Known Issues
 
 - 核心功能目前是本地 MVP，不应宣称已经完成。
-- semantic audit 默认仍使用 mock provider，质量判断还不够强。
-- fallback distillation 默认仍使用 mock provider，未知任务自动生成能力还没有真实闭环。
+- semantic audit 默认仍使用 mock provider；已支持外部 provider 命令，但未配置真实模型时质量判断仍不够强。
+- fallback distillation 默认仍使用 mock provider；已支持外部 provider 命令，但当前仓库还没有内置 OpenAI 或本地模型 provider。
 - active skill 当前只保留少量真实技能，复用价值还需要更多 dogfood 验证。
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
 - 未来新的 dogfood 执行默认不再改写版本管理下的 active metadata 和主索引。
+- 当前会话尝试 GitNexus MCP 查询时返回 `Transport closed`，本轮已退回普通文件检索。
 
 ## Constraints
 

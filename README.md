@@ -123,6 +123,7 @@ Architecture maintenance guard:
 
 - rule-based executable generation for known local automation patterns
 - fallback provider pipeline for unmatched successful trajectories
+- optional external fallback provider command via `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD`
 - current rule registry includes:
   - text merge
   - text replace
@@ -138,6 +139,8 @@ Architecture maintenance guard:
 
 - static checks for dangerous commands, shell usage, missing entrypoints, and hardcoded paths
 - provider-backed semantic review with prompt artifacts and a mock provider by default
+- optional external semantic review command via `SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD`
+- provider command details live in [Provider Integration](./docs/provider-integration.md)
 - semantic checks for:
   - trajectory alignment
   - parameter coverage

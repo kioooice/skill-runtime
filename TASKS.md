@@ -3,13 +3,13 @@
 ## Current Focus
 
 - 当前目标：从产品化收敛切回 Skill Runtime 核心功能完成度收敛
-- 当前状态：已新增两条核心 dogfood 验收路径：已知技能主链路可完整跑通；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；架构检查、contract 检查和 350 个 runtime 测试已通过
-- 下一步：围绕 provider 做明确决策：要么接真实 semantic audit / fallback provider，要么继续保持 mock fallback 默认不可晋级
+- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径；未知工作流在配置可信 provider 后可完成生成、审核、入库、复用；默认未配置 provider 时仍保持 mock 安全边界；架构检查、contract 检查和 352 个 runtime 测试已通过
+- 下一步：选择是否接一个具体真实 provider 后端（如 OpenAI 或本地模型命令），或先转向搜索质量评估
 
 ## Todo
 
-- [ ] 决定并执行 provider 主线：接真实 semantic audit / fallback provider，或把 mock fallback 默认不可晋级策略文档化为正式安全边界
-- [ ] 视 provider 决策决定是否补真实 provider 的核心验收路径
+- [ ] 决定是否接一个具体真实 provider 后端：OpenAI、本地模型，或继续只保留通用命令契约
+- [ ] 视 provider 后端选择补真实 provider 的端到端 dogfood 验收
 - [ ] 视验收结果决定是否补搜索质量评估集
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
 - [ ] 视需要继续统一其余治理写路径的索引刷新策略，减少未来新增治理入口时出现行为分叉
@@ -60,6 +60,11 @@
 - [x] 运行 `check_mcp_architecture`、`check_runtime_contracts` 和 `tests.test_runtime`，共通过 349 个测试
 - [x] 新增第二条核心 dogfood 验收路径：未知工作流进入 mock fallback 后不会自动提升为 active
 - [x] 运行 `check_mcp_architecture`、`check_runtime_contracts` 和 `tests.test_runtime`，共通过 350 个测试
+- [x] 新增外部命令型 fallback provider，支持未知工作流由可信外部命令生成候选 skill
+- [x] 新增外部命令型 semantic provider，支持外部审核器放行或阻止候选 skill
+- [x] 新增 provider dogfood 验收：未知工作流经外部 provider 生成、审核、promote、reuse
+- [x] 新增 semantic provider 阻断测试：外部审核器返回 high issue 时禁止 promote
+- [x] 运行 `check_mcp_architecture`、`check_runtime_contracts` 和 `tests.test_runtime`，共通过 352 个测试
 
 ## Blocked
 

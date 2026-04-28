@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-04-29 - 真实 provider 路径先采用可信本地命令契约
+
+**Decision**
+
+fallback distillation 和 semantic audit 的真实 provider 接入先采用外部命令契约：runtime 通过 stdin 发送结构化 JSON 请求，provider 命令通过 stdout 返回结构化 JSON 响应。未配置环境变量时继续使用内置 mock provider。
+
+**Reason**
+
+这样可以先打通真实 provider 的工程边界，而不把核心 runtime 绑定到某一家云服务、某种 API key 或某个本地模型实现。OpenAI、本地模型、企业内部审核器都可以包装成同一类本地命令，测试也能稳定验证。
+
+**Impact**
+
+- 新增 `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD` 和 `SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD`
+- 未知工作流在配置可信 provider 后可走生成、审核、入库、复用闭环
+- mock provider 仍是安全默认值，不会因为这次改造自动放行模板技能
+- provider 命令被视为可信本地命令，不能指向未审核脚本
+- 当前还没有内置 OpenAI 或本地模型 provider，只完成了可插拔接入路径
+
 ### 2026-04-29 - mock fallback 默认不作为可自动晋级的核心能力
 
 **Decision**

@@ -1,8 +1,10 @@
 import json
+import os
 from dataclasses import asdict
 from pathlib import Path
 
 from skill_runtime.api.models import Trajectory
+from skill_runtime.distill.fallback.command_provider import CommandFallbackProvider
 from skill_runtime.distill.fallback.mock_provider import MockFallbackProvider
 from skill_runtime.distill.fallback.prompt_builder import build_fallback_prompt
 from skill_runtime.distill.fallback.provider import FallbackRequest, FallbackResponse
@@ -12,7 +14,13 @@ class FallbackService:
     def __init__(self, staging_dir: str | Path, provider=None) -> None:
         self.staging_dir = Path(staging_dir)
         self.staging_dir.mkdir(parents=True, exist_ok=True)
-        self.provider = provider or MockFallbackProvider()
+        self.provider = provider or self._default_provider()
+
+    def _default_provider(self):
+        command = os.environ.get("SKILL_RUNTIME_FALLBACK_PROVIDER_CMD")
+        if command:
+            return CommandFallbackProvider(command)
+        return MockFallbackProvider()
 
     def generate(
         self,

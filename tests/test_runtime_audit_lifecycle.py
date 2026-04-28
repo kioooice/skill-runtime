@@ -1,3 +1,7 @@
+import json
+import os
+import sys
+import textwrap
 from pathlib import Path
 
 from skill_runtime.api.service import RuntimeServiceError
@@ -75,6 +79,59 @@ class RuntimeAuditLifecycleTestsMixin:
         self.assertEqual([], report["semantic_findings"])
         self.assertEqual("mock_semantic_review_provider", report["semantic_provider"])
         self.assertTrue(Path(report["semantic_artifact"]).exists())
+
+    def test_command_semantic_provider_can_block_audit(self) -> None:
+        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        semantic_provider = sandbox_root / "demo" / "blocking_semantic_provider.py"
+        semantic_provider.write_text(
+            textwrap.dedent(
+                '''
+                import json
+                import sys
+
+
+                json.loads(sys.stdin.read())
+                print(json.dumps({
+                    "provider_name": "command_semantic_blocking_fixture",
+                    "summary": "External semantic provider rejected the skill.",
+                    "issues": [
+                        {
+                            "rule_id": "external-semantic-block",
+                            "severity": "high",
+                            "message": "External semantic provider found an unacceptable workflow risk.",
+                        }
+                    ],
+                }))
+                '''
+            ).strip(),
+            encoding="utf-8",
+        )
+        self.addCleanup(lambda: semantic_provider.unlink(missing_ok=True))
+
+        original_semantic = os.environ.get("SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD")
+        os.environ["SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD"] = json.dumps(
+            [sys.executable, str(semantic_provider)]
+        )
+
+        def restore_semantic_env() -> None:
+            if original_semantic is None:
+                os.environ.pop("SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD", None)
+                return
+            os.environ["SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD"] = original_semantic
+
+        self.addCleanup(restore_semantic_env)
+
+        result = sandbox_service.audit(
+            sandbox_root / "skill_store" / "active" / "merge_text_files.py",
+            trajectory_path=sandbox_root / "trajectories" / "demo_merge_text_files.json",
+        )
+        report = result["report"]
+        self.assertEqual("needs_fix", report["status"])
+        self.assertEqual("command_semantic_blocking_fixture", report["semantic_provider"])
+        self.assertTrue(
+            any("unacceptable workflow risk" in finding for finding in report["semantic_findings"])
+        )
+        self.assertIsNone(result["recommended_host_operation"])
 
     def test_service_audit_returns_promote_follow_up_on_pass(self) -> None:
         sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
