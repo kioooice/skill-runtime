@@ -202,6 +202,8 @@ python -m skill_runtime.cli search --query "<task>"
 python -m skill_runtime.mcp_stdio --root .
 ```
 
+Local runtime usage statistics are stored in `.skill_runtime/usage.json`, which is ignored by Git so normal skill execution does not dirty versioned active-skill metadata.
+
 ## CLI Quick Start
 
 ```bash

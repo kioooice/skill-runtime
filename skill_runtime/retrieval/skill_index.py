@@ -17,12 +17,23 @@ class SkillIndex:
     def __init__(self, index_path: str | Path) -> None:
         self.index_path = Path(index_path)
         self.index_path.parent.mkdir(parents=True, exist_ok=True)
+        self.usage_state_path = self.index_path.parent.parent / ".skill_runtime" / "usage.json"
 
     def load_all(self) -> list[SkillMetadata]:
         if not self.index_path.exists():
             return []
         payload = json.loads(self.index_path.read_text(encoding="utf-8-sig"))
-        return [self._from_dict(item) for item in payload.get("skills", [])]
+        skills = [self._from_dict(item) for item in payload.get("skills", [])]
+        usage_state = self._load_usage_state()
+        if not usage_state:
+            return skills
+
+        for metadata in skills:
+            usage_payload = usage_state.get(metadata.skill_name)
+            if usage_payload is None:
+                continue
+            self._apply_usage_state(metadata, usage_payload)
+        return skills
 
     def save_all(self, skills: list[SkillMetadata]) -> Path:
         self.index_path.write_text(
@@ -43,6 +54,7 @@ class SkillIndex:
 
     def remove(self, skill_name: str) -> Path:
         skills = [skill for skill in self.load_all() if skill.skill_name != skill_name]
+        self._remove_usage_state(skill_name)
         return self.save_all(skills)
 
     def get(self, skill_name: str) -> SkillMetadata | None:
@@ -60,15 +72,7 @@ class SkillIndex:
             metadata.usage_count += 1
             metadata.last_used_at = datetime.now(timezone.utc).isoformat()
             skills[index] = metadata
-            self.save_all(skills)
-
-            metadata_path = Path(metadata.file_path).with_name(f"{metadata.skill_name}.metadata.json")
-            if metadata_path.exists():
-                metadata_path.write_text(
-                    json.dumps(asdict(metadata), ensure_ascii=False, indent=2),
-                    encoding="utf-8",
-                )
-
+            self._save_usage_state(metadata)
             return metadata
 
         raise SkillIndexError(f"skill not found for usage update: {skill_name}")
@@ -82,6 +86,63 @@ class SkillIndex:
             payload = json.loads(metadata_path.read_text(encoding="utf-8-sig"))
             skills.append(self._from_dict(payload))
         return self.save_all(skills)
+
+    def _load_usage_state(self) -> dict[str, dict]:
+        if not self.usage_state_path.exists():
+            return {}
+        payload = json.loads(self.usage_state_path.read_text(encoding="utf-8-sig"))
+        skills = payload.get("skills", {})
+        if not isinstance(skills, dict):
+            raise SkillIndexError("usage state must contain a skills object")
+        return {str(key): value for key, value in skills.items() if isinstance(value, dict)}
+
+    def _save_usage_state(self, metadata: SkillMetadata) -> Path:
+        state = self._load_usage_state()
+        state[metadata.skill_name] = {
+            "usage_count": metadata.usage_count,
+            "last_used_at": metadata.last_used_at,
+        }
+        self.usage_state_path.parent.mkdir(parents=True, exist_ok=True)
+        self.usage_state_path.write_text(
+            json.dumps({"skills": state}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        return self.usage_state_path
+
+    def _remove_usage_state(self, skill_name: str) -> None:
+        if not self.usage_state_path.exists():
+            return
+        state = self._load_usage_state()
+        if skill_name not in state:
+            return
+        state.pop(skill_name, None)
+        if not state:
+            self.usage_state_path.unlink(missing_ok=True)
+            return
+        self.usage_state_path.write_text(
+            json.dumps({"skills": state}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+    def _apply_usage_state(self, metadata: SkillMetadata, usage_payload: dict) -> None:
+        usage_count = usage_payload.get("usage_count")
+        if isinstance(usage_count, int):
+            metadata.usage_count = max(metadata.usage_count, usage_count)
+
+        last_used_at = usage_payload.get("last_used_at")
+        if not isinstance(last_used_at, str):
+            return
+        if metadata.last_used_at is None:
+            metadata.last_used_at = last_used_at
+            return
+        try:
+            metadata_last_used = datetime.fromisoformat(metadata.last_used_at)
+            overlay_last_used = datetime.fromisoformat(last_used_at)
+        except ValueError:
+            metadata.last_used_at = last_used_at
+            return
+        if overlay_last_used >= metadata_last_used:
+            metadata.last_used_at = last_used_at
 
     def search(self, query: str, top_k: int = 5) -> list[dict]:
         if not query.strip():

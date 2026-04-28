@@ -380,6 +380,39 @@ class RuntimeExecutionFlowTestsMixin:
         self.assertEqual(before_usage + 1, after.usage_count)
         self.assertIsNotNone(after.last_used_at)
 
+    def test_execute_active_skill_records_usage_without_mutating_versioned_skill_files(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+        index_path = sandbox_root / "skill_store" / "index.json"
+        metadata_path = sandbox_root / "skill_store" / "active" / "merge_text_files.metadata.json"
+        usage_state_path = sandbox_root / ".skill_runtime" / "usage.json"
+        before_index = index_path.read_text(encoding="utf-8")
+        before_metadata = metadata_path.read_text(encoding="utf-8")
+        before = sandbox_index.get("merge_text_files")
+        self.assertIsNotNone(before)
+
+        payload = self._execute_skill_cli(
+            "merge_text_files",
+            args_file=self._write_args_file(
+                "test_execute_usage_overlay_args.json",
+                {"input_dir": "demo/input", "output_path": "demo/output/test_usage_overlay.md"},
+                root=sandbox_root,
+            ),
+            root=sandbox_root,
+        )
+        observed_path = Path(payload["data"]["observed_task_record"])
+        self.addCleanup(observed_path.unlink)
+
+        after = sandbox_index.get("merge_text_files")
+        self.assertIsNotNone(after)
+        self.assertEqual(before.usage_count + 1, after.usage_count)
+        self.assertIsNotNone(after.last_used_at)
+        self.assertEqual(before_index, index_path.read_text(encoding="utf-8"))
+        self.assertEqual(before_metadata, metadata_path.read_text(encoding="utf-8"))
+        self.assertTrue(usage_state_path.exists())
+        usage_payload = self._read_json_file(usage_state_path)
+        self.assertIn("merge_text_files", usage_payload["skills"])
+        self.assertEqual(after.usage_count, usage_payload["skills"]["merge_text_files"]["usage_count"])
+
     def test_execute_cli_accepts_utf8_bom_args_file(self) -> None:
         sandbox_root, _, _ = self._make_runtime_sandbox()
         output_path = sandbox_root / "demo" / "output" / "bom_execute.md"

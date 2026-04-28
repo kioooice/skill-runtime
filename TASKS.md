@@ -3,13 +3,13 @@
 ## Current Focus
 
 - 当前目标：继续做 Skill Runtime 的产品化收敛，不新增大功能
-- 当前状态：已补齐安装后的正式命令入口，并进一步收口仓库边界：新增换行规范、忽略本地 `.claude/` 辅助目录，并将 GitNexus 本机 runbook 作为正式仓库文档保留；`tests.test_runtime` 当前为 344 个测试并已通过
-- 下一步：优先转向治理并行保护，避免多个治理动作并行后出现索引状态被后一次保存覆盖；工作区剩余的主要差异已收敛到真实运行统计和个别历史本地改动
+- 当前状态：已将 active skill 的使用统计从版本管理下的 `skill_store/index.json` / `active/*.metadata.json` 写回，收口为本地 `.skill_runtime/usage.json`；真实执行仍会记录使用情况，但默认不再改脏技能定义文件；`tests.test_runtime` 当前为 345 个测试并已通过
+- 下一步：优先转向治理并行保护，避免多个治理动作并行后出现索引状态被后一次保存覆盖；如继续收口工作区状态，再处理历史统计差异与换行噪音的最终归零
 
 ## Todo
 
 - [ ] 视需要补一层更稳的治理维护顺序保护，避免并行维护动作覆盖索引状态
-- [ ] 视需要进一步收敛 active skill 使用统计写回策略，避免真实仓库因 dogfood 执行而持续显脏
+- [ ] 视需要清理已存在的历史 usage 统计差异，让工作区回到更接近全干净状态
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
 
 ## In Progress
@@ -42,6 +42,9 @@
 - [x] 运行 `pip install -e .`、两个检查脚本、344 个 runtime 测试，以及安装后入口 help 验证
 - [x] 为仓库补充 `.gitattributes` 换行规范，减少 Windows 下的伪脏改动噪音
 - [x] 忽略本地 `.claude/` 辅助目录，并将 GitNexus 本机 runbook 作为正式仓库文档保留
+- [x] 将 active skill 使用统计写到本地 `.skill_runtime/usage.json`，避免正常执行继续改写版本管理下的技能定义文件
+- [x] 更新 README / README.zh-CN，说明本地 usage 状态文件的存放位置与忽略策略
+- [x] 重新运行 `check_mcp_architecture`、`check_runtime_contracts` 和 `tests.test_runtime`，共通过 345 个测试
 
 ## Blocked
 

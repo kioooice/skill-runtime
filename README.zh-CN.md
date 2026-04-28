@@ -204,6 +204,8 @@ python -m skill_runtime.cli search --query "<task>"
 python -m skill_runtime.mcp_stdio --root .
 ```
 
+本地运行产生的 skill 使用统计会写到 `.skill_runtime/usage.json`，该文件默认已被 Git 忽略，因此日常执行 skill 不会继续改脏版本管理下的 active skill 元数据。
+
 ## CLI 快速开始
 
 ```bash

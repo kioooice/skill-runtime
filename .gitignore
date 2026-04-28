@@ -14,4 +14,5 @@ output/
 Thumbs.db
 .claude/
 .gitnexus
+.skill_runtime/
 skill_runtime.egg-info/

@@ -2,6 +2,28 @@
 
 ## Decision Log
 
+### 2026-04-28 - 将 active skill 使用统计移到本地运行状态文件
+
+**Decision**
+
+保留 active skill 的使用统计能力，但不再把执行产生的 `usage_count / last_used_at` 直接写回版本管理下的 `skill_store/index.json` 和 `skill_store/active/*.metadata.json`。改为把这类运行态统计写到本地 `.skill_runtime/usage.json`，并在读取 skill 索引时叠加到内存视图中。
+
+**Reason**
+
+当前最真实的工作区脏状态来自日常 dogfood 执行会改写版本文件，而不是代码本身真的发生了产品变更。把“技能定义”和“本地使用痕迹”拆开，既保留检索和排序需要的 usage 信号，也避免正常运行持续污染仓库状态。
+
+**Impact**
+
+- 正常执行 skill 后，使用统计仍会累积
+- 搜索和索引读取仍能看到最新 usage 信息
+- 默认不再改写版本管理下的 active metadata 和主索引文件
+- 本地统计写入 `.skill_runtime/usage.json`，并通过 `.gitignore` 忽略
+- 当前完整验证已通过：
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+  - `python -m unittest tests.test_runtime -v`
+  - 结果：345 tests OK
+
 ### 2026-04-28 - 用仓库规则和忽略项收口本地杂项边界
 
 **Decision**
