@@ -3,13 +3,13 @@
 ## Current Focus
 
 - 当前目标：从产品化收敛切回 Skill Runtime 核心功能完成度收敛
-- 当前状态：已新增第一条核心 dogfood 验收路径，覆盖 MCP 搜索、执行、observed task、提升、复用，并确认 active 搜索不出现 fixture-tier 污染；架构检查、contract 检查和 349 个 runtime 测试已通过
-- 下一步：补第二条核心验收路径，专门覆盖未知工作流进入 fallback distillation 后应如何处理，从而决定是接真实 provider 还是先收紧 fallback 晋级
+- 当前状态：已新增两条核心 dogfood 验收路径：已知技能主链路可完整跑通；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；架构检查、contract 检查和 350 个 runtime 测试已通过
+- 下一步：围绕 provider 做明确决策：要么接真实 semantic audit / fallback provider，要么继续保持 mock fallback 默认不可晋级
 
 ## Todo
 
-- [ ] 补一条未知工作流 / fallback distillation 的核心验收路径
-- [ ] 视验收结果决定是否优先升级真实 semantic audit / fallback provider
+- [ ] 决定并执行 provider 主线：接真实 semantic audit / fallback provider，或把 mock fallback 默认不可晋级策略文档化为正式安全边界
+- [ ] 视 provider 决策决定是否补真实 provider 的核心验收路径
 - [ ] 视验收结果决定是否补搜索质量评估集
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
 - [ ] 视需要继续统一其余治理写路径的索引刷新策略，减少未来新增治理入口时出现行为分叉
@@ -58,6 +58,8 @@
 - [x] 完成核心功能完成度盘点，并新增 `docs/core-readiness-audit.md`
 - [x] 新增第一条核心 dogfood 验收路径：MCP 搜索、执行、记录、提升、复用、搜索污染检查
 - [x] 运行 `check_mcp_architecture`、`check_runtime_contracts` 和 `tests.test_runtime`，共通过 349 个测试
+- [x] 新增第二条核心 dogfood 验收路径：未知工作流进入 mock fallback 后不会自动提升为 active
+- [x] 运行 `check_mcp_architecture`、`check_runtime_contracts` 和 `tests.test_runtime`，共通过 350 个测试
 
 ## Blocked
 

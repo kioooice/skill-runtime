@@ -101,3 +101,49 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         governance = self._call_mcp_tool("governance_report", {}, root=sandbox_root)["data"]
         self.assertEqual(0, governance["library_tier_counts"]["fixture"])
         self.assertGreaterEqual(governance["library_tier_counts"]["stable"], 2)
+
+    def test_mcp_fallback_generated_candidate_is_not_auto_promoted(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+
+        payload = self._call_mcp_tool(
+            "distill_and_promote_candidate",
+            {
+                "observed_task": {
+                    "task": "Create a weekly insight report from mixed observations.",
+                    "actions": [
+                        {
+                            "tool": "observe_state",
+                            "input": {"report_name": "weekly_report"},
+                            "result": "Collected mixed observations.",
+                        },
+                        {
+                            "tool": "summarize_notes",
+                            "input": {"topic": "weekly_report"},
+                            "result": "Summarized notes into a draft.",
+                        },
+                    ],
+                    "outputs": ["demo/output/weekly_report.txt"],
+                },
+                "skill_name": "core_acceptance_unknown_workflow",
+            },
+            root=sandbox_root,
+        )
+        data = payload["data"]
+        metadata = self._read_json_file(Path(data["distillation"]["metadata_file"]))
+
+        self.assertFalse(data["promoted"])
+        self.assertIsNone(data["promotion"])
+        self.assertEqual("promotion skipped because audit did not pass", data["skipped_reason"])
+        self.assertEqual("needs_fix", data["audit"]["report"]["status"])
+        self.assertIn("fallback_artifact", data["distillation"])
+        self.assertEqual("llm_fallback", metadata["rule_name"])
+        self.assertEqual("mock_semantic_review_provider", data["audit"]["report"]["semantic_provider"])
+        self.assertTrue(
+            any(
+                "template" in finding.lower() or "fallback" in finding.lower()
+                for finding in data["audit"]["report"]["semantic_findings"]
+            )
+        )
+        self.assertIsNone(data["recommended_host_operation"])
+        self.assertEqual([], data["available_host_operations"])
+        self.assertIsNone(sandbox_index.get("core_acceptance_unknown_workflow"))

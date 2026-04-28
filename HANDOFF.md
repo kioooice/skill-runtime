@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能不能算建设完成。第一条核心 dogfood 验收路径已新增：通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染。剩余主要短板是：semantic audit 默认仍是 mock provider、未知任务 fallback distillation 默认仍是 mock provider、搜索质量仍是轻量关键词评分、active skill 库样本仍少。
+已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能不能算建设完成。两条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active。剩余主要短板是：semantic audit 默认仍是 mock provider、未知任务 fallback distillation 默认仍是 mock provider 且只能作为候选/提示产物、搜索质量仍是轻量关键词评分、active skill 库样本仍少。
 
 ## Last Completed
 
@@ -11,11 +11,12 @@
 - 新增 `tests/test_runtime_core_dogfood_acceptance.py`
 - 将核心 dogfood 验收接入 `tests.test_runtime`
 - 第一条验收路径覆盖：MCP 搜索、执行、observed task、提升、复用、active 搜索无 fixture-tier 污染
+- 第二条验收路径覆盖：未知工作流进入 mock fallback 后不自动提升为 active
 - 已运行：
   - `python scripts/check_mcp_architecture.py`
   - `python scripts/check_runtime_contracts.py`
   - `python -m unittest tests.test_runtime -v`
-  - 结果：349 tests OK
+  - 结果：350 tests OK
 - 新增 `docs/core-readiness-audit.md`，记录核心完成度盘点
 - 明确当前状态是“可用本地 MVP”，不是“核心功能完成”
 - 将下一阶段主线从产品化收敛切回核心 dogfood 验收
@@ -88,7 +89,7 @@
 
 ## Next Action
 
-继续补核心 dogfood 验收包的第二条路径：专门覆盖未知工作流进入 fallback distillation 后应如何处理。目标是判断下一步应优先接真实 provider，还是先把 mock fallback 的晋级路径收紧，避免把模板技能误提升为 active。
+下一步围绕 provider 做明确决策并推进：要么接入真实 semantic audit / fallback provider 路径，让未知工作流生成能力进入真实闭环；要么把 mock fallback 默认不可晋级正式文档化为安全边界，并先转向搜索质量评估。
 
 ## Important Files
 

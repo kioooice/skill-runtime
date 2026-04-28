@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-04-29 - mock fallback 默认不作为可自动晋级的核心能力
+
+**Decision**
+
+当前把 mock fallback 视为候选技能生成和提示产物，不视为可自动晋级到 active 的可靠核心能力。未知工作流如果只命中 mock fallback，必须被审核挡住，除非后续接入明确可信的真实 provider 或另行设计人工确认边界。
+
+**Reason**
+
+mock fallback 生成的是模板化技能，它能帮助暴露“未知工作流需要 provider”的缺口，但不能证明真实自动生成能力已经完成。如果允许这类候选直接提升，会把看似可复用但实际没有真实动作的技能放进 active 库，污染搜索和复用结果。
+
+**Impact**
+
+- 新增核心验收保证未知工作流进入 mock fallback 后不会自动提升
+- 当前核心主线的下一步从“是否需要收紧 fallback”变为“是否接真实 provider”
+- 在真实 provider 未接入前，不应宣称未知工作流自动生成已经完成
+
 ### 2026-04-28 - 核心 dogfood 验收先覆盖真实 MCP 主链路
 
 **Decision**
