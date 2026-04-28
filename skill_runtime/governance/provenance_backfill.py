@@ -39,7 +39,7 @@ class ProvenanceBackfill:
             changed = True
 
         if changed:
-            self.index.save_all(skills)
+            self.index.save_merged(skills)
 
         return updated
 

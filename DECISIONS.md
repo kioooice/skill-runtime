@@ -2,6 +2,27 @@
 
 ## Decision Log
 
+### 2026-04-28 - 治理维护动作保存索引时合并最新状态
+
+**Decision**
+
+对 `archive_cold`、`archive_duplicate_candidates`、`archive_fixture_skills` 以及 provenance 回填这类治理维护动作，不再在最后用一份旧的 skill 列表整包覆盖 `skill_store/index.json`。改为读取当前最新索引后按 `skill_name` 合并更新，再保存。
+
+**Reason**
+
+当前主线风险已经从“功能缺失”转成“维护动作之间互相覆盖”。如果一个治理动作开始后，期间又有另一项索引变化发生，最后那次整包保存就可能把中途新增或更新的索引项盖掉。
+
+**Impact**
+
+- 连续治理动作之间更不容易互相覆盖索引结果
+- 新增了回归测试，专门覆盖“归档过程中出现晚到索引更新仍能保留”
+- 现有治理 contract 不需要新增用户可见参数
+- 当前完整验证已通过：
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+  - `python -m unittest tests.test_runtime -v`
+  - 结果：346 tests OK
+
 ### 2026-04-28 - 将 active skill 使用统计移到本地运行状态文件
 
 **Decision**

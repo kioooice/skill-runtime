@@ -927,6 +927,67 @@ class RuntimeGovernanceTestsMixin:
         self.assertTrue(stable_skill.exists())
         self.assertEqual("governance_report", result["recommended_next_action"])
 
+    def test_archive_fixture_skills_preserves_late_index_updates(self) -> None:
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        active_dir = sandbox_root / "skill_store" / "active"
+        archive_dir = sandbox_root / "skill_store" / "archive"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+
+        fixture_payload = {
+            "summary": "Fixture merge txt files into one markdown file.",
+            "docstring": "fixture",
+            "input_schema": {"input_dir": "str", "output_path": "str"},
+            "output_schema": {"status": "str"},
+            "source_trajectory_ids": [],
+            "created_at": "2026-01-01T00:00:00+00:00",
+            "last_used_at": None,
+            "usage_count": 0,
+            "status": "active",
+            "audit_score": 90,
+            "rule_name": "text_merge",
+            "rule_priority": 70,
+            "rule_reason": "fixture duplicate",
+            "tags": ["fixture", "merge", "markdown", "txt"],
+        }
+        stable_payload = {
+            **fixture_payload,
+            "summary": "Stable merge txt files into one markdown file.",
+            "docstring": "stable",
+            "audit_score": 100,
+        }
+        late_payload = {
+            **stable_payload,
+            "summary": "Late-added stable skill that must survive index refresh.",
+            "docstring": "late arrival",
+            "rule_reason": "late addition",
+            "tags": ["stable", "late", "merge", "markdown", "txt"],
+        }
+
+        self._write_active_skill_fixture("cli_merge_fixture_test", fixture_payload, root=sandbox_root)
+        self._write_active_skill_fixture("merge_text_files", stable_payload, root=sandbox_root)
+        sandbox_index.rebuild_from_directory(active_dir)
+
+        original_archive_skill_metadata = sandbox_service._archive_skill_metadata
+        late_added = {"done": False}
+
+        def archive_with_late_index_update(metadata):
+            archived = original_archive_skill_metadata(metadata)
+            if archived and not late_added["done"]:
+                self._write_active_skill_fixture("late_arriving_skill", late_payload, root=sandbox_root)
+                sandbox_index.rebuild_from_directory(active_dir)
+                late_added["done"] = True
+            return archived
+
+        sandbox_service._archive_skill_metadata = archive_with_late_index_update
+        self.addCleanup(setattr, sandbox_service, "_archive_skill_metadata", original_archive_skill_metadata)
+
+        sandbox_service.archive_fixture_skills(skill_names=["cli_merge_fixture_test"])
+
+        refreshed_index = sandbox_index.__class__(sandbox_root / "skill_store" / "index.json")
+        late_skill = refreshed_index.get("late_arriving_skill")
+        self.assertIsNotNone(late_skill)
+        self.assertEqual("active", late_skill.status)
+
     def test_mcp_archive_fixture_skills_returns_follow_up_host_operation(self) -> None:
         sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
         active_dir = sandbox_root / "skill_store" / "active"

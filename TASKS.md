@@ -3,14 +3,14 @@
 ## Current Focus
 
 - 当前目标：继续做 Skill Runtime 的产品化收敛，不新增大功能
-- 当前状态：已将 active skill 的使用统计从版本管理下的 `skill_store/index.json` / `active/*.metadata.json` 写回，收口为本地 `.skill_runtime/usage.json`；真实执行仍会记录使用情况，但默认不再改脏技能定义文件；`tests.test_runtime` 当前为 345 个测试并已通过
-- 下一步：优先转向治理并行保护，避免多个治理动作并行后出现索引状态被后一次保存覆盖；如继续收口工作区状态，再处理历史统计差异与换行噪音的最终归零
+- 当前状态：已补治理并行保护；归档和 provenance 回填这类治理动作在保存索引时改为合并最新状态，不再用旧清单整包覆盖，减少连续治理动作互相盖掉结果的风险；`tests.test_runtime` 当前为 346 个测试并已通过
+- 下一步：如继续做产品化收敛，优先收口工作区剩余历史噪音；如果继续偏稳定性方向，则可以再评估是否需要把更多治理写操作统一到同一套索引刷新策略上
 
 ## Todo
 
-- [ ] 视需要补一层更稳的治理维护顺序保护，避免并行维护动作覆盖索引状态
 - [ ] 视需要清理已存在的历史 usage 统计差异，让工作区回到更接近全干净状态
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
+- [ ] 视需要继续统一其余治理写路径的索引刷新策略，减少未来新增治理入口时出现行为分叉
 
 ## In Progress
 
@@ -45,6 +45,9 @@
 - [x] 将 active skill 使用统计写到本地 `.skill_runtime/usage.json`，避免正常执行继续改写版本管理下的技能定义文件
 - [x] 更新 README / README.zh-CN，说明本地 usage 状态文件的存放位置与忽略策略
 - [x] 重新运行 `check_mcp_architecture`、`check_runtime_contracts` 和 `tests.test_runtime`，共通过 345 个测试
+- [x] 为治理维护动作补齐索引合并保存策略，减少连续治理动作互相覆盖索引结果的风险
+- [x] 新增并通过“归档过程中出现晚到索引更新也能保留”的回归测试
+- [x] 重新运行 `check_mcp_architecture`、`check_runtime_contracts` 和 `tests.test_runtime`，共通过 346 个测试
 
 ## Blocked
 

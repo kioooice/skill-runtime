@@ -642,7 +642,7 @@ class RuntimeService:
             if self._archive_skill_metadata(metadata):
                 archived.append(metadata.skill_name)
 
-        index.save_all(skills)
+        index.save_merged(skills)
         return with_recommendation(
             {"days": days, "archived": archived},
             governance_report_recommendation(
@@ -732,7 +732,7 @@ class RuntimeService:
                     archived.append(skill_name)
 
         if not dry_run:
-            index.save_all(skills)
+            index.save_merged(skills)
         recommendation = archive_duplicate_candidates_follow_up_recommendation(
             sorted(set(planned)),
             dry_run=dry_run,
@@ -773,7 +773,7 @@ class RuntimeService:
                 archived.append(metadata.skill_name)
 
         if not dry_run:
-            index.save_all(skills)
+            index.save_merged(skills)
         recommendation = archive_fixture_skills_follow_up_recommendation(
             sorted(set(planned)),
             dry_run=dry_run,

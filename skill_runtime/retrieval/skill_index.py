@@ -42,6 +42,12 @@ class SkillIndex:
         )
         return self.index_path
 
+    def save_merged(self, skills: list[SkillMetadata]) -> Path:
+        current_skills = {skill.skill_name: skill for skill in self.load_all()}
+        for metadata in skills:
+            current_skills[metadata.skill_name] = metadata
+        return self.save_all(list(current_skills.values()))
+
     def upsert(self, metadata: SkillMetadata) -> Path:
         skills = self.load_all()
         for index, existing in enumerate(skills):

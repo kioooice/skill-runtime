@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛：仓库已补齐最小 `pyproject.toml`、README 本地安装说明、CI 中的 `pip install -e .`、最小 MCP smoke 测试，以及 `copy_file` rollback 承诺修复。active skill 治理清理已完成，并已重建 active index，使治理报告与搜索结果同步到真实状态。runtime 测试隔离收敛也已完成，默认验证路径不再继续依赖被污染的 active skill 库，也不再默认把新的执行痕迹写回真实仓库。最新三轮已进一步补齐安装后的正式命令入口、收口本地杂项边界，并把 active skill 的 usage 写回从版本文件迁移到本地 `.skill_runtime/usage.json`：当前同时支持安装后直接使用 `skill-runtime` / `skill-runtime-mcp`，继续兼容仓库内 `scripts/*.py` 入口，正常执行 skill 仍可保留使用统计，但默认不再改脏版本管理下的 active skill 定义文件。
+已完成一轮 Skill Runtime 产品化收敛：仓库已补齐最小 `pyproject.toml`、README 本地安装说明、CI 中的 `pip install -e .`、最小 MCP smoke 测试，以及 `copy_file` rollback 承诺修复。active skill 治理清理已完成，并已重建 active index，使治理报告与搜索结果同步到真实状态。runtime 测试隔离收敛也已完成，默认验证路径不再继续依赖被污染的 active skill 库，也不再默认把新的执行痕迹写回真实仓库。最近几轮又进一步补齐安装后的正式命令入口、收口本地杂项边界、把 active skill 的 usage 写回迁移到本地 `.skill_runtime/usage.json`，并补上治理并行保护：当前同时支持安装后直接使用 `skill-runtime` / `skill-runtime-mcp`，继续兼容仓库内 `scripts/*.py` 入口，正常执行 skill 仍可保留使用统计，但默认不再改脏版本管理下的 active skill 定义文件；归档和 provenance 回填这类治理动作在保存索引时也不再容易把中途更新盖掉。
 
 ## Last Completed
 
@@ -59,10 +59,17 @@
   - `python scripts/check_runtime_contracts.py`
   - `python -m unittest tests.test_runtime -v`
   - 结果：345 tests OK
+- 已为治理维护动作补齐索引合并保存策略
+- 已新增回归测试，覆盖归档过程中出现晚到索引更新仍能保留
+- 已再次运行：
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+  - `python -m unittest tests.test_runtime -v`
+  - 结果：346 tests OK
 
 ## Next Action
 
-如果继续做产品化收敛，优先继续补治理层并行保护，避免多个治理动作并行后出现索引状态被后一次保存覆盖。若之后仍要继续收口工作区状态，再处理已存在的历史 usage 差异和 line-ending 噪音的最终归零。
+如果继续做产品化收敛，优先收口工作区剩余历史噪音，把已存在的 usage 历史差异和 line-ending 噪音进一步压下去；如果仍想继续偏稳定性方向，再评估是否需要把更多治理写操作统一到同一套索引刷新策略上。
 
 ## Important Files
 
@@ -82,10 +89,12 @@
 - `.gitattributes`
 - `.gitignore`
 - `skill_runtime/retrieval/skill_index.py`
+- `skill_runtime/api/service.py`
+- `skill_runtime/governance/provenance_backfill.py`
+- `tests/test_runtime_governance.py`
 
 ## Known Issues
 
-- 如果多个治理维护动作并行执行，可能出现索引状态被后一次保存覆盖的情况；当前已通过顺序清理加重建索引收口，但更稳的顺序保护仍可继续补。
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
 - 未来新的 dogfood 执行默认不再改写版本管理下的 active metadata 和主索引，但工作区里仍可能保留此前阶段已经产生的历史 usage 差异与 line-ending 噪音。
 
