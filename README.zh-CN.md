@@ -521,6 +521,7 @@ $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_se
 ```bash
 export DEEPSEEK_API_KEY="<your-deepseek-api-key>"
 export DEEPSEEK_MODEL="deepseek-v4-flash"
+export DEEPSEEK_REPAIR_ATTEMPTS="1"
 export SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deepseek_fallback_provider.py"]'
 export SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
 ```
@@ -530,11 +531,12 @@ PowerShell：
 ```powershell
 $env:DEEPSEEK_API_KEY="<your-deepseek-api-key>"
 $env:DEEPSEEK_MODEL="deepseek-v4-flash"
+$env:DEEPSEEK_REPAIR_ATTEMPTS="1"
 $env:SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deepseek_fallback_provider.py"]'
 $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
 ```
 
-不要把 API key 提交进仓库。DeepSeek provider 细节见 [Provider Integration](./docs/provider-integration.md#deepseek-providers)。
+不要把 API key 提交进仓库。fallback provider 会先做本地质量检查，失败时可让 DeepSeek 自动修复一次；细节见 [Provider Integration](./docs/provider-integration.md#deepseek-providers)。
 
 运行 demo：
 

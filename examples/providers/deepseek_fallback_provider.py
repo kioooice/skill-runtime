@@ -37,52 +37,107 @@ TOOL_SIGNATURES = {
 def main() -> int:
     request = _read_json_stdin()
     api_key = _required_env("DEEPSEEK_API_KEY")
+    payload = _request_candidate(api_key, request)
+    try:
+        _validate_candidate_skill(payload["code"], request)
+    except ValueError as exc:
+        if _repair_attempts() < 1:
+            raise
+        payload = _repair_candidate(api_key, request, payload, str(exc))
+        _validate_candidate_skill(payload["code"], request)
+    print(json.dumps(payload, ensure_ascii=False))
+    return 0
+
+
+def _request_candidate(api_key: str, request: dict) -> dict:
+    response = _chat_completion(api_key=api_key, messages=_generation_messages(request))
+    return _candidate_payload(response)
+
+
+def _repair_candidate(api_key: str, request: dict, candidate: dict, quality_gate_error: str) -> dict:
     response = _chat_completion(
         api_key=api_key,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You generate governed Python skills for Skill Runtime. "
-                    "Return only JSON with string fields: code, provider_name, reason. "
-                    "The code must define run(tools, **kwargs), use runtime tools instead of shell commands, "
-                    "stay parameterized, and return a structured dict. "
-                    "The run() function must have a docstring containing exactly these Chinese section headers: "
-                    "功能描述, 输入参数, 输出结果. "
-                    "Read inputs through kwargs.get(...). Prefer canonical parameter names such as input_path, "
-                    "output_path, metadata_path, input_dir, output_dir, pattern, old_text, and new_text. "
-                    "The generated code must read every key from the provided input_schema literally via kwargs. "
-                    "If the trajectory uses copy_file, call tools.copy_file. "
-                    "If the trajectory uses write_json, call tools.write_json. "
-                    "Do not hardcode demo paths or artifact names in the generated skill."
-                ),
-            },
-            {
-                "role": "user",
-                "content": (
-                    "Generate a candidate Skill Runtime skill from this provider request:\n"
-                    + json.dumps(request, ensure_ascii=False)
-                    + "\n\nReturn JSON only. Example shape: "
-                    + json.dumps(
-                        {
-                            "code": "def run(tools, **kwargs):\\n    ...",
-                            "provider_name": "deepseek",
-                            "reason": "Short generation rationale.",
-                        },
-                        ensure_ascii=False,
-                    )
-                ),
-            },
-        ],
+        messages=_repair_messages(request, candidate, quality_gate_error),
     )
+    payload = _candidate_payload(response)
+    payload["reason"] = payload["reason"] + f" Repaired after quality gate failure: {quality_gate_error}"
+    return payload
+
+
+def _candidate_payload(response: dict) -> dict:
     payload = _parse_json_content(response)
     _require_string(payload, "code")
     payload["code"] = _normalize_code_string(payload["code"])
     _ensure_string(payload, "provider_name", "deepseek_fallback_provider")
     _ensure_string(payload, "reason", "DeepSeek generated a candidate skill from the fallback prompt.")
-    _validate_candidate_skill(payload["code"], request)
-    print(json.dumps(payload, ensure_ascii=False))
-    return 0
+    return payload
+
+
+def _generation_messages(request: dict) -> list[dict[str, str]]:
+    return [
+        {
+            "role": "system",
+            "content": _system_prompt(),
+        },
+        {
+            "role": "user",
+            "content": (
+                "Generate a candidate Skill Runtime skill from this provider request:\n"
+                + json.dumps(request, ensure_ascii=False)
+                + "\n\nReturn JSON only. Example shape: "
+                + json.dumps(
+                    {
+                        "code": "def run(tools, **kwargs):\\n    ...",
+                        "provider_name": "deepseek",
+                        "reason": "Short generation rationale.",
+                    },
+                    ensure_ascii=False,
+                )
+            ),
+        },
+    ]
+
+
+def _repair_messages(request: dict, candidate: dict, quality_gate_error: str) -> list[dict[str, str]]:
+    return [
+        {
+            "role": "system",
+            "content": _system_prompt(),
+        },
+        {
+            "role": "user",
+            "content": (
+                "Repair this Skill Runtime candidate. The previous JSON failed the local quality gate.\n\n"
+                "Provider request:\n"
+                + json.dumps(request, ensure_ascii=False)
+                + "\n\nQuality gate failure:\n"
+                + quality_gate_error
+                + "\n\nPrevious candidate JSON:\n"
+                + json.dumps(candidate, ensure_ascii=False)
+                + "\n\nReturn one corrected JSON object only. Keep the same JSON shape and fix the code. "
+                "Do not explain outside JSON."
+            ),
+        },
+    ]
+
+
+def _system_prompt() -> str:
+    return (
+        "You generate governed Python skills for Skill Runtime. "
+        "Return only JSON with string fields: code, provider_name, reason. "
+        "The code must define run(tools, **kwargs), use runtime tools instead of shell commands, "
+        "stay parameterized, and return a structured dict. "
+        "The run() function must have a docstring containing exactly these Chinese section headers: "
+        "功能描述, 输入参数, 输出结果. "
+        "Read inputs through kwargs.get(...). Prefer canonical parameter names such as input_path, "
+        "output_path, metadata_path, input_dir, output_dir, pattern, old_text, and new_text. "
+        "The generated code must read every key from the provided input_schema literally via kwargs. "
+        "If the trajectory uses copy_file, call tools.copy_file. "
+        "If the trajectory uses write_json, call tools.write_json. "
+        "Use RuntimeTools method signatures exactly: copy_file(source_path, target_path), "
+        "write_json(path, data), write_text(path, content). "
+        "Do not hardcode demo paths or artifact names in the generated skill."
+    )
 
 
 def _chat_completion(api_key: str, messages: list[dict[str, str]]) -> dict:
@@ -181,6 +236,14 @@ def _ensure_string(payload: dict, key: str, default: str) -> None:
     value = payload.get(key)
     if not isinstance(value, str) or not value:
         payload[key] = default
+
+
+def _repair_attempts() -> int:
+    raw_value = os.environ.get("DEEPSEEK_REPAIR_ATTEMPTS", "1")
+    try:
+        return max(0, int(raw_value))
+    except ValueError:
+        return 1
 
 
 def _validate_candidate_skill(code: str, request: dict) -> None:

@@ -13,11 +13,11 @@ Current slow-test profile from `python scripts/profile_runtime_tests.py --suite 
 - Full suite result: 353 tests passed in about 9 minutes.
 - Slowest single test: `test_check_runtime_contracts_script_passes`, about 11.5 seconds after contract sandbox copy optimization.
 - Other slow areas: MCP/provider dogfood tests, generated skill rule combinations, distill coverage reporting, provenance/governance flows, and CLI rollback execution.
-- Fast suite result after DeepSeek provider quality gate: 13 tests passed in about 18 seconds.
+- Fast suite result after DeepSeek provider repair pass: 15 tests passed in about 20 seconds.
 - Fast suite provider dogfood uses the repository demo providers under `examples/providers/`, not ad-hoc scripts generated inside the test.
 - Fast suite DeepSeek provider checks use a local fake DeepSeek API server, not a real API key or real network call.
-- DeepSeek live smoke with the real API is not part of the automated suite; latest manual result proved API connectivity but exposed unstable generated-output quality.
-- DeepSeek fallback provider tests cover local quality gates for low-quality candidates, missing schema kwargs, invalid runtime tool signatures, and double-escaped code strings.
+- DeepSeek live smoke with the real API is not part of the automated suite; latest manual result proved API connectivity and returned a candidate that passed the local quality gate without needing repair.
+- DeepSeek fallback provider tests cover local quality gates for low-quality candidates, missing schema kwargs, invalid runtime tool signatures, double-escaped code strings, one-pass repair, and repair-disabled behavior.
 
 ## CLI
 

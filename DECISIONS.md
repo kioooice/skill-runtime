@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-29 - DeepSeek fallback 失败时允许一次自动返修
+
+**Decision**
+
+DeepSeek fallback provider 在本地质量门禁失败后，默认把具体失败原因和上一版候选 JSON 发回 DeepSeek，请模型修复一次；修复后的候选仍必须通过同一套本地门禁。`DEEPSEEK_REPAIR_ATTEMPTS=0` 可关闭返修。
+
+**Reason**
+
+真实 live smoke 已证明 DeepSeek 会偶发生成调用签名错误的代码。只拦截会保证安全，但用户每次都需要手工重试；允许一次受控返修，可以用本地门禁的具体错误指导模型修正，同时仍避免坏候选进入 staging / promote。
+
+**Impact**
+
+- 默认多一次 DeepSeek API 调用，仅在首次候选未过门禁时发生
+- 修复不绕过本地门禁，失败后仍明确退出
+- 快验新增一次返修成功和返修关闭两个回归测试
+- 真实 API 本轮 smoke 返回了可直接通过门禁的候选，没有触发返修
+
 ### 2026-04-29 - DeepSeek fallback 输出必须先过本地质量门禁
 
 **Decision**

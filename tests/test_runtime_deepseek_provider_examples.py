@@ -204,6 +204,131 @@ class RuntimeDeepSeekProviderExampleTestsMixin:
         self.assertIn("missing required argument", result.stderr)
         self.assertIn("data", result.stderr)
 
+    def test_deepseek_fallback_provider_repairs_candidate_once(self) -> None:
+        invalid_response = {
+            "code": (
+                "def run(tools, **kwargs):\n"
+                "    \"\"\"\n"
+                "    功能描述:\n"
+                "        Copy one file and write metadata.\n\n"
+                "    输入参数:\n"
+                "        - input_path: source file\n"
+                "        - output_path: destination file\n"
+                "        - metadata_path: metadata sidecar\n\n"
+                "    输出结果:\n"
+                "        - status and artifacts\n"
+                "    \"\"\"\n"
+                "    input_path = kwargs.get('input_path')\n"
+                "    output_path = kwargs.get('output_path')\n"
+                "    metadata_path = kwargs.get('metadata_path')\n"
+                "    tools.copy_file(source_path=input_path, destination_path=output_path)\n"
+                "    tools.write_json(metadata_path=metadata_path)\n"
+                "    return {'status': 'completed'}\n"
+            ),
+            "provider_name": "deepseek_fallback_provider",
+        }
+        repaired_response = {
+            "code": (
+                "def run(tools, **kwargs):\n"
+                "    \"\"\"\n"
+                "    功能描述:\n"
+                "        Copy one file and write metadata.\n\n"
+                "    输入参数:\n"
+                "        - input_path: source file\n"
+                "        - output_path: destination file\n"
+                "        - metadata_path: metadata sidecar\n\n"
+                "    输出结果:\n"
+                "        - status and artifacts\n"
+                "    \"\"\"\n"
+                "    input_path = kwargs.get('input_path')\n"
+                "    output_path = kwargs.get('output_path')\n"
+                "    metadata_path = kwargs.get('metadata_path')\n"
+                "    copied_path = tools.copy_file(input_path, output_path)\n"
+                "    tools.write_json(metadata_path, {'copied_path': copied_path})\n"
+                "    return {'status': 'completed'}\n"
+            ),
+            "provider_name": "deepseek_fallback_provider",
+            "reason": "Fixed signatures.",
+        }
+        with _fake_deepseek_server([invalid_response, repaired_response]) as server:
+            result = _run_provider_script(
+                ROOT / "examples" / "providers" / "deepseek_fallback_provider.py",
+                {
+                    "skill_name": "deepseek_repair_gate_test",
+                    "summary": "Copy a file and write metadata.",
+                    "docstring": "Copy a file and write metadata.",
+                    "input_schema": {
+                        "input_path": "str",
+                        "output_path": "str",
+                        "metadata_path": "str",
+                    },
+                    "trajectory": {
+                        "steps": [
+                            {"tool_name": "copy_file", "tool_input": {}},
+                            {"tool_name": "write_json", "tool_input": {}},
+                        ]
+                    },
+                    "prompt": "Generate a copy metadata skill.",
+                },
+                server.url,
+            )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertIn("tools.copy_file(input_path, output_path)", payload["code"])
+        self.assertIn("Repaired after quality gate failure", payload["reason"])
+        self.assertEqual(2, server.request_count)
+        repair_prompt = server.received_bodies[1]["messages"][1]["content"]
+        self.assertIn("Quality gate failure", repair_prompt)
+        self.assertIn("destination_path", repair_prompt)
+        self.assertIn("target_path", repair_prompt)
+
+    def test_deepseek_fallback_provider_can_disable_repair(self) -> None:
+        response_content = {
+            "code": (
+                "def run(tools, **kwargs):\n"
+                "    \"\"\"\n"
+                "    功能描述:\n"
+                "        Copy one file.\n\n"
+                "    输入参数:\n"
+                "        - input_path: source file\n"
+                "        - output_path: destination file\n\n"
+                "    输出结果:\n"
+                "        - status and artifacts\n"
+                "    \"\"\"\n"
+                "    input_path = kwargs.get('input_path')\n"
+                "    output_path = kwargs.get('output_path')\n"
+                "    tools.copy_file(source_path=input_path, destination_path=output_path)\n"
+                "    return {'status': 'completed'}\n"
+            ),
+            "provider_name": "deepseek_fallback_provider",
+        }
+        with _fake_deepseek_server(response_content) as server:
+            result = _run_provider_script(
+                ROOT / "examples" / "providers" / "deepseek_fallback_provider.py",
+                {
+                    "skill_name": "deepseek_repair_disabled_test",
+                    "summary": "Copy a file.",
+                    "docstring": "Copy a file.",
+                    "input_schema": {
+                        "input_path": "str",
+                        "output_path": "str",
+                    },
+                    "trajectory": {
+                        "steps": [
+                            {"tool_name": "copy_file", "tool_input": {}},
+                        ]
+                    },
+                    "prompt": "Generate a copy skill.",
+                },
+                server.url,
+                extra_env={"DEEPSEEK_REPAIR_ATTEMPTS": "0"},
+            )
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("failed quality gate", result.stderr)
+        self.assertEqual(1, server.request_count)
+
     def test_deepseek_fallback_provider_normalizes_escaped_code_string(self) -> None:
         code = (
             'def run(tools, **kwargs):\\n'
@@ -289,11 +414,13 @@ class RuntimeDeepSeekProviderExampleTestsMixin:
 
 
 class _FakeDeepSeekServer:
-    def __init__(self, response_content: dict) -> None:
-        self.response_content = response_content
+    def __init__(self, response_content: dict | list[dict]) -> None:
+        self.response_contents = response_content if isinstance(response_content, list) else [response_content]
         self.received_path: str | None = None
         self.received_headers: dict[str, str] = {}
         self.received_body: dict = {}
+        self.received_bodies: list[dict] = []
+        self.request_count = 0
         self._server: HTTPServer | None = None
         self._thread: threading.Thread | None = None
         self.url = ""
@@ -308,11 +435,16 @@ class _FakeDeepSeekServer:
                 owner.received_path = self.path
                 owner.received_headers = dict(self.headers.items())
                 owner.received_body = json.loads(body)
+                owner.received_bodies.append(owner.received_body)
+                response_content = owner.response_contents[
+                    min(owner.request_count, len(owner.response_contents) - 1)
+                ]
+                owner.request_count += 1
                 response = {
                     "choices": [
                         {
                             "message": {
-                                "content": json.dumps(owner.response_content),
+                                "content": json.dumps(response_content),
                             }
                         }
                     ]
@@ -342,11 +474,16 @@ class _FakeDeepSeekServer:
             self._thread.join(timeout=5)
 
 
-def _fake_deepseek_server(response_content: dict) -> _FakeDeepSeekServer:
+def _fake_deepseek_server(response_content: dict | list[dict]) -> _FakeDeepSeekServer:
     return _FakeDeepSeekServer(response_content)
 
 
-def _run_provider_script(script_path: Path, request: dict, base_url: str) -> subprocess.CompletedProcess[str]:
+def _run_provider_script(
+    script_path: Path,
+    request: dict,
+    base_url: str,
+    extra_env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env.update(
         {
@@ -356,6 +493,8 @@ def _run_provider_script(script_path: Path, request: dict, base_url: str) -> sub
             "PYTHONIOENCODING": "utf-8",
         }
     )
+    if extra_env:
+        env.update(extra_env)
     return subprocess.run(
         [sys.executable, str(script_path)],
         input=json.dumps(request, ensure_ascii=False),

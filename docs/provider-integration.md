@@ -56,6 +56,7 @@ Optional DeepSeek variables:
 - `DEEPSEEK_MODEL`: defaults to `deepseek-v4-flash`
 - `DEEPSEEK_TIMEOUT_SECONDS`: defaults to `60`
 - `DEEPSEEK_TEMPERATURE`: defaults to `0.0`
+- `DEEPSEEK_REPAIR_ATTEMPTS`: defaults to `1`; set to `0` to disable the fallback provider's one-pass repair request
 
 The DeepSeek fallback provider applies a local quality gate before returning generated code. It checks:
 
@@ -65,7 +66,7 @@ The DeepSeek fallback provider applies a local quality gate before returning gen
 - literal kwargs for every inferred input schema key
 - supported keyword arguments for known runtime tools such as `copy_file` and `write_json`
 
-If the generated code fails this gate, the provider exits with a non-zero status and the candidate is not written into staging.
+If the generated code fails this gate, the provider sends the failure reason back to DeepSeek once and asks for a corrected JSON payload. The repaired candidate must pass the same local gate. If repair is disabled or the repaired candidate still fails, the provider exits with a non-zero status and the candidate is not written into staging.
 
 Do not commit API keys. Set `DEEPSEEK_API_KEY` only in your local shell, Codex environment, or a secret manager.
 

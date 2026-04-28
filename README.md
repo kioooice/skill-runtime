@@ -521,6 +521,7 @@ Use DeepSeek as the real provider by setting local environment variables:
 ```bash
 export DEEPSEEK_API_KEY="<your-deepseek-api-key>"
 export DEEPSEEK_MODEL="deepseek-v4-flash"
+export DEEPSEEK_REPAIR_ATTEMPTS="1"
 export SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deepseek_fallback_provider.py"]'
 export SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
 ```
@@ -530,11 +531,12 @@ PowerShell:
 ```powershell
 $env:DEEPSEEK_API_KEY="<your-deepseek-api-key>"
 $env:DEEPSEEK_MODEL="deepseek-v4-flash"
+$env:DEEPSEEK_REPAIR_ATTEMPTS="1"
 $env:SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deepseek_fallback_provider.py"]'
 $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
 ```
 
-Do not commit API keys. DeepSeek provider details live in [Provider Integration](./docs/provider-integration.md#deepseek-providers).
+Do not commit API keys. The fallback provider runs a local quality gate and can ask DeepSeek for one repair pass before failing. DeepSeek provider details live in [Provider Integration](./docs/provider-integration.md#deepseek-providers).
 
 Run the demo flow:
 
