@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-29 - DeepSeek live smoke 后先补本地质量门禁
+
+**Decision**
+
+DeepSeek provider 已经真实连通，但暂不把它标记为稳定核心闭环能力。下一步先为 DeepSeek fallback 输出增加本地质量门禁，至少检查生成代码是否包含 `run`、docstring 结构、轨迹对应 runtime tool 调用和必要 kwargs；不满足时应失败或触发一次修复请求，而不是继续盲目 promote / reuse。
+
+**Reason**
+
+真实 live smoke 结果显示模型输出有波动：出现过通过审核、审核挡住、以及 promote 后复用未产出目标文件的情况。继续重试只会消耗额度，不能提升稳定性。把可验证的结构要求放在本地门禁里，比完全依赖模型自觉遵守 prompt 更可靠。
+
+**Impact**
+
+- DeepSeek API 接入层可继续保留
+- 当前不能宣称 DeepSeek provider 端到端稳定可用
+- 后续工作重点从“能否调用 API”转为“模型输出能否被本地验证和修复”
+- 本轮确认用户提供的 key 没有写入仓库文件
+
 ### 2026-04-29 - DeepSeek 接入采用命令型 provider 示例，不保存 API key
 
 **Decision**

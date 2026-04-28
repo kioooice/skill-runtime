@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。仓库现在包含本地 demo provider 和 DeepSeek provider 示例，可从 fresh clone 验证 provider hook。DeepSeek 接入使用 `DEEPSEEK_API_KEY` 环境变量、默认模型 `deepseek-v4-flash`，不会把 key 写入仓库。验证层已拆分为日常快验和全量慢验：`tests.test_runtime_fast` 当前 9 个测试，约 12 秒；`tests.test_runtime` 当前约 9 分钟。剩余主要短板是：DeepSeek 已有接入脚本但尚未用真实 key 做端到端 live smoke；搜索质量仍是轻量关键词评分；active skill 库样本仍少。
+已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。仓库现在包含本地 demo provider 和 DeepSeek provider 示例，可从 fresh clone 验证 provider hook。DeepSeek 接入使用 `DEEPSEEK_API_KEY` 环境变量、默认模型 `deepseek-v4-flash`，不会把 key 写入仓库。已按用户要求用真实 DeepSeek API 做 live smoke：API 可连通，fallback / semantic provider 都能返回结果；但完整“生成 -> 审核 -> 入库 -> 复用”仍不稳定，出现过通过审核、审核挡住、以及复用执行未产出目标文件的波动。验证层已拆分为日常快验和全量慢验：`tests.test_runtime_fast` 当前 9 个测试，约 12-15 秒；`tests.test_runtime` 当前约 9 分钟。剩余主要短板是：DeepSeek 输出质量还需要本地校验/修复边界；搜索质量仍是轻量关键词评分；active skill 库样本仍少。
 
 ## Last Completed
 
@@ -143,10 +143,23 @@
   - `python -m unittest tests.test_runtime_fast -v`
   - `git diff --check`
   - 结果：全部通过；快验 9 tests OK，约 12 秒
+- 已按用户要求使用真实 DeepSeek API 做 live smoke
+- live smoke 结论：
+  - API 真实连通，DeepSeek provider 脚本可调用模型
+  - fallback provider 曾返回缺少 `reason` 的 JSON，已改为对非核心说明字段补默认值
+  - prompt 已加严，要求生成 skill 包含 docstring 结构、使用 runtime tools、参数化输入
+  - 完整闭环仍不稳定：一次诊断通过 promote，但重复完整执行时出现审核未通过或复用无目标产物
+- 已补测试确保关键 prompt 约束会发送给 DeepSeek
+- 已重新运行：
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+  - `python -m unittest tests.test_runtime_fast -v`
+  - secret grep
+  - 结果：检查和快验通过；未发现用户提供的 DeepSeek key 写入仓库文件
 
 ## Next Action
 
-下一步建议做 DeepSeek 端到端 live smoke：由用户在本地环境设置新的 `DEEPSEEK_API_KEY` 后，运行一条最小未知工作流，确认 DeepSeek 真实返回能生成、审核、promote、reuse。日常小改动默认先跑 `python -m unittest tests.test_runtime_fast -v`，只有发布级或大范围 runtime 行为变化再跑 full suite，并使用至少 900 秒超时。
+下一步建议为 DeepSeek provider 增加本地输出质量门禁和修复策略：在 fallback provider 返回前检查生成代码是否包含 `run`、docstring 结构、轨迹对应 runtime tool 调用、必要 kwargs；不满足时失败或触发一次修复请求。日常小改动默认先跑 `python -m unittest tests.test_runtime_fast -v`，只有发布级或大范围 runtime 行为变化再跑 full suite，并使用至少 900 秒超时。
 
 ## Important Files
 
@@ -198,7 +211,8 @@
 - semantic audit 默认仍使用 mock provider；已支持外部 provider 命令、本地 demo provider 和 DeepSeek provider，但未配置真实模型时质量判断仍不够强。
 - fallback distillation 默认仍使用 mock provider；已支持外部 provider 命令、本地 demo provider 和 DeepSeek provider。
 - 本地 demo provider 是窄场景示例，只证明 provider hook 和闭环可运行，不能代表通用自动生成能力。
-- 用户曾在聊天中暴露 DeepSeek API key；不要把该 key 写入文件或提交。建议用户轮换 key 后再做 live smoke。
+- 用户曾在聊天中暴露 DeepSeek API key；不要把该 key 写入文件或提交。本轮已按用户要求直接使用，但仓库文件中未检测到该 key。
+- DeepSeek live smoke 已证明 API 可连通，但还不能宣称真实模型 provider 闭环稳定可用。
 - active skill 当前只保留少量真实技能，复用价值还需要更多 dogfood 验证。
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
 - 未来新的 dogfood 执行默认不再改写版本管理下的 active metadata 和主索引。

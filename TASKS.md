@@ -3,13 +3,14 @@
 ## Current Focus
 
 - 当前目标：从产品化收敛切回 Skill Runtime 核心功能完成度收敛
-- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；架构检查、contract 检查、快验均已通过
-- 下一步：优先使用 `tests.test_runtime_fast` 做日常验证；后续建议在用户轮换并设置 DeepSeek API key 后做端到端 live smoke
+- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；已用真实 DeepSeek API 做 live smoke，确认 API 可连通，但完整生成入库复用闭环仍不稳定；架构检查、contract 检查、快验均已通过
+- 下一步：优先为 DeepSeek provider 增加本地输出质量门禁和修复策略，再重跑端到端 live smoke
 
 ## Todo
 
-- [ ] 使用轮换后的 DeepSeek API key 做一次端到端 live smoke
-- [ ] 视 DeepSeek live smoke 结果决定是否补更严格的 provider 输出质量约束
+- [ ] 为 DeepSeek fallback 输出增加本地质量门禁：`run`、docstring 结构、runtime tool 调用、必要 kwargs
+- [ ] 视门禁结果决定是否增加一次 DeepSeek 修复请求
+- [ ] 门禁完成后重跑 DeepSeek 端到端 live smoke
 - [ ] 视验收结果决定是否补搜索质量评估集
 - [ ] 视需要继续优化 full runtime suite 剩余慢点，优先看 MCP/provider dogfood 和生成规则组合测试
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
@@ -84,7 +85,12 @@
 - [x] 新增本地假 DeepSeek API 契约测试，避免测试依赖真实 key 或真实网络
 - [x] README / README.zh-CN / provider 文档已补充 DeepSeek 配置方式和 key 不入库要求
 - [x] 已重新运行架构检查、contract 检查、快验和 `git diff --check`；快验 9 个测试通过
+- [x] 已按用户要求使用真实 DeepSeek API 做 live smoke
+- [x] 已确认 DeepSeek API 可连通，fallback / semantic provider 都能返回结果
+- [x] 已修复 DeepSeek fallback response 缺少非核心 `reason` 字段时直接失败的问题
+- [x] 已加严 DeepSeek provider prompt，并补测试确认关键约束会发送给模型
+- [x] 已确认用户提供的 DeepSeek key 未写入仓库文件
 
 ## Blocked
 
-- 无
+- DeepSeek 完整生成入库复用闭环仍不稳定，需要补本地输出质量门禁后再判断是否可作为稳定核心能力

@@ -21,7 +21,14 @@ def main() -> int:
                     "You generate governed Python skills for Skill Runtime. "
                     "Return only JSON with string fields: code, provider_name, reason. "
                     "The code must define run(tools, **kwargs), use runtime tools instead of shell commands, "
-                    "stay parameterized, and return a structured dict."
+                    "stay parameterized, and return a structured dict. "
+                    "The run() function must have a docstring containing exactly these Chinese section headers: "
+                    "功能描述, 输入参数, 输出结果. "
+                    "Read inputs through kwargs.get(...). Prefer canonical parameter names such as input_path, "
+                    "output_path, metadata_path, input_dir, output_dir, pattern, old_text, and new_text. "
+                    "If the trajectory uses copy_file, call tools.copy_file. "
+                    "If the trajectory uses write_json, call tools.write_json. "
+                    "Do not hardcode demo paths or artifact names in the generated skill."
                 ),
             },
             {
@@ -29,16 +36,23 @@ def main() -> int:
                 "content": (
                     "Generate a candidate Skill Runtime skill from this provider request:\n"
                     + json.dumps(request, ensure_ascii=False)
+                    + "\n\nReturn JSON only. Example shape: "
+                    + json.dumps(
+                        {
+                            "code": "def run(tools, **kwargs):\\n    ...",
+                            "provider_name": "deepseek",
+                            "reason": "Short generation rationale.",
+                        },
+                        ensure_ascii=False,
+                    )
                 ),
             },
         ],
     )
     payload = _parse_json_content(response)
     _require_string(payload, "code")
-    payload.setdefault("provider_name", "deepseek_fallback_provider")
-    payload.setdefault("reason", "DeepSeek generated a candidate skill from the fallback prompt.")
-    _require_string(payload, "provider_name")
-    _require_string(payload, "reason")
+    _ensure_string(payload, "provider_name", "deepseek_fallback_provider")
+    _ensure_string(payload, "reason", "DeepSeek generated a candidate skill from the fallback prompt.")
     print(json.dumps(payload, ensure_ascii=False))
     return 0
 
@@ -50,7 +64,7 @@ def _chat_completion(api_key: str, messages: list[dict[str, str]]) -> dict:
     body = {
         "model": model,
         "messages": messages,
-        "temperature": float(os.environ.get("DEEPSEEK_TEMPERATURE", "0.2")),
+        "temperature": float(os.environ.get("DEEPSEEK_TEMPERATURE", "0.0")),
         "response_format": {"type": "json_object"},
     }
     request = urllib.request.Request(
@@ -121,6 +135,12 @@ def _require_string(payload: dict, key: str) -> None:
     value = payload.get(key)
     if not isinstance(value, str) or not value:
         raise ValueError(f"DeepSeek fallback response missing string field: {key}")
+
+
+def _ensure_string(payload: dict, key: str, default: str) -> None:
+    value = payload.get(key)
+    if not isinstance(value, str) or not value:
+        payload[key] = default
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ Current slow-test profile from `python scripts/profile_runtime_tests.py --suite 
 - Fast suite result after DeepSeek provider examples: 9 tests passed in about 12 seconds.
 - Fast suite provider dogfood uses the repository demo providers under `examples/providers/`, not ad-hoc scripts generated inside the test.
 - Fast suite DeepSeek provider checks use a local fake DeepSeek API server, not a real API key or real network call.
+- DeepSeek live smoke with the real API is not part of the automated suite; latest manual result proved API connectivity but exposed unstable generated-output quality.
 
 ## CLI
 

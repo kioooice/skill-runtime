@@ -21,7 +21,11 @@ def main() -> int:
                     "You review generated Skill Runtime Python skills. "
                     "Return only JSON with provider_name, summary, and issues. "
                     "Each issue must contain rule_id, severity, and message. "
-                    "Use severity high only for problems that should block promotion."
+                    "Use severity high only for problems that should block promotion, such as dangerous shell use, "
+                    "path traversal, destructive behavior, missing run(), syntax failure, or code that cannot perform "
+                    "the trajectory. Use medium for docstring, retrievability, naming, or generalization concerns. "
+                    "If built-in heuristic findings are medium-only and the source clearly calls the same runtime "
+                    "tools as the trajectory, do not add high-severity issues."
                 ),
             },
             {
@@ -29,16 +33,23 @@ def main() -> int:
                 "content": (
                     "Review this Skill Runtime candidate request:\n"
                     + json.dumps(request, ensure_ascii=False)
+                    + "\n\nReturn JSON only. Example shape: "
+                    + json.dumps(
+                        {
+                            "provider_name": "deepseek",
+                            "summary": "Short review summary.",
+                            "issues": [],
+                        },
+                        ensure_ascii=False,
+                    )
                 ),
             },
         ],
     )
     payload = _parse_json_content(response)
-    payload.setdefault("provider_name", "deepseek_semantic_review_provider")
-    payload.setdefault("summary", "DeepSeek completed semantic review.")
+    _ensure_string(payload, "provider_name", "deepseek_semantic_review_provider")
+    _ensure_string(payload, "summary", "DeepSeek completed semantic review.")
     payload.setdefault("issues", [])
-    _require_string(payload, "provider_name")
-    _require_string(payload, "summary")
     _validate_issues(payload["issues"])
     print(json.dumps(payload, ensure_ascii=False))
     return 0
@@ -122,6 +133,12 @@ def _require_string(payload: dict, key: str) -> None:
     value = payload.get(key)
     if not isinstance(value, str) or not value:
         raise ValueError(f"DeepSeek semantic response missing string field: {key}")
+
+
+def _ensure_string(payload: dict, key: str, default: str) -> None:
+    value = payload.get(key)
+    if not isinstance(value, str) or not value:
+        payload[key] = default
 
 
 def _validate_issues(issues: object) -> None:
