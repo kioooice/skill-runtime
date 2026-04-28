@@ -6,7 +6,7 @@ from tests.runtime_test_support import ROOT
 
 class RuntimeLifecycleTestsMixin:
     def test_service_distill_and_promote_from_inline_observed_single_file_transform_uses_rule_skill(self) -> None:
-        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
 
         result = sandbox_service.distill_and_promote(
             observed_task={
@@ -77,7 +77,7 @@ class RuntimeLifecycleTestsMixin:
         self.assertEqual("execute_skill", payload["data"]["recommended_next_action"])
 
     def test_service_distill_and_promote_from_observed_single_file_transform_uses_rule_skill(self) -> None:
-        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
         observed_path = self._write_json_file(
             sandbox_root / "demo" / "observed_single_file_transform_service.json",
             {
@@ -115,7 +115,7 @@ class RuntimeLifecycleTestsMixin:
         )
 
     def test_service_distill_and_promote_from_observed_csv_to_json_uses_rule_skill(self) -> None:
-        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
         observed_path = self._write_json_file(
             sandbox_root / "demo" / "observed_csv_to_json_service.json",
             {
@@ -2822,13 +2822,45 @@ class RuntimeLifecycleTestsMixin:
         )
 
     def test_service_distill_and_promote_from_execute_directory_copy_observed_task_uses_rule_skill(self) -> None:
-        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
         source_dir = sandbox_root / "demo" / "copy_input"
         target_dir = sandbox_root / "demo" / "copy_output"
         source_dir.mkdir(parents=True, exist_ok=True)
         target_dir.mkdir(parents=True, exist_ok=True)
         (source_dir / "a.txt").write_text("alpha\n", encoding="utf-8")
         (source_dir / "b.txt").write_text("beta\n", encoding="utf-8")
+
+        self._generate_and_activate_skill(
+            Trajectory(
+                task_id="directory_copy_demo",
+                session_id="session_directory_copy",
+                task_description="Copy matching txt files from one directory into another directory.",
+                steps=[
+                    TrajectoryStep(
+                        step_id="1",
+                        tool_name="list_files",
+                        tool_input={"input_dir": "demo/copy_input", "pattern": "*.txt", "output_dir": "demo/copy_output"},
+                        observation="Found txt files to copy.",
+                        status="success",
+                    ),
+                    TrajectoryStep(
+                        step_id="2",
+                        tool_name="copy_file",
+                        tool_input={"input_dir": "demo/copy_input", "output_dir": "demo/copy_output", "pattern": "*.txt"},
+                        observation="Copied matching files into output directory.",
+                        status="success",
+                    ),
+                ],
+                final_status="success",
+                artifacts=[],
+                started_at="2026-04-18T11:15:00",
+                ended_at="2026-04-18T11:16:00",
+            ),
+            skill_name="directory_copy_rule_test",
+            root=sandbox_root,
+            index=sandbox_index,
+        )
+        sandbox_service = type(sandbox_service)(sandbox_root)
 
         execute_result = sandbox_service.execute(
             "directory_copy_rule_test",
@@ -5019,11 +5051,43 @@ class RuntimeLifecycleTestsMixin:
         )
 
     def test_service_distill_and_promote_from_execute_batch_rename_observed_task_uses_rule_skill(self) -> None:
-        sandbox_root, sandbox_service, _ = self._make_runtime_sandbox()
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
         input_dir = sandbox_root / "demo" / "rename_input"
         input_dir.mkdir(parents=True, exist_ok=True)
         (input_dir / "a.txt").write_text("alpha\n", encoding="utf-8")
         (input_dir / "b.txt").write_text("beta\n", encoding="utf-8")
+
+        self._generate_and_activate_skill(
+            Trajectory(
+                task_id="batch_rename_rule_demo",
+                session_id="session_batch_rename_rule",
+                task_description="Rename all txt files in a directory by prefixing them with a value.",
+                steps=[
+                    TrajectoryStep(
+                        step_id="1",
+                        tool_name="list_files",
+                        tool_input={"input_dir": "demo/rename_input", "pattern": "*.txt", "prefix": "done_"},
+                        observation="Found files to rename.",
+                        status="success",
+                    ),
+                    TrajectoryStep(
+                        step_id="2",
+                        tool_name="rename_path",
+                        tool_input={"input_dir": "demo/rename_input", "prefix": "done_"},
+                        observation="Renamed matching files.",
+                        status="success",
+                    ),
+                ],
+                final_status="success",
+                artifacts=[],
+                started_at="2026-04-18T11:10:00",
+                ended_at="2026-04-18T11:11:00",
+            ),
+            skill_name="batch_rename_rule_test",
+            root=sandbox_root,
+            index=sandbox_index,
+        )
+        sandbox_service = type(sandbox_service)(sandbox_root)
 
         execute_result = sandbox_service.execute(
             "batch_rename_rule_test",

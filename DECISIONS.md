@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-04-28 - runtime 测试默认使用隔离副本而不是直接写真实仓库
+
+**Decision**
+
+将 `RuntimeTestCase` 的默认运行根切到临时隔离副本；只有少量需要验证目录生成行为的测试模块，才把 `ROOT` 显式映射到隔离副本。与此同时，让搜索、治理和部分生命周期测试自己准备需要的样本技能，而不是继续依赖历史测试留下的 active skill 污染状态。
+
+**Reason**
+
+当前主线目标之一是“别人 clone 后能验证”，而不是“测试一跑就把仓库越跑越脏”。如果验证默认会改写真实 `skill_store`、`observed_tasks` 或隐式依赖旧的脏数据，那么 CI 和本地验证都不稳定，active library 清理后的产品承诺也站不住。
+
+**Impact**
+
+- `tests.test_runtime` 现在默认在隔离副本里运行 runtime service、CLI 和 MCP smoke
+- 目录生成类测试仍能在隔离副本里按原样验证输出文件行为
+- 搜索与治理测试会自己播种 `experimental / fixture` 样本，不再要求真实 active library 被测试技能污染
+- `python -m unittest tests.test_runtime -v` 当前已通过 342 个测试
+- 仓库里此前已经存在的历史验证产物仍需后续单独清理，但本轮修复后默认验证不应继续扩大这类污染
+
 ### 2026-04-28 - active skill 清理后立即重建索引
 
 **Decision**

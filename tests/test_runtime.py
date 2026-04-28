@@ -11,6 +11,7 @@ from tests.test_runtime_distill_coverage import RuntimeDistillCoverageTestsMixin
 from tests.test_runtime_execution_flow import RuntimeExecutionFlowTestsMixin
 from tests.test_runtime_governance import RuntimeGovernanceTestsMixin
 from tests.test_runtime_host_operations import RuntimeHostOperationTestsMixin
+from tests.test_runtime_isolation import RuntimeIsolationTestsMixin
 from tests.test_runtime_lifecycle import RuntimeLifecycleTestsMixin
 from tests.test_runtime_mcp_smoke import RuntimeMcpSmokeTestsMixin
 from tests.test_runtime_trajectory_search import RuntimeTrajectorySearchTestsMixin
@@ -25,6 +26,7 @@ class RuntimeTests(
     RuntimeExecutionFlowTestsMixin,
     RuntimeAuditLifecycleTestsMixin,
     RuntimeHostOperationTestsMixin,
+    RuntimeIsolationTestsMixin,
     RuntimeMcpSmokeTestsMixin,
     RuntimeFileGeneratedSkillTestsMixin,
     RuntimeDirectoryGeneratedSkillTestsMixin,

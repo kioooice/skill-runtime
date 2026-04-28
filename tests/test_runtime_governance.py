@@ -694,6 +694,7 @@ class RuntimeGovernanceTestsMixin:
         self._assert_operation_role(payload["data"]["available_host_operations"][0], "primary")
 
     def test_governance_report_surfaces_duplicate_candidates(self) -> None:
+        self._seed_merge_search_variants()
         report = self.service.governance_report()
         self.assertIn("status_counts", report)
         self.assertIn("duplicate_candidates", report)
@@ -807,6 +808,7 @@ class RuntimeGovernanceTestsMixin:
         self.assertIn("fixture-only duplicate clusters are hidden", fixture_action["reason"])
 
     def test_mcp_governance_report_returns_host_ready_recommended_actions(self) -> None:
+        self._seed_merge_search_variants()
         payload = self._call_mcp_tool("governance_report", {})
         self.assertIn("recommended_actions", payload["data"])
         self.assertIn("available_host_operations", payload["data"])

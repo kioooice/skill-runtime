@@ -358,6 +358,7 @@ class RuntimeTrajectorySearchTestsMixin:
         self.assertEqual("execute_skill", payload["data"]["results"][0]["host_operation"]["tool_name"])
 
     def test_search_deprioritizes_experimental_skill_names(self) -> None:
+        self._seed_merge_search_variants()
         results = self.index.search("merge txt files into markdown", top_k=10)
         experimental = next(result for result in results if result["skill_name"] == "merge_text_files_generated")
         stable = next(result for result in results if result["skill_name"] == "merge_text_files")
@@ -367,6 +368,7 @@ class RuntimeTrajectorySearchTestsMixin:
         self.assertLess(experimental["score_breakdown"]["library_penalty"], 0)
 
     def test_search_deprioritizes_fixture_skills_below_generated_skills(self) -> None:
+        self._seed_merge_search_variants()
         results = self.index.search("merge txt files into markdown", top_k=10)
         fixture = next(result for result in results if result["skill_name"] == "cli_distill_and_promote_test")
         experimental = next(result for result in results if result["skill_name"] == "merge_text_files_generated")

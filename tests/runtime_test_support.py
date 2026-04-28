@@ -22,20 +22,36 @@ CLI = ROOT / "scripts" / "skill_cli.py"
 
 class RuntimeTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.index = SkillIndex(ROOT / "skill_store" / "index.json")
-        self.index.rebuild_from_directory(ROOT / "skill_store" / "active")
-        self.service = RuntimeService(ROOT)
+        self.runtime_root, self.service, self.index = self._make_runtime_sandbox()
+        self._patch_test_module_roots()
+
+    def _default_root(self, root: Path | None) -> Path:
+        return root or self.runtime_root
+
+    def _patch_test_module_roots(self) -> None:
+        sandbox_root_modules = {
+            "tests.test_runtime_directory_generated_skills",
+        }
+        for module_name, module in list(sys.modules.items()):
+            if module_name not in sandbox_root_modules:
+                continue
+            if not hasattr(module, "ROOT"):
+                continue
+            original_root = module.ROOT
+            module.ROOT = self.runtime_root
+            self.addCleanup(setattr, module, "ROOT", original_root)
 
     def _activate_generated_skill(
         self,
         generated: dict,
         *,
-        root: Path = ROOT,
+        root: Path | None = None,
         index: SkillIndex | None = None,
     ) -> None:
         module_path = generated["skill_file"]
         metadata = generated["metadata"]
 
+        root = self._default_root(root)
         target_index = index or self.index
         active_dir = root / "skill_store" / "active"
         active_dir.mkdir(parents=True, exist_ok=True)
@@ -56,9 +72,10 @@ class RuntimeTestCase(unittest.TestCase):
         trajectory: Trajectory,
         *,
         skill_name: str,
-        root: Path = ROOT,
+        root: Path | None = None,
         index: SkillIndex | None = None,
     ) -> dict:
+        root = self._default_root(root)
         generated = SkillGenerator(root / "skill_store" / "staging").generate(
             trajectory,
             skill_name=skill_name,
@@ -66,13 +83,15 @@ class RuntimeTestCase(unittest.TestCase):
         self._activate_generated_skill(generated, root=root, index=index)
         return generated
 
-    def _write_args_file(self, file_name: str, payload: dict, *, root: Path = ROOT) -> Path:
+    def _write_args_file(self, file_name: str, payload: dict, *, root: Path | None = None) -> Path:
+        root = self._default_root(root)
         args_file = root / "demo" / file_name
         args_file.write_text(json.dumps(payload), encoding="utf-8")
         self.addCleanup(args_file.unlink)
         return args_file
 
-    def _write_demo_json(self, file_name: str, payload: dict, *, root: Path = ROOT) -> Path:
+    def _write_demo_json(self, file_name: str, payload: dict, *, root: Path | None = None) -> Path:
+        root = self._default_root(root)
         file_path = root / "demo" / file_name
         file_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
@@ -175,8 +194,9 @@ class RuntimeTestCase(unittest.TestCase):
         metadata: dict,
         *,
         source: str | None = None,
-        root: Path = ROOT,
+        root: Path | None = None,
     ) -> tuple[Path, Path]:
+        root = self._default_root(root)
         active_dir = root / "skill_store" / "active"
         skill_path = active_dir / f"{skill_name}.py"
         metadata_path = active_dir / f"{skill_name}.metadata.json"
@@ -189,7 +209,63 @@ class RuntimeTestCase(unittest.TestCase):
         self._write_json_file(metadata_path, payload)
         return skill_path, metadata_path
 
-    def _execute_skill_cli(self, skill_name: str, *, args_file: Path, root: Path = ROOT) -> dict:
+    def _seed_merge_search_variants(
+        self,
+        *,
+        root: Path | None = None,
+        index: SkillIndex | None = None,
+    ) -> dict[str, str]:
+        root = self._default_root(root)
+        target_index = index or self.index
+        canonical = target_index.get("merge_text_files")
+        if canonical is None:
+            raise AssertionError("merge_text_files must exist before seeding search variants")
+
+        shared_metadata = {
+            "summary": canonical.summary,
+            "docstring": canonical.docstring,
+            "input_schema": canonical.input_schema,
+            "output_schema": canonical.output_schema,
+            "source_trajectory_ids": canonical.source_trajectory_ids,
+            "created_at": canonical.created_at,
+            "last_used_at": canonical.last_used_at,
+            "usage_count": canonical.usage_count,
+            "status": "active",
+            "audit_score": canonical.audit_score,
+            "rule_name": canonical.rule_name,
+            "rule_priority": canonical.rule_priority,
+            "rule_reason": canonical.rule_reason,
+            "tags": canonical.tags,
+            "scope_policy": canonical.scope_policy,
+        }
+
+        self._write_active_skill_fixture(
+            "merge_text_files_generated",
+            shared_metadata,
+            source='def run(tools, **kwargs):\n    return {"status": "completed"}\n',
+            root=root,
+        )
+        self._write_active_skill_fixture(
+            "cli_distill_and_promote_test",
+            {
+                **shared_metadata,
+                "summary": "Fixture skill for merge txt files into markdown smoke coverage.",
+                "docstring": "fixture merge test",
+                "usage_count": 0,
+                "audit_score": min(shared_metadata["audit_score"], 90),
+                "tags": ["fixture", "merge", "txt", "markdown"],
+            },
+            source='def run(tools, **kwargs):\n    return {"status": "completed"}\n',
+            root=root,
+        )
+        target_index.rebuild_from_directory(root / "skill_store" / "active")
+        return {
+            "experimental": "merge_text_files_generated",
+            "fixture": "cli_distill_and_promote_test",
+        }
+
+    def _execute_skill_cli(self, skill_name: str, *, args_file: Path, root: Path | None = None) -> dict:
+        root = self._default_root(root)
         payload = self._run_cli(
             "execute",
             "--skill",
@@ -202,7 +278,8 @@ class RuntimeTestCase(unittest.TestCase):
         self.assertEqual("ok", payload["status"])
         return payload
 
-    def _run_cli(self, *args: str, root: Path = ROOT, expect_json: bool = False):
+    def _run_cli(self, *args: str, root: Path | None = None, expect_json: bool = False):
+        root = self._default_root(root)
         result = subprocess.run(
             [sys.executable, str(CLI), "--root", str(root), *args],
             capture_output=True,
@@ -214,7 +291,8 @@ class RuntimeTestCase(unittest.TestCase):
             return json.loads(result.stdout)
         return result
 
-    def _call_mcp_tool(self, tool_name: str, arguments: dict, *, root: Path = ROOT) -> dict:
+    def _call_mcp_tool(self, tool_name: str, arguments: dict, *, root: Path | None = None) -> dict:
+        root = self._default_root(root)
         server = build_mcp_server(root)
         _, payload = asyncio.run(server.call_tool(tool_name, arguments))
         self.assertEqual("ok", payload["status"])
