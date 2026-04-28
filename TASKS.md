@@ -3,12 +3,12 @@
 ## Current Focus
 
 - 当前目标：从产品化收敛切回 Skill Runtime 核心功能完成度收敛
-- 当前状态：已完成核心完成度盘点；结论是核心闭环已有可用本地 MVP，但不能算建设完成，主要短板在真实 dogfood 验收、语义审计/未知任务生成的默认 mock、搜索质量评估和 MCP 真实闭环验证
-- 下一步：优先建设核心 dogfood 验收包，用真实本地任务证明 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 能稳定跑通
+- 当前状态：已新增第一条核心 dogfood 验收路径，覆盖 MCP 搜索、执行、observed task、提升、复用，并确认 active 搜索不出现 fixture-tier 污染；架构检查、contract 检查和 349 个 runtime 测试已通过
+- 下一步：补第二条核心验收路径，专门覆盖未知工作流进入 fallback distillation 后应如何处理，从而决定是接真实 provider 还是先收紧 fallback 晋级
 
 ## Todo
 
-- [ ] 建设核心 dogfood 验收包，覆盖搜索、执行、记录、生成、审核、提升、复用的完整闭环
+- [ ] 补一条未知工作流 / fallback distillation 的核心验收路径
 - [ ] 视验收结果决定是否优先升级真实 semantic audit / fallback provider
 - [ ] 视验收结果决定是否补搜索质量评估集
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
@@ -56,6 +56,8 @@
 - [x] 修复 `python -m skill_runtime.cli` 与 `python -m skill_runtime.mcp_stdio` 模块入口，确保 README 推荐的模块命令真实可运行
 - [x] 新增模块入口回归测试
 - [x] 完成核心功能完成度盘点，并新增 `docs/core-readiness-audit.md`
+- [x] 新增第一条核心 dogfood 验收路径：MCP 搜索、执行、记录、提升、复用、搜索污染检查
+- [x] 运行 `check_mcp_architecture`、`check_runtime_contracts` 和 `tests.test_runtime`，共通过 349 个测试
 
 ## Blocked
 

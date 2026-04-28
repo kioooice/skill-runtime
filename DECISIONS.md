@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-04-28 - 核心 dogfood 验收先覆盖真实 MCP 主链路
+
+**Decision**
+
+第一条核心 dogfood 验收不新增业务能力，而是用 MCP host-style 调用串起现有主链路：搜索已有技能、执行、生成 observed task、从 observed task 提升为 active skill、再次复用，并检查 active 搜索结果没有 fixture-tier 污染。
+
+**Reason**
+
+此前已有很多单点测试，但用户关心的是核心功能本身是否建设完成。单点测试不能直接证明“从用户角度的一整条闭环能不能跑通”。先用真实 MCP 工具调用做验收，比继续补外围安装/文档更贴近核心主线。
+
+**Impact**
+
+- `tests.test_runtime` 会跑到新的核心 dogfood 验收
+- MCP smoke 从“能构造 server”进一步扩展到“一条真实 host-style 闭环能跑通”
+- 当前验收仍不证明 mock semantic audit / mock fallback provider 已经足够，下一步应补 fallback 路径验收
+
 ### 2026-04-28 - 主线从产品化收敛切回核心闭环验收
 
 **Decision**

@@ -2,11 +2,20 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度盘点。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能不能算建设完成。主要短板是：真实 dogfood 验收不足、semantic audit 默认仍是 mock provider、未知任务 fallback distillation 默认仍是 mock provider、搜索质量仍是轻量关键词评分、active skill 库干净但样本很少、MCP 仍偏 smoke 而非真实 host round-trip。
+已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能不能算建设完成。第一条核心 dogfood 验收路径已新增：通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染。剩余主要短板是：semantic audit 默认仍是 mock provider、未知任务 fallback distillation 默认仍是 mock provider、搜索质量仍是轻量关键词评分、active skill 库样本仍少。
 
 ## Last Completed
 
 本轮已完成：
+- 新增 `docs/core-dogfood-acceptance.md`，记录核心 dogfood 验收范围
+- 新增 `tests/test_runtime_core_dogfood_acceptance.py`
+- 将核心 dogfood 验收接入 `tests.test_runtime`
+- 第一条验收路径覆盖：MCP 搜索、执行、observed task、提升、复用、active 搜索无 fixture-tier 污染
+- 已运行：
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+  - `python -m unittest tests.test_runtime -v`
+  - 结果：349 tests OK
 - 新增 `docs/core-readiness-audit.md`，记录核心完成度盘点
 - 明确当前状态是“可用本地 MVP”，不是“核心功能完成”
 - 将下一阶段主线从产品化收敛切回核心 dogfood 验收
@@ -79,7 +88,7 @@
 
 ## Next Action
 
-优先建设核心 dogfood 验收包。目标不是新增大功能，而是用真实本地任务证明完整闭环能稳定跑通：搜索已有技能、执行、生成 observed task、从记录生成候选技能、审核、提升、再次复用，并确认不会污染 active 搜索结果。
+继续补核心 dogfood 验收包的第二条路径：专门覆盖未知工作流进入 fallback distillation 后应如何处理。目标是判断下一步应优先接真实 provider，还是先把 mock fallback 的晋级路径收紧，避免把模板技能误提升为 active。
 
 ## Important Files
 
@@ -89,6 +98,7 @@
 - `HANDOFF.md`
 - `docs/gitnexus-local-runbook.md`
 - `docs/core-readiness-audit.md`
+- `docs/core-dogfood-acceptance.md`
 - `pyproject.toml`
 - `.github/workflows/runtime-contracts.yml`
 - `skill_runtime/execution/runtime_tools.py`
@@ -108,6 +118,7 @@
 - `README.md`
 - `README.zh-CN.md`
 - `tests/test_runtime_contracts.py`
+- `tests/test_runtime_core_dogfood_acceptance.py`
 
 ## Known Issues
 

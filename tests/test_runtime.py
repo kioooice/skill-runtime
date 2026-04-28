@@ -7,6 +7,7 @@ from tests.test_runtime_generated_skill_regressions import RuntimeGeneratedSkill
 from tests.runtime_test_support import RuntimeTestCase
 from tests.test_runtime_architecture import RuntimeArchitectureTestsMixin
 from tests.test_runtime_contracts import RuntimeContractTestsMixin
+from tests.test_runtime_core_dogfood_acceptance import RuntimeCoreDogfoodAcceptanceTestsMixin
 from tests.test_runtime_distill_coverage import RuntimeDistillCoverageTestsMixin
 from tests.test_runtime_execution_flow import RuntimeExecutionFlowTestsMixin
 from tests.test_runtime_governance import RuntimeGovernanceTestsMixin
@@ -20,6 +21,7 @@ from tests.test_runtime_trajectory_search import RuntimeTrajectorySearchTestsMix
 class RuntimeTests(
     RuntimeArchitectureTestsMixin,
     RuntimeContractTestsMixin,
+    RuntimeCoreDogfoodAcceptanceTestsMixin,
     RuntimeDistillCoverageTestsMixin,
     RuntimeTrajectorySearchTestsMixin,
     RuntimeLifecycleTestsMixin,

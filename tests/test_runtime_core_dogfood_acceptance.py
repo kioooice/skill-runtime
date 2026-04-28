@@ -1,0 +1,103 @@
+from pathlib import Path
+
+
+class RuntimeCoreDogfoodAcceptanceTestsMixin:
+    def test_mcp_host_style_loop_search_execute_promote_and_reuse(self) -> None:
+        sandbox_root, _, sandbox_index = self._make_runtime_sandbox()
+
+        search_payload = self._call_mcp_tool(
+            "search_skill",
+            {"query": "merge txt files into markdown", "top_k": 5},
+            root=sandbox_root,
+        )
+        search_data = search_payload["data"]
+
+        self.assertEqual("merge_text_files", search_data["recommended_skill_name"])
+        self.assertEqual("execute_skill", search_data["recommended_next_action"])
+        self.assertTrue(search_data["results"])
+        self.assertFalse(any(result["library_tier"] == "fixture" for result in search_data["results"]))
+
+        execute_operation = search_data["recommended_host_operation"]
+        self._assert_host_operation_basics(
+            execute_operation,
+            tool_name="execute_skill",
+            source_ref="search:recommended_skill:merge_text_files",
+            requires_confirmation=False,
+        )
+        execute_args = dict(execute_operation["arguments"])
+        execute_args["args"] = {
+            "input_dir": "demo/input",
+            "output_path": "demo/output/core_acceptance_first.md",
+        }
+        execute_payload = self._call_mcp_tool(execute_operation["tool_name"], execute_args, root=sandbox_root)
+        execute_data = execute_payload["data"]
+        first_output = sandbox_root / "demo" / "output" / "core_acceptance_first.md"
+
+        self.assertTrue(first_output.exists())
+        self.assertEqual("distill_and_promote_candidate", execute_data["recommended_next_action"])
+        self.assertTrue(Path(execute_data["observed_task_record"]).exists())
+        self._assert_observed_skill_record(
+            execute_data["observed_task"],
+            skill_name="merge_text_files",
+            status="completed",
+            first_tool="list_files",
+            last_tool="write_text",
+        )
+
+        promote_operation = execute_data["recommended_host_operation"]
+        self._assert_observed_task_follow_up(
+            promote_operation,
+            observed_task_path=execute_data["observed_task_record"],
+            display_label="Promote this execution",
+            risk_level="medium",
+        )
+        promote_args = dict(promote_operation["arguments"])
+        promote_args["skill_name"] = "core_acceptance_merge_text_files"
+        promote_payload = self._call_mcp_tool(promote_operation["tool_name"], promote_args, root=sandbox_root)
+        promote_data = promote_payload["data"]
+        metadata = self._read_json_file(Path(promote_data["distillation"]["metadata_file"]))
+
+        self.assertTrue(promote_data["promoted"])
+        self.assertEqual("passed", promote_data["audit"]["report"]["status"])
+        self.assertEqual("text_merge", metadata["rule_name"])
+        self.assertNotIn("fallback_artifact", promote_data["distillation"])
+
+        promoted = sandbox_index.get("core_acceptance_merge_text_files")
+        self.assertIsNotNone(promoted)
+        self.assertEqual("active", promoted.status)
+
+        reuse_operation = promote_data["recommended_host_operation"]
+        self._assert_host_operation_basics(
+            reuse_operation,
+            tool_name="execute_skill",
+            source_ref="promote:core_acceptance_merge_text_files",
+            requires_confirmation=False,
+        )
+        reuse_args = dict(reuse_operation["arguments"])
+        reuse_args["args"] = {
+            "input_dir": "demo/input",
+            "output_path": "demo/output/core_acceptance_reuse.md",
+            "pattern": "*.txt",
+        }
+        reuse_payload = self._call_mcp_tool(reuse_operation["tool_name"], reuse_args, root=sandbox_root)
+        reuse_data = reuse_payload["data"]
+        reuse_output = sandbox_root / "demo" / "output" / "core_acceptance_reuse.md"
+
+        self.assertTrue(reuse_output.exists())
+        self.assertEqual("completed", reuse_data["result"]["status"])
+        self.assertEqual("core_acceptance_merge_text_files", reuse_data["skill_name"])
+        self.assertEqual("distill_and_promote_candidate", reuse_data["recommended_next_action"])
+
+        final_search = self._call_mcp_tool(
+            "search_skill",
+            {"query": "merge txt files into markdown", "top_k": 10},
+            root=sandbox_root,
+        )["data"]
+        library_tiers = {result["skill_name"]: result["library_tier"] for result in final_search["results"]}
+        self.assertEqual("stable", library_tiers["merge_text_files"])
+        self.assertEqual("stable", library_tiers["core_acceptance_merge_text_files"])
+        self.assertNotIn("fixture", library_tiers.values())
+
+        governance = self._call_mcp_tool("governance_report", {}, root=sandbox_root)["data"]
+        self.assertEqual(0, governance["library_tier_counts"]["fixture"])
+        self.assertGreaterEqual(governance["library_tier_counts"]["stable"], 2)
