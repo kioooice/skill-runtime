@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛：仓库已补齐最小 `pyproject.toml`、README 本地安装说明、CI 中的 `pip install -e .`、最小 MCP smoke 测试，以及 `copy_file` rollback 承诺修复。验证已跑通，当前剩余的主要拍板项是 active skill 治理清理。
+已完成一轮 Skill Runtime 产品化收敛：仓库已补齐最小 `pyproject.toml`、README 本地安装说明、CI 中的 `pip install -e .`、最小 MCP smoke 测试，以及 `copy_file` rollback 承诺修复。active skill 治理清理也已完成，并已重建 active index，使治理报告与搜索结果同步到真实状态。
 
 ## Last Completed
 
@@ -16,11 +16,21 @@
   - `python scripts/check_mcp_architecture.py`
   - `python scripts/check_runtime_contracts.py`
   - `python -m unittest tests.test_runtime -v`
-- 已生成 active skill 治理清理计划，且明确保留真实 dogfood skill
+- 已执行 active skill 治理清理，且明确保留真实 dogfood skill
+- 已重建 `skill_store/index.json`
+- 当前 active skill 只剩：
+  - `merge_text_files`
+  - `archive_log_files_dogfood`
+- 当前治理报告：
+  - `active_count = 2`
+  - `duplicate_candidates = []`
+  - `fixture_count = 0`
+- 当前搜索验证：
+  - 查询 `merge txt files into markdown` 时，不再出现测试技能污染结果
 
 ## Next Action
 
-如果继续做产品化收敛，优先处理 active skill 治理清理：先归档 fixture / duplicate 噪音技能，保持 `merge_text_files` 和 `archive_log_files_dogfood` 这类真实技能为 canonical，避免搜索结果被测试与 demo 技能污染。
+如果继续做产品化收敛，优先处理治理层的小缺口：避免在并行执行多个治理维护动作时出现旧索引视图；如果当前更重视推进主线价值，也可以直接基于现在干净的 active library 继续下一项产品化任务。
 
 ## Important Files
 
@@ -36,8 +46,7 @@
 
 ## Known Issues
 
-- active skill 当前仍有大量 fixture / alias-rule / smoke / promote 测试技能处于 active 状态，虽然已经有治理清理计划，但还未正式归档。
-- `merge_text_files_generated` 仍处于 experimental active 状态，可能继续污染搜索结果。
+- 如果多个治理维护动作并行执行，可能出现索引状态被后一次保存覆盖的情况；当前已通过顺序清理加重建索引收口，但更稳的顺序保护仍可继续补。
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
 
 ## Constraints

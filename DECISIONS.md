@@ -2,6 +2,42 @@
 
 ## Decision Log
 
+### 2026-04-28 - active skill 清理后立即重建索引
+
+**Decision**
+
+在完成 active skill 归档清理后，立即重建 active index，而不是只依赖前面的归档动作逐步更新索引状态。
+
+**Reason**
+
+这样可以确保治理报告和搜索结果直接对齐到文件系统里的真实 active skill 集合，避免“文件已归档，但旧索引仍把测试技能当 active”的残留污染。
+
+**Impact**
+
+- 当前 active library 已收敛到 2 个 stable 技能：
+  - `merge_text_files`
+  - `archive_log_files_dogfood`
+- 当前治理报告无 duplicate candidates
+- 当前搜索结果不再被 fixture / demo / alias-rule 技能污染
+
+### 2026-04-28 - active skill 清理优先保留 dogfood 与 canonical 技能
+
+**Decision**
+
+执行 active skill 清理时，优先归档 fixture、demo、rule-test、alias-rule、promote-smoke 类技能，明确保留真实 dogfood 技能和 canonical 技能。
+
+**Reason**
+
+这样可以先解决“active skill 污染搜索结果”的产品问题，同时避免误删仍有真实使用价值的主线技能。
+
+**Impact**
+
+- 已保留：
+  - `merge_text_files`
+  - `archive_log_files_dogfood`
+- 已归档大量 fixture / duplicate / experimental 噪音技能
+- active skill 默认搜索面已大幅收敛
+
 ### 2026-04-28 - 本轮先做产品化收敛，不新增大功能
 
 **Decision**

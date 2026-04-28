@@ -3,13 +3,12 @@
 ## Current Focus
 
 - 当前目标：继续做 Skill Runtime 的产品化收敛，不新增大功能
-- 当前状态：已补齐最小安装入口、CI 安装步骤、MCP smoke、copy_file rollback 一致性，并完成主验证；active skill 治理清理计划已生成，等待用户拍板
-- 下一步：决定是否按治理清理计划归档 fixture / duplicate 噪音技能，避免 active skill 污染搜索结果
+- 当前状态：已完成 active skill 治理清理与重建索引；当前 active 只剩 2 个 stable 技能，治理报告无重复候选，搜索结果不再被测试技能污染
+- 下一步：决定是否继续收敛治理层的小缺口，例如避免治理报告在并行维护动作下出现旧索引视图，或先转入下一项产品化收口任务
 
 ## Todo
 
-- [ ] 视需要执行 active skill 治理清理计划，先归档 fixture 与 duplicate 噪音技能
-- [ ] 视需要把 `merge_text_files_generated` 这类 experimental active skill 从默认搜索面移出
+- [ ] 视需要补一层更稳的治理维护顺序保护，避免并行维护动作覆盖索引状态
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
 
 ## In Progress
@@ -30,6 +29,8 @@
 - [x] 修复 `RuntimeTools.copy_file` rollback hint 与 `RuntimeService.rollback_operations` 支持策略不一致的问题
 - [x] 运行 `check_mcp_architecture`、`check_runtime_contracts` 和 `tests.test_runtime`
 - [x] 生成 active skill 治理清理计划并保留 dogfood skill
+- [x] 执行 active skill 治理清理，保留 `merge_text_files` 与 `archive_log_files_dogfood`
+- [x] 重建 active index，使治理报告与搜索结果同步到清理后的真实状态
 
 ## Blocked
 
