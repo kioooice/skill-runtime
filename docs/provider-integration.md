@@ -55,7 +55,17 @@ Optional DeepSeek variables:
 - `DEEPSEEK_API_BASE`: defaults to `https://api.deepseek.com`
 - `DEEPSEEK_MODEL`: defaults to `deepseek-v4-flash`
 - `DEEPSEEK_TIMEOUT_SECONDS`: defaults to `60`
-- `DEEPSEEK_TEMPERATURE`: defaults to `0.2` for fallback generation and `0.0` for semantic review
+- `DEEPSEEK_TEMPERATURE`: defaults to `0.0`
+
+The DeepSeek fallback provider applies a local quality gate before returning generated code. It checks:
+
+- Python syntax and `run(tools, **kwargs)` entrypoint
+- required docstring sections: `功能描述`, `输入参数`, `输出结果`
+- runtime tool calls that match the trajectory
+- literal kwargs for every inferred input schema key
+- supported keyword arguments for known runtime tools such as `copy_file` and `write_json`
+
+If the generated code fails this gate, the provider exits with a non-zero status and the candidate is not written into staging.
 
 Do not commit API keys. Set `DEEPSEEK_API_KEY` only in your local shell, Codex environment, or a secret manager.
 

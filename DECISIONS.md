@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-29 - DeepSeek fallback 输出必须先过本地质量门禁
+
+**Decision**
+
+DeepSeek fallback provider 在返回生成代码前，必须先通过本地质量门禁。门禁检查 Python 语法、`run(tools, **kwargs)` 入口、三段式 docstring、轨迹对应 runtime tool 调用、`input_schema` 声明的 kwargs，以及 `RuntimeTools` 常用方法的真实调用签名。
+
+**Reason**
+
+真实 live smoke 发现 DeepSeek 会生成看似合理但运行必失败的代码，例如 `tools.copy_file(destination_path=...)` 或 `tools.write_json(metadata_path=...)`。这些问题不能等到 promote 后复用时才发现，必须在 fallback provider 返回前就拦住。
+
+**Impact**
+
+- 坏输出不再进入 staging / audit / promote
+- 快验新增 DeepSeek 质量门禁回归测试
+- 当前门禁只负责拦截，不负责自动修复
+- 下一步应增加一次修复请求，用门禁失败原因指导 DeepSeek 重新输出
+
 ### 2026-04-29 - DeepSeek live smoke 后先补本地质量门禁
 
 **Decision**

@@ -3,14 +3,13 @@
 ## Current Focus
 
 - 当前目标：从产品化收敛切回 Skill Runtime 核心功能完成度收敛
-- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；已用真实 DeepSeek API 做 live smoke，确认 API 可连通，但完整生成入库复用闭环仍不稳定；架构检查、contract 检查、快验均已通过
-- 下一步：优先为 DeepSeek provider 增加本地输出质量门禁和修复策略，再重跑端到端 live smoke
+- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；已用真实 DeepSeek API 做 live smoke，确认 API 可连通；DeepSeek fallback 本地质量门禁已能阻止坏输出进入 staging，但自动修复重试还未做
+- 下一步：为 DeepSeek provider 增加一次自动修复请求，质量门禁失败时让模型按具体失败原因修复后再验一次
 
 ## Todo
 
-- [ ] 为 DeepSeek fallback 输出增加本地质量门禁：`run`、docstring 结构、runtime tool 调用、必要 kwargs
-- [ ] 视门禁结果决定是否增加一次 DeepSeek 修复请求
-- [ ] 门禁完成后重跑 DeepSeek 端到端 live smoke
+- [ ] 为 DeepSeek fallback provider 增加一次自动修复请求
+- [ ] 修复请求完成后重跑 DeepSeek 端到端 live smoke
 - [ ] 视验收结果决定是否补搜索质量评估集
 - [ ] 视需要继续优化 full runtime suite 剩余慢点，优先看 MCP/provider dogfood 和生成规则组合测试
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
@@ -90,7 +89,10 @@
 - [x] 已修复 DeepSeek fallback response 缺少非核心 `reason` 字段时直接失败的问题
 - [x] 已加严 DeepSeek provider prompt，并补测试确认关键约束会发送给模型
 - [x] 已确认用户提供的 DeepSeek key 未写入仓库文件
+- [x] 为 DeepSeek fallback 输出增加本地质量门禁：`run`、docstring 结构、runtime tool 调用、必要 kwargs、runtime tool 调用签名
+- [x] 补充 DeepSeek 门禁测试：低质量候选、schema kwargs 缺失、runtime tool 签名错误、双重转义代码字符串
+- [x] 最新真实 live smoke 已证明坏签名输出会在 fallback 阶段被拦截，不再进入 staging / promote
 
 ## Blocked
 
-- DeepSeek 完整生成入库复用闭环仍不稳定，需要补本地输出质量门禁后再判断是否可作为稳定核心能力
+- DeepSeek 完整生成入库复用闭环仍不稳定；当前已能拦截坏输出，但还不能自动修复坏输出

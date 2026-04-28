@@ -12,7 +12,25 @@ from tests.runtime_test_support import ROOT
 class RuntimeDeepSeekProviderExampleTestsMixin:
     def test_deepseek_fallback_provider_uses_chat_completion_contract(self) -> None:
         response_content = {
-            "code": "def run(tools, **kwargs):\n    return {'status': 'completed'}\n",
+            "code": (
+                "def run(tools, **kwargs):\n"
+                "    \"\"\"\n"
+                "    功能描述:\n"
+                "        Copy one file and write metadata.\n\n"
+                "    输入参数:\n"
+                "        - input_path: source file\n"
+                "        - output_path: destination file\n"
+                "        - metadata_path: metadata sidecar\n\n"
+                "    输出结果:\n"
+                "        - status and artifacts\n"
+                "    \"\"\"\n"
+                "    input_path = kwargs.get('input_path')\n"
+                "    output_path = kwargs.get('output_path')\n"
+                "    metadata_path = kwargs.get('metadata_path')\n"
+                "    copied_path = tools.copy_file(input_path, output_path)\n"
+                "    tools.write_json(metadata_path, {'copied_path': copied_path})\n"
+                "    return {'status': 'completed'}\n"
+            ),
             "provider_name": "deepseek_fallback_provider",
         }
         with _fake_deepseek_server(response_content) as server:
@@ -22,8 +40,17 @@ class RuntimeDeepSeekProviderExampleTestsMixin:
                     "skill_name": "deepseek_contract_test",
                     "summary": "Generate a simple skill.",
                     "docstring": "A simple skill.",
-                    "input_schema": {},
-                    "trajectory": {},
+                    "input_schema": {
+                        "input_path": "str",
+                        "output_path": "str",
+                        "metadata_path": "str",
+                    },
+                    "trajectory": {
+                        "steps": [
+                            {"tool_name": "copy_file", "tool_input": {}},
+                            {"tool_name": "write_json", "tool_input": {}},
+                        ]
+                    },
                     "prompt": "Generate a simple skill.",
                 },
                 server.url,
@@ -41,6 +68,193 @@ class RuntimeDeepSeekProviderExampleTestsMixin:
         system_prompt = server.received_body["messages"][0]["content"]
         self.assertIn("功能描述", system_prompt)
         self.assertIn("tools.copy_file", system_prompt)
+
+    def test_deepseek_fallback_provider_blocks_low_quality_candidate(self) -> None:
+        response_content = {
+            "code": "def run(tools, **kwargs):\n    return {'status': 'completed'}\n",
+            "provider_name": "deepseek_fallback_provider",
+        }
+        with _fake_deepseek_server(response_content) as server:
+            result = _run_provider_script(
+                ROOT / "examples" / "providers" / "deepseek_fallback_provider.py",
+                {
+                    "skill_name": "deepseek_quality_gate_test",
+                    "summary": "Copy a file and write metadata.",
+                    "docstring": "Copy a file and write metadata.",
+                    "input_schema": {
+                        "input_path": "str",
+                        "output_path": "str",
+                        "metadata_path": "str",
+                    },
+                    "trajectory": {
+                        "steps": [
+                            {"tool_name": "copy_file", "tool_input": {}},
+                            {"tool_name": "write_json", "tool_input": {}},
+                        ]
+                    },
+                    "prompt": "Generate a copy metadata skill.",
+                },
+                server.url,
+            )
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("failed quality gate", result.stderr)
+        self.assertIn("missing runtime tool calls", result.stderr)
+
+    def test_deepseek_fallback_provider_requires_schema_kwargs(self) -> None:
+        response_content = {
+            "code": (
+                "def run(tools, **kwargs):\n"
+                "    \"\"\"\n"
+                "    功能描述:\n"
+                "        Copy one file and write metadata.\n\n"
+                "    输入参数:\n"
+                "        - source_path: source file\n"
+                "        - destination_path: destination file\n"
+                "        - metadata_path: metadata sidecar\n\n"
+                "    输出结果:\n"
+                "        - status and artifacts\n"
+                "    \"\"\"\n"
+                "    source_path = kwargs.get('source_path')\n"
+                "    destination_path = kwargs.get('destination_path')\n"
+                "    metadata_path = kwargs.get('metadata_path')\n"
+                "    copied_path = tools.copy_file(source_path, destination_path)\n"
+                "    tools.write_json(metadata_path, {'copied_path': copied_path})\n"
+                "    return {'status': 'completed'}\n"
+            ),
+            "provider_name": "deepseek_fallback_provider",
+        }
+        with _fake_deepseek_server(response_content) as server:
+            result = _run_provider_script(
+                ROOT / "examples" / "providers" / "deepseek_fallback_provider.py",
+                {
+                    "skill_name": "deepseek_schema_gate_test",
+                    "summary": "Copy a file and write metadata.",
+                    "docstring": "Copy a file and write metadata.",
+                    "input_schema": {
+                        "input_path": "str",
+                        "output_path": "str",
+                        "metadata_path": "str",
+                    },
+                    "trajectory": {
+                        "steps": [
+                            {"tool_name": "copy_file", "tool_input": {}},
+                            {"tool_name": "write_json", "tool_input": {}},
+                        ]
+                    },
+                    "prompt": "Generate a copy metadata skill.",
+                },
+                server.url,
+            )
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("missing kwargs for inferred inputs", result.stderr)
+        self.assertIn("input_path", result.stderr)
+        self.assertIn("output_path", result.stderr)
+
+    def test_deepseek_fallback_provider_blocks_invalid_runtime_tool_signature(self) -> None:
+        response_content = {
+            "code": (
+                "def run(tools, **kwargs):\n"
+                "    \"\"\"\n"
+                "    功能描述:\n"
+                "        Copy one file and write metadata.\n\n"
+                "    输入参数:\n"
+                "        - input_path: source file\n"
+                "        - output_path: destination file\n"
+                "        - metadata_path: metadata sidecar\n\n"
+                "    输出结果:\n"
+                "        - status and artifacts\n"
+                "    \"\"\"\n"
+                "    input_path = kwargs.get('input_path')\n"
+                "    output_path = kwargs.get('output_path')\n"
+                "    metadata_path = kwargs.get('metadata_path')\n"
+                "    tools.copy_file(source_path=input_path, destination_path=output_path)\n"
+                "    tools.write_json(metadata_path=metadata_path)\n"
+                "    return {'status': 'completed'}\n"
+            ),
+            "provider_name": "deepseek_fallback_provider",
+        }
+        with _fake_deepseek_server(response_content) as server:
+            result = _run_provider_script(
+                ROOT / "examples" / "providers" / "deepseek_fallback_provider.py",
+                {
+                    "skill_name": "deepseek_signature_gate_test",
+                    "summary": "Copy a file and write metadata.",
+                    "docstring": "Copy a file and write metadata.",
+                    "input_schema": {
+                        "input_path": "str",
+                        "output_path": "str",
+                        "metadata_path": "str",
+                    },
+                    "trajectory": {
+                        "steps": [
+                            {"tool_name": "copy_file", "tool_input": {}},
+                            {"tool_name": "write_json", "tool_input": {}},
+                        ]
+                    },
+                    "prompt": "Generate a copy metadata skill.",
+                },
+                server.url,
+            )
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("unsupported keyword argument", result.stderr)
+        self.assertIn("destination_path", result.stderr)
+        self.assertIn("missing required argument", result.stderr)
+        self.assertIn("data", result.stderr)
+
+    def test_deepseek_fallback_provider_normalizes_escaped_code_string(self) -> None:
+        code = (
+            'def run(tools, **kwargs):\\n'
+            '    \\"\\"\\"\\n'
+            '    功能描述:\\n'
+            '        Copy one file and write metadata.\\n\\n'
+            '    输入参数:\\n'
+            '        - input_path: source file\\n'
+            '        - output_path: destination file\\n'
+            '        - metadata_path: metadata sidecar\\n\\n'
+            '    输出结果:\\n'
+            '        - status and artifacts\\n'
+            '    \\"\\"\\"\\n'
+            "    input_path = kwargs.get('input_path')\\n"
+            "    output_path = kwargs.get('output_path')\\n"
+            "    metadata_path = kwargs.get('metadata_path')\\n"
+            "    copied_path = tools.copy_file(input_path, output_path)\\n"
+            "    tools.write_json(metadata_path, {'copied_path': copied_path})\\n"
+            "    return {'status': 'completed'}\\n"
+        )
+        response_content = {
+            "code": code,
+            "provider_name": "deepseek_fallback_provider",
+        }
+        with _fake_deepseek_server(response_content) as server:
+            result = _run_provider_script(
+                ROOT / "examples" / "providers" / "deepseek_fallback_provider.py",
+                {
+                    "skill_name": "deepseek_escaped_code_gate_test",
+                    "summary": "Copy a file and write metadata.",
+                    "docstring": "Copy a file and write metadata.",
+                    "input_schema": {
+                        "input_path": "str",
+                        "output_path": "str",
+                        "metadata_path": "str",
+                    },
+                    "trajectory": {
+                        "steps": [
+                            {"tool_name": "copy_file", "tool_input": {}},
+                            {"tool_name": "write_json", "tool_input": {}},
+                        ]
+                    },
+                    "prompt": "Generate a copy metadata skill.",
+                },
+                server.url,
+            )
+
+        self.assertEqual(0, result.returncode, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertIn("\n", payload["code"])
+        self.assertNotIn("\\n", payload["code"])
 
     def test_deepseek_semantic_provider_uses_chat_completion_contract(self) -> None:
         response_content = {
