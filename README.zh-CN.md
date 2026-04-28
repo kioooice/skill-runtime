@@ -121,6 +121,7 @@ docs/
 - 未命中的成功轨迹可走 fallback provider
 - 可通过 `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD` 接入外部 fallback provider 命令
 - 仓库内已提供本地示例 fallback provider：`examples/providers/copy_metadata_fallback_provider.py`
+- 已提供 DeepSeek fallback provider：`examples/providers/deepseek_fallback_provider.py`
 - 当前规则库包括：
   - 文本合并
   - 文本替换
@@ -144,6 +145,7 @@ docs/
   - 可通过 `SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD` 接入外部语义审核命令
   - provider 命令契约见 [Provider Integration](./docs/provider-integration.md)
   - 仓库内已提供本地示例 semantic provider：`examples/providers/pass_semantic_review_provider.py`
+  - 已提供 DeepSeek semantic provider：`examples/providers/deepseek_semantic_review_provider.py`
   - 审计 prompt artifact
   - provider review summary
   - 轨迹对齐
@@ -513,6 +515,26 @@ $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_se
 ```
 
 这两个 provider 是很窄的本地示例，不是通用 LLM 后端。它们用于验证真实 provider hook 可以在不临时写脚本的情况下完成生成、审核、入库和复用。
+
+使用 DeepSeek 作为真实 provider：
+
+```bash
+export DEEPSEEK_API_KEY="<your-deepseek-api-key>"
+export DEEPSEEK_MODEL="deepseek-v4-flash"
+export SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deepseek_fallback_provider.py"]'
+export SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
+```
+
+PowerShell：
+
+```powershell
+$env:DEEPSEEK_API_KEY="<your-deepseek-api-key>"
+$env:DEEPSEEK_MODEL="deepseek-v4-flash"
+$env:SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deepseek_fallback_provider.py"]'
+$env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
+```
+
+不要把 API key 提交进仓库。DeepSeek provider 细节见 [Provider Integration](./docs/provider-integration.md#deepseek-providers)。
 
 运行 demo：
 

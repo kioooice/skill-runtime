@@ -125,6 +125,7 @@ Architecture maintenance guard:
 - fallback provider pipeline for unmatched successful trajectories
 - optional external fallback provider command via `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD`
 - included local demo fallback provider in `examples/providers/copy_metadata_fallback_provider.py`
+- DeepSeek fallback provider in `examples/providers/deepseek_fallback_provider.py`
 - current rule registry includes:
   - text merge
   - text replace
@@ -143,6 +144,7 @@ Architecture maintenance guard:
 - optional external semantic review command via `SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD`
 - provider command details live in [Provider Integration](./docs/provider-integration.md)
 - included local demo semantic provider in `examples/providers/pass_semantic_review_provider.py`
+- DeepSeek semantic review provider in `examples/providers/deepseek_semantic_review_provider.py`
 - semantic checks for:
   - trajectory alignment
   - parameter coverage
@@ -513,6 +515,26 @@ $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_se
 ```
 
 These providers are narrow local examples, not a general LLM backend. They are useful for verifying that the real provider hook can generate, audit, promote, and reuse an executable skill without writing ad-hoc scripts.
+
+Use DeepSeek as the real provider by setting local environment variables:
+
+```bash
+export DEEPSEEK_API_KEY="<your-deepseek-api-key>"
+export DEEPSEEK_MODEL="deepseek-v4-flash"
+export SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deepseek_fallback_provider.py"]'
+export SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
+```
+
+PowerShell:
+
+```powershell
+$env:DEEPSEEK_API_KEY="<your-deepseek-api-key>"
+$env:DEEPSEEK_MODEL="deepseek-v4-flash"
+$env:SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deepseek_fallback_provider.py"]'
+$env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
+```
+
+Do not commit API keys. DeepSeek provider details live in [Provider Integration](./docs/provider-integration.md#deepseek-providers).
 
 Run the demo flow:
 

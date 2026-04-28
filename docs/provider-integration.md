@@ -25,6 +25,40 @@ $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_se
 
 These demo providers are intentionally narrow. They prove the provider contract and host loop are runnable from a fresh clone, but they are not a general LLM backend.
 
+## DeepSeek Providers
+
+This repository also includes DeepSeek command providers backed by the OpenAI-compatible Chat Completions API:
+
+- `examples/providers/deepseek_fallback_provider.py`: asks DeepSeek to generate the fallback skill JSON payload.
+- `examples/providers/deepseek_semantic_review_provider.py`: asks DeepSeek to review a candidate skill and return semantic findings.
+
+Configuration:
+
+```bash
+export DEEPSEEK_API_KEY="<your-deepseek-api-key>"
+export DEEPSEEK_MODEL="deepseek-v4-flash"
+export SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deepseek_fallback_provider.py"]'
+export SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
+```
+
+PowerShell:
+
+```powershell
+$env:DEEPSEEK_API_KEY="<your-deepseek-api-key>"
+$env:DEEPSEEK_MODEL="deepseek-v4-flash"
+$env:SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deepseek_fallback_provider.py"]'
+$env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
+```
+
+Optional DeepSeek variables:
+
+- `DEEPSEEK_API_BASE`: defaults to `https://api.deepseek.com`
+- `DEEPSEEK_MODEL`: defaults to `deepseek-v4-flash`
+- `DEEPSEEK_TIMEOUT_SECONDS`: defaults to `60`
+- `DEEPSEEK_TEMPERATURE`: defaults to `0.2` for fallback generation and `0.0` for semantic review
+
+Do not commit API keys. Set `DEEPSEEK_API_KEY` only in your local shell, Codex environment, or a secret manager.
+
 ## Environment Variables
 
 - `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD`: command used when no deterministic distillation rule matches a successful trajectory.

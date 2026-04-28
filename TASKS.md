@@ -3,13 +3,13 @@
 ## Current Focus
 
 - 当前目标：从产品化收敛切回 Skill Runtime 核心功能完成度收敛
-- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、测试分层与第一轮全量测试提速；架构检查、contract 检查、快验均已通过
-- 下一步：优先使用 `tests.test_runtime_fast` 做日常验证；后续建议在真实 LLM / 本地模型 provider 方案选择和搜索质量评估之间择一推进
+- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；架构检查、contract 检查、快验均已通过
+- 下一步：优先使用 `tests.test_runtime_fast` 做日常验证；后续建议在用户轮换并设置 DeepSeek API key 后做端到端 live smoke
 
 ## Todo
 
-- [ ] 决定是否接一个具体真实 provider 后端：OpenAI、本地模型，或继续以本地命令契约为主
-- [ ] 视 provider 后端选择补真实 provider 的端到端 dogfood 验收
+- [ ] 使用轮换后的 DeepSeek API key 做一次端到端 live smoke
+- [ ] 视 DeepSeek live smoke 结果决定是否补更严格的 provider 输出质量约束
 - [ ] 视验收结果决定是否补搜索质量评估集
 - [ ] 视需要继续优化 full runtime suite 剩余慢点，优先看 MCP/provider dogfood 和生成规则组合测试
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
@@ -79,6 +79,11 @@
 - [x] provider dogfood 测试改为使用仓库内示例脚本，不再只依赖测试临时脚本
 - [x] README / README.zh-CN / provider 文档已补充本地 provider 示例启用方式
 - [x] 已重新运行架构检查、contract 检查、快验和 `git diff --check`
+- [x] 新增 DeepSeek fallback provider 和 DeepSeek semantic review provider 示例脚本
+- [x] DeepSeek provider 默认使用 `deepseek-v4-flash`，并通过环境变量读取 API key
+- [x] 新增本地假 DeepSeek API 契约测试，避免测试依赖真实 key 或真实网络
+- [x] README / README.zh-CN / provider 文档已补充 DeepSeek 配置方式和 key 不入库要求
+- [x] 已重新运行架构检查、contract 检查、快验和 `git diff --check`；快验 9 个测试通过
 
 ## Blocked
 

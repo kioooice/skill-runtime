@@ -13,7 +13,9 @@ Current slow-test profile from `python scripts/profile_runtime_tests.py --suite 
 - Full suite result: 353 tests passed in about 9 minutes.
 - Slowest single test: `test_check_runtime_contracts_script_passes`, about 11.5 seconds after contract sandbox copy optimization.
 - Other slow areas: MCP/provider dogfood tests, generated skill rule combinations, distill coverage reporting, provenance/governance flows, and CLI rollback execution.
+- Fast suite result after DeepSeek provider examples: 9 tests passed in about 12 seconds.
 - Fast suite provider dogfood uses the repository demo providers under `examples/providers/`, not ad-hoc scripts generated inside the test.
+- Fast suite DeepSeek provider checks use a local fake DeepSeek API server, not a real API key or real network call.
 
 ## CLI
 

@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-29 - DeepSeek 接入采用命令型 provider 示例，不保存 API key
+
+**Decision**
+
+新增 `examples/providers/deepseek_fallback_provider.py` 和 `examples/providers/deepseek_semantic_review_provider.py`，通过 DeepSeek OpenAI-compatible Chat Completions API 接入 fallback 生成和 semantic review。默认模型为 `deepseek-v4-flash`，API key 只从 `DEEPSEEK_API_KEY` 环境变量读取，不写入仓库、文档示例或测试。
+
+**Reason**
+
+项目已有命令型 provider 契约，继续沿用这个边界能用最小改动接入真实模型，同时不把 runtime 核心绑定死到某一家 SDK 或新增依赖。用户提供的 key 已出现在聊天中，不能再沉淀到项目文件里。
+
+**Impact**
+
+- DeepSeek provider 可以通过 `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD` 和 `SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD` 启用
+- 测试使用本地假 DeepSeek API 验证请求格式和响应解析，不依赖真实 key 或真实网络
+- 后续 live smoke 需要用户先在本地环境设置轮换后的 `DEEPSEEK_API_KEY`
+- 如果 DeepSeek 返回质量不稳定，下一步需要补 provider 输出质量约束或更严格的审核边界
+
 ### 2026-04-29 - 先用仓库内本地 demo provider 固化 provider 接口闭环
 
 **Decision**
