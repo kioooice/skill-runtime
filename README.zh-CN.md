@@ -172,6 +172,24 @@ docs/
     和 `arguments`，方便宿主从“看建议”直接切到“执行建议”
 - `archive-duplicate-candidates` 可按建议安全归档重复候选
 
+## 本地安装
+
+在项目根目录执行可编辑安装：
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+最小本地验证命令：
+
+```bash
+python scripts/check_mcp_architecture.py
+python scripts/check_runtime_contracts.py
+python -m unittest tests.test_runtime -v
+python -c "from skill_runtime.mcp import build_mcp_server; build_mcp_server('.')"
+```
+
 ## CLI 快速开始
 
 ```bash

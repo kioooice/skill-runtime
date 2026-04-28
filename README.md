@@ -170,6 +170,24 @@ Architecture maintenance guard:
     and `arguments` needed for direct host execution
 - duplicate candidate archival through `archive-duplicate-candidates`
 
+## Local Installation
+
+Install the runtime in editable mode from the project root:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+Minimum local verification:
+
+```bash
+python scripts/check_mcp_architecture.py
+python scripts/check_runtime_contracts.py
+python -m unittest tests.test_runtime -v
+python -c "from skill_runtime.mcp import build_mcp_server; build_mcp_server('.')"
+```
+
 ## CLI Quick Start
 
 ```bash

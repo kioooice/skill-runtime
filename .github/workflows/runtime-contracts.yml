@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - ".github/workflows/runtime-contracts.yml"
+      - "pyproject.toml"
       - "README.md"
       - "README.zh-CN.md"
       - "scripts/check_mcp_architecture.py"
@@ -13,11 +14,12 @@ on:
       - "skill_runtime/**"
       - "docs/mcp-integration.md"
       - "docs/codex-integration.md"
-      - "tests/test_runtime.py"
+      - "tests/**"
       - "TESTS.md"
   pull_request:
     paths:
       - ".github/workflows/runtime-contracts.yml"
+      - "pyproject.toml"
       - "README.md"
       - "README.zh-CN.md"
       - "scripts/check_mcp_architecture.py"
@@ -27,7 +29,7 @@ on:
       - "skill_runtime/**"
       - "docs/mcp-integration.md"
       - "docs/codex-integration.md"
-      - "tests/test_runtime.py"
+      - "tests/**"
       - "TESTS.md"
   workflow_dispatch:
 
@@ -43,6 +45,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Install runtime package
+        run: python -m pip install -e .
 
       - name: Verify MCP architecture boundaries
         run: python scripts/check_mcp_architecture.py

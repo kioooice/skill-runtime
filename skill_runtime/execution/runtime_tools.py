@@ -389,7 +389,7 @@ class RuntimeTools:
         target_display = self._display_path(target)
         if not target.exists():
             return {
-                "strategy": "delete_copied_file",
+                "strategy": "delete_created_file",
                 "target_path": target_display,
             }
         return {

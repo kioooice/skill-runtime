@@ -5,6 +5,128 @@ from tests.runtime_test_support import ROOT
 
 
 class RuntimeExecutionFlowTestsMixin:
+    def test_service_rollback_operations_deletes_new_copy_target(self) -> None:
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        source_path = sandbox_root / "demo" / "input" / "copy_source.txt"
+        target_path = sandbox_root / "demo" / "output" / "copied_once.txt"
+        source_path.write_text("copied content", encoding="utf-8")
+        self.addCleanup(lambda: source_path.unlink(missing_ok=True))
+        self.addCleanup(lambda: target_path.unlink(missing_ok=True))
+
+        self._write_active_skill_fixture(
+            "copy_file_rollback_skill",
+            {
+                "summary": "Copy a file into output.",
+                "docstring": "copy rollback test",
+                "input_schema": {"source_path": "str", "target_path": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-27T00:00:00+00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["copy", "rollback"],
+                "scope_policy": {
+                    "allowed_roots": ["demo/input", "demo/output"],
+                    "allowed_extensions": [".txt"],
+                },
+            },
+            source=(
+                "def run(tools, source_path, target_path, **kwargs):\n"
+                "    tools.copy_file(source_path, target_path)\n"
+                "    return {'status': 'completed'}\n"
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(sandbox_root / "skill_store" / "active")
+
+        result = sandbox_service.execute(
+            "copy_file_rollback_skill",
+            {"source_path": "demo/input/copy_source.txt", "target_path": "demo/output/copied_once.txt"},
+        )
+
+        self.assertTrue(target_path.exists())
+        copy_record = next(record for record in result["operation_log"] if record["tool_name"] == "copy_file")
+        self.assertEqual(
+            {
+                "strategy": "delete_created_file",
+                "target_path": "demo/output/copied_once.txt",
+            },
+            copy_record["rollback_hint"],
+        )
+
+        rollback = sandbox_service.rollback_operations(result["operation_log"])
+
+        self.assertEqual(["op_0001"], rollback["rolled_back_operation_ids"])
+        self.assertFalse(target_path.exists())
+        self.assertEqual("rolled_back", rollback["results"][0]["status"])
+        self.assertEqual("delete_created_file", rollback["results"][0]["strategy"])
+
+    def test_service_rollback_operations_keeps_manual_restore_for_overwritten_copy(self) -> None:
+        sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
+        source_path = sandbox_root / "demo" / "input" / "copy_overwrite_source.txt"
+        target_path = sandbox_root / "demo" / "output" / "copy_overwrite_target.txt"
+        source_path.write_text("new copied content", encoding="utf-8")
+        target_path.write_text("existing content", encoding="utf-8")
+        self.addCleanup(lambda: source_path.unlink(missing_ok=True))
+        self.addCleanup(lambda: target_path.unlink(missing_ok=True))
+
+        self._write_active_skill_fixture(
+            "copy_file_manual_restore_skill",
+            {
+                "summary": "Copy over an existing file.",
+                "docstring": "copy overwrite rollback test",
+                "input_schema": {"source_path": "str", "target_path": "str"},
+                "output_schema": {"status": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-04-27T00:00:00+00:00",
+                "last_used_at": None,
+                "usage_count": 0,
+                "status": "active",
+                "audit_score": 100,
+                "tags": ["copy", "rollback"],
+                "scope_policy": {
+                    "allowed_roots": ["demo/input", "demo/output"],
+                    "allowed_extensions": [".txt"],
+                },
+            },
+            source=(
+                "def run(tools, source_path, target_path, **kwargs):\n"
+                "    tools.copy_file(source_path, target_path)\n"
+                "    return {'status': 'completed'}\n"
+            ),
+            root=sandbox_root,
+        )
+        sandbox_index.rebuild_from_directory(sandbox_root / "skill_store" / "active")
+
+        result = sandbox_service.execute(
+            "copy_file_manual_restore_skill",
+            {
+                "source_path": "demo/input/copy_overwrite_source.txt",
+                "target_path": "demo/output/copy_overwrite_target.txt",
+            },
+        )
+
+        self.assertTrue(target_path.exists())
+        self.assertEqual("new copied content", target_path.read_text(encoding="utf-8"))
+        copy_record = next(record for record in result["operation_log"] if record["tool_name"] == "copy_file")
+        self.assertEqual(
+            {
+                "strategy": "manual_restore_required",
+                "target_path": "demo/output/copy_overwrite_target.txt",
+                "reason": "copy would overwrite an existing target",
+            },
+            copy_record["rollback_hint"],
+        )
+
+        rollback = sandbox_service.rollback_operations(result["operation_log"])
+
+        self.assertEqual([], rollback["rolled_back_operation_ids"])
+        self.assertEqual("unsupported", rollback["results"][0]["status"])
+        self.assertEqual("manual_restore_required", rollback["results"][0]["strategy"])
+        self.assertEqual("new copied content", target_path.read_text(encoding="utf-8"))
+
     def test_service_execute_blocks_shell_without_scope_permission(self) -> None:
         sandbox_root, sandbox_service, sandbox_index = self._make_runtime_sandbox()
         self._write_active_skill_fixture(

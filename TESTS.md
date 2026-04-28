@@ -34,6 +34,7 @@
 
 ## MCP Contract Architecture
 
+- `build_mcp_server` can be imported and construct a server without starting a stdio loop
 - `skill_runtime/mcp/source_refs.py` does not import other `skill_runtime.mcp` modules
 - `operation_builders.py` only depends on `source_refs.py`
 - `recommendation_builders.py` only depends on `operation_builders.py` and `source_refs.py`
@@ -72,6 +73,8 @@
 - active skills with `run` execute successfully
 - active skills without `run` fail cleanly
 - non-dict results are wrapped as `raw_result`
+- `copy_file` rollback deletes a newly created copied target
+- `copy_file` overwrite rollback remains `manual_restore_required` and is not auto-applied
 
 ## End-to-End
 
