@@ -266,6 +266,45 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
             output_path.read_text(encoding="utf-8"),
         )
 
+    def test_directory_json_to_csv_dogfood_skill_executes_from_search(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+
+        search_payload = self._call_mcp_tool(
+            "search_skill",
+            {"query": "convert json directory to csv files", "top_k": 5},
+            root=sandbox_root,
+        )
+        search_data = search_payload["data"]
+        self.assertEqual("directory_json_to_csv_dogfood", search_data["recommended_skill_name"])
+
+        execute_args = dict(search_data["recommended_host_operation"]["arguments"])
+        execute_args["args"] = {
+            "input_dir": "demo/input/json_records",
+            "output_dir": "demo/output/json_records_csv_dogfood",
+            "pattern": "**/*.json",
+            "delimiter": ",",
+        }
+        execute_payload = self._call_mcp_tool(
+            search_data["recommended_host_operation"]["tool_name"],
+            execute_args,
+            root=sandbox_root,
+        )
+        team_output = sandbox_root / "demo" / "output" / "json_records_csv_dogfood" / "team.csv"
+        jobs_output = sandbox_root / "demo" / "output" / "json_records_csv_dogfood" / "ops" / "jobs.csv"
+
+        self.assertEqual("completed", execute_payload["data"]["result"]["status"])
+        self.assertEqual("directory_json_to_csv_dogfood", execute_payload["data"]["skill_name"])
+        self.assertTrue(team_output.exists())
+        self.assertTrue(jobs_output.exists())
+        self.assertEqual(
+            "name,team\nAda,research\nGrace,engineering\n",
+            team_output.read_text(encoding="utf-8"),
+        )
+        self.assertEqual(
+            "job_id,status\nnightly-cleanup,ok\nindex-refresh,queued\n",
+            jobs_output.read_text(encoding="utf-8"),
+        )
+
     def _restore_env(self, name: str, value: str | None) -> None:
         if value is None:
             os.environ.pop(name, None)

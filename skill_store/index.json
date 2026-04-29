@@ -41,6 +41,51 @@
       "scope_policy": null
     },
     {
+      "skill_name": "directory_json_to_csv_dogfood",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_json_to_csv_dogfood.py",
+      "summary": "Batch export all JSON records in a folder into CSV files.",
+      "docstring": "功能描述:\n    Batch export all JSON records in a folder into CSV files.\n\n输入参数:\n        - delimiter: str\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "delimiter": "str",
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "dogfood_directory_json_to_csv_20260429"
+      ],
+      "created_at": "2026-04-29T11:00:00+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "directory_json_to_csv",
+      "rule_priority": 74,
+      "rule_reason": "Matched directory_json_to_csv because the trajectory lists files, reads JSON files, writes CSV text files, and the task description mentions JSON and CSV.",
+      "tags": [
+        "all",
+        "batch",
+        "convert",
+        "csv",
+        "delimiter",
+        "directory",
+        "export",
+        "files",
+        "folder",
+        "input_dir",
+        "json",
+        "output_dir",
+        "pattern",
+        "records"
+      ],
+      "scope_policy": null
+    },
+    {
       "skill_name": "json_to_csv_dogfood",
       "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\json_to_csv_dogfood.py",
       "summary": "Convert a JSON list of records into a CSV file.",

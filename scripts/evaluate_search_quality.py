@@ -39,6 +39,14 @@ SEARCH_CASES = [
         "query": "export json list as csv file",
         "expected_skill": "json_to_csv_dogfood",
     },
+    {
+        "query": "convert json directory to csv files",
+        "expected_skill": "directory_json_to_csv_dogfood",
+    },
+    {
+        "query": "batch export json records folder to csv",
+        "expected_skill": "directory_json_to_csv_dogfood",
+    },
 ]
 
 NO_RECOMMENDATION_CASES = [

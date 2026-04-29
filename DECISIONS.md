@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-29 - 第四个真实 dogfood 技能选择目录 JSON 批量转 CSV
+
+**Decision**
+
+新增 `directory_json_to_csv_dogfood` 作为第四个真实 active dogfood skill，并配套嵌套 demo 输入、源 trajectory、audit 记录、active metadata、索引记录、搜索质量样本和执行回归测试。
+
+**Reason**
+
+第三个样本已经覆盖单个 JSON 文件转 CSV，但 active 库仍缺少“批量处理整个文件夹”的真实样本。目录 JSON 批量转 CSV 能复用已有 `directory_json_to_csv` 规则，不需要新增大功能，同时可以验证嵌套目录保持相对结构这一类更接近真实工作的场景。
+
+**Impact**
+
+- active skill 数量从 3 增加到 4
+- 搜索质量基线从 7 个检查扩展到 9 个检查
+- 快验新增目录 JSON 批量转 CSV dogfood 搜索与执行覆盖
+- 新增样本仍属于文件类工作流，后续还需要文本清洗、替换等不同类型 dogfood 扩大复用证明
+
 ### 2026-04-29 - 第三个真实 dogfood 技能选择 JSON 转 CSV
 
 **Decision**

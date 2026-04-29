@@ -1,0 +1,10 @@
+[
+  {
+    "job_id": "nightly-cleanup",
+    "status": "ok"
+  },
+  {
+    "job_id": "index-refresh",
+    "status": "queued"
+  }
+]

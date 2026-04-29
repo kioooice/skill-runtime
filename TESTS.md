@@ -10,16 +10,16 @@ Use the fast suite for routine development feedback. Use the full suite before r
 
 Current slow-test profile from `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 10`:
 
-- Full suite result after adding `json_to_csv_dogfood`: 363 tests passed in about 7 minutes.
+- Full suite result after adding `directory_json_to_csv_dogfood`: 364 tests passed in about 7 minutes.
 - Slowest single test: `test_check_runtime_contracts_script_passes`, about 11.5 seconds after contract sandbox copy optimization.
 - Other slow areas: MCP/provider dogfood tests, generated skill rule combinations, distill coverage reporting, provenance/governance flows, and CLI rollback execution.
-- Fast suite result after adding `json_to_csv_dogfood`: 17 tests passed in about 20 seconds.
+- Fast suite result after adding `directory_json_to_csv_dogfood`: 18 tests passed in about 21 seconds.
 - Fast suite provider dogfood uses the repository demo providers under `examples/providers/`, not ad-hoc scripts generated inside the test.
 - Fast suite DeepSeek provider checks use a local fake DeepSeek API server, not a real API key or real network call.
 - DeepSeek live smoke with the real API is not part of the automated suite; latest manual result passed the full generate -> audit -> promote -> execute loop through `scripts/smoke_deepseek_provider_loop.py`.
 - DeepSeek fallback provider tests cover local quality gates for low-quality candidates, missing schema kwargs, invalid runtime tool signatures, double-escaped code strings, one-pass repair, and repair-disabled behavior.
 - Manual live DeepSeek loop smoke: `python scripts/smoke_deepseek_provider_loop.py`; this requires `DEEPSEEK_API_KEY`, uses a temporary sandbox, and verifies generate -> audit -> promote -> execute.
-- Search quality baseline: `python scripts/evaluate_search_quality.py`; this checks current active skills against a small expected-query set and is also covered by the fast suite. Current baseline: 7 checks passed.
+- Search quality baseline: `python scripts/evaluate_search_quality.py`; this checks current active skills against a small expected-query set and is also covered by the fast suite. Current baseline: 9 checks passed.
 
 ## CLI
 
