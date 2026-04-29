@@ -47,6 +47,14 @@ SEARCH_CASES = [
         "query": "batch export json records folder to csv",
         "expected_skill": "directory_json_to_csv_dogfood",
     },
+    {
+        "query": "replace text in one file",
+        "expected_skill": "text_replace_dogfood",
+    },
+    {
+        "query": "update draft word in a text file",
+        "expected_skill": "text_replace_dogfood",
+    },
 ]
 
 NO_RECOMMENDATION_CASES = [

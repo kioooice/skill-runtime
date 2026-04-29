@@ -305,6 +305,39 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
             jobs_output.read_text(encoding="utf-8"),
         )
 
+    def test_text_replace_dogfood_skill_executes_from_search(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+
+        search_payload = self._call_mcp_tool(
+            "search_skill",
+            {"query": "replace text in one file", "top_k": 5},
+            root=sandbox_root,
+        )
+        search_data = search_payload["data"]
+        self.assertEqual("text_replace_dogfood", search_data["recommended_skill_name"])
+
+        execute_args = dict(search_data["recommended_host_operation"]["arguments"])
+        execute_args["args"] = {
+            "input_path": "demo/input/template_note.txt",
+            "output_path": "demo/output/template_note_ready_dogfood.txt",
+            "old_text": "draft",
+            "new_text": "ready",
+        }
+        execute_payload = self._call_mcp_tool(
+            search_data["recommended_host_operation"]["tool_name"],
+            execute_args,
+            root=sandbox_root,
+        )
+        output_path = sandbox_root / "demo" / "output" / "template_note_ready_dogfood.txt"
+
+        self.assertEqual("completed", execute_payload["data"]["result"]["status"])
+        self.assertEqual("text_replace_dogfood", execute_payload["data"]["skill_name"])
+        self.assertTrue(output_path.exists())
+        self.assertEqual(
+            "Title: Weekly Update\nStatus: ready\nOwner: docs\n",
+            output_path.read_text(encoding="utf-8"),
+        )
+
     def _restore_env(self, name: str, value: str | None) -> None:
         if value is None:
             os.environ.pop(name, None)

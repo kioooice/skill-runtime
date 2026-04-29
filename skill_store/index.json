@@ -154,6 +154,49 @@
         "files"
       ],
       "scope_policy": null
+    },
+    {
+      "skill_name": "text_replace_dogfood",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\text_replace_dogfood.py",
+      "summary": "Replace or update a word or text in one file and write the updated file.",
+      "docstring": "功能描述:\n    Replace or update a word or text in one file and write the updated file.\n\n输入参数:\n        - input_path: str\n        - new_text: str\n        - old_text: str\n        - output_path: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_path": "str",
+        "new_text": "str",
+        "old_text": "str",
+        "output_path": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "dogfood_text_replace_20260429"
+      ],
+      "created_at": "2026-04-29T12:00:00+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "text_replace",
+      "rule_priority": 90,
+      "rule_reason": "Matched text_replace because the trajectory reads and writes one file, includes old_text/new_text inputs, and the task description mentions replacement.",
+      "tags": [
+        "file",
+        "input_path",
+        "new_text",
+        "old_text",
+        "one",
+        "output_path",
+        "replace",
+        "text",
+        "update",
+        "updated",
+        "word",
+        "write"
+      ],
+      "scope_policy": null
     }
   ]
 }

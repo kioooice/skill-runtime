@@ -1,0 +1,35 @@
+{
+  "task_id": "dogfood_text_replace_20260429",
+  "session_id": "dogfood_session_20260429",
+  "task_description": "Replace or update a word or text in one file and write the updated file.",
+  "steps": [
+    {
+      "step_id": "1",
+      "tool_name": "read_text",
+      "tool_input": {
+        "path": "demo/input/template_note.txt"
+      },
+      "observation": "Read the source text file.",
+      "status": "success",
+      "thought_summary": "Load the source note before replacement."
+    },
+    {
+      "step_id": "2",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "demo/output/template_note_ready.txt",
+        "old_text": "draft",
+        "new_text": "ready"
+      },
+      "observation": "Wrote the updated text file.",
+      "status": "success",
+      "thought_summary": "Replace the requested text and save the result."
+    }
+  ],
+  "final_status": "success",
+  "artifacts": [
+    "demo/output/template_note_ready.txt"
+  ],
+  "started_at": "2026-04-29T12:00:00",
+  "ended_at": "2026-04-29T12:01:00"
+}

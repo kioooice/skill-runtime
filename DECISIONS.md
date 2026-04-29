@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-29 - 第五个真实 dogfood 技能选择单文件文本替换
+
+**Decision**
+
+新增 `text_replace_dogfood` 作为第五个真实 active dogfood skill，并配套 demo 输入、源 trajectory、audit 记录、active metadata、索引记录、搜索质量样本和执行回归测试。
+
+**Reason**
+
+active 库已有文本合并、日志归档、JSON 转 CSV 和目录 JSON 批量转 CSV，但还缺少最常见的“改一个文件里的某段文字”工作流。单文件文本替换能复用已有 `text_replace` 规则，不新增大功能，同时覆盖普通用户常说的 replace / update word 表述。
+
+**Impact**
+
+- active skill 数量从 4 增加到 5
+- 搜索质量基线从 9 个检查扩展到 11 个检查
+- 快验新增单文件文本替换 dogfood 搜索与执行覆盖
+- 由于 `merge_text_files` 使用次数很高，文本类查询可能被 usage boost 干扰；本轮通过更明确的 replace / update / word 描述守住了当前查询命中
+
 ### 2026-04-29 - 第四个真实 dogfood 技能选择目录 JSON 批量转 CSV
 
 **Decision**
