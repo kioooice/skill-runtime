@@ -170,7 +170,7 @@ class RuntimeDeepSeekProviderExampleTestsMixin:
                 "    output_path = kwargs.get('output_path')\n"
                 "    metadata_path = kwargs.get('metadata_path')\n"
                 "    tools.copy_file(source_path=input_path, destination_path=output_path)\n"
-                "    tools.write_json(metadata_path=metadata_path)\n"
+                "    tools.write_json(path=metadata_path, data={'copied_path': output_path})\n"
                 "    return {'status': 'completed'}\n"
             ),
             "provider_name": "deepseek_fallback_provider",
@@ -201,8 +201,8 @@ class RuntimeDeepSeekProviderExampleTestsMixin:
         self.assertNotEqual(0, result.returncode)
         self.assertIn("unsupported keyword argument", result.stderr)
         self.assertIn("destination_path", result.stderr)
-        self.assertIn("missing required argument", result.stderr)
         self.assertIn("data", result.stderr)
+        self.assertIn("payload", result.stderr)
 
     def test_deepseek_fallback_provider_repairs_candidate_once(self) -> None:
         invalid_response = {
@@ -222,7 +222,7 @@ class RuntimeDeepSeekProviderExampleTestsMixin:
                 "    output_path = kwargs.get('output_path')\n"
                 "    metadata_path = kwargs.get('metadata_path')\n"
                 "    tools.copy_file(source_path=input_path, destination_path=output_path)\n"
-                "    tools.write_json(metadata_path=metadata_path)\n"
+                "    tools.write_json(path=metadata_path, data={'copied_path': output_path})\n"
                 "    return {'status': 'completed'}\n"
             ),
             "provider_name": "deepseek_fallback_provider",

@@ -2,6 +2,39 @@
 
 ## Decision Log
 
+### 2026-04-29 - 搜索质量先用小型基线评估守住当前能力
+
+**Decision**
+
+新增 `scripts/evaluate_search_quality.py`，用少量代表性查询检查当前 active skill 能否命中预期技能，并把该基线接入 `tests.test_runtime_fast`。
+
+**Reason**
+
+当前搜索仍是轻量关键词评分，不适合立刻大改算法。先建立可重复评估入口，可以在后续增加 dogfood 技能或调整评分时快速发现明显退化。
+
+**Impact**
+
+- 快验会覆盖搜索质量基线
+- 当前基线只覆盖现有两个真实 active 技能，不代表完整搜索质量评测
+- 后续如果 active 技能库扩充，应同步增加评估样本
+
+### 2026-04-29 - DeepSeek live 闭环 smoke 固化为临时沙箱脚本
+
+**Decision**
+
+新增 `scripts/smoke_deepseek_provider_loop.py` 作为手动 live smoke 入口。脚本要求 `DEEPSEEK_API_KEY` 从环境变量读取，自动创建临时 runtime 沙箱，配置 DeepSeek fallback 和 semantic provider，执行生成、审核、提升、复用，并验证复制文件和 metadata sidecar。
+
+**Reason**
+
+一次性手工命令虽然能证明 API 可用，但不适合后续重复验证。把完整闭环固化为脚本，可以让真实 provider 验收变成可复用操作，同时避免污染仓库真实 active skill 库。
+
+**Impact**
+
+- DeepSeek 完整 provider dogfood 现在有明确手动验证入口
+- 该脚本不进 CI，因为它依赖真实 API key 和网络
+- smoke 过程中发现并修正了 `write_json` 签名契约错误：真实参数是 `payload`，不是 `data`
+- 最新真实 smoke 结果：生成、审核、提升、复用均通过
+
 ### 2026-04-29 - DeepSeek fallback 失败时允许一次自动返修
 
 **Decision**

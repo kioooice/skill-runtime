@@ -25,7 +25,10 @@ TOOL_SIGNATURES = {
     "copy_file": {"required": ("source_path", "target_path"), "allowed": {"source_path", "target_path"}},
     "move_file": {"required": ("source_path", "target_path"), "allowed": {"source_path", "target_path"}},
     "rename_path": {"required": ("source_path", "target_path"), "allowed": {"source_path", "target_path"}},
-    "write_json": {"required": ("path", "data"), "allowed": {"path", "data"}},
+    "write_json": {
+        "required": ("path", "payload"),
+        "allowed": {"path", "payload", "ensure_ascii", "indent", "sort_keys"},
+    },
     "write_text": {"required": ("path", "content"), "allowed": {"path", "content"}},
     "read_json": {"required": ("path",), "allowed": {"path"}},
     "read_text": {"required": ("path",), "allowed": {"path"}},
@@ -135,7 +138,7 @@ def _system_prompt() -> str:
         "If the trajectory uses copy_file, call tools.copy_file. "
         "If the trajectory uses write_json, call tools.write_json. "
         "Use RuntimeTools method signatures exactly: copy_file(source_path, target_path), "
-        "write_json(path, data), write_text(path, content). "
+        "write_json(path, payload), write_text(path, content). "
         "Do not hardcode demo paths or artifact names in the generated skill."
     )
 

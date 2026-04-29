@@ -500,6 +500,12 @@ Run the fast local validation suite:
 python -m unittest tests.test_runtime_fast -v
 ```
 
+Run the current active-skill search quality baseline:
+
+```bash
+python scripts/evaluate_search_quality.py
+```
+
 Run the included local provider demo path by setting trusted command providers:
 
 ```bash
@@ -537,6 +543,12 @@ $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepsee
 ```
 
 Do not commit API keys. The fallback provider runs a local quality gate and can ask DeepSeek for one repair pass before failing. DeepSeek provider details live in [Provider Integration](./docs/provider-integration.md#deepseek-providers).
+
+Optional live DeepSeek loop smoke:
+
+```bash
+python scripts/smoke_deepseek_provider_loop.py
+```
 
 Run the demo flow:
 

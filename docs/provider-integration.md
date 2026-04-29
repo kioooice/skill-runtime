@@ -70,6 +70,20 @@ If the generated code fails this gate, the provider sends the failure reason bac
 
 Do not commit API keys. Set `DEEPSEEK_API_KEY` only in your local shell, Codex environment, or a secret manager.
 
+Live smoke test:
+
+```bash
+python scripts/smoke_deepseek_provider_loop.py
+```
+
+PowerShell:
+
+```powershell
+python scripts/smoke_deepseek_provider_loop.py
+```
+
+The smoke test creates a temporary runtime sandbox, configures both DeepSeek providers, runs `distill_and_promote`, executes the promoted skill, and verifies the copied text file plus metadata sidecar. It does not write generated skills into the repository's real active library. Use `--keep-sandbox` only when debugging a failure.
+
 ## Environment Variables
 
 - `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD`: command used when no deterministic distillation rule matches a successful trajectory.

@@ -5,6 +5,7 @@ from tests.test_runtime_core_dogfood_acceptance import RuntimeCoreDogfoodAccepta
 from tests.test_runtime_deepseek_provider_examples import RuntimeDeepSeekProviderExampleTestsMixin
 from tests.test_runtime_isolation import RuntimeIsolationTestsMixin
 from tests.test_runtime_mcp_smoke import RuntimeMcpSmokeTestsMixin
+from tests.test_runtime_search_quality import RuntimeSearchQualityTestsMixin
 
 
 class RuntimeFastTests(
@@ -12,6 +13,7 @@ class RuntimeFastTests(
     RuntimeDeepSeekProviderExampleTestsMixin,
     RuntimeIsolationTestsMixin,
     RuntimeMcpSmokeTestsMixin,
+    RuntimeSearchQualityTestsMixin,
     RuntimeTestCase,
 ):
     pass

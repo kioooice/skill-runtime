@@ -3,13 +3,13 @@
 ## Current Focus
 
 - 当前目标：从产品化收敛切回 Skill Runtime 核心功能完成度收敛
-- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；已用真实 DeepSeek API 做 live smoke，确认 API 可连通；DeepSeek fallback 本地质量门禁已能阻止坏输出进入 staging，并已支持失败后自动返修一次
-- 下一步：在真实 provider dogfood 路径中验证 DeepSeek 生成、审核、入库、复用的完整闭环
+- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；已用真实 DeepSeek API 验证完整 provider dogfood 闭环，确认生成、审核、入库、复用可跑通；DeepSeek fallback 本地质量门禁已能阻止坏输出进入 staging，并已支持失败后自动返修一次；搜索质量已有最小评估脚本和快验覆盖
+- 下一步：继续增加真实 dogfood 技能样本，或扩大搜索质量评估样本集
 
 ## Todo
 
-- [ ] 在完整 provider dogfood 闭环中验证 DeepSeek 生成、审核、入库、复用
-- [ ] 视验收结果决定是否补搜索质量评估集
+- [ ] 继续增加真实 dogfood 技能样本
+- [ ] 视需要扩大搜索质量评估样本集
 - [ ] 视需要继续优化 full runtime suite 剩余慢点，优先看 MCP/provider dogfood 和生成规则组合测试
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
 - [ ] 视需要继续统一其余治理写路径的索引刷新策略，减少未来新增治理入口时出现行为分叉
@@ -94,7 +94,12 @@
 - [x] 为 DeepSeek fallback provider 增加一次自动修复请求，质量门禁失败时把失败原因发回 DeepSeek 再验一次
 - [x] 补充 DeepSeek 返修测试：一次返修成功，以及显式关闭返修时只失败不重试
 - [x] 重新运行架构检查、runtime contract 检查、快验和真实 DeepSeek live smoke；真实 API 本轮返回了可直接通过门禁的候选技能
+- [x] 新增 `scripts/smoke_deepseek_provider_loop.py`，把真实 DeepSeek 生成、审核、入库、复用 smoke 固化为可复用脚本
+- [x] 修正 DeepSeek fallback 门禁中的 `write_json` 签名契约：真实参数是 `payload`，不是 `data`
+- [x] 真实 DeepSeek provider dogfood 闭环通过：生成、审核、提升、复用均成功，并验证复制文件与 metadata sidecar
+- [x] 新增 `scripts/evaluate_search_quality.py`，为当前 active 技能建立最小搜索质量评估入口
+- [x] 将搜索质量基线接入 `tests.test_runtime_fast`
 
 ## Blocked
 
-- DeepSeek 完整生成入库复用闭环仍需要继续 dogfood 验证；当前已能拦截坏输出，并支持一次自动返修
+- 无

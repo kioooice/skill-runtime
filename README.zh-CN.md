@@ -500,6 +500,12 @@ Observed task 输入格式现在统一收口在
 python -m unittest tests.test_runtime_fast -v
 ```
 
+运行当前 active 技能搜索质量基线：
+
+```bash
+python scripts/evaluate_search_quality.py
+```
+
 运行仓库内置的本地 provider 示例路径：
 
 ```bash
@@ -537,6 +543,12 @@ $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepsee
 ```
 
 不要把 API key 提交进仓库。fallback provider 会先做本地质量检查，失败时可让 DeepSeek 自动修复一次；细节见 [Provider Integration](./docs/provider-integration.md#deepseek-providers)。
+
+可选真实 DeepSeek 闭环 smoke：
+
+```bash
+python scripts/smoke_deepseek_provider_loop.py
+```
 
 运行 demo：
 

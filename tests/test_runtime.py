@@ -16,6 +16,7 @@ from tests.test_runtime_host_operations import RuntimeHostOperationTestsMixin
 from tests.test_runtime_isolation import RuntimeIsolationTestsMixin
 from tests.test_runtime_lifecycle import RuntimeLifecycleTestsMixin
 from tests.test_runtime_mcp_smoke import RuntimeMcpSmokeTestsMixin
+from tests.test_runtime_search_quality import RuntimeSearchQualityTestsMixin
 from tests.test_runtime_trajectory_search import RuntimeTrajectorySearchTestsMixin
 
 
@@ -32,6 +33,7 @@ class RuntimeTests(
     RuntimeHostOperationTestsMixin,
     RuntimeIsolationTestsMixin,
     RuntimeMcpSmokeTestsMixin,
+    RuntimeSearchQualityTestsMixin,
     RuntimeFileGeneratedSkillTestsMixin,
     RuntimeDirectoryGeneratedSkillTestsMixin,
     RuntimeGeneratedSkillRegressionTestsMixin,
