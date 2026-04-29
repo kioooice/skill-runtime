@@ -217,7 +217,8 @@
   - `python scripts/check_mcp_architecture.py`
   - `python scripts/check_runtime_contracts.py`
   - `python -m unittest tests.test_runtime_fast -v`
-  - 结果：搜索质量基线 5/5 通过；快验 16 tests OK
+  - `python -m unittest tests.test_runtime -v`
+  - 结果：搜索质量基线 5/5 通过；快验 16 tests OK；全量 362 tests OK，约 7 分钟
 
 ## Next Action
 

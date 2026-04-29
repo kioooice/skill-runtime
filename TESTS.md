@@ -10,7 +10,7 @@ Use the fast suite for routine development feedback. Use the full suite before r
 
 Current slow-test profile from `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 10`:
 
-- Full suite result: 353 tests passed in about 9 minutes.
+- Full suite result after search-quality baseline and stopword filtering: 362 tests passed in about 7 minutes.
 - Slowest single test: `test_check_runtime_contracts_script_passes`, about 11.5 seconds after contract sandbox copy optimization.
 - Other slow areas: MCP/provider dogfood tests, generated skill rule combinations, distill coverage reporting, provenance/governance flows, and CLI rollback execution.
 - Fast suite result after DeepSeek provider repair pass and search-quality baseline: 16 tests passed in about 18 seconds.
