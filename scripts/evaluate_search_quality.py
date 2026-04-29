@@ -71,13 +71,14 @@ def evaluate(root: Path, *, top_k: int = 5) -> dict[str, Any]:
     for case in NO_RECOMMENDATION_CASES:
         result = service.search(case["query"], top_k=top_k)
         recommended = result["recommended_skill_name"]
+        top_results = [item["skill_name"] for item in result["results"]]
         checks.append(
             {
                 "query": case["query"],
                 "expected_skill": None,
                 "recommended_skill": recommended,
-                "passed": recommended is None,
-                "top_results": [item["skill_name"] for item in result["results"]],
+                "passed": recommended is None and not top_results,
+                "top_results": top_results,
             }
         )
 

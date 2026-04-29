@@ -8,6 +8,24 @@ from skill_runtime.api.models import SkillMetadata
 from skill_runtime.library_tiers import classify_skill_name
 from skill_runtime.mcp.host_operations import search_result_payload
 
+STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "as",
+    "by",
+    "for",
+    "from",
+    "in",
+    "into",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "with",
+}
+
 
 class SkillIndexError(ValueError):
     pass
@@ -252,7 +270,7 @@ class SkillIndex:
         return {
             token.lower()
             for token in re.findall(r"[A-Za-z0-9_]+", text)
-            if len(token) >= 2
+            if len(token) >= 2 and token.lower() not in STOPWORDS
         }
 
     def _library_tier(self, skill: SkillMetadata) -> str:

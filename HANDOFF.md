@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。仓库现在包含本地 demo provider 和 DeepSeek provider 示例，可从 fresh clone 验证 provider hook。DeepSeek 接入使用 `DEEPSEEK_API_KEY` 环境变量、默认模型 `deepseek-v4-flash`，不会把 key 写入仓库。已按用户要求用真实 DeepSeek API 做 live smoke：API 可连通，fallback / semantic provider 都能返回结果；DeepSeek fallback 本地质量门禁可以在 staging 前拦截语法错误、缺少入口/说明、缺少轨迹工具调用、缺少 schema kwargs、runtime 工具签名错误等坏输出，并已支持门禁失败后自动返修一次。最新 live smoke 已通过完整生成、审核、提升、复用闭环，并验证复制文件与 metadata sidecar。搜索质量已有最小基线脚本，覆盖当前两个真实 active 技能。验证层已拆分为日常快验和全量慢验：`tests.test_runtime_fast` 当前 16 个测试，约 18 秒；`tests.test_runtime` 当前约 9 分钟。剩余主要短板是：active skill 库样本仍少；搜索质量评估样本仍少。
+已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。仓库现在包含本地 demo provider 和 DeepSeek provider 示例，可从 fresh clone 验证 provider hook。DeepSeek 接入使用 `DEEPSEEK_API_KEY` 环境变量、默认模型 `deepseek-v4-flash`，不会把 key 写入仓库。已按用户要求用真实 DeepSeek API 做 live smoke：API 可连通，fallback / semantic provider 都能返回结果；DeepSeek fallback 本地质量门禁可以在 staging 前拦截语法错误、缺少入口/说明、缺少轨迹工具调用、缺少 schema kwargs、runtime 工具签名错误等坏输出，并已支持门禁失败后自动返修一次。最新 live smoke 已通过完整生成、审核、提升、复用闭环，并验证复制文件与 metadata sidecar。搜索质量已有最小基线脚本，覆盖当前两个真实 active 技能；搜索分词已过滤英文停用词，避免无关查询产生弱相关结果。验证层已拆分为日常快验和全量慢验：`tests.test_runtime_fast` 当前 16 个测试，约 18 秒；`tests.test_runtime` 当前约 9 分钟。剩余主要短板是：active skill 库样本仍少；搜索质量评估样本仍少。
 
 ## Last Completed
 
@@ -208,6 +208,8 @@
   - 归档日志文件命中 `archive_log_files_dogfood`
   - 无关邮件营销查询不产生推荐技能
 - 已将搜索质量基线接入 `tests.test_runtime_fast`
+- 已在 `SkillIndex` 分词中加入英文停用词过滤
+- 搜索质量基线中的无关查询现在不仅不推荐技能，也不返回弱相关 top results
 - 已重新运行：
   - `python scripts/evaluate_search_quality.py`
   - `python -m py_compile scripts/evaluate_search_quality.py tests/test_runtime_search_quality.py tests/test_runtime_fast.py tests/test_runtime.py`
@@ -219,7 +221,7 @@
 
 ## Next Action
 
-下一步建议补充更多真实 dogfood 技能样本，尤其是能覆盖当前 active library 之外的常见文件工作流；如果先调整搜索算法，应同步扩大 `scripts/evaluate_search_quality.py` 的样本集。日常小改动默认先跑 `python -m unittest tests.test_runtime_fast -v`，只有发布级或大范围 runtime 行为变化再跑 full suite，并使用至少 900 秒超时。
+下一步建议补充更多真实 dogfood 技能样本，尤其是能覆盖当前 active library 之外的常见文件工作流；如果先继续调搜索算法，应同步扩大 `scripts/evaluate_search_quality.py` 的样本集。日常小改动默认先跑 `python -m unittest tests.test_runtime_fast -v`，只有发布级或大范围 runtime 行为变化再跑 full suite，并使用至少 900 秒超时。
 
 ## Important Files
 
