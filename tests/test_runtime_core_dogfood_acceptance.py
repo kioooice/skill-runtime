@@ -234,6 +234,38 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         )
         self.assertTrue((sandbox_root / "demo" / "output" / "provider_reuse.json").exists())
 
+    def test_json_to_csv_dogfood_skill_executes_from_search(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+
+        search_payload = self._call_mcp_tool(
+            "search_skill",
+            {"query": "convert json records to csv", "top_k": 5},
+            root=sandbox_root,
+        )
+        search_data = search_payload["data"]
+        self.assertEqual("json_to_csv_dogfood", search_data["recommended_skill_name"])
+
+        execute_args = dict(search_data["recommended_host_operation"]["arguments"])
+        execute_args["args"] = {
+            "input_path": "demo/input/records.json",
+            "output_path": "demo/output/records_dogfood.csv",
+            "delimiter": ",",
+        }
+        execute_payload = self._call_mcp_tool(
+            search_data["recommended_host_operation"]["tool_name"],
+            execute_args,
+            root=sandbox_root,
+        )
+        output_path = sandbox_root / "demo" / "output" / "records_dogfood.csv"
+
+        self.assertEqual("completed", execute_payload["data"]["result"]["status"])
+        self.assertEqual("json_to_csv_dogfood", execute_payload["data"]["skill_name"])
+        self.assertTrue(output_path.exists())
+        self.assertEqual(
+            "name,role\nAda,researcher\nGrace,engineer\n",
+            output_path.read_text(encoding="utf-8"),
+        )
+
     def _restore_env(self, name: str, value: str | None) -> None:
         if value is None:
             os.environ.pop(name, None)

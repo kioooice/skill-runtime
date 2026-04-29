@@ -2,7 +2,7 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。仓库现在包含本地 demo provider 和 DeepSeek provider 示例，可从 fresh clone 验证 provider hook。DeepSeek 接入使用 `DEEPSEEK_API_KEY` 环境变量、默认模型 `deepseek-v4-flash`，不会把 key 写入仓库。已按用户要求用真实 DeepSeek API 做 live smoke：API 可连通，fallback / semantic provider 都能返回结果；DeepSeek fallback 本地质量门禁可以在 staging 前拦截语法错误、缺少入口/说明、缺少轨迹工具调用、缺少 schema kwargs、runtime 工具签名错误等坏输出，并已支持门禁失败后自动返修一次。最新 live smoke 已通过完整生成、审核、提升、复用闭环，并验证复制文件与 metadata sidecar。搜索质量已有最小基线脚本，覆盖当前两个真实 active 技能；搜索分词已过滤英文停用词，避免无关查询产生弱相关结果。验证层已拆分为日常快验和全量慢验：`tests.test_runtime_fast` 当前 16 个测试，约 18 秒；`tests.test_runtime` 当前约 9 分钟。剩余主要短板是：active skill 库样本仍少；搜索质量评估样本仍少。
+已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。仓库现在包含本地 demo provider 和 DeepSeek provider 示例，可从 fresh clone 验证 provider hook。DeepSeek 接入使用 `DEEPSEEK_API_KEY` 环境变量、默认模型 `deepseek-v4-flash`，不会把 key 写入仓库。已按用户要求用真实 DeepSeek API 做 live smoke：API 可连通，fallback / semantic provider 都能返回结果；DeepSeek fallback 本地质量门禁可以在 staging 前拦截语法错误、缺少入口/说明、缺少轨迹工具调用、缺少 schema kwargs、runtime 工具签名错误等坏输出，并已支持门禁失败后自动返修一次。最新 live smoke 已通过完整生成、审核、提升、复用闭环，并验证复制文件与 metadata sidecar。active 库已有 3 个真实 dogfood 技能：`merge_text_files`、`archive_log_files_dogfood`、`json_to_csv_dogfood`。搜索质量已有最小基线脚本，覆盖当前三个真实 active 技能；搜索分词已过滤英文停用词，避免无关查询产生弱相关结果。验证层已拆分为日常快验和全量慢验：`tests.test_runtime_fast` 当前 17 个测试，约 20 秒；`tests.test_runtime` 当前约 9 分钟。剩余主要短板是：active skill 库样本仍少；搜索质量评估样本仍少。
 
 ## Last Completed
 
@@ -219,10 +219,27 @@
   - `python -m unittest tests.test_runtime_fast -v`
   - `python -m unittest tests.test_runtime -v`
   - 结果：搜索质量基线 5/5 通过；快验 16 tests OK；全量 362 tests OK，约 7 分钟
+- 已新增第三个真实 active dogfood skill：
+  - `json_to_csv_dogfood`
+  - 源 trajectory：`trajectories/dogfood_json_to_csv_20260429.json`
+  - demo 输入：`demo/input/records.json`
+  - audit：`audits/json_to_csv_dogfood.audit.json`
+- 已扩展搜索质量基线：
+  - JSON records 转 CSV 命中 `json_to_csv_dogfood`
+  - JSON list 导出 CSV 命中 `json_to_csv_dogfood`
+  - 当前基线 7/7 通过
+- 已新增 fast 回归：搜索命中 `json_to_csv_dogfood` 后执行技能并验证 CSV 内容
+- 已重新运行：
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+  - `python scripts/evaluate_search_quality.py`
+  - `python -m unittest tests.test_runtime_fast -v`
+  - `python -m unittest tests.test_runtime -v`
+  - 结果：架构检查通过；contract 检查通过；搜索质量基线 7/7 通过；快验 17 tests OK；全量 363 tests OK，约 7 分钟
 
 ## Next Action
 
-下一步建议补充更多真实 dogfood 技能样本，尤其是能覆盖当前 active library 之外的常见文件工作流；如果先继续调搜索算法，应同步扩大 `scripts/evaluate_search_quality.py` 的样本集。日常小改动默认先跑 `python -m unittest tests.test_runtime_fast -v`，只有发布级或大范围 runtime 行为变化再跑 full suite，并使用至少 900 秒超时。
+下一步建议继续补充更多真实 dogfood 技能样本，优先覆盖 CSV/JSON 批量目录转换、单文件文本替换或目录文本清洗这类常见文件工作流；如果先继续调搜索算法，应同步扩大 `scripts/evaluate_search_quality.py` 的样本集。日常小改动默认先跑 `python -m unittest tests.test_runtime_fast -v`，只有发布级或大范围 runtime 行为变化再跑 full suite，并使用至少 900 秒超时。
 
 ## Important Files
 
@@ -264,6 +281,10 @@
 - `skill_runtime/governance/provenance_backfill.py`
 - `tests/test_runtime_governance.py`
 - `skill_store/active/merge_text_files.metadata.json`
+- `skill_store/active/json_to_csv_dogfood.py`
+- `skill_store/active/json_to_csv_dogfood.metadata.json`
+- `trajectories/dogfood_json_to_csv_20260429.json`
+- `audits/json_to_csv_dogfood.audit.json`
 - `skill_store/staging/*.metadata.json`
 - `README.md`
 - `README.zh-CN.md`
@@ -281,7 +302,7 @@
 - 用户曾在聊天中暴露 DeepSeek API key；不要把该 key 写入文件或提交。本轮已按用户要求直接使用，但仓库文件中未检测到该 key。
 - DeepSeek live smoke 已证明 API 可连通，且完整 provider 闭环已在临时沙箱中跑通；仍不应把单次 live smoke 等同于长期稳定 SLA。
 - DeepSeek 质量门禁已经能阻止坏输出进入 staging，并默认允许一次自动返修；如果返修后仍失败，候选仍不会进入 staging。
-- active skill 当前只保留少量真实技能，复用价值还需要更多 dogfood 验证。
+- active skill 当前已有 3 个真实技能，但复用价值还需要更多 dogfood 验证。
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
 - 未来新的 dogfood 执行默认不再改写版本管理下的 active metadata 和主索引。
 - 当前会话尝试 GitNexus MCP 查询时返回 `Transport closed`，本轮已退回普通文件检索。

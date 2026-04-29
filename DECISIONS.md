@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-29 - 第三个真实 dogfood 技能选择 JSON 转 CSV
+
+**Decision**
+
+新增 `json_to_csv_dogfood` 作为第三个真实 active dogfood skill，并配套 demo 输入、源 trajectory、audit 记录、active metadata、索引记录、搜索质量样本和执行回归测试。
+
+**Reason**
+
+当前 active 库已有文本合并和日志归档，仍缺少结构化数据转换样本。JSON 转 CSV 属于常见文件工作流，能复用已有 `json_to_csv` 规则，不需要新增大功能或新规则。
+
+**Impact**
+
+- active skill 数量从 2 增加到 3
+- 搜索质量基线从 5 个检查扩展到 7 个检查
+- 快验新增 JSON 转 CSV dogfood 搜索与执行覆盖
+- active 库仍然较小，后续还需要更多真实 dogfood 样本证明复用价值
+
 ### 2026-04-29 - 搜索分词过滤英文停用词
 
 **Decision**

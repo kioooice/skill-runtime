@@ -31,6 +31,14 @@ SEARCH_CASES = [
         "query": "move all log files to archive folder",
         "expected_skill": "archive_log_files_dogfood",
     },
+    {
+        "query": "convert json records to csv",
+        "expected_skill": "json_to_csv_dogfood",
+    },
+    {
+        "query": "export json list as csv file",
+        "expected_skill": "json_to_csv_dogfood",
+    },
 ]
 
 NO_RECOMMENDATION_CASES = [

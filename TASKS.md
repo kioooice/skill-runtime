@@ -3,7 +3,7 @@
 ## Current Focus
 
 - 当前目标：从产品化收敛切回 Skill Runtime 核心功能完成度收敛
-- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；已用真实 DeepSeek API 验证完整 provider dogfood 闭环，确认生成、审核、入库、复用可跑通；DeepSeek fallback 本地质量门禁已能阻止坏输出进入 staging，并已支持失败后自动返修一次；搜索质量已有最小评估脚本和快验覆盖，且已过滤英文停用词以减少无关弱匹配
+- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；已用真实 DeepSeek API 验证完整 provider dogfood 闭环，确认生成、审核、入库、复用可跑通；DeepSeek fallback 本地质量门禁已能阻止坏输出进入 staging，并已支持失败后自动返修一次；active 库新增第三个真实 dogfood 技能 `json_to_csv_dogfood`；搜索质量已有最小评估脚本和快验覆盖，且已过滤英文停用词以减少无关弱匹配
 - 下一步：继续增加真实 dogfood 技能样本，或扩大搜索质量评估样本集
 
 ## Todo
@@ -100,6 +100,9 @@
 - [x] 新增 `scripts/evaluate_search_quality.py`，为当前 active 技能建立最小搜索质量评估入口
 - [x] 将搜索质量基线接入 `tests.test_runtime_fast`
 - [x] 在搜索分词中加入英文停用词过滤，避免无关查询因为 `an`、`in` 等低价值词返回弱相关结果
+- [x] 新增真实 active dogfood skill：`json_to_csv_dogfood`
+- [x] 为 `json_to_csv_dogfood` 增加 demo 输入、源 trajectory、audit 记录、active metadata 和索引记录
+- [x] 搜索质量基线扩展到 7 个检查，覆盖 JSON 转 CSV 查询
 
 ## Blocked
 
