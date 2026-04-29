@@ -3,12 +3,12 @@
 ## Current Focus
 
 - 当前目标：从产品化收敛切回 Skill Runtime 核心功能完成度收敛
-- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；已用真实 DeepSeek API 验证完整 provider dogfood 闭环，确认生成、审核、入库、复用可跑通；DeepSeek fallback 本地质量门禁已能阻止坏输出进入 staging，并已支持失败后自动返修一次；active 库已有 5 个真实 dogfood 技能，最新新增 `text_replace_dogfood`；搜索质量已有最小评估脚本和快验覆盖，且已过滤英文停用词以减少无关弱匹配
-- 下一步：继续增加真实 dogfood 技能样本，优先覆盖目录文本清洗；或扩大搜索质量评估样本集
+- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；已用真实 DeepSeek API 验证完整 provider dogfood 闭环，确认生成、审核、入库、复用可跑通；DeepSeek fallback 本地质量门禁已能阻止坏输出进入 staging，并已支持失败后自动返修一次；active 库已有 6 个真实 dogfood 技能，最新新增 `directory_text_cleanup_dogfood`；搜索质量已有最小评估脚本和快验覆盖，且已过滤英文停用词以减少无关弱匹配
+- 下一步：继续增加真实 dogfood 技能样本，优先覆盖目录文本替换；或扩大搜索质量评估样本集
 
 ## Todo
 
-- [ ] 继续增加真实 dogfood 技能样本，优先覆盖目录文本清洗
+- [ ] 继续增加真实 dogfood 技能样本，优先覆盖目录文本替换
 - [ ] 视需要扩大搜索质量评估样本集
 - [ ] 视需要继续优化 full runtime suite 剩余慢点，优先看 MCP/provider dogfood 和生成规则组合测试
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
@@ -111,6 +111,10 @@
 - [x] 为单文件文本替换增加 demo 输入、源 trajectory、audit 记录、active metadata 和索引记录
 - [x] 搜索质量基线扩展到 11 个检查，覆盖 replace / update word 两类文本替换查询
 - [x] 已重新运行架构检查、runtime contract 检查、搜索质量基线、快验和全量 runtime suite；全量 365 个测试通过
+- [x] 新增第六个真实 active dogfood skill：`directory_text_cleanup_dogfood`
+- [x] 为目录文本清洗增加嵌套 demo 输入、源 trajectory、audit 记录、active metadata 和索引记录
+- [x] 搜索质量基线扩展到 13 个检查，覆盖 clean directory text 与 normalize trailing whitespace 查询
+- [x] 已重新运行架构检查、runtime contract 检查、搜索质量基线、快验和全量 runtime suite；全量 366 个测试通过
 
 ## Blocked
 

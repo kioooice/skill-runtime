@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-04-29 - 第六个真实 dogfood 技能选择目录文本清洗
+
+**Decision**
+
+新增 `directory_text_cleanup_dogfood` 作为第六个真实 active dogfood skill，并配套嵌套 demo 输入、源 trajectory、audit 记录、active metadata、索引记录、搜索质量样本和执行回归测试。
+
+**Reason**
+
+active 库已有单文件文本替换，但还缺少“批量清理一个目录里的文本文件”这种更接近真实资料整理的场景。目录文本清洗能复用已有 `directory_text_transform` 规则，不新增大功能，同时覆盖 clean / normalize / trailing whitespace 这类常见用户表达。
+
+**Impact**
+
+- active skill 数量从 5 增加到 6
+- 搜索质量基线从 11 个检查扩展到 13 个检查
+- 快验新增目录文本清洗 dogfood 搜索与执行覆盖
+- 当前清洗语义是去掉文件末尾多余空白并统一最终换行，不是逐行格式化；后续如果要做逐行清洗，需要单独设计规则或明确作为新能力
+
 ### 2026-04-29 - 第五个真实 dogfood 技能选择单文件文本替换
 
 **Decision**

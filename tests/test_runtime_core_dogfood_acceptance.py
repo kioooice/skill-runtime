@@ -338,6 +338,39 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
             output_path.read_text(encoding="utf-8"),
         )
 
+    def test_directory_text_cleanup_dogfood_skill_executes_from_search(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+
+        search_payload = self._call_mcp_tool(
+            "search_skill",
+            {"query": "clean text files in a directory", "top_k": 5},
+            root=sandbox_root,
+        )
+        search_data = search_payload["data"]
+        self.assertEqual("directory_text_cleanup_dogfood", search_data["recommended_skill_name"])
+
+        execute_args = dict(search_data["recommended_host_operation"]["arguments"])
+        execute_args["args"] = {
+            "input_dir": "demo/input/text_notes",
+            "output_dir": "demo/output/text_notes_clean_dogfood",
+            "pattern": "**/*.txt",
+            "suffix": "_clean",
+        }
+        execute_payload = self._call_mcp_tool(
+            search_data["recommended_host_operation"]["tool_name"],
+            execute_args,
+            root=sandbox_root,
+        )
+        day_output = sandbox_root / "demo" / "output" / "text_notes_clean_dogfood" / "day1_clean.txt"
+        runbook_output = sandbox_root / "demo" / "output" / "text_notes_clean_dogfood" / "ops" / "runbook_clean.txt"
+
+        self.assertEqual("completed", execute_payload["data"]["result"]["status"])
+        self.assertEqual("directory_text_cleanup_dogfood", execute_payload["data"]["skill_name"])
+        self.assertTrue(day_output.exists())
+        self.assertTrue(runbook_output.exists())
+        self.assertEqual("Daily note\nStatus: open\n", day_output.read_text(encoding="utf-8"))
+        self.assertEqual("Runbook\nStep: verify\n", runbook_output.read_text(encoding="utf-8"))
+
     def _restore_env(self, name: str, value: str | None) -> None:
         if value is None:
             os.environ.pop(name, None)

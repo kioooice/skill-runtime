@@ -86,6 +86,51 @@
       "scope_policy": null
     },
     {
+      "skill_name": "directory_text_cleanup_dogfood",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_text_cleanup_dogfood.py",
+      "summary": "Clean and normalize text files in a directory or folder by trimming trailing whitespace.",
+      "docstring": "功能描述:\n    Clean and normalize text files in a directory or folder by trimming trailing whitespace.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n        - suffix: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "input_schema": {
+        "input_dir": "str",
+        "output_dir": "str",
+        "pattern": "str",
+        "suffix": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "steps_executed": "int"
+      },
+      "source_trajectory_ids": [
+        "dogfood_directory_text_cleanup_20260429"
+      ],
+      "created_at": "2026-04-29T13:00:00+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "directory_text_transform",
+      "rule_priority": 50,
+      "rule_reason": "Matched directory_text_transform because the trajectory lists files, reads text files, and writes transformed text files into an output directory.",
+      "tags": [
+        "clean",
+        "cleanup",
+        "directory",
+        "files",
+        "folder",
+        "input_dir",
+        "normalize",
+        "output_dir",
+        "pattern",
+        "suffix",
+        "text",
+        "trailing",
+        "txt",
+        "whitespace"
+      ],
+      "scope_policy": null
+    },
+    {
       "skill_name": "json_to_csv_dogfood",
       "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\json_to_csv_dogfood.py",
       "summary": "Convert a JSON list of records into a CSV file.",

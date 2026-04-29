@@ -23,7 +23,7 @@ The current risk is not that the project cannot run. The risk is that several co
 | Audit | Partial core | Static checks and heuristic semantic checks catch common unsafe or weak skills. | Provider-backed semantic review uses a mock provider by default, so quality judgment is not yet strong enough. |
 | Promotion and governance | Solid MVP | Skills move through staging, audit, promotion, archive, and governance reports. | Governance is credible, but depends on audit quality and a small active library. |
 | MCP integration | Runnable MVP | MCP server can be built, tools are exposed, and smoke coverage exists. | Smoke proves construction, not a full host round trip on real work. |
-| Active skill library | Clean but small | Search is no longer polluted by fixtures and demos, and now includes merge, archive, single-file JSON-to-CSV, directory JSON-to-CSV, and single-file text replace dogfood samples. | Five real active skills still do not prove broad usefulness. |
+| Active skill library | Clean but small | Search is no longer polluted by fixtures and demos, and now includes merge, archive, single-file JSON-to-CSV, directory JSON-to-CSV, single-file text replace, and directory text cleanup dogfood samples. | Six real active skills still do not prove broad usefulness. |
 
 ## What Is Already Built
 

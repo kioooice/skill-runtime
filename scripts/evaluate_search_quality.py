@@ -55,6 +55,14 @@ SEARCH_CASES = [
         "query": "update draft word in a text file",
         "expected_skill": "text_replace_dogfood",
     },
+    {
+        "query": "clean text files in a directory",
+        "expected_skill": "directory_text_cleanup_dogfood",
+    },
+    {
+        "query": "normalize txt folder trailing whitespace",
+        "expected_skill": "directory_text_cleanup_dogfood",
+    },
 ]
 
 NO_RECOMMENDATION_CASES = [
