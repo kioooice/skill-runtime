@@ -8,8 +8,8 @@
   - `local-text-transformation`
   - `structured-format-conversion`
   - `low-risk-workspace-organization`
-  这意味着当前默认接入已经不再只是“有入口”，而是“有入口且第一批任务边界更小更可信”。同时，第一处现有入口 `agent-plan` / `agent-plan-learning` 已正式切换到 Codex 默认通道，且更大范围验证已经通过：架构检查通过、contract 检查通过、CLI 级 default-in/default-out smoke 都通过，full slow runtime suite 也已通过 399 个测试。当前默认先把这一处入口作为阶段性默认路径验证点，而不是继续马上切第二处现有入口。现在又进一步把 `skill_runtime` 上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 MCP 启动也已不再写死在 `vibe` 根目录，而会优先识别当前工作区。最新已完成只读可视化观察面板设计，第一版目标是让用户看到技能树和触发日志，而不是做完整管理后台。快验基线维持 53 个测试通过
-- 下一步：进入跨工作区真实使用观察，按 `runtime_lane_status` 和 `runtime_lane_reason` 判断这条全局默认能力是否真的参与并且行为合理；同时后续文档与沟通默认使用“背景能力层 / runtime lane”口径，而不是再回到“主要是 MCP 工具集”的旧说法
+  这意味着当前默认接入已经不再只是“有入口”，而是“有入口且第一批任务边界更小更可信”。同时，第一处现有入口 `agent-plan` / `agent-plan-learning` 已正式切换到 Codex 默认通道，且更大范围验证已经通过：架构检查通过、contract 检查通过、CLI 级 default-in/default-out smoke 都通过，full slow runtime suite 也已通过 399 个测试。当前默认先把这一处入口作为阶段性默认路径验证点，而不是继续马上切第二处现有入口。现在又进一步把 `skill_runtime` 上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 MCP 启动也已不再写死在 `vibe` 根目录，而会优先识别当前工作区。只读可视化观察面板已完成，并已把“技能树”从长列表改成 `Runtime Root -> active/staging/archive/rejected` 的分支视图，同时把 Trigger Log 和治理快照都改成独立页面式视图；顶部现在是技能树、触发日志、治理快照三页切换。dashboard 命令也已支持 `--open` 一键生成并打开本地页面。dashboard 固定界面文案、技能名称和技能说明都已中文显示；内部调用仍保留原始英文 `skill_name`。快验基线为 60 个测试通过
+- 下一步：进入跨工作区真实使用观察，按 `runtime_lane_status` 和 `runtime_lane_reason` 判断这条全局默认能力是否真的参与并且行为合理；如果继续增强 dashboard，优先做真实触发事件的日志卡片可读性，而不是增加写操作
 
 ## Todo
 
@@ -188,6 +188,14 @@
 - [x] 完成只读 runtime observability dashboard 实现计划，计划文档为 `docs/superpowers/plans/2026-05-01-runtime-observability-dashboard.md`
 - [x] 实现只读 runtime observability dashboard：runtime lane 事件日志、数据收集、HTML 渲染和 CLI 入口
 - [x] 验证 `python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可生成本地 HTML 观察面板
+- [x] 将 dashboard 的 Skill Tree 从长列表改成按状态分叉的树形视图
+- [x] 修正 dashboard 窄屏下的基础换行与布局保护
+- [x] 将 dashboard 的 Trigger Log 拆成独立标题视图，并增加视图导航
+- [x] 为 dashboard CLI 增加 `--open`，支持一键生成并用默认浏览器打开本地面板
+- [x] 将 dashboard 固定界面文案切换为中文
+- [x] 将 dashboard 技能名称和技能说明改成中文展示，同时保留英文 `skill_name` 作为内部 ID
+- [x] 将 dashboard 的触发日志改成页面式切换，避免点击后只是滚动到技能树下方
+- [x] 将 dashboard 的治理快照拆成第三个独立视图，不再跟触发日志混在一起
 
 ## Blocked
 

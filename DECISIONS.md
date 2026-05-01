@@ -2,6 +2,102 @@
 
 ## Decision Log
 
+### 2026-05-01 - Dashboard 治理快照拆为独立视图
+
+**Decision**
+
+dashboard 顶部视图从两个扩为三个：`技能树`、`触发日志`、`治理快照`。治理快照不再跟在触发日志页下方，而是作为独立页面式视图，只在用户点击治理入口时显示。
+
+**Reason**
+
+触发日志回答“最近发生了什么”，治理快照回答“技能库是否健康”。两者有关联，但不属于同一类信息。混在一起会让用户误以为治理问题是日志的一部分，降低页面可读性。
+
+**Impact**
+
+- dashboard 信息结构变成三页：技能资产、触发行为、库健康状态
+- 后续治理展示可以单独增强，不影响触发日志页面
+- 当前仍保持只读，不新增治理按钮或写操作
+
+### 2026-05-01 - Runtime dashboard 的技能树采用状态分支视图
+
+**Decision**
+
+dashboard 的 Skill Tree 不再用单列卡片列表展示技能，而是改为 `Runtime Root -> active / staging / archive / rejected` 的分支结构。每个分支显示完整数量，分支内展示代表性技能节点，过长分支用剩余数量提示收起。
+
+**Reason**
+
+用户需要看到“技能树”的结构关系，而不是换了标题的长列表。按状态分叉更接近真实的技能生命周期，也能让 active 技能、候选技能和历史归档技能的边界一眼可见。
+
+**Impact**
+
+- dashboard 现在更适合用来解释 runtime 里技能处于哪个阶段
+- archive 这类长分支不会继续把页面拖成不可读长条
+- 当前仍保持只读，不新增编辑、promote、archive 等高风险操作
+
+### 2026-05-01 - Trigger Log 拆成独立 dashboard 视图
+
+**Decision**
+
+dashboard 不再把 Trigger Log 放在 Skill Tree 旁边或同一块内容区域中，而是拆成独立的 `Trigger Log View`。页面顶部增加轻量视图导航，用于在 `Skill Tree View` 和 `Trigger Log View` 之间切换。导航不再使用同页锚点滚动，而是页面式视图切换：默认只显示技能树页，点击触发日志后只显示日志页并回到页面顶部。
+
+**Reason**
+
+技能树回答“系统里有哪些技能、处于什么阶段”，触发日志回答“最近有没有被 Codex 触发、为什么触发”。这两个问题不同，放在同一块区域会让用户把日志误解成技能树的附属信息。
+
+**Impact**
+
+- dashboard 的信息结构更清楚：总览、技能树视图、触发日志视图、治理快照
+- 后续优化日志卡片时可以只改 `Trigger Log View`
+- 用户点击触发日志时看到的是独立页面式内容，不再是滚动到技能树下方
+- 当前仍保持只读，不新增后台服务或写操作
+
+### 2026-05-01 - Dashboard 打开体验采用 CLI `--open`
+
+**Decision**
+
+在现有 `dashboard` 命令上增加 `--open` 参数：
+
+```bash
+python -m skill_runtime.cli dashboard --open
+```
+
+安装命令入口可用时也支持：
+
+```bash
+skill-runtime dashboard --open
+```
+
+该参数会先生成 `.skill_runtime/dashboard.html`，再用系统默认浏览器打开生成的本地文件。
+
+**Reason**
+
+用户需要的是“一键打开观察面板”，不是手动找 HTML 文件，也不是新增常驻 Web 服务。复用现有静态 HTML 生成能力并增加打开动作，是最小、低风险、跨平台的实现路径。
+
+**Impact**
+
+- dashboard 仍然是本地静态只读页面
+- CLI JSON 输出新增 `dashboard_url` 和 `opened`
+- 不引入后台服务、端口占用或写操作风险
+- 如果系统默认浏览器无法打开，页面文件仍会生成，可根据 `dashboard_url` 手动访问
+
+### 2026-05-01 - Dashboard 默认采用中文展示
+
+**Decision**
+
+dashboard 的固定界面文案默认使用中文，包括标题、总览、技能树视图、触发日志视图、治理快照、状态标签和空状态提示。技能名称和技能摘要也在 dashboard 展示层转换为中文；内部执行、检索、索引和调用仍使用原始英文 `skill_name`。
+
+**Reason**
+
+当前仓库默认说明已经切为中文，用户也明确要求中文界面。用户看界面时应理解技能用途，而不是被英文 ID 和英文摘要打断；但真正执行技能时必须保持英文 `skill_name`，否则会破坏索引、调用契约和已有技能文件。
+
+**Impact**
+
+- dashboard HTML 标记为 `lang="zh-CN"`
+- 状态 badge 从 `active/staging/archived/rejected` 改为中文展示
+- 技能卡片展示中文名称和中文说明
+- 原始英文 `skill_name` 保留在 HTML `data-skill-name` 中，供内部定位和排查使用
+- 当前中文展示是 dashboard 渲染层能力，不会回写 metadata、索引或技能文件
+
 ### 2026-05-01 - Runtime dashboard 第一版保持本地静态只读
 
 **Decision**

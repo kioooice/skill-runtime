@@ -43,11 +43,49 @@
 
 用户已批准该设计进入实现计划阶段。当前实现计划已写入 `docs/superpowers/plans/2026-05-01-runtime-observability-dashboard.md`，计划拆成事件日志、host 接入、dashboard 数据收集、HTML 渲染、CLI 入口和最终验证六个任务。
 
-当前实现也已经完成：`python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可以生成本地只读观察面板。页面展示 overview、Skill Tree、Trigger Log 和 Governance Snapshot。Codex-facing runtime lane 入口现在会把 `used / entered / skipped` 事件写入 `.skill_runtime/runtime_lane_events.jsonl`。
+当前实现也已经完成：`python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可以生成本地只读观察面板。页面展示总览、技能树视图、触发日志视图和治理快照。Codex-facing runtime lane 入口现在会把 `used / entered / skipped` 事件写入 `.skill_runtime/runtime_lane_events.jsonl`。最新一轮根据用户反馈，已把 Skill Tree 从单列长列表改成 `Runtime Root -> active / staging / archive / rejected` 的分支视图，并让 archive 这类长分支只展示部分节点和剩余数量。随后又把 Trigger Log 和治理快照都改成独立页面式视图，顶部导航不再用同页锚点滚动；点击触发日志只显示日志页，点击治理快照只显示库健康页。dashboard CLI 现在还支持 `--open`，可一键生成并用系统默认浏览器打开本地面板。固定界面文案、技能名称和技能说明已经中文显示；内部执行、检索和索引仍使用原始英文 `skill_name`。
 
 ## Last Completed
 
 本轮已完成：
+- 将 dashboard 的 Skill Tree 从长列表改成状态分支树：
+  - 根节点显示当前 runtime root 的技能总量
+  - 下方按 active / staging / archive / rejected 分枝
+  - 每个技能作为分支下的节点展示
+  - archive 等长分支不再全部铺满首屏，而是显示代表性节点和剩余数量
+- 将 Trigger Log 从技能树区域中拆出：
+  - 新增 `Skill Tree View`
+  - 新增 `Trigger Log View`
+  - 增加顶部视图导航，方便在两个视图之间切换
+  - 改为页面式切换，不再点击后滚动到技能树下方
+- 将治理快照从日志页底部拆出：
+  - 新增 `Governance View`
+  - 顶部导航现在是技能树、触发日志、治理快照三页
+  - 触发日志只展示触发事件，治理快照只展示技能库健康状态
+- 新增 dashboard 一键打开命令：
+  - `python -m skill_runtime.cli dashboard --open`
+  - `skill-runtime dashboard --open`
+  - JSON 输出新增 `dashboard_url` 和 `opened`
+- 将 dashboard 固定界面文案切换为中文：
+  - HTML `lang` 改为 `zh-CN`
+  - 标题、总览、技能树视图、触发日志视图、治理快照、状态标签和空状态均为中文
+- 将技能卡片改成中文展示：
+  - 技能名称显示中文
+  - 技能说明显示中文
+  - 原始英文 `skill_name` 保留为 HTML `data-skill-name`，不回写 metadata 或索引
+  - 来源轨迹在界面上显示为“已记录 N 条来源轨迹”，原始轨迹 ID 保留为节点属性
+- 顺手补了 dashboard 窄屏换行和布局保护
+- 已验证：
+  - `python -m unittest tests.test_runtime_fast -v`，60 tests OK
+  - `python -m unittest tests.test_runtime_fast.RuntimeFastTests.test_dashboard_renderer_includes_core_sections tests.test_runtime_fast.RuntimeFastTests.test_dashboard_cli_writes_static_html_file -v`
+  - `python -m unittest tests.test_runtime_fast.RuntimeFastTests.test_dashboard_command_can_open_generated_html -v`
+  - `python -m unittest tests.test_runtime_fast.RuntimeFastTests.test_dashboard_renderer_includes_core_sections tests.test_runtime_fast.RuntimeFastTests.test_dashboard_cli_writes_static_html_file tests.test_runtime_fast.RuntimeFastTests.test_dashboard_command_can_open_generated_html -v`
+  - `python -m py_compile skill_runtime/dashboard/templates.py skill_runtime/dashboard/render.py tests/test_runtime_dashboard.py`
+  - `python -m py_compile skill_runtime/cli.py tests/test_runtime_dashboard.py`
+  - `python -m skill_runtime.cli dashboard --help`
+  - `git diff --check`
+  - `python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html`
+  - `python -m skill_runtime.cli dashboard --open`
 - 实现只读 runtime observability dashboard：
   - 新增 runtime lane 事件日志 `.skill_runtime/runtime_lane_events.jsonl`
   - 新增 dashboard 数据收集层
@@ -324,7 +362,7 @@
 
 ## Next Action
 
-下一步默认进入真实使用观察：运行 `skill-runtime dashboard` 或 `python -m skill_runtime.cli dashboard` 查看当前 runtime root 的技能树、触发日志和治理快照。如果用户要求继续增强 dashboard，优先考虑增加真实浏览器打开体验或更清楚的触发日志视图，而不是直接加写操作。
+下一步默认进入真实使用观察：运行 `python -m skill_runtime.cli dashboard --open` 或 `skill-runtime dashboard --open` 查看当前 runtime root 的分支技能树、触发日志和治理快照。三个部分现在是独立视图。如果用户要求继续增强 dashboard，优先考虑把真实触发事件做成更易读的日志卡片，而不是直接加写操作。
 
 ## Important Files
 
@@ -430,6 +468,7 @@
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
 - 未来新的 dogfood 执行默认不再改写版本管理下的 active metadata 和主索引。
 - 当前会话尝试 GitNexus MCP 查询时返回 `Transport closed`，本轮已退回普通文件检索。
+- 本轮内置 Browser/IAB 预览因为本机 Node 版本低于插件要求不可用，已退回本机 Chrome headless 截图检查。
 - 全量 runtime suite 不是失败，但当前约 9 分钟，仍不适合作为每次小改动的默认第一验证命令。
 - `git diff --check` 当前仍提示 `skill_store/index.json` 和 `trajectories/demo_merge_text_files.json` 未来会按 LF 写回；这是换行提示，不是本轮新增的失败。
 

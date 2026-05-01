@@ -553,7 +553,19 @@ Codex 侧的默认通道结果会返回两个可见字段：
 python -m skill_runtime.cli dashboard
 ```
 
-默认输出到 `.skill_runtime/dashboard.html`。它只读取当前 runtime root 的本地数据，用于查看技能树、runtime lane 触发日志和治理快照。
+一键生成并用默认浏览器打开：
+
+```bash
+python -m skill_runtime.cli dashboard --open
+```
+
+如果已安装命令入口，也可以运行：
+
+```bash
+skill-runtime dashboard --open
+```
+
+默认输出到 `.skill_runtime/dashboard.html`。它只读取当前 runtime root 的本地数据，用于查看技能树、runtime lane 触发日志和治理快照；三者在面板中是独立视图，不混在同一页。面板默认中文显示；技能调用仍使用原始英文 `skill_name`，页面只在展示层把技能名称和说明翻译成中文。
 
 运行本地快验：
 

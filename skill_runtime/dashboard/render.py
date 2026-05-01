@@ -2,38 +2,124 @@ from __future__ import annotations
 
 from typing import Any
 
-from skill_runtime.dashboard.templates import STYLE, badge, text
+from skill_runtime.dashboard.templates import SCRIPT, STYLE, badge, text
+
+
+SKILL_NAME_LABELS = {
+    "directory_json_to_csv_dogfood": "目录 JSON 批量转 CSV",
+    "directory_text_cleanup_dogfood": "目录文本清理",
+    "json_to_csv_dogfood": "JSON 转 CSV",
+    "merge_text_files": "合并文本文件",
+    "text_replace_dogfood": "文本替换",
+    "archive_log_files_dogfood": "归档日志文件",
+    "bridge_config_test": "桥接配置测试",
+    "explainable_rule_test": "可解释规则测试",
+    "fallback_rule_test": "兜底规则测试",
+    "generalized_merge_rule_test": "通用合并规则测试",
+    "manual_fallback_demo": "手动兜底演示",
+    "merge_text_files_generated_v2": "合并文本文件生成版 v2",
+    "registry_refactor_test": "注册表重构测试",
+    "semantic_provider_fallback_test": "语义提供器兜底测试",
+    "service_audit_followup_test": "服务审核跟进测试",
+    "service_distill_followup_test": "服务蒸馏跟进测试",
+}
+
+SKILL_SUMMARY_LABELS = {
+    "Batch export all JSON records in a folder into CSV files.": "将文件夹中的所有 JSON 记录批量导出为 CSV 文件。",
+    "Clean and normalize text files in a directory or folder by trimming trailing whitespace.": "清理并规范化目录中的文本文件，去除行尾多余空白。",
+    "Convert a JSON list of records into a CSV file.": "将 JSON 记录列表转换为 CSV 文件。",
+    "Merge all .txt files in an input directory into one markdown output file.": "将输入目录中的所有 .txt 文件合并为一个 Markdown 输出文件。",
+    "Replace or update a word or text in one file and write the updated file.": "替换或更新单个文件中的词语或文本，并写出更新后的文件。",
+    "Move all log files from inbox to archive.": "将收件箱中的所有日志文件移动到归档目录。",
+    "Merge all txt files in a directory into one markdown file.": "将目录中的所有 txt 文件合并为一个 Markdown 文件。",
+    "Generate a report from mixed observations without a known deterministic file rule.": "从混合观察结果生成报告，适用于没有固定文件规则的场景。",
+    "Generate a report from mixed observations without a deterministic rule.": "从混合观察结果生成报告，适用于没有固定规则的场景。",
+    "Rename all txt files in a directory by prefixing them with a value.": "通过添加前缀批量重命名目录中的 txt 文件。",
+}
+
+SKILL_NAME_TOKEN_LABELS = {
+    "active": "活跃",
+    "agent": "代理",
+    "alias": "别名",
+    "archive": "归档",
+    "audit": "审核",
+    "backfill": "回填",
+    "batch": "批量",
+    "bridge": "桥接",
+    "cli": "命令行",
+    "compact": "压缩",
+    "config": "配置",
+    "csv": "CSV",
+    "destination": "目标",
+    "directory": "目录",
+    "distill": "蒸馏",
+    "dogfood": "自测",
+    "duplicate": "重复",
+    "explainable": "可解释",
+    "fallback": "兜底",
+    "file": "文件",
+    "files": "文件",
+    "followup": "跟进",
+    "from": "从",
+    "generated": "生成版",
+    "generalized": "通用",
+    "glob": "通配",
+    "input": "输入",
+    "json": "JSON",
+    "lifecycle": "生命周期",
+    "log": "日志",
+    "manual": "手动",
+    "merge": "合并",
+    "name": "名称",
+    "observed": "观察",
+    "output": "输出",
+    "prefix": "前缀",
+    "promote": "提升",
+    "provider": "提供器",
+    "refactor": "重构",
+    "registry": "注册表",
+    "rename": "重命名",
+    "replace": "替换",
+    "rule": "规则",
+    "semantic": "语义",
+    "service": "服务",
+    "source": "来源",
+    "test": "测试",
+    "text": "文本",
+    "to": "到",
+    "v2": "v2",
+}
 
 
 def render_dashboard_html(data: dict[str, Any]) -> str:
     return f"""<!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Runtime Observability Dashboard</title>
+  <title>运行时可观察面板</title>
   <style>{STYLE}</style>
 </head>
-<body>
+<body data-active-view="skill-tree">
   <main>
     <section class="hero">
       <div>
-        <div class="eyebrow">Skill Runtime</div>
-        <h1>Runtime Observability Dashboard</h1>
+        <div class="eyebrow">技能运行时</div>
+        <h1>运行时可观察面板</h1>
         <div class="muted">{text(data.get("root"))}</div>
       </div>
       <div class="panel">
-        <strong>Read-only view</strong>
-        <div class="muted">No skill edits, promotion, archive, or cross-workspace aggregation.</div>
+        <strong>只读视图</strong>
+        <div class="muted">不编辑技能、不提升、不归档，也不做跨工作区聚合。</div>
       </div>
     </section>
     {_overview(data.get("overview", {}))}
-    <section class="two">
-      {_skill_tree(data.get("skills", []))}
-      {_trigger_log(data.get("events", []))}
-    </section>
+    {_view_nav()}
+    {_skill_tree(data.get("skills", []))}
+    {_trigger_log(data.get("events", []))}
     {_governance(data.get("governance", {}), data.get("diagnostics", []))}
   </main>
+  {SCRIPT}
 </body>
 </html>
 """
@@ -42,50 +128,132 @@ def render_dashboard_html(data: dict[str, Any]) -> str:
 def _overview(overview: dict[str, Any]) -> str:
     counts = overview.get("recent_event_counts", {})
     return f"""<section class="panel">
-  <h2>Overview</h2>
+  <h2>总览</h2>
   <div class="grid">
-    {_metric("Active", overview.get("active_count", 0), "usable skills")}
-    {_metric("Staging", overview.get("staging_count", 0), "candidate skills")}
-    {_metric("Used", counts.get("used", 0), "recent lane events")}
-    {_metric("Skipped", counts.get("skipped", 0), "normal Codex path")}
+    {_metric("活跃", overview.get("active_count", 0), "可用技能")}
+    {_metric("候选", overview.get("staging_count", 0), "候选技能")}
+    {_metric("已使用", counts.get("used", 0), "最近通道事件")}
+    {_metric("已跳过", counts.get("skipped", 0), "普通 Codex 路径")}
   </div>
-  <p class="muted">Latest event: {text(overview.get("latest_event_time") or "No runtime lane events yet")}</p>
+  <p class="muted">最近事件：{text(overview.get("latest_event_time") or "暂无运行通道事件")}</p>
 </section>"""
+
+
+def _view_nav() -> str:
+    return """<nav class="view-nav" aria-label="面板视图">
+  <button class="view-link is-active" type="button" data-view-target="skill-tree" aria-controls="skill-tree-view" aria-current="page"><strong>技能树</strong><span>生命周期分支</span></button>
+  <button class="view-link" type="button" data-view-target="trigger-log" aria-controls="trigger-log-view" aria-current="false"><strong>触发日志</strong><span>运行通道事件</span></button>
+  <button class="view-link" type="button" data-view-target="governance" aria-controls="governance-view" aria-current="false"><strong>治理快照</strong><span>技能库健康</span></button>
+</nav>"""
 
 
 def _metric(label: str, value: Any, caption: str) -> str:
     return f'<div class="metric"><strong>{text(value)}</strong><span>{text(label)} - {text(caption)}</span></div>'
 
 
+def _skill_display_name(raw_name: Any) -> str:
+    raw = str(raw_name or "").strip()
+    if not raw:
+        return "未命名技能"
+    if raw in SKILL_NAME_LABELS:
+        return SKILL_NAME_LABELS[raw]
+    tokens = raw.split("_")
+    translated = [SKILL_NAME_TOKEN_LABELS.get(token, token) for token in tokens]
+    return " ".join(translated)
+
+
+def _skill_display_summary(raw_summary: Any) -> str:
+    raw = str(raw_summary or "").strip()
+    if not raw:
+        return "该技能没有说明。"
+    return SKILL_SUMMARY_LABELS.get(raw, "该技能还没有中文说明，原始说明保留在技能元数据中。")
+
+
+def _source_display_text(sources: list[Any]) -> str:
+    if not sources:
+        return "没有记录来源轨迹"
+    return f"已记录 {len(sources)} 条来源轨迹"
+
+
 def _skill_tree(skills: list[dict[str, Any]]) -> str:
     if not skills:
-        body = '<p class="muted">No skills found in this runtime root.</p>'
+        body = '<p class="muted">当前运行根目录没有找到技能。</p>'
     else:
-        body = "\n".join(_skill_card(skill) for skill in skills[:80])
-    return f'<section class="panel"><h2>Skill Tree</h2>{body}</section>'
+        body = _skill_tree_branches(skills[:80])
+    return f"""<section id="skill-tree-view" class="panel view-panel dashboard-view-page" data-view-page="skill-tree">
+  <div class="view-kicker">视图 01</div>
+  <h2>技能树视图</h2>
+  {body}
+</section>"""
 
 
-def _skill_card(skill: dict[str, Any]) -> str:
+def _skill_tree_branches(skills: list[dict[str, Any]]) -> str:
+    branches = [
+        ("active", "活跃", "可用技能", 12),
+        ("staging", "候选", "候选技能", 12),
+        ("archived", "归档", "已退役技能", 8),
+        ("rejected", "拒绝", "已阻断候选", 8),
+    ]
+    grouped: dict[str, list[dict[str, Any]]] = {status: [] for status, _, _, _ in branches}
+    for skill in skills:
+        grouped.setdefault(str(skill.get("status") or "unknown"), []).append(skill)
+    branch_html = "\n".join(
+        _skill_branch(status, label, caption, grouped.get(status, []), limit)
+        for status, label, caption, limit in branches
+    )
+    total_count = sum(len(grouped.get(status, [])) for status, _, _, _ in branches)
+    return f"""<div class="tree-canvas">
+  <div class="tree-root">
+    <div class="tree-node root"><strong>运行时根节点</strong><span>{text(total_count)} 个已索引技能</span></div>
+  </div>
+  <div class="tree-branches">{branch_html}</div>
+</div>"""
+
+
+def _skill_branch(status: str, label: str, caption: str, skills: list[dict[str, Any]], limit: int) -> str:
+    if skills:
+        visible_skills = skills[:limit]
+        body_parts = [_skill_node(skill) for skill in visible_skills]
+        hidden_count = len(skills) - len(visible_skills)
+        if hidden_count > 0:
+            body_parts.append(f'<div class="more-node">该分支还有 {text(hidden_count)} 个技能未展开</div>')
+        body = "\n".join(body_parts)
+    else:
+        body = '<div class="empty-branch">该分支暂无技能。</div>'
+    return f"""<section class="tree-branch {text(status)}">
+  <div class="branch-head {text(status)}"><strong>{text(len(skills))}</strong><span>{text(label)} - {text(caption)}</span></div>
+  <div class="branch-skills">{body}</div>
+</section>"""
+
+
+def _skill_node(skill: dict[str, Any]) -> str:
+    raw_name = str(skill.get("skill_name") or "")
     sources = skill.get("source_trajectory_ids") or []
-    source_text = ", ".join(text(item) for item in sources) if sources else "No source trajectory recorded"
-    return f"""<article class="skill">
-  <div>{badge(skill.get("status"))} <span class="skill-name">{text(skill.get("skill_name"))}</span></div>
-  <p>{text(skill.get("summary"))}</p>
-  <div class="muted">trajectory -> {source_text}</div>
-  <div class="muted">reuse count: {text(skill.get("usage_count", 0))}</div>
+    source_text = _source_display_text(sources)
+    source_ids = ",".join(str(item) for item in sources)
+    return f"""<article class="skill-node" data-skill-name="{text(raw_name)}" data-source-trajectories="{text(source_ids)}">
+  <div>{badge(skill.get("status"))} <span class="skill-name">{text(_skill_display_name(raw_name))}</span></div>
+  <p class="skill-summary">{text(_skill_display_summary(skill.get("summary")))}</p>
+  <div class="muted">来源轨迹：{text(source_text)}</div>
+  <div class="muted">复用次数：{text(skill.get("usage_count", 0))}</div>
 </article>"""
 
 
 def _trigger_log(events: list[dict[str, Any]]) -> str:
     if not events:
-        body = '<p class="muted">No runtime lane events yet.</p>'
+        body = '<p class="muted">暂无运行通道事件。</p>'
     else:
         body = "\n".join(_event_row(event) for event in events[:50])
-    return f'<section class="panel"><h2>Trigger Log</h2>{body}</section>'
+    return f"""<section id="trigger-log-view" class="panel view-panel dashboard-view-page" data-view-page="trigger-log" hidden>
+  <div class="view-kicker">视图 02</div>
+  <h2>触发日志视图</h2>
+  {body}
+</section>"""
 
 
 def _event_row(event: dict[str, Any]) -> str:
-    skill = event.get("selected_skill_name") or "normal Codex path"
+    selected_skill_name = event.get("selected_skill_name")
+    skill = _skill_display_name(selected_skill_name) if selected_skill_name else "普通 Codex 路径"
     return f"""<article class="event">
   <div>{badge(event.get("runtime_lane_status"))} <strong>{text(event.get("task_description"))}</strong></div>
   <div class="muted">{text(event.get("timestamp"))} - {text(skill)}</div>
@@ -98,11 +266,12 @@ def _governance(governance: dict[str, Any], diagnostics: list[str]) -> str:
     if duplicate_candidates:
         duplicate_body = f"<pre>{text(duplicate_candidates)}</pre>"
     else:
-        duplicate_body = '<p class="muted">No duplicate candidates reported.</p>'
-    diagnostics_body = "".join(f"<li>{text(item)}</li>" for item in diagnostics) or "<li>No diagnostics.</li>"
-    return f"""<section class="panel" style="margin-top:16px">
-  <h2>Governance Snapshot</h2>
+        duplicate_body = '<p class="muted">没有发现重复候选。</p>'
+    diagnostics_body = "".join(f"<li>{text(item)}</li>" for item in diagnostics) or "<li>没有诊断信息。</li>"
+    return f"""<section id="governance-view" class="panel view-panel dashboard-view-page" data-view-page="governance" hidden>
+  <div class="view-kicker">视图 03</div>
+  <h2>治理快照</h2>
   {duplicate_body}
-  <h3>Diagnostics</h3>
+  <h3>诊断信息</h3>
   <ul>{diagnostics_body}</ul>
 </section>"""

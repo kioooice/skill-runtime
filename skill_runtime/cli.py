@@ -1,5 +1,6 @@
 import argparse
 import json
+import webbrowser
 from dataclasses import asdict
 from pathlib import Path
 
@@ -568,9 +569,13 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     data = collect_dashboard_data(root)
     output_path.write_text(render_dashboard_html(data), encoding="utf-8")
+    dashboard_url = output_path.resolve().as_uri()
+    opened = bool(webbrowser.open(dashboard_url)) if getattr(args, "open", False) else False
     return ok(
         {
             "output_path": str(output_path.resolve()),
+            "dashboard_url": dashboard_url,
+            "opened": opened,
             "root": str(root),
             "active_count": data["overview"]["active_count"],
             "event_count": len(data["events"]),
@@ -645,6 +650,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     dashboard_parser = subparsers.add_parser("dashboard")
     dashboard_parser.add_argument("--output")
+    dashboard_parser.add_argument("--open", action="store_true", help="Open the generated dashboard in the default browser")
     dashboard_parser.set_defaults(func=cmd_dashboard)
 
     distill_coverage_parser = subparsers.add_parser("distill-coverage-report")

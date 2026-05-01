@@ -1,4 +1,8 @@
 import json
+from argparse import Namespace
+from contextlib import redirect_stdout
+from io import StringIO
+from unittest.mock import patch
 
 
 class RuntimeDashboardTestsMixin:
@@ -59,12 +63,27 @@ class RuntimeDashboardTestsMixin:
         html = render_dashboard_html(data)
 
         self.assertIn("<!doctype html>", html.lower())
-        self.assertIn("Runtime Observability Dashboard", html)
-        self.assertIn("Overview", html)
-        self.assertIn("Skill Tree", html)
-        self.assertIn("Trigger Log", html)
-        self.assertIn("Governance Snapshot", html)
-        self.assertIn("merge_text_files", html)
+        self.assertIn('<html lang="zh-CN">', html)
+        self.assertIn("运行时可观察面板", html)
+        self.assertIn("总览", html)
+        self.assertIn("技能树视图", html)
+        self.assertIn("tree-branches", html)
+        self.assertIn("运行时根节点", html)
+        self.assertIn("活跃 - 可用技能", html)
+        self.assertIn("触发日志视图", html)
+        self.assertIn('data-active-view="skill-tree"', html)
+        self.assertIn('data-view-target="trigger-log"', html)
+        self.assertIn('data-view-page="trigger-log"', html)
+        self.assertIn('data-view-target="governance"', html)
+        self.assertIn('data-view-page="governance"', html)
+        self.assertIn("setDashboardView", html)
+        self.assertNotIn('href="#trigger-log-view"', html)
+        self.assertIn("治理快照", html)
+        self.assertIn("目录 JSON 批量转 CSV", html)
+        self.assertIn("将文件夹中的所有 JSON 记录批量导出为 CSV 文件。", html)
+        self.assertIn('data-skill-name="directory_json_to_csv_dogfood"', html)
+        self.assertIn("合并文本文件", html)
+        self.assertNotIn("Batch export all JSON records in a folder into CSV files.", html)
 
     def test_dashboard_cli_writes_static_html_file(self) -> None:
         output_path = self.runtime_root / ".skill_runtime" / "dashboard.html"
@@ -81,5 +100,27 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual(str(output_path.resolve()), payload["data"]["output_path"])
         self.assertTrue(output_path.exists())
         html = output_path.read_text(encoding="utf-8")
-        self.assertIn("Runtime Observability Dashboard", html)
-        self.assertIn("Trigger Log", html)
+        self.assertIn("运行时可观察面板", html)
+        self.assertIn("触发日志视图", html)
+        self.assertIn("合并文本文件", html)
+
+    def test_dashboard_command_can_open_generated_html(self) -> None:
+        from skill_runtime.cli import cmd_dashboard
+
+        output_path = self.runtime_root / ".skill_runtime" / "dashboard.html"
+        args = Namespace(root=str(self.runtime_root), output=str(output_path), open=True)
+        stdout = StringIO()
+
+        with patch("skill_runtime.cli.webbrowser.open", return_value=True) as open_mock:
+            with redirect_stdout(stdout):
+                exit_code = cmd_dashboard(args)
+
+        dashboard_url = output_path.resolve().as_uri()
+        payload = json.loads(stdout.getvalue())
+
+        self.assertEqual(0, exit_code)
+        self.assertEqual("ok", payload["status"])
+        self.assertEqual(str(output_path.resolve()), payload["data"]["output_path"])
+        self.assertEqual(dashboard_url, payload["data"]["dashboard_url"])
+        self.assertTrue(payload["data"]["opened"])
+        open_mock.assert_called_once_with(dashboard_url)
