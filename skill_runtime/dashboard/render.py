@@ -108,12 +108,24 @@ SKILL_GROUP_ORDER = [
 
 
 def render_dashboard_html(data: dict[str, Any]) -> str:
+    global_data = data.get("global") if isinstance(data.get("global"), dict) else None
+    title = "全局运行时观察面板" if global_data else "运行时可观察面板"
+    subtitle = (
+        f"{text(data.get('root'))} · 已合并跨工作区调用记录"
+        if global_data
+        else text(data.get("root"))
+    )
+    read_only_text = (
+        "同一页面内查看当前项目技能树、触发日志、治理快照，以及跨工作区调用记录。"
+        if global_data
+        else "不编辑技能、不提升、不归档，也不做跨工作区聚合。"
+    )
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>运行时可观察面板</title>
+  <title>{title}</title>
   <style>{STYLE}</style>
 </head>
 <body data-active-view="skill-tree">
@@ -121,19 +133,22 @@ def render_dashboard_html(data: dict[str, Any]) -> str:
     <section class="hero">
       <div>
         <div class="eyebrow">技能运行时</div>
-        <h1>运行时可观察面板</h1>
-        <div class="muted">{text(data.get("root"))}</div>
+        <h1>{title}</h1>
+        <div class="muted">{subtitle}</div>
       </div>
       <div class="panel">
         <strong>只读视图</strong>
-        <div class="muted">不编辑技能、不提升、不归档，也不做跨工作区聚合。</div>
+        <div class="muted">{read_only_text}</div>
       </div>
     </section>
     {_overview(data.get("overview", {}))}
-    {_view_nav()}
+    {_global_overview(global_data.get("overview", {})) if global_data else ""}
+    {_view_nav(global_enabled=bool(global_data))}
     {_skill_tree(data.get("skills", []))}
     {_trigger_log(data.get("events", []))}
     {_governance(data.get("governance", {}), data.get("diagnostics", []))}
+    {_global_projects_view(global_data) if global_data else ""}
+    {_global_log_view(global_data) if global_data else ""}
   </main>
   {SCRIPT}
 </body>
@@ -144,7 +159,7 @@ def render_dashboard_html(data: dict[str, Any]) -> str:
 def _overview(overview: dict[str, Any]) -> str:
     counts = overview.get("recent_event_counts", {})
     return f"""<section class="panel">
-  <h2>总览</h2>
+  <h2>当前项目总览</h2>
   <div class="grid">
     {_metric("活跃", overview.get("active_count", 0), "可用技能")}
     {_metric("候选", overview.get("staging_count", 0), "候选技能")}
@@ -155,11 +170,92 @@ def _overview(overview: dict[str, Any]) -> str:
 </section>"""
 
 
-def _view_nav() -> str:
-    return """<nav class="view-nav" aria-label="面板视图">
+def _global_overview(overview: dict[str, Any]) -> str:
+    counts = overview.get("recent_event_counts", {})
+    return f"""<section class="panel">
+  <h2>全局总览</h2>
+  <div class="grid">
+    {_metric("项目数", overview.get("project_count", 0), "发现调用记录的工作区")}
+    {_metric("事件数", overview.get("event_count", 0), "最近全局事件")}
+    {_metric("已使用", counts.get("used", 0), "runtime 真的参与")}
+    {_metric("已跳过", counts.get("skipped", 0), "普通 Codex 路径")}
+  </div>
+  <p class="muted">最近事件：{text(overview.get("latest_event_time") or "暂无全局运行通道事件")}</p>
+</section>"""
+
+
+def _project_card(project: dict[str, Any]) -> str:
+    counts = project.get("recent_event_counts", {})
+    return f"""<article class="project-card">
+  <div class="project-name">{text(project.get("project_name"))}</div>
+  <div class="project-path">{text(project.get("project_root"))}</div>
+  <div class="project-stats">
+    <span>{text(project.get("event_count", 0))} 条事件</span>
+    <span>{text(counts.get("used", 0))} 次使用</span>
+    <span>{text(counts.get("skipped", 0))} 次跳过</span>
+  </div>
+  <div class="muted">最近：{text(project.get("latest_event_time") or "暂无")}</div>
+</article>"""
+
+
+def _global_event_row(event: dict[str, Any]) -> str:
+    selected_skill_name = event.get("selected_skill_name")
+    skill = _skill_display_name(selected_skill_name) if selected_skill_name else "普通 Codex 路径"
+    return f"""<article class="event">
+  <div><span class="event-project">{text(event.get("project_name"))}</span> {badge(event.get("runtime_lane_status"))} <strong>{text(event.get("task_description"))}</strong></div>
+  <div class="muted">{text(event.get("timestamp"))} - {text(skill)}</div>
+  <div class="reason">{text(event.get("runtime_lane_reason"))}</div>
+</article>"""
+
+
+def _global_projects_view(global_data: dict[str, Any]) -> str:
+    return f"""<section id="global-projects-view" class="panel view-panel dashboard-view-page" data-view-page="global-projects" hidden>
+  <div class="view-kicker">视图 04</div>
+  <h2>全局项目概览</h2>
+  {_project_overview_body(global_data.get("projects", []))}
+  <h3>扫描范围</h3>
+  {_scan_root_lists(global_data.get("scan_roots", []), global_data.get("diagnostics", []))}
+</section>"""
+
+
+def _global_log_view(global_data: dict[str, Any]) -> str:
+    events = global_data.get("events", [])
+    if not events:
+        body = '<p class="muted">暂无全局运行通道事件。</p>'
+    else:
+        body = "\n".join(_global_event_row(event) for event in events[:100])
+    return f"""<section id="global-log-view" class="panel view-panel dashboard-view-page" data-view-page="global-log" hidden>
+  <div class="view-kicker">视图 05</div>
+  <h2>全局触发日志</h2>
+  {body}
+</section>"""
+
+
+def _project_overview_body(projects: list[dict[str, Any]]) -> str:
+    if not projects:
+        return '<p class="muted">没有在扫描范围内发现项目调用记录。</p>'
+    return '<div class="project-grid">' + "\n".join(_project_card(project) for project in projects) + "</div>"
+
+
+def _scan_root_lists(scan_roots: list[Any], diagnostics: list[str]) -> str:
+    scan_body = "".join(f"<li>{text(item)}</li>" for item in scan_roots) or "<li>没有扫描范围。</li>"
+    diagnostics_body = "".join(f"<li>{text(item)}</li>" for item in diagnostics) or "<li>没有诊断信息。</li>"
+    return f"""<ul class="scan-list">{scan_body}</ul>
+  <h3>诊断信息</h3>
+  <ul class="scan-list">{diagnostics_body}</ul>"""
+
+
+def _view_nav(*, global_enabled: bool = False) -> str:
+    global_links = ""
+    if global_enabled:
+        global_links = """
+  <button class="view-link" type="button" data-view-target="global-projects" aria-controls="global-projects-view" aria-current="false"><strong>全局项目</strong><span>跨工作区概览</span></button>
+  <button class="view-link" type="button" data-view-target="global-log" aria-controls="global-log-view" aria-current="false"><strong>全局日志</strong><span>跨项目事件</span></button>"""
+    return f"""<nav class="view-nav" aria-label="面板视图">
   <button class="view-link is-active" type="button" data-view-target="skill-tree" aria-controls="skill-tree-view" aria-current="page"><strong>技能树</strong><span>生命周期分支</span></button>
   <button class="view-link" type="button" data-view-target="trigger-log" aria-controls="trigger-log-view" aria-current="false"><strong>触发日志</strong><span>运行通道事件</span></button>
   <button class="view-link" type="button" data-view-target="governance" aria-controls="governance-view" aria-current="false"><strong>治理快照</strong><span>技能库健康</span></button>
+  {global_links}
 </nav>"""
 
 

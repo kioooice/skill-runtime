@@ -6,7 +6,7 @@ from typing import Any
 
 from skill_runtime.api.models import SkillMetadata
 from skill_runtime.api.service import RuntimeService
-from skill_runtime.observability.events import read_runtime_lane_events
+from skill_runtime.observability.events import RUNTIME_LANE_EVENTS_FILE, read_runtime_lane_events
 from skill_runtime.retrieval.skill_index import SkillIndex, SkillIndexError
 
 
@@ -23,6 +23,48 @@ def collect_dashboard_data(root: str | Path, *, event_limit: int = 50) -> dict[s
         "skills": skills,
         "events": events,
         "governance": governance,
+        "diagnostics": diagnostics,
+    }
+
+
+def collect_global_dashboard_data(
+    root: str | Path,
+    *,
+    scan_roots: list[str | Path] | None = None,
+    event_limit: int = 200,
+) -> dict[str, Any]:
+    runtime_root = Path(root).resolve()
+    diagnostics: list[str] = []
+    resolved_scan_roots = _resolve_scan_roots(runtime_root, scan_roots, diagnostics)
+    project_roots = _discover_event_roots(runtime_root, resolved_scan_roots, diagnostics)
+    projects: list[dict[str, Any]] = []
+    events: list[dict[str, Any]] = []
+
+    for project_root in project_roots:
+        project_events = list(reversed(read_runtime_lane_events(project_root, limit=event_limit)))
+        if not project_events:
+            continue
+        annotated_events = [_global_event_payload(event, project_root) for event in project_events]
+        events.extend(annotated_events)
+        counts = _event_counts(annotated_events)
+        projects.append(
+            {
+                "project_name": project_root.name,
+                "project_root": str(project_root),
+                "event_count": len(annotated_events),
+                "latest_event_time": annotated_events[0].get("timestamp"),
+                "recent_event_counts": counts,
+            }
+        )
+
+    events = sorted(events, key=lambda item: str(item.get("timestamp") or ""), reverse=True)[:event_limit]
+    projects = sorted(projects, key=lambda item: str(item.get("latest_event_time") or ""), reverse=True)
+    return {
+        "root": str(runtime_root),
+        "scan_roots": [str(path) for path in resolved_scan_roots],
+        "overview": _build_global_overview(projects, events),
+        "projects": projects,
+        "events": events,
         "diagnostics": diagnostics,
     }
 
@@ -54,6 +96,75 @@ def _collect_skills(root: Path, diagnostics: list[str]) -> list[dict[str, Any]]:
             indexed_metadata = indexed.get(skill_name)
             skills[skill_name] = _skill_payload(skill_name, status, payload, indexed_metadata, root)
     return sorted(skills.values(), key=lambda item: (item["status"], item["skill_name"]))
+
+
+def _resolve_scan_roots(
+    runtime_root: Path,
+    scan_roots: list[str | Path] | None,
+    diagnostics: list[str],
+) -> list[Path]:
+    raw_scan_roots = scan_roots if scan_roots else [runtime_root.parent]
+    resolved: list[Path] = []
+    seen: set[Path] = set()
+    for raw_path in raw_scan_roots:
+        try:
+            path = Path(raw_path).resolve()
+        except OSError as exc:
+            diagnostics.append(f"Could not resolve scan root {raw_path}: {exc}")
+            continue
+        if path in seen:
+            continue
+        seen.add(path)
+        resolved.append(path)
+    return resolved
+
+
+def _discover_event_roots(runtime_root: Path, scan_roots: list[Path], diagnostics: list[str]) -> list[Path]:
+    discovered: list[Path] = []
+    seen: set[Path] = set()
+
+    def add_if_event_root(candidate: Path) -> None:
+        try:
+            project_root = candidate.resolve()
+        except OSError as exc:
+            diagnostics.append(f"Could not inspect project root {candidate}: {exc}")
+            return
+        if project_root in seen:
+            return
+        if (project_root / RUNTIME_LANE_EVENTS_FILE).exists():
+            seen.add(project_root)
+            discovered.append(project_root)
+
+    add_if_event_root(runtime_root)
+    for scan_root in scan_roots:
+        if not scan_root.exists():
+            diagnostics.append(f"Missing scan root: {scan_root}")
+            continue
+        add_if_event_root(scan_root)
+        try:
+            children = sorted(path for path in scan_root.iterdir() if path.is_dir())
+        except OSError as exc:
+            diagnostics.append(f"Could not scan {scan_root}: {exc}")
+            continue
+        for child in children:
+            add_if_event_root(child)
+    return discovered
+
+
+def _global_event_payload(event: dict[str, Any], project_root: Path) -> dict[str, Any]:
+    payload = dict(event)
+    payload["project_name"] = project_root.name
+    payload["project_root"] = str(project_root)
+    return payload
+
+
+def _event_counts(events: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {"used": 0, "entered": 0, "skipped": 0}
+    for event in events:
+        status = event.get("runtime_lane_status")
+        if status in counts:
+            counts[status] += 1
+    return counts
 
 
 def _skill_payload(
@@ -124,6 +235,16 @@ def _build_overview(
         "latest_event_time": events[0].get("timestamp") if events else None,
         "recent_event_counts": event_counts,
         "governance_warning_count": governance_warning_count,
+    }
+
+
+def _build_global_overview(projects: list[dict[str, Any]], events: list[dict[str, Any]]) -> dict[str, Any]:
+    counts = _event_counts(events)
+    return {
+        "project_count": len(projects),
+        "event_count": len(events),
+        "latest_event_time": events[0].get("timestamp") if events else None,
+        "recent_event_counts": counts,
     }
 
 

@@ -2,6 +2,40 @@
 
 ## Decision Log
 
+### 2026-05-01 - 全局 Dashboard 合并当前项目视图
+
+**Decision**
+
+新增全局 dashboard 时，不再做成和普通 dashboard 割裂的独立页面。`dashboard --global` 仍然显示当前项目的技能树、触发日志和治理快照，同时增加“全局项目”和“全局日志”两页。全局部分只聚合各工作区的 `.skill_runtime/runtime_lane_events.jsonl` 调用记录，不跨项目编辑技能、不做 promote/archive，也不把其他项目的技能库合并到当前项目。
+
+**Reason**
+
+用户需要的是“一个面板里既能看技能树、日志、治理，也能看其他工作区有没有触发 Skill Runtime”。因此全局能力应当是普通观察面板的增强，而不是另一个只显示日志的页面。跨项目问题只需要可见性，不需要跨项目写操作。
+
+**Impact**
+
+- 新命令 `dashboard --global --scan-root <目录>` 会生成统一观察面板
+- 同一页面内可看当前项目技能树、当前项目触发日志、当前项目治理快照、全局项目概览和全局触发日志
+- 默认只扫描指定目录下一层项目，避免全盘扫描带来的慢和误读
+- 后续如果要做跨项目治理或统一 skill registry，需要另起设计，不应塞进这个只读 dashboard
+
+### 2026-05-01 - 开发任务默认先走 Skill Runtime Gate
+
+**Decision**
+
+Codex 做具体项目开发任务时，不再只依赖“已配置 skill_runtime MCP”。新的默认规则是：在实质性读代码、改代码、改文档、改配置、写测试或做项目维护前，先调用 Codex-facing runtime gate。优先使用 `mcp__skill_runtime__.run_codex_task_experimental`；如果 MCP 不可用或没有返回可见 runtime lane 状态，则用 `python -m skill_runtime.cli --root <workspace> codex-run ...` 兜底。任务完成后，如果有结构化执行结果或操作日志，再调用 `finalize_codex_task_experimental`。
+
+**Reason**
+
+过去几天虽然全局 MCP 已配置，但 Codex 没有主动调用 runtime gate，所以 dashboard 没有触发日志，用户也感知不到 runtime 存在。必须把“任务开始先 gate、任务结束可 finalize”写成 Agent 规则，才能从“可调用工具”变成“默认开发流程的一部分”。
+
+**Impact**
+
+- 之后真实开发任务会先产生 `runtime_lane_status` / `runtime_lane_reason`
+- dashboard 的触发日志能用于观察 runtime 是否参与
+- 广泛或不确定任务默认只观察和分类，不让 runtime 静默接管
+- 如果 runtime 不可用，不阻塞开发，只说明本次未走 gate
+
 ### 2026-05-01 - 技能树中心节点避开组别卡片
 
 **Decision**

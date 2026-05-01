@@ -567,6 +567,14 @@ skill-runtime dashboard --open
 
 默认输出到 `.skill_runtime/dashboard.html`。它只读取当前 runtime root 的本地数据，用于查看技能树、runtime lane 触发日志和治理快照；三者在面板中是独立视图，不混在同一页。技能树采用中心向四周发散的径向布局，四个象限分别展示 active / staging / archived / rejected 分支；分支内优先展示“格式转换、文本处理、文件整理、运行时治理”等组别，而不是逐个技能堆叠。点击组别时，组内技能会在居中的详情界面中凸显出来；页面不会自动滚动，技能树本身也不会被撑开。面板默认中文显示；技能调用仍使用原始英文 `skill_name`，页面只在展示层把技能名称和说明翻译成中文。
 
+查看多个项目的全局触发记录：
+
+```bash
+python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open
+```
+
+全局面板默认输出到 `.skill_runtime/global-dashboard.html`。它和普通面板是同一套界面：仍然可以看当前项目的技能树、触发日志和治理快照，同时额外增加“全局项目”和“全局日志”两页，用来回答“其他工作区有没有触发过 runtime lane”。它只扫描指定目录下一层项目里的 `.skill_runtime/runtime_lane_events.jsonl`。如果不传 `--scan-root`，默认扫描当前 runtime root 的父目录。
+
 运行本地快验：
 
 ```bash

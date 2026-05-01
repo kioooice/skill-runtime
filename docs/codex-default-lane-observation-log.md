@@ -23,6 +23,24 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-01 - Global runtime dashboard
+
+- Task type: cross-workspace runtime lane observability
+- Classified as: guarded-in for this feature work
+- What happened: `dashboard --global --scan-root <directory>` now renders the normal read-only dashboard plus global project and global log views, aggregating runtime lane events from sibling project roots
+- Did the behavior feel correct: yes; this task should not be silently auto-executed by an existing skill, but it should leave clearer runtime visibility afterwards
+- Did the lane help: yes, it clarified the current visibility gap across workspaces and produced a concrete way to inspect other projects' trigger records
+- Follow-up: use the global dashboard during real work in other project directories to confirm that event logs are being written where expected
+
+### 2026-05-01 - Development task runtime gate rule
+
+- Task type: Codex default-lane workflow enforcement
+- Classified as: default-out for this specific rule-update task
+- What happened: global and project Agent rules were tightened so concrete project development tasks must call the Codex-facing runtime gate before substantive work, with CLI `codex-run` as a visible-event fallback
+- Did the behavior feel correct: partly; the CLI gate wrote a visible `runtime_lane_status: skipped` event, but the earlier MCP call did not create an obvious dashboard event in this session
+- Did the lane help: yes, it exposed the real gap between "MCP configured" and "Codex actually calls the runtime during development"
+- Follow-up: use the next real code-development task to verify that `run_codex_task_experimental` plus optional `finalize_codex_task_experimental` produces stable dashboard events
+
 ### 2026-05-01 - Runtime observability dashboard implementation
 
 - Task type: Codex runtime lane observability

@@ -46,7 +46,9 @@ p, span, div, article, section, li { overflow-wrap: anywhere; word-break: break-
 .dashboard-view-page { display: none; }
 body[data-active-view="skill-tree"] [data-view-page="skill-tree"],
 body[data-active-view="trigger-log"] [data-view-page="trigger-log"],
-body[data-active-view="governance"] [data-view-page="governance"] { display: block; }
+body[data-active-view="governance"] [data-view-page="governance"],
+body[data-active-view="global-projects"] [data-view-page="global-projects"],
+body[data-active-view="global-log"] [data-view-page="global-log"] { display: block; }
 .view-kicker { color: var(--muted); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; margin-bottom: 6px; }
 .metric { border-left: 4px solid #b8792f; padding-left: 12px; }
 .metric strong { display: block; font-size: 30px; }
@@ -166,10 +168,18 @@ body[data-active-view="governance"] [data-view-page="governance"] { display: blo
 .event { border-bottom: 1px solid var(--line); padding: 12px 0; }
 .event:last-child { border-bottom: 0; }
 .reason { color: var(--muted); margin-top: 4px; }
+.project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.project-card { border: 1px solid var(--line); border-radius: 20px; background: rgba(255,253,247,.76); padding: 14px; box-shadow: 0 12px 28px rgba(79,54,27,.06); }
+.project-name { font-size: 20px; font-weight: 800; margin-bottom: 5px; }
+.project-path { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+.project-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.project-stats span, .event-project { border: 1px solid rgba(217,203,183,.9); border-radius: 999px; background: rgba(255,250,240,.8); color: var(--muted); display: inline-block; font-size: 12px; padding: 4px 8px; }
+.event-project { color: #8a5b13; font-weight: 800; margin-right: 6px; }
+.scan-list { color: var(--muted); margin: 8px 0 14px; padding-left: 20px; }
 pre { white-space: pre-wrap; word-break: break-word; background: #2b2118; color: #fff6e8; padding: 12px; border-radius: 14px; }
 @media (max-width: 860px) {
   main { width: min(calc(100% - 24px), 1180px); margin: 20px auto; }
-  .grid, .two { grid-template-columns: 1fr; }
+  .grid, .two, .project-grid { grid-template-columns: 1fr; }
   .hero { display: block; }
   h1 { font-size: 31px; }
   .panel { padding: 18px; }
@@ -206,7 +216,9 @@ SCRIPT = """
   var viewHashes = {
     "skill-tree": "#skill-tree-view",
     "trigger-log": "#trigger-log-view",
-    "governance": "#governance-view"
+    "governance": "#governance-view",
+    "global-projects": "#global-projects-view",
+    "global-log": "#global-log-view"
   };
   var body = document.body;
   var buttons = Array.prototype.slice.call(document.querySelectorAll("[data-view-target]"));
@@ -222,6 +234,12 @@ SCRIPT = """
     }
     if (window.location.hash === "#governance-view") {
       return "governance";
+    }
+    if (window.location.hash === "#global-projects-view") {
+      return "global-projects";
+    }
+    if (window.location.hash === "#global-log-view") {
+      return "global-log";
     }
     return defaultView;
   }

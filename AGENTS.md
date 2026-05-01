@@ -15,6 +15,25 @@ This workspace is `vibe`.
 - Confirm the tech stack first, then choose the deployment pattern.
 - Add Docker when the project is ready for deployment or long-term maintenance.
 
+## Skill Runtime Development Gate
+
+- For any concrete project development task, call the Codex-facing `skill_runtime` gate before substantive code reading, code edits, documentation edits, config edits, test work, UI work, or project maintenance.
+- Preferred MCP entry:
+  - `mcp__skill_runtime__.run_codex_task_experimental`
+- Pass:
+  - the current workspace as `working_directory`
+  - a concise task description
+  - expected outputs when obvious
+  - a realistic `risk_level`
+- For broad or ambiguous development tasks, set `allow_silent_reuse=false` so the runtime observes and classifies without taking over execution.
+- Only allow silent reuse for low-risk deterministic local file workflows where automatic execution is safe.
+- The gate result must expose `runtime_lane_status` and `runtime_lane_reason`.
+- If the MCP gate is unavailable or does not produce visible runtime-lane status, fall back to the CLI gate:
+  - `python -m skill_runtime.cli --root <workspace> codex-run ...`
+- After a project development task completes, call `mcp__skill_runtime__.finalize_codex_task_experimental` when there is a useful structured execution result or operation log.
+- If no files changed, no operation log exists, or the task was purely conversational, skip finalization and state that briefly.
+- Do not let this gate become user-visible overhead; it should be a default background step, not a repeated permission question.
+
 ## Auto Mode Protocol
 
 - When the user sends `自动模式开始`, treat that message itself as an execution command.

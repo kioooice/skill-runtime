@@ -6,6 +6,39 @@ from unittest.mock import patch
 
 
 class RuntimeDashboardTestsMixin:
+    def _write_dashboard_event(
+        self,
+        project_root,
+        *,
+        timestamp: str,
+        task_description: str,
+        runtime_lane_status: str,
+        runtime_lane_reason: str,
+        selected_skill_name: str | None = None,
+    ) -> None:
+        event_dir = project_root / ".skill_runtime"
+        event_dir.mkdir(parents=True, exist_ok=True)
+        event_path = event_dir / "runtime_lane_events.jsonl"
+        event_path.write_text(
+            json.dumps(
+                {
+                    "timestamp": timestamp,
+                    "working_directory": str(project_root),
+                    "task_description": task_description,
+                    "runtime_lane_status": runtime_lane_status,
+                    "runtime_lane_reason": runtime_lane_reason,
+                    "classification_bucket": "default-in",
+                    "reuse_decision": "auto_execute" if runtime_lane_status == "used" else "skip",
+                    "learning_decision": "skip",
+                    "selected_skill_name": selected_skill_name,
+                    "observed_task_record": None,
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
     def test_dashboard_collector_handles_empty_runtime_root(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
 
@@ -55,6 +88,82 @@ class RuntimeDashboardTestsMixin:
         self.assertTrue(any(skill["skill_name"] == "merge_text_files" for skill in data["skills"]))
         self.assertEqual("used", data["events"][0]["runtime_lane_status"])
 
+    def test_global_dashboard_collector_aggregates_project_events(self) -> None:
+        from skill_runtime.dashboard.collector import collect_global_dashboard_data
+
+        workspace_parent = self.runtime_root / "global-workspaces"
+        project_alpha = workspace_parent / "alpha"
+        project_beta = workspace_parent / "beta"
+        self._write_dashboard_event(
+            project_alpha,
+            timestamp="2026-05-01T12:00:00+00:00",
+            task_description="merge alpha notes",
+            runtime_lane_status="used",
+            runtime_lane_reason="auto-executed reusable skill",
+            selected_skill_name="merge_text_files",
+        )
+        self._write_dashboard_event(
+            project_beta,
+            timestamp="2026-05-01T13:00:00+00:00",
+            task_description="review beta roadmap",
+            runtime_lane_status="skipped",
+            runtime_lane_reason="kept on normal Codex path",
+        )
+
+        data = collect_global_dashboard_data(self.runtime_root, scan_roots=[workspace_parent])
+
+        self.assertEqual(2, data["overview"]["project_count"])
+        self.assertEqual(2, data["overview"]["event_count"])
+        self.assertEqual({"used": 1, "entered": 0, "skipped": 1}, data["overview"]["recent_event_counts"])
+        self.assertEqual(["beta", "alpha"], [project["project_name"] for project in data["projects"]])
+        self.assertEqual("beta", data["events"][0]["project_name"])
+        self.assertEqual(str(workspace_parent.resolve()), data["scan_roots"][0])
+
+    def test_global_dashboard_renderer_includes_local_and_global_views(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data, collect_global_dashboard_data
+        from skill_runtime.dashboard.render import render_dashboard_html
+
+        workspace_parent = self.runtime_root / "global-render-workspaces"
+        project_alpha = workspace_parent / "alpha"
+        project_beta = workspace_parent / "beta"
+        self._write_dashboard_event(
+            project_alpha,
+            timestamp="2026-05-01T12:00:00+00:00",
+            task_description="merge alpha notes",
+            runtime_lane_status="used",
+            runtime_lane_reason="auto-executed reusable skill",
+            selected_skill_name="merge_text_files",
+        )
+        self._write_dashboard_event(
+            project_beta,
+            timestamp="2026-05-01T13:00:00+00:00",
+            task_description="review beta roadmap",
+            runtime_lane_status="skipped",
+            runtime_lane_reason="kept on normal Codex path",
+        )
+
+        data = collect_dashboard_data(self.runtime_root)
+        data["global"] = collect_global_dashboard_data(self.runtime_root, scan_roots=[workspace_parent])
+        html = render_dashboard_html(data)
+
+        self.assertIn("<!doctype html>", html.lower())
+        self.assertIn('<html lang="zh-CN">', html)
+        self.assertIn("全局运行时观察面板", html)
+        self.assertIn("当前项目总览", html)
+        self.assertIn("全局总览", html)
+        self.assertIn("技能树视图", html)
+        self.assertIn("触发日志视图", html)
+        self.assertIn("治理快照", html)
+        self.assertIn("全局项目概览", html)
+        self.assertIn("全局触发日志", html)
+        self.assertIn('data-view-target="global-projects"', html)
+        self.assertIn('data-view-target="global-log"', html)
+        self.assertIn("alpha", html)
+        self.assertIn("beta", html)
+        self.assertIn("merge alpha notes", html)
+        self.assertIn("review beta roadmap", html)
+        self.assertIn("普通 Codex 路径", html)
+
     def test_dashboard_renderer_includes_core_sections(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
         from skill_runtime.dashboard.render import render_dashboard_html
@@ -65,7 +174,7 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("<!doctype html>", html.lower())
         self.assertIn('<html lang="zh-CN">', html)
         self.assertIn("运行时可观察面板", html)
-        self.assertIn("总览", html)
+        self.assertIn("当前项目总览", html)
         self.assertIn("技能树视图", html)
         self.assertIn("tree-fan", html)
         self.assertIn("radial-tree", html)
@@ -132,6 +241,47 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("运行时可观察面板", html)
         self.assertIn("触发日志视图", html)
         self.assertIn("合并文本文件", html)
+
+    def test_global_dashboard_cli_writes_static_html_file(self) -> None:
+        workspace_parent = self.runtime_root / "global-cli-workspaces"
+        project_alpha = workspace_parent / "alpha"
+        self._write_dashboard_event(
+            project_alpha,
+            timestamp="2026-05-01T12:00:00+00:00",
+            task_description="merge alpha notes",
+            runtime_lane_status="used",
+            runtime_lane_reason="auto-executed reusable skill",
+            selected_skill_name="merge_text_files",
+        )
+        output_path = self.runtime_root / ".skill_runtime" / "global-dashboard.html"
+
+        payload = self._run_cli(
+            "dashboard",
+            "--global",
+            "--scan-root",
+            str(workspace_parent),
+            "--output",
+            str(output_path),
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        self.assertTrue(payload["data"]["global"])
+        self.assertEqual(1, payload["data"]["project_count"])
+        self.assertEqual(1, payload["data"]["event_count"])
+        self.assertEqual(str(output_path.resolve()), payload["data"]["output_path"])
+        self.assertTrue(output_path.exists())
+        html = output_path.read_text(encoding="utf-8")
+        self.assertIn("全局运行时观察面板", html)
+        self.assertIn("当前项目总览", html)
+        self.assertIn("全局总览", html)
+        self.assertIn("技能树视图", html)
+        self.assertIn("触发日志视图", html)
+        self.assertIn("治理快照", html)
+        self.assertIn("全局项目概览", html)
+        self.assertIn("全局触发日志", html)
+        self.assertIn("merge alpha notes", html)
 
     def test_dashboard_command_can_open_generated_html(self) -> None:
         from skill_runtime.cli import cmd_dashboard

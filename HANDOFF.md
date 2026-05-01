@@ -43,11 +43,34 @@
 
 用户已批准该设计进入实现计划阶段。当前实现计划已写入 `docs/superpowers/plans/2026-05-01-runtime-observability-dashboard.md`，计划拆成事件日志、host 接入、dashboard 数据收集、HTML 渲染、CLI 入口和最终验证六个任务。
 
-当前实现也已经完成：`python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可以生成本地只读观察面板。页面展示总览、技能树视图、触发日志视图和治理快照。Codex-facing runtime lane 入口现在会把 `used / entered / skipped` 事件写入 `.skill_runtime/runtime_lane_events.jsonl`。最新一轮根据用户反馈，已把 Skill Tree 从单列长列表改成中心向四周发散的径向布局：运行时根节点在中心，active / staging / archived / rejected 四个状态分支分布在四个象限；分支内第一层展示能力组别，例如格式转换、文本处理、文件整理和运行时治理；中心节点已放到上下分支之间，避免压到组别卡片；点击组别时，组内技能会在居中凸显的详情界面中展开，页面不自动滚动，也不再把树枝撑长；同时去掉交叉连接线和硬分界线，改用位置、状态圆点和组别卡片表达结构。随后又把 Trigger Log 和治理快照都改成独立页面式视图，顶部导航不再用同页锚点滚动；点击触发日志只显示日志页，点击治理快照只显示库健康页。dashboard CLI 现在还支持 `--open`，可一键生成并用系统默认浏览器打开本地面板。固定界面文案、技能名称和技能说明已经中文显示；内部执行、检索和索引仍使用原始英文 `skill_name`。
+当前实现也已经完成：`python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可以生成本地只读观察面板。页面展示总览、技能树视图、触发日志视图和治理快照。Codex-facing runtime lane 入口现在会把 `used / entered / skipped` 事件写入 `.skill_runtime/runtime_lane_events.jsonl`。最新一轮根据用户反馈，已把 Skill Tree 从单列长列表改成中心向四周发散的径向布局：运行时根节点在中心，active / staging / archived / rejected 四个状态分支分布在四个象限；分支内第一层展示能力组别，例如格式转换、文本处理、文件整理和运行时治理；中心节点已放到上下分支之间，避免压到组别卡片；点击组别时，组内技能会在居中凸显的详情界面中展开，页面不自动滚动，也不再把树枝撑长；同时去掉交叉连接线和硬分界线，改用位置、状态圆点和组别卡片表达结构。随后又把 Trigger Log 和治理快照都改成独立页面式视图，顶部导航不再用同页锚点滚动；点击触发日志只显示日志页，点击治理快照只显示库健康页。dashboard CLI 现在还支持 `--open`，可一键生成并用系统默认浏览器打开本地面板。现在又新增全局只读 dashboard，并已按用户反馈与普通 dashboard 合并：`python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 仍然显示当前项目技能树、当前项目触发日志、当前项目治理快照，同时增加“全局项目”和“全局日志”两页，用来查看其他工作区是否触发过 Skill Runtime。固定界面文案、技能名称和技能说明已经中文显示；内部执行、检索和索引仍使用原始英文 `skill_name`。当前还把全局和项目 `AGENTS.md` 规则加严：具体项目开发任务在实质性读代码或改动前必须先调用 Codex-facing runtime gate，优先走 `run_codex_task_experimental`，必要时用 CLI `codex-run` 兜底产生 dashboard 可见事件；任务完成后如有结构化执行结果，再调用 `finalize_codex_task_experimental`。
 
 ## Last Completed
 
 本轮已完成：
+- 新增全局只读 dashboard，并与普通 dashboard 合并：
+  - `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`
+  - 默认输出 `.skill_runtime/global-dashboard.html`
+  - 页面同时展示当前项目技能树、当前项目触发日志、当前项目治理快照、全局项目概览、全局触发日志
+  - 全局部分只扫描指定目录下一层项目中的 `.skill_runtime/runtime_lane_events.jsonl`
+  - 不跨项目编辑技能、不归档、不提升
+- 已验证全局 dashboard：
+  - `python -m unittest tests.test_runtime_fast -v`，63 tests OK
+  - `python -m skill_runtime.cli dashboard --help`
+  - `python -m skill_runtime.cli --root . dashboard --global --scan-root D:\02-Projects --output .skill_runtime\global-dashboard.html`
+  - `git diff --check`
+  - 截图检查：`output/playwright/runtime-dashboard-global-combined.png`
+  - 全局日志页截图检查：`output/playwright/runtime-dashboard-global-log-view.png`
+- 将 Codex 开发任务默认触发 runtime 的规则写入：
+  - 全局 `C:\Users\Administrator\.codex\AGENTS.md`
+  - 项目 `AGENTS.md`
+  - 具体开发任务开始前先调用 `run_codex_task_experimental`
+  - 如 MCP gate 不可用或没有可见 runtime 状态，使用 CLI `codex-run` 兜底
+  - 任务完成后有结构化执行结果时，再调用 `finalize_codex_task_experimental`
+- 验证 CLI 可见触发事件：
+  - `python -m skill_runtime.cli --root . codex-run --task-description "update Codex agent rules for runtime gate" --working-directory . --risk-level low --task-kind project-state-maintenance --disable-silent-reuse --disable-learning`
+  - 已写入 `.skill_runtime/runtime_lane_events.jsonl`
+  - 本轮事件状态为 `runtime_lane_status: skipped`，原因是该规则更新任务被分类为 `default-out`
 - 将 dashboard 的 Skill Tree 从长列表改成状态分支树：
   - 根节点显示当前 runtime root 的技能总量
   - 下方按 active / staging / archive / rejected 分枝
@@ -396,7 +419,7 @@
 
 ## Next Action
 
-下一步默认进入真实使用观察：运行 `python -m skill_runtime.cli dashboard --open` 或 `skill-runtime dashboard --open` 查看当前 runtime root 的组别化径向技能树、居中组别详情界面、触发日志和治理快照。三个部分现在是独立视图。如果用户要求继续增强 dashboard，优先考虑把真实触发事件做成更易读的日志卡片，而不是直接加写操作。
+下一步默认进入真实开发任务观察：后续具体项目开发任务开始时先调用 `mcp__skill_runtime__.run_codex_task_experimental`；如果它不可用或没有返回可见 `runtime_lane_status`，用 `python -m skill_runtime.cli --root <workspace> codex-run ...` 兜底。任务完成后，如果有结构化执行结果或操作日志，再调用 `mcp__skill_runtime__.finalize_codex_task_experimental`。查看当前项目用 `python -m skill_runtime.cli dashboard --open`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`。
 
 ## Important Files
 

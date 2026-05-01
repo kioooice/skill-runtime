@@ -8,12 +8,13 @@
   - `local-text-transformation`
   - `structured-format-conversion`
   - `low-risk-workspace-organization`
-  这意味着当前默认接入已经不再只是“有入口”，而是“有入口且第一批任务边界更小更可信”。同时，第一处现有入口 `agent-plan` / `agent-plan-learning` 已正式切换到 Codex 默认通道，且更大范围验证已经通过：架构检查通过、contract 检查通过、CLI 级 default-in/default-out smoke 都通过，full slow runtime suite 也已通过 399 个测试。当前默认先把这一处入口作为阶段性默认路径验证点，而不是继续马上切第二处现有入口。现在又进一步把 `skill_runtime` 上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 MCP 启动也已不再写死在 `vibe` 根目录，而会优先识别当前工作区。只读可视化观察面板已完成，并已把“技能树”从长列表改成中心向四周发散的径向布局，active / staging / archived / rejected 分支分布在四个象限；分支内现在优先展示能力组别，例如格式转换、文本处理、文件整理和运行时治理，而不是逐个技能铺开；当前也已去掉交叉连接线和硬分界线，让能力地图更干净。中心运行时根节点已重新放到上下分支之间，避免压到组别卡片。点击组别时，组内技能现在进入居中凸显的详情界面，页面不会自动滚动，也不再把树枝撑长。Trigger Log 和治理快照也都是独立页面式视图。dashboard 命令支持 `--open` 一键生成并打开本地页面。dashboard 固定界面文案、技能名称和技能说明都已中文显示；内部调用仍保留原始英文 `skill_name`。快验基线为 60 个测试通过
-- 下一步：进入跨工作区真实使用观察，按 `runtime_lane_status` 和 `runtime_lane_reason` 判断这条全局默认能力是否真的参与并且行为合理；如果继续增强 dashboard，优先做真实触发事件的日志卡片可读性，而不是增加写操作
+  这意味着当前默认接入已经不再只是“有入口”，而是“有入口且第一批任务边界更小更可信”。同时，第一处现有入口 `agent-plan` / `agent-plan-learning` 已正式切换到 Codex 默认通道，且更大范围验证已经通过：架构检查通过、contract 检查通过、CLI 级 default-in/default-out smoke 都通过，full slow runtime suite 也已通过 399 个测试。当前默认先把这一处入口作为阶段性默认路径验证点，而不是继续马上切第二处现有入口。现在又进一步把 `skill_runtime` 上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 MCP 启动也已不再写死在 `vibe` 根目录，而会优先识别当前工作区。当前已进一步把规则加严：具体项目开发任务在实质性读代码或改动前必须先走 Codex-facing runtime gate，优先调用 `run_codex_task_experimental`，必要时用 CLI `codex-run` 兜底写入可见触发事件；任务完成后如有结构化执行结果再走 `finalize_codex_task_experimental`。只读可视化观察面板已完成，并已把“技能树”从长列表改成中心向四周发散的径向布局，active / staging / archived / rejected 分支分布在四个象限；分支内现在优先展示能力组别，例如格式转换、文本处理、文件整理和运行时治理，而不是逐个技能铺开；当前也已去掉交叉连接线和硬分界线，让能力地图更干净。中心运行时根节点已重新放到上下分支之间，避免压到组别卡片。点击组别时，组内技能现在进入居中凸显的详情界面，页面不会自动滚动，也不再把树枝撑长。Trigger Log 和治理快照也都是独立页面式视图。dashboard 命令支持 `--open` 一键生成并打开本地页面。现在新增全局只读 dashboard，并已和普通 dashboard 合并：`dashboard --global --scan-root <目录>` 仍然能看当前项目技能树、触发日志、治理快照，同时增加全局项目概览和全局触发日志，用于查看其他工作区是否触发过 Skill Runtime。dashboard 固定界面文案、技能名称和技能说明都已中文显示；内部调用仍保留原始英文 `skill_name`。快验基线为 63 个测试通过
+- 下一步：用后续真实开发任务验证“任务开始先 gate、任务结束可 finalize”是否真的稳定产生 `runtime_lane_status`；需要看跨项目记录时，运行 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`
 
 ## Todo
 
 - [ ] 观察这条全局默认能力在真实工作区中的表现
+- [ ] 用下一次真实代码开发任务验证 `run_codex_task_experimental` + `finalize_codex_task_experimental` 的默认流程
 - [ ] 持续补充 `docs/codex-default-lane-observation-log.md` 中的真实样本
 - [ ] 仅在观察期出现明确价值时，再决定是否继续切第二处现有入口到 Codex 默认通道
 - [ ] 如有必要，把观察期暴露出的高频边界问题收成回归测试
@@ -202,6 +203,10 @@
 - [x] 去掉 dashboard 技能树的交叉线和硬分界线，改用位置、圆点和组别卡片表达结构
 - [x] 将 dashboard 组别展开改成居中凸显的详情界面，打开时不滚动页面也不撑开树枝
 - [x] 调整 dashboard 技能树中心节点位置，避免运行时根节点与组别卡片重叠
+- [x] 将全局和项目 AGENTS 规则加严为：项目开发任务开始先走 Codex-facing runtime gate，完成后按需 finalize
+- [x] 验证 CLI `codex-run` 能写入 dashboard 可见的 `runtime_lane_status: skipped` 事件
+- [x] 新增全局只读 dashboard，并将它与当前项目技能树、触发日志、治理快照合并在同一页面
+- [x] 验证 `python -m skill_runtime.cli --root . dashboard --global --scan-root D:\02-Projects --output .skill_runtime\global-dashboard.html`
 
 ## Blocked
 

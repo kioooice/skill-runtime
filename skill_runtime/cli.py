@@ -14,7 +14,7 @@ from skill_runtime.api.models import (
 from skill_runtime.api.orchestration import AgentOrchestrationService
 from skill_runtime.api.host import classify_codex_task, finalize_codex_task, run_codex_task, start_codex_task
 from skill_runtime.api.service import RuntimeService, RuntimeServiceError
-from skill_runtime.dashboard.collector import collect_dashboard_data
+from skill_runtime.dashboard.collector import collect_dashboard_data, collect_global_dashboard_data
 from skill_runtime.dashboard.render import render_dashboard_html
 
 
@@ -563,24 +563,32 @@ def cmd_distill_and_promote(args: argparse.Namespace) -> int:
 
 def cmd_dashboard(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
-    output_path = Path(args.output) if args.output else root / ".skill_runtime" / "dashboard.html"
+    global_view = bool(getattr(args, "global_view", False))
+    default_output = root / ".skill_runtime" / ("global-dashboard.html" if global_view else "dashboard.html")
+    output_path = Path(args.output) if args.output else default_output
     if not output_path.is_absolute():
         output_path = root / output_path
     output_path.parent.mkdir(parents=True, exist_ok=True)
     data = collect_dashboard_data(root)
+    if global_view:
+        global_data = collect_global_dashboard_data(root, scan_roots=getattr(args, "scan_root", None))
+        data["global"] = global_data
     output_path.write_text(render_dashboard_html(data), encoding="utf-8")
     dashboard_url = output_path.resolve().as_uri()
     opened = bool(webbrowser.open(dashboard_url)) if getattr(args, "open", False) else False
-    return ok(
-        {
-            "output_path": str(output_path.resolve()),
-            "dashboard_url": dashboard_url,
-            "opened": opened,
-            "root": str(root),
-            "active_count": data["overview"]["active_count"],
-            "event_count": len(data["events"]),
-        }
-    )
+    payload = {
+        "output_path": str(output_path.resolve()),
+        "dashboard_url": dashboard_url,
+        "opened": opened,
+        "root": str(root),
+        "global": global_view,
+        "event_count": len(data["global"]["events"]) if global_view else len(data["events"]),
+    }
+    if global_view:
+        payload["project_count"] = data["global"]["overview"]["project_count"]
+        payload["scan_roots"] = data["global"]["scan_roots"]
+    payload["active_count"] = data["overview"]["active_count"]
+    return ok(payload)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -651,6 +659,17 @@ def build_parser() -> argparse.ArgumentParser:
     dashboard_parser = subparsers.add_parser("dashboard")
     dashboard_parser.add_argument("--output")
     dashboard_parser.add_argument("--open", action="store_true", help="Open the generated dashboard in the default browser")
+    dashboard_parser.add_argument(
+        "--global",
+        dest="global_view",
+        action="store_true",
+        help="Render the normal read-only dashboard plus aggregated runtime lane events across project roots",
+    )
+    dashboard_parser.add_argument(
+        "--scan-root",
+        action="append",
+        help="Directory whose immediate child projects should be scanned for runtime lane events",
+    )
     dashboard_parser.set_defaults(func=cmd_dashboard)
 
     distill_coverage_parser = subparsers.add_parser("distill-coverage-report")
