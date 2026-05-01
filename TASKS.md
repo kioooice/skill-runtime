@@ -10,6 +10,7 @@
   - `low-risk-workspace-organization`
   这意味着当前默认接入已经不再只是“有入口”，而是“有入口且第一批任务边界更小更可信”。同时，第一处现有入口 `agent-plan` / `agent-plan-learning` 已正式切换到 Codex 默认通道，且更大范围验证已经通过：架构检查通过、contract 检查通过、CLI 级 default-in/default-out smoke 都通过，full slow runtime suite 也已通过 399 个测试。当前默认先把这一处入口作为阶段性默认路径验证点，而不是继续马上切第二处现有入口。现在又进一步把 `skill_runtime` 上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 MCP 启动也已不再写死在 `vibe` 根目录，而会优先识别当前工作区。当前已进一步把规则加严：具体项目开发任务在实质性读代码或改动前必须先走 Codex-facing runtime gate，优先调用 `run_codex_task_experimental`，必要时用 CLI `codex-run` 兜底写入可见触发事件；任务完成后如有结构化执行结果再走 `finalize_codex_task_experimental`。只读可视化观察面板已完成，并已把“技能树”从长列表改成中心向四周发散的径向布局，active / staging / archived / rejected 分支分布在四个象限；分支内现在优先展示能力组别，例如格式转换、文本处理、文件整理和运行时治理，而不是逐个技能铺开；当前也已去掉交叉连接线和硬分界线，让能力地图更干净。中心运行时根节点已重新放到上下分支之间，避免压到组别卡片。点击组别时，组内技能现在进入居中凸显的详情界面，页面不会自动滚动，也不再把树枝撑长。Trigger Log 和治理快照也都是独立页面式视图。dashboard 命令支持 `--open` 一键生成并打开本地页面。现在新增全局只读 dashboard，并已和普通 dashboard 合并：`dashboard --global --scan-root <目录>` 仍然能看当前项目技能树、触发日志、治理快照，同时增加全局项目概览和全局触发日志，用于查看其他工作区是否触发过 Skill Runtime。dashboard 固定界面文案、技能名称和技能说明都已中文显示；内部调用仍保留原始英文 `skill_name`。快验基线为 63 个测试通过
 - 下一步：用后续真实开发任务验证“任务开始先 gate、任务结束可 finalize”是否真的稳定产生 `runtime_lane_status`；需要看跨项目记录时，运行 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`
+- GitNexus 状态：本机查询崩溃已定位为 Windows 下 LadybugDB FTS/VECTOR 扩展加载导致 native crash；已用本机补丁让 CLI 的 `cypher` / `query` / `context` 恢复可用，并重建到当前提交 `992f36e`。当前 Codex 会话里的 GitNexus MCP transport 曾被崩溃打断，需要新会话或重启后再复测 MCP 工具。
 
 ## Todo
 
@@ -207,6 +208,10 @@
 - [x] 验证 CLI `codex-run` 能写入 dashboard 可见的 `runtime_lane_status: skipped` 事件
 - [x] 新增全局只读 dashboard，并将它与当前项目技能树、触发日志、治理快照合并在同一页面
 - [x] 验证 `python -m skill_runtime.cli --root . dashboard --global --scan-root D:\02-Projects --output .skill_runtime\global-dashboard.html`
+- [x] 定位 GitNexus 一直没效果的根因：MCP 查询路径被 LadybugDB FTS/VECTOR native crash 带断
+- [x] 为本机 GitNexus 查询路径补齐 pool-adapter 和 BM25 fallback 补丁
+- [x] 重建当前仓库 GitNexus 索引到提交 `992f36e`，并验证 `status` / `list` / `cypher` / `query` / `context`
+- [x] 更新 GitNexus 本机 runbook，记录查询崩溃根因、补丁点、恢复步骤和当前限制
 
 ## Blocked
 

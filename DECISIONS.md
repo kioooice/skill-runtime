@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-02 - GitNexus Windows 查询路径采用降级保活策略
+
+**Decision**
+
+当前本机 GitNexus 继续保留为可用的辅助能力，但在 Windows 查询路径上不再强行加载 LadybugDB FTS/VECTOR 扩展。全局安装包里的临时补丁让 pooled read path 跳过 FTS/VECTOR 加载，并让 BM25 搜索在 Windows 下退回 `CONTAINS` 图扫描。仓库索引已重建到当前提交 `992f36e`。
+
+**Reason**
+
+排查确认：GitNexus 已安装、仓库已注册，之前“没效果”的直接表现是 MCP `Transport closed`，真实根因是 LadybugDB FTS/VECTOR 扩展加载触发 native crash。继续追求完整 FTS/vector 路径会让 MCP 反复被带崩；先保住结构查询、上下文查询和基础关键词查询更有价值。
+
+**Impact**
+
+- `gitnexus status` 当前为 up-to-date
+- CLI 的 `cypher` / `query` / `context` 已恢复可用
+- 关键词搜索排序质量低于正常 FTS/vector 路径，复杂定位优先用 `cypher` 或 `context`
+- 当前 Codex 会话里的 GitNexus MCP transport 已被早先崩溃打断，需要新会话或重启后复测 MCP
+- 这些是本机补丁，GitNexus 升级或重装后可能被覆盖，恢复步骤记录在 `docs/gitnexus-local-runbook.md`
+
 ### 2026-05-01 - 全局 Dashboard 合并当前项目视图
 
 **Decision**

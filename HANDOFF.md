@@ -45,9 +45,30 @@
 
 当前实现也已经完成：`python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可以生成本地只读观察面板。页面展示总览、技能树视图、触发日志视图和治理快照。Codex-facing runtime lane 入口现在会把 `used / entered / skipped` 事件写入 `.skill_runtime/runtime_lane_events.jsonl`。最新一轮根据用户反馈，已把 Skill Tree 从单列长列表改成中心向四周发散的径向布局：运行时根节点在中心，active / staging / archived / rejected 四个状态分支分布在四个象限；分支内第一层展示能力组别，例如格式转换、文本处理、文件整理和运行时治理；中心节点已放到上下分支之间，避免压到组别卡片；点击组别时，组内技能会在居中凸显的详情界面中展开，页面不自动滚动，也不再把树枝撑长；同时去掉交叉连接线和硬分界线，改用位置、状态圆点和组别卡片表达结构。随后又把 Trigger Log 和治理快照都改成独立页面式视图，顶部导航不再用同页锚点滚动；点击触发日志只显示日志页，点击治理快照只显示库健康页。dashboard CLI 现在还支持 `--open`，可一键生成并用系统默认浏览器打开本地面板。现在又新增全局只读 dashboard，并已按用户反馈与普通 dashboard 合并：`python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 仍然显示当前项目技能树、当前项目触发日志、当前项目治理快照，同时增加“全局项目”和“全局日志”两页，用来查看其他工作区是否触发过 Skill Runtime。固定界面文案、技能名称和技能说明已经中文显示；内部执行、检索和索引仍使用原始英文 `skill_name`。当前还把全局和项目 `AGENTS.md` 规则加严：具体项目开发任务在实质性读代码或改动前必须先调用 Codex-facing runtime gate，优先走 `run_codex_task_experimental`，必要时用 CLI `codex-run` 兜底产生 dashboard 可见事件；任务完成后如有结构化执行结果，再调用 `finalize_codex_task_experimental`。
 
+GitNexus 当前结论：之前“一直没效果”不是因为没安装，也不是仓库没索引，而是查询路径在 Windows 上加载 LadybugDB FTS/VECTOR 扩展时触发 native crash。这个 crash 会把 MCP transport 直接带断，所以 Codex 里表现为 `Transport closed`。本机已在全局安装的 GitNexus 包里增加临时补丁：查询池不再加载 FTS/VECTOR，BM25 搜索在 Windows 下退回较慢的 `CONTAINS` 扫描；当前仓库索引已重建到提交 `992f36e`，CLI 的 `status` / `list` / `cypher` / `query` / `context` 已验证可用。当前会话里的 GitNexus MCP 已被早先崩溃打断，需要新 Codex 会话或重启后再复测 MCP 工具。
+
 ## Last Completed
 
 本轮已完成：
+- 定位 GitNexus 查询失败根因：
+  - GitNexus 已安装，仓库也已注册
+  - 原索引落后当前提交 33 个提交
+  - 真正导致“没效果”的问题是 LadybugDB FTS/VECTOR 扩展在 Windows 查询路径中崩溃
+  - MCP 的 `Transport closed` 是 native crash 的结果，不是主要根因
+- 修复本机 GitNexus 查询路径：
+  - `pool-adapter.js` 跳过 pooled read path 的 FTS/VECTOR 扩展加载
+  - `bm25-index.js` 在 Windows 下用 `CONTAINS` 扫描兜底，避免 FTS 崩溃
+  - 保留结构查询和上下文查询能力，搜索排序质量会低于正常 FTS/vector 路径
+- 重建当前仓库 GitNexus 索引：
+  - Indexed commit: `992f36e`
+  - Stats: `3032 files`, `8671 symbols`, `12478 edges`, `271 processes`
+  - `gitnexus status` 已显示 `✅ up-to-date`
+- 验证 GitNexus CLI 可用：
+  - `gitnexus cypher "RETURN 1 AS c" --repo skill-runtime`
+  - `gitnexus query "runtime service" --repo skill-runtime --limit 3`
+  - `gitnexus context RuntimeService --repo skill-runtime`
+  - dashboard 相关文件可通过 `cypher` 查到
+- 更新 `docs/gitnexus-local-runbook.md`，记录新增补丁点、恢复步骤和当前限制
 - 新增全局只读 dashboard，并与普通 dashboard 合并：
   - `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`
   - 默认输出 `.skill_runtime/global-dashboard.html`
@@ -419,7 +440,7 @@
 
 ## Next Action
 
-下一步默认进入真实开发任务观察：后续具体项目开发任务开始时先调用 `mcp__skill_runtime__.run_codex_task_experimental`；如果它不可用或没有返回可见 `runtime_lane_status`，用 `python -m skill_runtime.cli --root <workspace> codex-run ...` 兜底。任务完成后，如果有结构化执行结果或操作日志，再调用 `mcp__skill_runtime__.finalize_codex_task_experimental`。查看当前项目用 `python -m skill_runtime.cli dashboard --open`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`。
+下一步默认进入真实开发任务观察：后续具体项目开发任务开始时先调用 `mcp__skill_runtime__.run_codex_task_experimental`；如果它不可用或没有返回可见 `runtime_lane_status`，用 `python -m skill_runtime.cli --root <workspace> codex-run ...` 兜底。任务完成后，如果有结构化执行结果或操作日志，再调用 `mcp__skill_runtime__.finalize_codex_task_experimental`。查看当前项目用 `python -m skill_runtime.cli dashboard --open`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`。如果下一轮要验证 GitNexus MCP 是否恢复，先开启新 Codex 会话或重启 MCP，再执行 `list_repos`、`cypher RETURN 1` 和一次 dashboard 相关查询；不要把当前会话里已经断开的 transport 当作补丁失败。
 
 ## Important Files
 
@@ -522,9 +543,9 @@
 - DeepSeek live smoke 已证明 API 可连通，且完整 provider 闭环已在临时沙箱中跑通；仍不应把单次 live smoke 等同于长期稳定 SLA。
 - DeepSeek 质量门禁已经能阻止坏输出进入 staging，并默认允许一次自动返修；如果返修后仍失败，候选仍不会进入 staging。
 - active skill 当前已有 6 个真实技能，已足够证明主链路存在；当前风险转为“默认工作方式仍偏手动技能库”，不是“样本数量继续不够”。
-- 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
+- 当前仓库 GitNexus 索引已更新到当前提交，CLI 查询已恢复；但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
 - 未来新的 dogfood 执行默认不再改写版本管理下的 active metadata 和主索引。
-- 当前会话尝试 GitNexus MCP 查询时返回 `Transport closed`，本轮已退回普通文件检索。
+- 当前会话尝试 GitNexus MCP 查询时返回 `Transport closed`；根因已定位为 native crash，CLI 已恢复，但当前会话内 MCP transport 仍需新会话或重启后复测。
 - 本轮内置 Browser/IAB 预览因为本机 Node 版本低于插件要求不可用，已退回本机 Chrome headless 截图检查。
 - 全量 runtime suite 不是失败，但当前约 9 分钟，仍不适合作为每次小改动的默认第一验证命令。
 - `git diff --check` 当前仍提示 `skill_store/index.json` 和 `trajectories/demo_merge_text_files.json` 未来会按 LF 写回；这是换行提示，不是本轮新增的失败。
