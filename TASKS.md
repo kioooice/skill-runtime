@@ -8,7 +8,7 @@
   - `local-text-transformation`
   - `structured-format-conversion`
   - `low-risk-workspace-organization`
-  这意味着当前默认接入已经不再只是“有入口”，而是“有入口且第一批任务边界更小更可信”。同时，第一处现有入口 `agent-plan` / `agent-plan-learning` 已正式切换到 Codex 默认通道，且更大范围验证已经通过：架构检查通过、contract 检查通过、CLI 级 default-in/default-out smoke 都通过，full slow runtime suite 也已通过 399 个测试。当前默认先把这一处入口作为阶段性默认路径验证点，而不是继续马上切第二处现有入口。现在又进一步把 `skill_runtime` 上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 MCP 启动也已不再写死在 `vibe` 根目录，而会优先识别当前工作区。只读可视化观察面板已完成，并已把“技能树”从长列表改成 `Runtime Root -> active/staging/archive/rejected` 的分支视图，同时把 Trigger Log 和治理快照都改成独立页面式视图；顶部现在是技能树、触发日志、治理快照三页切换。dashboard 命令也已支持 `--open` 一键生成并打开本地页面。dashboard 固定界面文案、技能名称和技能说明都已中文显示；内部调用仍保留原始英文 `skill_name`。快验基线为 60 个测试通过
+  这意味着当前默认接入已经不再只是“有入口”，而是“有入口且第一批任务边界更小更可信”。同时，第一处现有入口 `agent-plan` / `agent-plan-learning` 已正式切换到 Codex 默认通道，且更大范围验证已经通过：架构检查通过、contract 检查通过、CLI 级 default-in/default-out smoke 都通过，full slow runtime suite 也已通过 399 个测试。当前默认先把这一处入口作为阶段性默认路径验证点，而不是继续马上切第二处现有入口。现在又进一步把 `skill_runtime` 上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 MCP 启动也已不再写死在 `vibe` 根目录，而会优先识别当前工作区。只读可视化观察面板已完成，并已把“技能树”从长列表改成中心向四周发散的径向布局，active / staging / archived / rejected 分支分布在四个象限；分支内现在优先展示能力组别，例如格式转换、文本处理、文件整理和运行时治理，而不是逐个技能铺开；当前也已去掉交叉连接线和硬分界线，让能力地图更干净。中心运行时根节点已重新放到上下分支之间，避免压到组别卡片。点击组别时，组内技能现在进入居中凸显的详情界面，页面不会自动滚动，也不再把树枝撑长。Trigger Log 和治理快照也都是独立页面式视图。dashboard 命令支持 `--open` 一键生成并打开本地页面。dashboard 固定界面文案、技能名称和技能说明都已中文显示；内部调用仍保留原始英文 `skill_name`。快验基线为 60 个测试通过
 - 下一步：进入跨工作区真实使用观察，按 `runtime_lane_status` 和 `runtime_lane_reason` 判断这条全局默认能力是否真的参与并且行为合理；如果继续增强 dashboard，优先做真实触发事件的日志卡片可读性，而不是增加写操作
 
 ## Todo
@@ -196,6 +196,12 @@
 - [x] 将 dashboard 技能名称和技能说明改成中文展示，同时保留英文 `skill_name` 作为内部 ID
 - [x] 将 dashboard 的触发日志改成页面式切换，避免点击后只是滚动到技能树下方
 - [x] 将 dashboard 的治理快照拆成第三个独立视图，不再跟触发日志混在一起
+- [x] 将 dashboard 技能树从长条卡片改成分支簇和叶子节点布局
+- [x] 将 dashboard 技能树改成中心向四周发散的径向布局
+- [x] 将 dashboard 技能树第一层改成能力组别，而不是逐个技能节点
+- [x] 去掉 dashboard 技能树的交叉线和硬分界线，改用位置、圆点和组别卡片表达结构
+- [x] 将 dashboard 组别展开改成居中凸显的详情界面，打开时不滚动页面也不撑开树枝
+- [x] 调整 dashboard 技能树中心节点位置，避免运行时根节点与组别卡片重叠
 
 ## Blocked
 

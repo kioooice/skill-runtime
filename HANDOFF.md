@@ -43,7 +43,7 @@
 
 用户已批准该设计进入实现计划阶段。当前实现计划已写入 `docs/superpowers/plans/2026-05-01-runtime-observability-dashboard.md`，计划拆成事件日志、host 接入、dashboard 数据收集、HTML 渲染、CLI 入口和最终验证六个任务。
 
-当前实现也已经完成：`python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可以生成本地只读观察面板。页面展示总览、技能树视图、触发日志视图和治理快照。Codex-facing runtime lane 入口现在会把 `used / entered / skipped` 事件写入 `.skill_runtime/runtime_lane_events.jsonl`。最新一轮根据用户反馈，已把 Skill Tree 从单列长列表改成 `Runtime Root -> active / staging / archive / rejected` 的分支视图，并让 archive 这类长分支只展示部分节点和剩余数量。随后又把 Trigger Log 和治理快照都改成独立页面式视图，顶部导航不再用同页锚点滚动；点击触发日志只显示日志页，点击治理快照只显示库健康页。dashboard CLI 现在还支持 `--open`，可一键生成并用系统默认浏览器打开本地面板。固定界面文案、技能名称和技能说明已经中文显示；内部执行、检索和索引仍使用原始英文 `skill_name`。
+当前实现也已经完成：`python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可以生成本地只读观察面板。页面展示总览、技能树视图、触发日志视图和治理快照。Codex-facing runtime lane 入口现在会把 `used / entered / skipped` 事件写入 `.skill_runtime/runtime_lane_events.jsonl`。最新一轮根据用户反馈，已把 Skill Tree 从单列长列表改成中心向四周发散的径向布局：运行时根节点在中心，active / staging / archived / rejected 四个状态分支分布在四个象限；分支内第一层展示能力组别，例如格式转换、文本处理、文件整理和运行时治理；中心节点已放到上下分支之间，避免压到组别卡片；点击组别时，组内技能会在居中凸显的详情界面中展开，页面不自动滚动，也不再把树枝撑长；同时去掉交叉连接线和硬分界线，改用位置、状态圆点和组别卡片表达结构。随后又把 Trigger Log 和治理快照都改成独立页面式视图，顶部导航不再用同页锚点滚动；点击触发日志只显示日志页，点击治理快照只显示库健康页。dashboard CLI 现在还支持 `--open`，可一键生成并用系统默认浏览器打开本地面板。固定界面文案、技能名称和技能说明已经中文显示；内部执行、检索和索引仍使用原始英文 `skill_name`。
 
 ## Last Completed
 
@@ -53,6 +53,40 @@
   - 下方按 active / staging / archive / rejected 分枝
   - 每个技能作为分支下的节点展示
   - archive 等长分支不再全部铺满首屏，而是显示代表性节点和剩余数量
+- 将 Skill Tree 进一步从长条卡片收成分支簇和叶子节点：
+  - 分支不再用大矩形卡片撑满高度
+  - 技能默认显示为紧凑叶子
+  - 技能说明保留在可展开叶子内
+  - 候选和归档分支默认收起多余节点
+- 将 Skill Tree 改成径向布局：
+  - 运行时根节点固定在中心
+  - active / staging / archived / rejected 分布在四个象限
+  - 移动端仍降级为单列，避免小屏挤压
+- 调整 Skill Tree 中心节点位置：
+  - 中心运行时根节点放到上下分支之间
+  - 上下两排分支间距拉开，避免中心节点压到组别卡片
+  - 截图检查：`output/playwright/runtime-dashboard-skill-tree-current-scrolled.png`
+  - 对照首屏截图：`output/playwright/runtime-dashboard-skill-tree-center-spacing.png`
+- 将 Skill Tree 第一层改成能力组别：
+  - 默认显示格式转换、文本处理、文件整理、运行时治理等组别
+  - 单个技能保留在居中详情界面里
+  - 分组只用于 dashboard 展示，不回写 metadata 或索引
+- 将组别展开改成居中详情界面：
+  - 组别卡片点击后不再内联展开
+  - 组内技能在居中弹出的详情界面中显示
+  - 打开组别不会滚动页面
+  - 详情界面提供“收起详情”，点击背景或按 Esc 也可关闭
+  - 截图检查：`output/playwright/runtime-dashboard-group-detail-modal.png`
+- 去掉 Skill Tree 中影响视觉的线条：
+  - 移除中心向外的交叉连接线
+  - 移除状态分支旁的硬竖向分界线
+  - 改用四象限位置、状态圆点和能力组别卡片表达结构
+  - 截图检查：`output/playwright/runtime-dashboard-skill-tree-groups-soft.png`
+- 已验证本轮 dashboard 视觉调整：
+  - `python -m unittest tests.test_runtime_fast -v`，60 tests OK
+  - `git diff --check`
+  - `python -m skill_runtime.cli dashboard --open`
+  - 居中详情界面截图验证时页面滚动位置保持 `scrollY:0->0`，并锁定背景滚动
 - 将 Trigger Log 从技能树区域中拆出：
   - 新增 `Skill Tree View`
   - 新增 `Trigger Log View`
@@ -362,7 +396,7 @@
 
 ## Next Action
 
-下一步默认进入真实使用观察：运行 `python -m skill_runtime.cli dashboard --open` 或 `skill-runtime dashboard --open` 查看当前 runtime root 的分支技能树、触发日志和治理快照。三个部分现在是独立视图。如果用户要求继续增强 dashboard，优先考虑把真实触发事件做成更易读的日志卡片，而不是直接加写操作。
+下一步默认进入真实使用观察：运行 `python -m skill_runtime.cli dashboard --open` 或 `skill-runtime dashboard --open` 查看当前 runtime root 的组别化径向技能树、居中组别详情界面、触发日志和治理快照。三个部分现在是独立视图。如果用户要求继续增强 dashboard，优先考虑把真实触发事件做成更易读的日志卡片，而不是直接加写操作。
 
 ## Important Files
 

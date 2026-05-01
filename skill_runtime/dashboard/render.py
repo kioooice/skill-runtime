@@ -90,6 +90,22 @@ SKILL_NAME_TOKEN_LABELS = {
     "v2": "v2",
 }
 
+SKILL_GROUP_LABELS = {
+    "structured-conversion": ("格式转换", "JSON、CSV、结构化导入导出"),
+    "text-processing": ("文本处理", "合并、清理、替换、Markdown 输出"),
+    "file-organization": ("文件整理", "归档、移动、批量重命名"),
+    "runtime-governance": ("运行时治理", "测试、规则、审核、候选维护"),
+    "other-workflows": ("其他工作流", "暂未归入固定能力类型"),
+}
+
+SKILL_GROUP_ORDER = [
+    "structured-conversion",
+    "text-processing",
+    "file-organization",
+    "runtime-governance",
+    "other-workflows",
+]
+
 
 def render_dashboard_html(data: dict[str, Any]) -> str:
     return f"""<!doctype html>
@@ -175,6 +191,49 @@ def _source_display_text(sources: list[Any]) -> str:
     return f"已记录 {len(sources)} 条来源轨迹"
 
 
+def _skill_group_key(skill: dict[str, Any]) -> str:
+    raw_name = str(skill.get("skill_name") or "").lower()
+    summary = str(skill.get("summary") or "").lower()
+    raw_hint = f" {raw_name} "
+    combined = f"{raw_name} {summary}"
+
+    governance_markers = (
+        "audit",
+        "bridge",
+        "config",
+        "demo",
+        "distill",
+        "explainable",
+        "fallback",
+        "followup",
+        "generated",
+        "generalized",
+        "manual",
+        "provider",
+        "registry",
+        "rule",
+        "semantic",
+        "service",
+        "test",
+    )
+    if any(marker in raw_hint for marker in governance_markers):
+        return "runtime-governance"
+    if any(marker in combined for marker in ("json", "csv", "convert", "export", "record")):
+        return "structured-conversion"
+    if any(marker in combined for marker in ("markdown", "merge", "normalize", "replace", "text", "txt", "whitespace")):
+        return "text-processing"
+    if any(marker in combined for marker in ("archive", "log", "move", "prefix", "rename")):
+        return "file-organization"
+    return "other-workflows"
+
+
+def _group_skills_by_type(skills: list[dict[str, Any]]) -> list[tuple[str, list[dict[str, Any]]]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for skill in skills:
+        grouped.setdefault(_skill_group_key(skill), []).append(skill)
+    return [(group_id, grouped[group_id]) for group_id in SKILL_GROUP_ORDER if grouped.get(group_id)]
+
+
 def _skill_tree(skills: list[dict[str, Any]]) -> str:
     if not skills:
         body = '<p class="muted">当前运行根目录没有找到技能。</p>'
@@ -189,53 +248,121 @@ def _skill_tree(skills: list[dict[str, Any]]) -> str:
 
 def _skill_tree_branches(skills: list[dict[str, Any]]) -> str:
     branches = [
-        ("active", "活跃", "可用技能", 12),
-        ("staging", "候选", "候选技能", 12),
-        ("archived", "归档", "已退役技能", 8),
-        ("rejected", "拒绝", "已阻断候选", 8),
+        ("active", "活跃", "可用技能", 8, "nw"),
+        ("staging", "候选", "候选技能", 5, "ne"),
+        ("archived", "归档", "已退役技能", 3, "sw"),
+        ("rejected", "拒绝", "已阻断候选", 6, "se"),
     ]
-    grouped: dict[str, list[dict[str, Any]]] = {status: [] for status, _, _, _ in branches}
+    grouped: dict[str, list[dict[str, Any]]] = {status: [] for status, _, _, _, _ in branches}
     for skill in skills:
         grouped.setdefault(str(skill.get("status") or "unknown"), []).append(skill)
     branch_html = "\n".join(
-        _skill_branch(status, label, caption, grouped.get(status, []), limit)
-        for status, label, caption, limit in branches
+        _skill_branch(status, label, caption, grouped.get(status, []), limit, quadrant)
+        for status, label, caption, limit, quadrant in branches
     )
-    total_count = sum(len(grouped.get(status, [])) for status, _, _, _ in branches)
-    return f"""<div class="tree-canvas">
-  <div class="tree-root">
+    detail_html = "\n".join(
+        _skill_group_detail_panel(status, label, group_id, group_skills)
+        for status, label, _, _, _ in branches
+        for group_id, group_skills in _group_skills_by_type(grouped.get(status, []))
+    )
+    total_count = sum(len(grouped.get(status, [])) for status, _, _, _, _ in branches)
+    return f"""<div class="tree-canvas tree-fan radial-tree">
+  <div class="tree-root radial-center">
     <div class="tree-node root"><strong>运行时根节点</strong><span>{text(total_count)} 个已索引技能</span></div>
   </div>
-  <div class="tree-branches">{branch_html}</div>
+  <div class="branch-map radial-quadrants">{branch_html}</div>
+  <section class="group-detail-modal" data-skill-group-modal role="dialog" aria-modal="true" aria-live="polite" hidden>
+    <button class="group-detail-backdrop" type="button" data-skill-group-close aria-label="关闭组别详情"></button>
+    <div class="group-detail-surface">{detail_html}</div>
+  </section>
 </div>"""
 
 
-def _skill_branch(status: str, label: str, caption: str, skills: list[dict[str, Any]], limit: int) -> str:
+def _skill_branch(
+    status: str,
+    label: str,
+    caption: str,
+    skills: list[dict[str, Any]],
+    limit: int,
+    quadrant: str,
+) -> str:
     if skills:
-        visible_skills = skills[:limit]
-        body_parts = [_skill_node(skill) for skill in visible_skills]
-        hidden_count = len(skills) - len(visible_skills)
+        skill_groups = _group_skills_by_type(skills)
+        visible_groups = skill_groups[:limit]
+        body_parts = [_skill_group_node(group_id, group_skills, status) for group_id, group_skills in visible_groups]
+        hidden_count = sum(len(group_skills) for _, group_skills in skill_groups[len(visible_groups) :])
         if hidden_count > 0:
-            body_parts.append(f'<div class="more-node">该分支还有 {text(hidden_count)} 个技能未展开</div>')
+            body_parts.append(f'<div class="more-group">还有 {text(hidden_count)} 个技能分布在更多组别中</div>')
         body = "\n".join(body_parts)
     else:
-        body = '<div class="empty-branch">该分支暂无技能。</div>'
-    return f"""<section class="tree-branch {text(status)}">
+        body = '<div class="empty-group">该分支暂无技能。</div>'
+    return f"""<section class="tree-branch branch-cluster {text(status)} quadrant-{text(quadrant)}">
   <div class="branch-head {text(status)}"><strong>{text(len(skills))}</strong><span>{text(label)} - {text(caption)}</span></div>
-  <div class="branch-skills">{body}</div>
+  <div class="branch-canopy">{body}</div>
 </section>"""
 
 
-def _skill_node(skill: dict[str, Any]) -> str:
+def _skill_group_node(group_id: str, skills: list[dict[str, Any]], status: str) -> str:
+    label, caption = SKILL_GROUP_LABELS.get(group_id, SKILL_GROUP_LABELS["other-workflows"])
+    usage_count = sum(_safe_int(skill.get("usage_count", 0)) for skill in skills)
+    example_names = "、".join(_skill_display_name(skill.get("skill_name")) for skill in skills[:2])
+    examples = f"代表：{example_names}" if example_names else "暂无代表技能"
+    target_id = _skill_group_target_id(status, group_id)
+    return f"""<button class="skill-group {text(status)}" type="button" data-skill-group="{text(group_id)}" data-skill-group-target="{text(target_id)}" aria-controls="{text(target_id)}" aria-expanded="false">
+  <span class="group-title">{text(label)}</span>
+  <span class="group-count">{text(len(skills))} 个技能</span>
+  <span class="group-caption">{text(caption)}</span>
+  <span class="group-meta">总复用 {text(usage_count)} 次 · {text(examples)}</span>
+  <span class="group-action">查看组内技能</span>
+</button>"""
+
+
+def _skill_group_target_id(status: str, group_id: str) -> str:
+    return f"group-{status}-{group_id}"
+
+
+def _skill_group_detail_panel(status: str, status_name: str, group_id: str, skills: list[dict[str, Any]]) -> str:
+    label, caption = SKILL_GROUP_LABELS.get(group_id, SKILL_GROUP_LABELS["other-workflows"])
+    visible_skills = skills[:10]
+    hidden_count = len(skills) - len(visible_skills)
+    usage_count = sum(_safe_int(skill.get("usage_count", 0)) for skill in skills)
+    member_body = "\n".join(_skill_group_member(skill) for skill in visible_skills)
+    if hidden_count > 0:
+        member_body += f'\n<div class="group-more">还有 {text(hidden_count)} 个技能未在面板中展开。</div>'
+    target_id = _skill_group_target_id(status, group_id)
+    return f"""<article id="{text(target_id)}" class="group-detail-panel {text(status)}" data-skill-group-panel="{text(target_id)}" hidden>
+  <div class="group-detail-head">
+    <div>
+      <div class="group-detail-kicker">{text(status_name)}能力组</div>
+      <h3>{text(label)}</h3>
+      <p>{text(caption)}</p>
+    </div>
+    <div class="group-detail-stats"><strong>{text(len(skills))}</strong><span>组内技能</span><span>总复用 {text(usage_count)} 次</span></div>
+    <button class="group-detail-close" type="button" data-skill-group-close>收起详情</button>
+  </div>
+  <div class="group-skill-list">{member_body}</div>
+</article>"""
+
+
+def _safe_int(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _skill_group_member(skill: dict[str, Any]) -> str:
     raw_name = str(skill.get("skill_name") or "")
+    status = str(skill.get("status") or "skipped")
     sources = skill.get("source_trajectory_ids") or []
     source_text = _source_display_text(sources)
     source_ids = ",".join(str(item) for item in sources)
-    return f"""<article class="skill-node" data-skill-name="{text(raw_name)}" data-source-trajectories="{text(source_ids)}">
-  <div>{badge(skill.get("status"))} <span class="skill-name">{text(_skill_display_name(raw_name))}</span></div>
+    usage_count = skill.get("usage_count", 0)
+    return f"""<article class="group-skill" data-skill-name="{text(raw_name)}" data-source-trajectories="{text(source_ids)}">
+  <div>{badge(status)} <span class="skill-name">{text(_skill_display_name(raw_name))}</span></div>
+  <div class="group-skill-meta">复用 {text(usage_count)} 次 · 来源 {text(len(sources))} 条</div>
   <p class="skill-summary">{text(_skill_display_summary(skill.get("summary")))}</p>
-  <div class="muted">来源轨迹：{text(source_text)}</div>
-  <div class="muted">复用次数：{text(skill.get("usage_count", 0))}</div>
+  <div class="leaf-detail">来源轨迹：{text(source_text)}</div>
 </article>"""
 
 
