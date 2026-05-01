@@ -1,8 +1,20 @@
 import argparse
 import json
+from dataclasses import asdict
 from pathlib import Path
 
+from skill_runtime.api.models import (
+    AgentOrchestrationResult,
+    AgentTaskRequest,
+    CodexTaskClassification,
+    LearningDecision,
+    ReuseDecision,
+)
+from skill_runtime.api.orchestration import AgentOrchestrationService
+from skill_runtime.api.host import classify_codex_task, finalize_codex_task, run_codex_task, start_codex_task
 from skill_runtime.api.service import RuntimeService, RuntimeServiceError
+from skill_runtime.dashboard.collector import collect_dashboard_data
+from skill_runtime.dashboard.render import render_dashboard_html
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -17,6 +29,10 @@ EXIT_POLICY_BLOCKED = 5
 
 def service_for_args(args: argparse.Namespace) -> RuntimeService:
     return RuntimeService(Path(args.root).resolve())
+
+
+def orchestration_for_args(args: argparse.Namespace) -> AgentOrchestrationService:
+    return AgentOrchestrationService(Path(args.root).resolve())
 
 
 def load_json_file(path: str) -> object:
@@ -327,6 +343,165 @@ def cmd_archive_fixture_skills(args: argparse.Namespace) -> int:
     return ok(service_for_args(args).archive_fixture_skills(skill_names=args.skill_name, dry_run=args.dry_run))
 
 
+def _build_agent_task_request(args: argparse.Namespace) -> AgentTaskRequest:
+    task_description = getattr(args, "task_description", None)
+    if not isinstance(task_description, str) or not task_description.strip():
+        raise ValueError("--task-description is required unless --plan-json already provides the request")
+
+    known_inputs = {}
+    if getattr(args, "known_inputs_json", None):
+        known_inputs = json.loads(args.known_inputs_json)
+        if not isinstance(known_inputs, dict):
+            raise ValueError("--known-inputs-json must decode to a JSON object")
+
+    expected_outputs = []
+    if getattr(args, "expected_outputs_json", None):
+        expected_outputs = json.loads(args.expected_outputs_json)
+        if not isinstance(expected_outputs, list) or not all(isinstance(item, str) for item in expected_outputs):
+            raise ValueError("--expected-outputs-json must decode to a JSON array of strings")
+
+    return AgentTaskRequest(
+        task_description=task_description,
+        working_directory=getattr(args, "working_directory", None),
+        known_inputs=known_inputs,
+        expected_outputs=expected_outputs,
+        risk_level=getattr(args, "risk_level", "medium"),
+        task_kind=getattr(args, "task_kind", "workflow"),
+        allow_silent_reuse=not getattr(args, "disable_silent_reuse", False),
+        allow_learning=not getattr(args, "disable_learning", False),
+    )
+
+
+def cmd_agent_plan(args: argparse.Namespace) -> int:
+    try:
+        request = _build_agent_task_request(args)
+    except (ValueError, json.JSONDecodeError) as exc:
+        return error(str(exc), "INVALID_AGENT_PLAN_INPUT", exit_code=EXIT_ARGUMENT_ERROR)
+
+    plan = start_codex_task(Path(args.root).resolve(), request)
+    return ok(asdict(plan))
+
+
+def _build_agent_orchestration_result(raw_plan: object) -> AgentOrchestrationResult:
+    if not isinstance(raw_plan, dict):
+        raise ValueError("--plan-json must decode to a JSON object")
+
+    raw_request = raw_plan.get("request")
+    raw_reuse = raw_plan.get("reuse_decision")
+    if not isinstance(raw_request, dict) or not isinstance(raw_reuse, dict):
+        raise ValueError("--plan-json must contain request and reuse_decision objects")
+
+    request = AgentTaskRequest(**raw_request)
+    reuse_decision = ReuseDecision(**raw_reuse)
+
+    raw_learning = raw_plan.get("learning_decision")
+    learning_decision = LearningDecision(**raw_learning) if isinstance(raw_learning, dict) else None
+
+    selected_skill_name = raw_plan.get("selected_skill_name")
+    selected_skill_args = raw_plan.get("selected_skill_args", {})
+    execution_payload = raw_plan.get("execution_payload")
+    learning_capture_payload = raw_plan.get("learning_capture_payload")
+    runtime_lane_status = raw_plan.get("runtime_lane_status")
+    runtime_lane_reason = raw_plan.get("runtime_lane_reason")
+    if not isinstance(selected_skill_args, dict):
+        raise ValueError("selected_skill_args in --plan-json must be an object")
+
+    return AgentOrchestrationResult(
+        request=request,
+        reuse_decision=reuse_decision,
+        learning_decision=learning_decision,
+        runtime_lane_status=runtime_lane_status if isinstance(runtime_lane_status, str) else None,
+        runtime_lane_reason=runtime_lane_reason if isinstance(runtime_lane_reason, str) else None,
+        selected_skill_name=selected_skill_name if isinstance(selected_skill_name, str) else None,
+        selected_skill_args=selected_skill_args,
+        execution_payload=execution_payload if isinstance(execution_payload, dict) else None,
+        learning_capture_payload=learning_capture_payload if isinstance(learning_capture_payload, dict) else None,
+    )
+
+
+def cmd_agent_plan_learning(args: argparse.Namespace) -> int:
+    try:
+        execution_payload = json.loads(args.execution_json)
+        if not isinstance(execution_payload, dict):
+            raise ValueError("--execution-json must decode to a JSON object")
+        if args.plan_json:
+            plan = _build_codex_orchestration_result(json.loads(args.plan_json))
+        else:
+            request = _build_agent_task_request(args)
+            classification = classify_codex_task(request)
+            plan = AgentOrchestrationResult(
+                request=request,
+                reuse_decision=ReuseDecision("skip", "no prior reuse plan was provided"),
+                task_classification=classification,
+            )
+    except (ValueError, json.JSONDecodeError) as exc:
+        return error(str(exc), "INVALID_AGENT_PLAN_INPUT", exit_code=EXIT_ARGUMENT_ERROR)
+
+    finalized = finalize_codex_task(Path(args.root).resolve(), plan, execution_payload)
+    return ok(asdict(finalized))
+
+
+def _build_codex_orchestration_result(raw_plan: object) -> AgentOrchestrationResult:
+    plan = _build_agent_orchestration_result(raw_plan)
+    if not isinstance(raw_plan, dict):
+        raise ValueError("--plan-json must decode to a JSON object")
+    raw_classification = raw_plan.get("task_classification")
+    classification = CodexTaskClassification(**raw_classification) if isinstance(raw_classification, dict) else None
+    return AgentOrchestrationResult(
+        request=plan.request,
+        reuse_decision=plan.reuse_decision,
+        learning_decision=plan.learning_decision,
+        task_classification=classification,
+        runtime_lane_status=plan.runtime_lane_status,
+        runtime_lane_reason=plan.runtime_lane_reason,
+        selected_skill_name=plan.selected_skill_name,
+        selected_skill_args=dict(plan.selected_skill_args),
+        execution_payload=plan.execution_payload,
+        learning_capture_payload=plan.learning_capture_payload,
+    )
+
+
+def cmd_codex_classify(args: argparse.Namespace) -> int:
+    try:
+        request = _build_agent_task_request(args)
+    except (ValueError, json.JSONDecodeError) as exc:
+        return error(str(exc), "INVALID_CODEX_TASK_INPUT", exit_code=EXIT_ARGUMENT_ERROR)
+    return ok(asdict(classify_codex_task(request)))
+
+
+def cmd_codex_run(args: argparse.Namespace) -> int:
+    try:
+        request = _build_agent_task_request(args)
+    except (ValueError, json.JSONDecodeError) as exc:
+        return error(str(exc), "INVALID_CODEX_TASK_INPUT", exit_code=EXIT_ARGUMENT_ERROR)
+
+    result = run_codex_task(Path(args.root).resolve(), request)
+    return ok(asdict(result))
+
+
+def cmd_codex_finalize(args: argparse.Namespace) -> int:
+    try:
+        execution_payload = json.loads(args.execution_json)
+        if not isinstance(execution_payload, dict):
+            raise ValueError("--execution-json must decode to a JSON object")
+        if args.plan_json:
+            plan = _build_codex_orchestration_result(json.loads(args.plan_json))
+        else:
+            request = _build_agent_task_request(args)
+            classification = classify_codex_task(request)
+            plan = AgentOrchestrationResult(
+                request=request,
+                reuse_decision=ReuseDecision("skip", classification.reason),
+                learning_decision=None,
+                task_classification=classification,
+            )
+    except (ValueError, json.JSONDecodeError) as exc:
+        return error(str(exc), "INVALID_CODEX_TASK_INPUT", exit_code=EXIT_ARGUMENT_ERROR)
+
+    finalized = finalize_codex_task(Path(args.root).resolve(), plan, execution_payload)
+    return ok(asdict(finalized))
+
+
 def cmd_distill_and_promote(args: argparse.Namespace) -> int:
     if sum(
         1
@@ -383,6 +558,24 @@ def cmd_distill_and_promote(args: argparse.Namespace) -> int:
             else EXIT_VALIDATION_ERROR
         )
         return error(exc.message, exc.code, exc.details, exit_code=exit_code)
+
+
+def cmd_dashboard(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    output_path = Path(args.output) if args.output else root / ".skill_runtime" / "dashboard.html"
+    if not output_path.is_absolute():
+        output_path = root / output_path
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    data = collect_dashboard_data(root)
+    output_path.write_text(render_dashboard_html(data), encoding="utf-8")
+    return ok(
+        {
+            "output_path": str(output_path.resolve()),
+            "root": str(root),
+            "active_count": data["overview"]["active_count"],
+            "event_count": len(data["events"]),
+        }
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -450,6 +643,10 @@ def build_parser() -> argparse.ArgumentParser:
     governance_parser = subparsers.add_parser("governance-report")
     governance_parser.set_defaults(func=cmd_governance_report)
 
+    dashboard_parser = subparsers.add_parser("dashboard")
+    dashboard_parser.add_argument("--output")
+    dashboard_parser.set_defaults(func=cmd_dashboard)
+
     distill_coverage_parser = subparsers.add_parser("distill-coverage-report")
     distill_coverage_parser.add_argument(
         "--observed-task-scope",
@@ -478,6 +675,65 @@ def build_parser() -> argparse.ArgumentParser:
     archive_fixture_parser.add_argument("--skill-name", action="append")
     archive_fixture_parser.add_argument("--dry-run", action="store_true")
     archive_fixture_parser.set_defaults(func=cmd_archive_fixture_skills)
+
+    agent_plan_parser = subparsers.add_parser("agent-plan")
+    agent_plan_parser.add_argument("--task-description", required=True)
+    agent_plan_parser.add_argument("--working-directory")
+    agent_plan_parser.add_argument("--known-inputs-json")
+    agent_plan_parser.add_argument("--expected-outputs-json")
+    agent_plan_parser.add_argument("--risk-level", default="medium")
+    agent_plan_parser.add_argument("--task-kind", default="workflow")
+    agent_plan_parser.add_argument("--disable-silent-reuse", action="store_true")
+    agent_plan_parser.add_argument("--disable-learning", action="store_true")
+    agent_plan_parser.set_defaults(func=cmd_agent_plan)
+
+    agent_learning_parser = subparsers.add_parser("agent-plan-learning")
+    agent_learning_parser.add_argument("--plan-json")
+    agent_learning_parser.add_argument("--task-description")
+    agent_learning_parser.add_argument("--working-directory")
+    agent_learning_parser.add_argument("--known-inputs-json")
+    agent_learning_parser.add_argument("--expected-outputs-json")
+    agent_learning_parser.add_argument("--risk-level", default="medium")
+    agent_learning_parser.add_argument("--task-kind", default="workflow")
+    agent_learning_parser.add_argument("--disable-silent-reuse", action="store_true")
+    agent_learning_parser.add_argument("--disable-learning", action="store_true")
+    agent_learning_parser.add_argument("--execution-json", required=True)
+    agent_learning_parser.set_defaults(func=cmd_agent_plan_learning)
+
+    codex_classify_parser = subparsers.add_parser("codex-classify")
+    codex_classify_parser.add_argument("--task-description", required=True)
+    codex_classify_parser.add_argument("--working-directory")
+    codex_classify_parser.add_argument("--known-inputs-json")
+    codex_classify_parser.add_argument("--expected-outputs-json")
+    codex_classify_parser.add_argument("--risk-level", default="medium")
+    codex_classify_parser.add_argument("--task-kind", default="workflow")
+    codex_classify_parser.add_argument("--disable-silent-reuse", action="store_true")
+    codex_classify_parser.add_argument("--disable-learning", action="store_true")
+    codex_classify_parser.set_defaults(func=cmd_codex_classify)
+
+    codex_run_parser = subparsers.add_parser("codex-run")
+    codex_run_parser.add_argument("--task-description", required=True)
+    codex_run_parser.add_argument("--working-directory")
+    codex_run_parser.add_argument("--known-inputs-json")
+    codex_run_parser.add_argument("--expected-outputs-json")
+    codex_run_parser.add_argument("--risk-level", default="medium")
+    codex_run_parser.add_argument("--task-kind", default="workflow")
+    codex_run_parser.add_argument("--disable-silent-reuse", action="store_true")
+    codex_run_parser.add_argument("--disable-learning", action="store_true")
+    codex_run_parser.set_defaults(func=cmd_codex_run)
+
+    codex_finalize_parser = subparsers.add_parser("codex-finalize")
+    codex_finalize_parser.add_argument("--plan-json")
+    codex_finalize_parser.add_argument("--task-description")
+    codex_finalize_parser.add_argument("--working-directory")
+    codex_finalize_parser.add_argument("--known-inputs-json")
+    codex_finalize_parser.add_argument("--expected-outputs-json")
+    codex_finalize_parser.add_argument("--risk-level", default="medium")
+    codex_finalize_parser.add_argument("--task-kind", default="workflow")
+    codex_finalize_parser.add_argument("--disable-silent-reuse", action="store_true")
+    codex_finalize_parser.add_argument("--disable-learning", action="store_true")
+    codex_finalize_parser.add_argument("--execution-json", required=True)
+    codex_finalize_parser.set_defaults(func=cmd_codex_finalize)
 
     return parser
 

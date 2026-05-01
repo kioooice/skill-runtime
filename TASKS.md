@@ -2,14 +2,22 @@
 
 ## Current Focus
 
-- 当前目标：从产品化收敛切回 Skill Runtime 核心功能完成度收敛
-- 当前状态：已新增外部命令型 fallback / semantic provider 接入路径、仓库内本地 demo provider、DeepSeek provider 示例、测试分层与第一轮全量测试提速；已用真实 DeepSeek API 验证完整 provider dogfood 闭环，确认生成、审核、入库、复用可跑通；DeepSeek fallback 本地质量门禁已能阻止坏输出进入 staging，并已支持失败后自动返修一次；active 库已有 6 个真实 dogfood 技能，最新新增 `directory_text_cleanup_dogfood`；搜索质量已有最小评估脚本和快验覆盖，且已过滤英文停用词以减少无关弱匹配
-- 下一步：继续增加真实 dogfood 技能样本，优先覆盖目录文本替换；或扩大搜索质量评估样本集
+- 当前目标：把 Skill Runtime 真正接到 Codex 默认工作方式上，但先采用受控低风险任务通道，而不是一次性全量切换
+- 当前状态：agent-first runtime 的实验路径已经完成阶段性收口，当前层已证明“先做事，再回收经验”真实可用；当前主线已从“继续证明底层存在”切换到“如何让 Codex 默认使用这层”。现在除了分类文档、host API、MCP 实验入口和 Codex CLI 默认通道以外，phase-one `default-in` 还进一步收窄成四类白名单家族：
+  - `project-state-maintenance`
+  - `local-text-transformation`
+  - `structured-format-conversion`
+  - `low-risk-workspace-organization`
+  这意味着当前默认接入已经不再只是“有入口”，而是“有入口且第一批任务边界更小更可信”。同时，第一处现有入口 `agent-plan` / `agent-plan-learning` 已正式切换到 Codex 默认通道，且更大范围验证已经通过：架构检查通过、contract 检查通过、CLI 级 default-in/default-out smoke 都通过，full slow runtime suite 也已通过 399 个测试。当前默认先把这一处入口作为阶段性默认路径验证点，而不是继续马上切第二处现有入口。现在又进一步把 `skill_runtime` 上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 MCP 启动也已不再写死在 `vibe` 根目录，而会优先识别当前工作区。最新已完成只读可视化观察面板设计，第一版目标是让用户看到技能树和触发日志，而不是做完整管理后台。快验基线维持 53 个测试通过
+- 下一步：进入跨工作区真实使用观察，按 `runtime_lane_status` 和 `runtime_lane_reason` 判断这条全局默认能力是否真的参与并且行为合理；同时后续文档与沟通默认使用“背景能力层 / runtime lane”口径，而不是再回到“主要是 MCP 工具集”的旧说法
 
 ## Todo
 
-- [ ] 继续增加真实 dogfood 技能样本，优先覆盖目录文本替换
-- [ ] 视需要扩大搜索质量评估样本集
+- [ ] 观察这条全局默认能力在真实工作区中的表现
+- [ ] 持续补充 `docs/codex-default-lane-observation-log.md` 中的真实样本
+- [ ] 仅在观察期出现明确价值时，再决定是否继续切第二处现有入口到 Codex 默认通道
+- [ ] 如有必要，把观察期暴露出的高频边界问题收成回归测试
+- [ ] 如有必要，补一条围绕 Codex 默认接入边界的回归测试路径
 - [ ] 视需要继续优化 full runtime suite 剩余慢点，优先看 MCP/provider dogfood 和生成规则组合测试
 - [ ] 视需要继续收敛 GitNexus 本机补丁为更长期方案
 - [ ] 视需要继续统一其余治理写路径的索引刷新策略，减少未来新增治理入口时出现行为分叉
@@ -115,6 +123,71 @@
 - [x] 为目录文本清洗增加嵌套 demo 输入、源 trajectory、audit 记录、active metadata 和索引记录
 - [x] 搜索质量基线扩展到 13 个检查，覆盖 clean directory text 与 normalize trailing whitespace 查询
 - [x] 已重新运行架构检查、runtime contract 检查、搜索质量基线、快验和全量 runtime suite；全量 366 个测试通过
+- [x] 完成方向收口：停止默认继续补通用 dogfood 样本，改为推进 agent-first 自动沉淀主线
+- [x] 新增 `docs/agent-first-runtime-architecture.md`，记录目标应用形态、分层、迁移路径和停止条件
+- [x] 新增 `docs/agent-side-reuse-policy.md`，记录自动复用触发条件、风险门槛和第一处代码接入点
+- [x] 明确自动复用采用三段式决策带，且第一处接入点在 `skill_runtime/api/` 附近而不是 MCP 层
+- [x] 新增 `docs/post-task-distillation-policy.md`，记录任务完成后自动沉淀的四种结果分流和保守策略
+- [x] 明确自动沉淀默认采用“观测优先、蒸馏保守”策略
+- [x] 新增 `docs/agent-orchestration-interface.md`，定义第一版 agent-side orchestration 边界
+- [x] 在 `skill_runtime/api/models.py` 中加入第一版 orchestration 最小请求/决策/结果模型
+- [x] 新增 `skill_runtime/api/orchestration.py`，落地第一版 `AgentOrchestrationService`
+- [x] 为 orchestration service 增加快验覆盖，并通过 `python -m unittest tests.test_runtime_fast -v`
+- [x] 在 `skill_runtime/cli.py` 中新增最小真实调用点：`agent-plan` / `agent-plan-learning`
+- [x] 为新的 CLI 调用点增加快验覆盖，并通过 `python -m unittest tests.test_runtime_fast -v`
+- [x] 在 `AgentOrchestrationService` 中新增 `start_task(...)` / `finalize_task(...)` 双阶段 helper
+- [x] 为双阶段 helper 增加快验覆盖，并通过 `python -m unittest tests.test_runtime_fast -v`
+- [x] 将现有 `agent-plan` / `agent-plan-learning` CLI 改为走 `start_task(...)` / `finalize_task(...)`
+- [x] 为 CLI lifecycle 接入增加快验覆盖，并通过 `python -m unittest tests.test_runtime_fast -v`
+- [x] 在 `AgentOrchestrationService` 中新增 `run_task(...)` 最小真实任务流入口
+- [x] 为 `run_task(...)` 增加快验覆盖，并通过 `python -m unittest tests.test_runtime_fast -v`
+- [x] 新增 `skill_runtime/api/host.py` 作为公开宿主入口 facade
+- [x] 将 `run_agent_task` / `start_agent_task` / `finalize_agent_task` 导出到 `skill_runtime.api`
+- [x] 为 host-facing API facade 增加快验覆盖，并通过 `python -m unittest tests.test_runtime_fast -v`
+- [x] 完成当前主线完成度盘点，并新增 `docs/agent-mainline-readiness-review.md`
+- [x] 明确当前不建议立刻把默认上层整体切换到新 host facade
+- [x] 选择首个受控试运行入口为独立 MCP 实验工具 `run_agent_task_experimental`
+- [x] 将 `run_agent_task_experimental` 接到 `skill_runtime.api.host.run_agent_task(...)`
+- [x] 为实验型 MCP 宿主入口增加快验覆盖，并通过 `python -m unittest tests.test_runtime_fast -v`
+- [x] 验证实验入口自动执行时保留 `rollback_operations`
+- [x] 验证实验入口在欠覆盖工作流上干净返回 plan-only
+- [x] 验证实验入口在 `allow_silent_reuse=False` 时不会自动执行
+- [x] 为实验入口新增 `finalize_agent_task_experimental` 学习收尾入口
+- [x] 验证 under-covered workflow 可通过 finalize 重新接回学习链
+- [x] 验证 finalize 后会真实 capture trajectory，并返回 `distill_trajectory` 后续建议
+- [x] 用“更新 HANDOFF / TASKS / DECISIONS”完成第一条真实任务 dogfood 验证
+- [x] 验证真实项目维护任务也能被 capture 为 trajectory 并给出后续蒸馏建议
+- [x] 完成当前层阶段性收口判断：先停在 `capture + recommendation`
+- [x] 新增 `docs/agent-layer-stage-closure.md`
+- [x] 新增 `docs/codex-default-integration-plan.md`，正式收口 Codex 默认接入的受控方案
+- [x] 新增 `docs/codex-task-classification-boundary.md`，正式定义 Codex 侧 default-in / guarded-in / default-out 分类边界
+- [x] 新增 `skill_runtime/api/classification.py`，把 Codex 任务分类边界落成可运行判断器
+- [x] 新增 Codex host API：`classify_codex_task` / `start_codex_task` / `run_codex_task` / `finalize_codex_task`
+- [x] 新增 Codex MCP 实验入口：`run_codex_task_experimental` / `finalize_codex_task_experimental`
+- [x] 为 Codex 分类器和新入口补齐快验，当前 `tests.test_runtime_fast` 共 46 个测试通过
+- [x] 新增 Codex CLI 默认通道：`codex-classify` / `codex-run` / `codex-finalize`
+- [x] 为 Codex CLI 默认通道补齐快验，当前 `tests.test_runtime_fast` 共 49 个测试通过
+- [x] 将 phase-one `default-in` 收窄为四类白名单家族
+- [x] 为更窄的白名单分类补齐快验，当前 `tests.test_runtime_fast` 共 52 个测试通过
+- [x] 将现有 `agent-plan` / `agent-plan-learning` 正式切换到 Codex 默认通道
+- [x] 为现有入口切换补齐快验，当前 `tests.test_runtime_fast` 共 53 个测试通过
+- [x] 完成第一处现有入口切换后的更大范围验证：架构检查、contract 检查、CLI smoke 均通过
+- [x] 完成第一处现有入口切换后的 full slow runtime suite 验证：399 tests OK
+- [x] 新增 `docs/codex-default-lane-stage-closure.md`，将第一处默认通道迁移收为阶段性验证点
+- [x] 新增 `docs/codex-default-lane-observation-plan.md`，明确观察期目标、扩大条件和停止条件
+- [x] 新增 `docs/codex-default-lane-observation-log.md`，作为观察期的轻量真实样本记录页
+- [x] 将 `skill_runtime` 上收为 Codex 全局默认背景能力，并去掉全局 MCP 启动对 `vibe` 根目录的硬绑定
+- [x] 将仓库主说明从 “MCP 工具集” 口径改写为 “Codex 背景能力层 / runtime lane” 口径
+- [x] 新增 `docs/multi-host-adaptation-plan.md`，面向外部说明如何适配其他应用
+- [x] 将仓库根入口切为中文默认：`README.md` 为中文主入口，`README.en.md` 为英文版
+- [x] 为 Codex 默认通道新增触发可见性字段：`runtime_lane_status` / `runtime_lane_reason`
+- [x] 统一 host API、CLI 和 MCP 对 runtime lane 可见性字段的传递
+- [x] 补充快验，覆盖 default-in 实际使用、default-out 跳过和 CLI plan 输出状态
+- [x] 更新 README、Codex 接入文档和观察日志，说明如何判断 Skill Runtime 是否参与
+- [x] 完成只读可视化观察面板设计，设计文档为 `docs/superpowers/specs/2026-05-01-runtime-observability-dashboard-design.md`
+- [x] 完成只读 runtime observability dashboard 实现计划，计划文档为 `docs/superpowers/plans/2026-05-01-runtime-observability-dashboard.md`
+- [x] 实现只读 runtime observability dashboard：runtime lane 事件日志、数据收集、HTML 渲染和 CLI 入口
+- [x] 验证 `python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可生成本地 HTML 观察面板
 
 ## Blocked
 

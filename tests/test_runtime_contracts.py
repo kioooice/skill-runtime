@@ -172,10 +172,14 @@ class RuntimeContractTestsMixin:
 
     def test_installed_entrypoint_modules_are_importable(self) -> None:
         from skill_runtime.cli import build_parser, main as cli_main
+        from skill_runtime.api.host import run_agent_task, start_agent_task, finalize_agent_task
         from skill_runtime.mcp_stdio import main as mcp_main, resolve_runtime_root
 
         self.assertTrue(callable(build_parser))
         self.assertTrue(callable(cli_main))
+        self.assertTrue(callable(run_agent_task))
+        self.assertTrue(callable(start_agent_task))
+        self.assertTrue(callable(finalize_agent_task))
         self.assertTrue(callable(resolve_runtime_root))
         self.assertTrue(callable(mcp_main))
 

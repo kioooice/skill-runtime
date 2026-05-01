@@ -2,6 +2,14 @@
 
 This runtime can be exposed to host AI applications as a local MCP server over stdio.
 
+MCP is now best understood as an interface layer for the runtime, not as the full product shape.
+
+The runtime itself is moving toward a background capability layer under Codex and similar hosts.
+
+Use this document for transport, contract, and tool-surface details.
+
+Do not use it as the main product description of the system.
+
 ## Start Command
 
 From the runtime project root:
@@ -400,6 +408,11 @@ This keeps the host AI responsible for planning and user interaction, while the 
 - retrieval
 - execution
 - governance reporting
+
+For the newer product-oriented description of this system, see:
+
+- `docs/agent-first-runtime-architecture.md`
+- `docs/codex-integration.md`
 
 ## Current Limits
 

@@ -1,10 +1,16 @@
 # Skill Runtime
 
-[English](./README.md)
+[English](./README.en.md)
 
 `Skill Runtime` 是一套面向宿主 AI 的本地技能运行时，目标是把成功完成过的任务流程，沉淀成可治理、可审计、可复用的技能。
 
 它不是第二个聊天 AI，而是挂在 Codex 这类宿主 AI 下方的一层能力内核。
+
+这次最重要的形态变化是：
+
+- 它不再最适合被描述成“一组 MCP 工具”
+- 现在更适合被描述成“Codex 下方的一层背景能力层”
+- MCP、CLI 和脚本仍然存在，但更像接口层和传输层，而不是主产品形态本身
 
 ## 它解决什么问题
 
@@ -36,23 +42,55 @@
 - skill 只是存下来，没有审计和生命周期管理
 - skill 检索和复用缺乏解释，容易变成黑箱
 
-这个项目的重点不是“积累技能”，而是“治理技能”。
+这个项目的重点不是“积累技能”，而是“治理技能”，以及把这套治理能力慢慢藏到正常的 Codex 执行流程下面。
 
 ## 核心特性
 
 - `宿主优先`：宿主 AI 负责理解任务、规划和交互
 - `可治理`：skill 必须走 staging -> audit -> promote 流程
 - `可解释`：搜索结果可以返回命中原因、规则来源和推荐下一步动作
-- `可扩展`：同一套 runtime 同时暴露 CLI 和 MCP
+- `可扩展`：同一套 runtime 同时暴露 CLI 和 MCP，但它们都不是最终产品形态本身
 - `本地优先`：文件型存储，容易检查和调试
+
+## 产品形态
+
+这个项目现在经历了两种不同的描述方式。
+
+### 较早的描述方式
+
+```text
+Codex
+-> MCP tool calls
+-> runtime service
+```
+
+这个说法在技术上仍然成立，但已经不是最准确的产品描述。
+
+### 现在更准确的描述方式
+
+```text
+User task
+-> Codex
+-> runtime gate
+-> normal execution
+-> runtime finalize
+```
+
+在这条链里：
+
+- Codex 继续负责用户交互和任务完成
+- runtime 在后台判断什么时候值得复用
+- 任务成功后，runtime 再决定是否回收这次经验
+- MCP 仍然重要，但它更像宿主接口，而不是这套系统的本体
 
 ## 当前架构
 
 ```text
 Host AI
--> CLI / MCP adapter
+-> runtime gate / lifecycle adapter
 -> Runtime service
 -> skill store / trajectories / audits
+-> CLI / MCP / scripts 作为接口层
 ```
 
 主要目录结构：
@@ -91,7 +129,8 @@ docs/
 - 运行 `python scripts/check_mcp_architecture.py` 可验证当前文档化分层和 contract 边界
 - 运行 `python scripts/check_runtime_contracts.py` 可验证 host-operation 和 recommendation payload 不变量
 - 更细的 MCP contract 说明见 [MCP Integration](./docs/mcp-integration.md)
-- Codex 侧 contract 说明见 [Codex Integration](./docs/codex-integration.md)
+- Codex 默认通道说明见 [Codex Integration](./docs/codex-integration.md)
+- 当前这次架构转向的总说明见 [Agent-First Runtime Architecture](./docs/agent-first-runtime-architecture.md)
 - 当前运行时分层 guard 明确覆盖 `service / governance / retrieval`
 - 也覆盖 `memory / distill / audit / execution`
 
@@ -476,16 +515,30 @@ Observed task 输入格式现在统一收口在
 
 ## Codex 接入方式
 
-本项目已经按 “Codex 下方的本地能力层” 这个方向组织好。
+本项目已经按 “Codex 下方的本地背景能力层” 这个方向组织好。
+
+MCP 仍然是其中一个很重要的宿主接入面，但它已经不是全部。
 
 推荐使用顺序：
 
-1. `search_skill`
-2. 有强命中时，调用 `execute_skill`
-3. 如果这次任务是新解法或更优解法，沿 `recommended_host_operation` 进入 `distill_and_promote_candidate`
-4. 没有强命中时，正常完成任务
-5. 需要走显式受治理路径时，使用上面的 host-call 生命周期闭环
-6. 库状态变化后，使用治理维护闭环
+1. 先让 Codex 判断这次任务是否属于 runtime lane
+2. 如果属于，保守地尝试静默复用
+3. 如果不适合复用，就正常完成任务
+4. 任务成功后，再回收有复用价值的经验
+5. 只有在需要手动控制、调试或治理时，才显式走 MCP 生命周期工具
+6. 库状态变化后，再使用治理维护闭环
+
+### 如何知道 runtime lane 有没有触发
+
+Codex 侧的默认通道结果会返回两个可见字段：
+
+- `runtime_lane_status`
+  - `used`：runtime lane 真的执行了复用技能，或捕获了可沉淀的任务经验
+  - `entered`：任务进入过 runtime lane 判断，但这次没有实际复用或捕获
+  - `skipped`：任务被判定留在普通 Codex 路径，没有进入 runtime lane
+- `runtime_lane_reason`：用一句话说明为什么进入、使用或跳过
+
+这两个字段用于回答“这次到底有没有用上 Skill Runtime”。正常使用时不需要手动找技能；如果要排查体验，可以看这两个字段。
 
 详细说明见：
 
@@ -493,6 +546,14 @@ Observed task 输入格式现在统一收口在
 - [Codex Integration](./docs/codex-integration.md)
 
 ## Demo 与验证
+
+生成本地只读观察面板：
+
+```bash
+python -m skill_runtime.cli dashboard
+```
+
+默认输出到 `.skill_runtime/dashboard.html`。它只读取当前 runtime root 的本地数据，用于查看技能树、runtime lane 触发日志和治理快照。
 
 运行本地快验：
 
@@ -568,6 +629,10 @@ python scripts/skill_cli.py execute --skill merge_text_files_generated --args-fi
 - [项目详细报告](./docs/skill-runtime-project-report.md)
 - [MCP 接入说明](./docs/mcp-integration.md)
 - [Codex 接入说明](./docs/codex-integration.md)
+- [多宿主适配方案](./docs/multi-host-adaptation-plan.md)
+- [Codex 默认通道阶段收口](./docs/codex-default-lane-stage-closure.md)
+- [Codex 默认通道观察计划](./docs/codex-default-lane-observation-plan.md)
+- [Agent-First 架构说明](./docs/agent-first-runtime-architecture.md)
 - [视频脚本素材包](./docs/skill-runtime-video-cover.md)
 
 ## 当前局限

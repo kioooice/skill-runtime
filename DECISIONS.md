@@ -2,6 +2,818 @@
 
 ## Decision Log
 
+### 2026-05-01 - Runtime dashboard 第一版保持本地静态只读
+
+**Decision**
+
+第一版 dashboard 通过 `skill-runtime dashboard` / `python -m skill_runtime.cli dashboard` 生成本地静态 HTML，不启动常驻 Web 服务，也不提供编辑、promote 或 archive 操作。
+
+**Reason**
+
+当前目标是让用户看见 Skill Runtime 是否参与任务，而不是新增一个高风险管理后台。静态只读页面能先解决“看不见”的问题，同时避免引入权限、误操作和跨工作区聚合复杂度。
+
+**Impact**
+
+- 新增 `.skill_runtime/runtime_lane_events.jsonl` 作为 runtime lane 触发事件日志
+- 新增 `.skill_runtime/dashboard.html` 作为默认本地观察面板输出
+- 后续如果要加治理按钮、自动打开浏览器或跨工作区汇总，必须在只读观察面板稳定之后单独设计
+
+### 2026-05-01 - 可视化界面第一版采用只读观察面板
+
+**Decision**
+
+第一版可视化界面不做完整后台，也不做 skill 编辑、promote、archive 等操作能力。先做只读观察面板，围绕当前 runtime root 展示：
+
+- 技能树
+- runtime lane 触发日志
+- 技能状态概览
+- 治理风险快照
+
+**Reason**
+
+当前最需要解决的问题是“用户怎么知道 Skill Runtime 有没有工作”，不是新增一个复杂管理后台。只读面板能最快补上可观察性，同时避免一开始就引入误操作、权限、跨工作区聚合和前端服务复杂度。
+
+**Impact**
+
+- 后续实现优先新增本地静态 dashboard 生成能力
+- 第一版推荐命令是 `skill-runtime dashboard`
+- runtime lane 事件需要自动写入 `.skill_runtime/runtime_lane_events.jsonl`
+- 后续只有只读面板稳定后，才考虑治理按钮或跨工作区视图
+
+### 2026-05-01 - Codex 默认通道必须返回触发可见性
+
+**Decision**
+
+Codex-facing orchestration 结果统一返回：
+
+- `runtime_lane_status`
+- `runtime_lane_reason`
+
+其中 `runtime_lane_status` 只表达三种状态：
+
+- `used`：runtime lane 实际自动执行了复用技能，或捕获了可沉淀的任务经验
+- `entered`：任务进入过 runtime lane 判断，但本次没有实际复用或捕获
+- `skipped`：任务留在普通 Codex 路径，没有进入 runtime lane
+
+**Reason**
+
+全局配置和默认规则已经把 Skill Runtime 上收为 Codex 背景能力层，但用户在其他项目里无法判断它到底有没有参与。没有可见状态时，这层能力容易退回“存在但感知不到”的状态，也很难做观察期判断。
+
+**Impact**
+
+- host API、CLI、MCP payload 重建路径都会保留这两个字段
+- 观察期可以用这两个字段判断真实任务是否进入或使用 runtime lane
+- 这不是扩大能力范围，只是让现有默认通道可解释、可排查
+- 后续如果要做更深的 Codex 集成，应继续把可见性保持在结果 contract 中
+
+### 2026-04-30 - 仓库对外描述从 MCP 工具集改写为 Codex 背景能力层
+
+**Decision**
+
+更新仓库主说明，明确这次形态变化不应再表述为“从一个 MCP skill 工具集继续扩展”，而应表述为：
+
+- 本体是 Codex 下方的背景能力层
+- MCP、CLI、脚本是接口层和传输层
+- 默认产品形态是 `task -> Codex -> runtime gate -> normal execution -> runtime finalize`
+- 显式 MCP 工具链退居为手动控制、调试、治理和集成接口
+
+**Reason**
+
+如果仓库主文档还停留在 “MCP tools + skill lifecycle” 口径，那么即使代码和全局配置已经往背景能力层演进，用户和后续新会话仍会把它理解成“一个主要靠手动调用的技能系统”。这会直接把产品理解拉回旧方向。
+
+**Impact**
+
+- README / README.zh-CN 已明确写出：
+  - 背景能力层是本体
+  - MCP 只是接口层之一
+- `docs/codex-integration.md` 已明确写出：
+  - 以前是 MCP-first
+  - 现在更准确是 Codex-first background capability routing
+- `docs/mcp-integration.md` 已明确写出：
+  - 该文档只负责接口与 contract，不再充当主产品描述
+- 后续对外介绍这套系统时，优先使用“Codex 背景能力层 / runtime lane”口径，而不是“本地 MCP skill 工具集”
+
+### 2026-04-30 - 仓库默认入口改为中文，并补多宿主适配方案
+
+**Decision**
+
+将仓库根入口切为中文默认：
+
+- `README.md` 作为中文主入口
+- `README.en.md` 保留英文版
+
+同时新增一份给外部阅读的多宿主适配方案文档，明确这套系统未来如何从 Codex 扩展到其他应用。
+
+**Reason**
+
+当前主要读者和推进语境都以中文为主，仓库默认入口继续用英文会增加理解成本。与此同时，既然已经把产品形态改写成“背景能力层”，就需要一份对外说明文档，清楚解释未来如果适配其他宿主，应该复用 runtime core，而不是再复制出一套新的技能系统。
+
+**Impact**
+
+- 根入口现在默认中文
+- 英文说明仍保留在 `README.en.md`
+- 新增 `docs/multi-host-adaptation-plan.md`
+- README / README.zh-CN / README.en.md 都已补上该文档入口
+
+### 2026-04-30 - skill_runtime 先升级为 Codex 全局默认背景能力
+
+**Decision**
+
+不再把 `skill_runtime` 只当成 `vibe` 仓库内的默认能力。当前先把它升级为 Codex 全局默认背景能力：
+
+- 全局 `AGENTS.md` 改为优先采用 Codex-side runtime lane，而不是手动技能搜索
+- 全局 `MEMORY.md` 写入这一偏好
+- 全局 `config.toml` 不再把 `skill_runtime` MCP 写死到 `D:/02-Projects/vibe` 根目录
+- 改为通过全局启动脚本，优先把当前工作区识别为 runtime root；只有识别不到时才回退到 `vibe`
+
+**Reason**
+
+如果只是当前仓库里有一套默认接入规则，那它还不算真正的底层能力。要让用户在别的工作区也能自然触发这层，就必须把默认触发逻辑和运行根目录选择一起上收成全局行为。
+
+**Impact**
+
+- 新增全局启动脚本：
+  - `C:\Users\Administrator\.codex\launch-skill-runtime.ps1`
+- 当前已验证：
+  - 在 `D:\02-Projects\vibe` 中会解析到 `D:\02-Projects\vibe`
+  - 在 `D:\02-Projects\work` 中会解析到 `D:\02-Projects\work`
+  - `python -m skill_runtime.cli --root D:\02-Projects\work search --query "test workflow"` 可正常返回空结果而不崩溃
+- 这意味着当前已从“仓库内默认能力”升级到“Codex 全局默认背景能力雏形”
+- 下一步不再是继续改全局配置，而是进入跨工作区真实使用观察
+
+### 2026-04-30 - Codex 默认通道先进入观察期，再决定是否扩大
+
+**Decision**
+
+在第一处现有入口已经完成阶段性验证点收口之后，当前不继续默认扩大 Codex 默认通道。先进入观察期，并把“何时允许继续扩大到第二处现有入口”的判断标准写入仓库文档。
+
+观察期的核心问题不是“还能不能继续迁移”，而是：
+
+- 当前这条默认通道是否已经在正常使用里带来更顺手的体验
+- 它是否会让用户更少感知到底层 runtime，而不是更多
+
+**Reason**
+
+如果现在继续切第二处现有入口，很容易重新回到“为了推进而推进”的节奏。当前更需要确认的是：第一处迁移后的真实使用表现到底值不值得扩大覆盖面。先进入观察期，可以把后续决定建立在真实使用证据上，而不是继续依赖推测。
+
+**Impact**
+
+- 新增 `docs/codex-default-lane-observation-plan.md`
+- 新增 `docs/codex-default-lane-observation-log.md`
+- 当前默认策略变为：
+  - 先观察第一处现有入口
+  - 只有在出现明确证据时，才考虑第二处入口迁移
+- 后续如果继续扩默认通道，依据将来自观察期结果，而不是“还有入口没切完”
+
+### 2026-04-30 - 第一处 Codex 默认通道先作为阶段性验证点收口
+
+**Decision**
+
+在第一处现有入口 `agent-plan` / `agent-plan-learning` 已经切到 Codex 默认通道，并且完成更大范围验证之后，当前不默认继续切第二处现有入口。先把这一处入口视为阶段性默认路径验证点收口。
+
+这一轮收口覆盖了：
+
+- 快验
+- `check_mcp_architecture`
+- `check_runtime_contracts`
+- CLI 级 `default-in` smoke
+- CLI 级 `default-out` smoke
+- full slow runtime suite
+
+**Reason**
+
+当前最重要的问题已经不是“Codex 能不能接这层”，而是“第一处现实入口切过去后，值不值得继续扩大默认覆盖面”。既然第一处入口已经通过从快验到全量慢验的完整验证，就不该再为了推进感继续默认切第二处入口。此时更合理的是先把它作为一个稳定验证点收住。
+
+**Impact**
+
+- 新增 `docs/codex-default-lane-stage-closure.md` 作为这一轮正式收口文档
+- 当前可明确宣称：
+  - 第一处现有入口已经真实迁移到 Codex 默认通道
+  - 这一处入口已通过架构、contract、CLI smoke 和 full suite 验证
+- 当前不宣称：
+  - 所有 Codex 默认入口都已切换
+  - 已经适合继续自动扩大到第二处现有入口
+- 下一步更适合等待真实使用反馈，或在出现明确价值时再决定是否扩第二处入口
+
+### 2026-04-30 - 第一处现有入口切换后先用更大范围验证收口
+
+**Decision**
+
+在 `agent-plan` / `agent-plan-learning` 切到 Codex 默认通道后，先不立刻继续切第二处现有入口，而是先做一轮更大范围验证：
+
+- `check_mcp_architecture`
+- `check_runtime_contracts`
+- CLI 级别的 `codex-run` smoke
+- CLI 级别的 `agent-plan` default-out smoke
+
+**Reason**
+
+第一处现有入口刚切过去时，最重要的不是继续扩入口数量，而是确认：
+
+- 新旧路径没有互相打架
+- default-in 任务真的会进入 runtime lane
+- default-out 任务真的会留在普通路径
+- contract 和架构约束没有被悄悄破坏
+
+**Impact**
+
+- 当前已确认：
+  - MCP architecture check passed
+  - Runtime contract check passed
+  - `codex-run` 可真实执行 default-in 文本工作流
+  - `agent-plan` 可真实把开放式 review 任务留在普通路径
+- 当前 `git diff --check` 仍只有既有 LF 换行提示，不是本轮新增失败
+- 下一步更适合决定是继续切第二处现有入口，还是把当前入口当作阶段性默认路径验证点
+
+### 2026-04-30 - 第一处现有入口先切换为 Codex 默认通道
+
+**Decision**
+
+先不去碰所有现有入口，第一处正式切换的现有入口选择为：
+
+- `agent-plan`
+- `agent-plan-learning`
+
+它们现在默认走：
+
+- `start_codex_task(...)`
+- `finalize_codex_task(...)`
+
+而不再直接走旧的纯 agent lifecycle helper。
+
+**Reason**
+
+这两条入口已经最接近“任务开始前给一份计划、任务完成后补回结果”的真实使用方式，又比直接改动更大的默认宿主路径风险低。先切它们，能最小代价证明“已有入口已经开始被 Codex 默认通道接管”。
+
+**Impact**
+
+- 第一处现有入口已经正式改走 Codex 默认通道
+- `agent-plan` 现在会携带 `task_classification`
+- `agent-plan` 在 `default-out` 任务上会留在普通路径，不再假装都能进入 runtime lane
+- 当前快验已更新为 53 个测试通过
+- 下一步更适合决定：
+  - 是否继续切第二处现有入口
+  - 或先停在这里做更大范围验证
+
+### 2026-04-30 - Phase-one default-in 先收窄为四类白名单家族
+
+**Decision**
+
+Codex phase-one 的 `default-in` 不再仅靠“本地 + 低风险 + 工作流”这类宽条件判断，而是先收窄为四类明确白名单家族：
+
+- `project-state-maintenance`
+- `local-text-transformation`
+- `structured-format-conversion`
+- `low-risk-workspace-organization`
+
+只有命中这四类之一的任务，才默认进入 runtime lane。
+
+**Reason**
+
+如果 default-in 仍然过宽，那么后面即使把现有入口正式切过去，也会在边界模糊任务上误判。把第一批任务先收成白名单家族，能让 phase one 真正保持“范围小但可信”，而不是一边接默认入口一边继续猜任务类型。
+
+**Impact**
+
+- `skill_runtime/api/classification.py` 现在先判断是否命中四类 phase-one family
+- `default-in` 已从宽条件进一步收成小范围白名单
+- 新增测试覆盖：
+  - JSON -> CSV 结构化转换
+  - 低风险工作区整理
+  - 带本地输出路径的外部登录任务仍保持 `default-out`
+- 当前快验已更新为 52 个测试通过
+
+### 2026-04-30 - 更真实的 Codex 默认入口先落在 CLI 默认通道
+
+**Decision**
+
+在已有 host API 和 MCP 实验入口之外，先新增一组更接近默认使用方式的 CLI 通道：
+
+- `codex-classify`
+- `codex-run`
+- `codex-finalize`
+
+它们直接走 Codex 侧分类与默认 runtime lane，而不是继续只保留在实验型 MCP 工具里。
+
+**Reason**
+
+当前需要的不是更多文档，而是一个“比实验工具更真实、又不会一下子改坏所有旧路径”的默认入口。CLI 是最小、最稳、最好验证的接点：它比纯 API 更像实际使用路径，又比直接改写所有默认上层更容易回退。
+
+**Impact**
+
+- Codex 默认通道第一次脱离“只存在于实验型 MCP 工具”的状态
+- 现在可以直接通过 CLI 验证：
+  - 任务分类
+  - default-in 自动进入 runtime lane
+  - default-in 任务完成后继续 capture + recommendation
+- 当前快验已更新为 49 个测试通过
+- 下一步更适合继续收窄第一批 default-in 规则，或决定是否让某个现有入口改走这组 Codex CLI/host 通道
+
+### 2026-04-29 - Codex 默认入口先通过任务分类器接入实验宿主路径
+
+**Decision**
+
+在已有 `run_agent_task_experimental` / `finalize_agent_task_experimental` 之外，新增一条更贴近 Codex 默认行为的实验入口：
+
+- `run_codex_task_experimental`
+- `finalize_codex_task_experimental`
+
+它们先走 Codex 侧任务分类器：
+
+- `default-in`
+- `guarded-in`
+- `default-out`
+
+只有 `default-in` 才自动进入 runtime lane。
+
+**Reason**
+
+光有分类文档还不够，必须先让“按任务类型决定是否进入 runtime”变成真实可运行入口，才能验证 Codex 版本是不是已经开始具备默认接入的产品形态。同时又不应该直接改掉所有现有入口，所以先落在实验宿主路径最稳。
+
+**Impact**
+
+- 新增 `skill_runtime/api/classification.py`
+- 新增 host API：
+  - `classify_codex_task`
+  - `start_codex_task`
+  - `run_codex_task`
+  - `finalize_codex_task`
+- 新增 MCP 实验入口：
+  - `run_codex_task_experimental`
+  - `finalize_codex_task_experimental`
+- 当前快验已扩大到 46 个测试通过
+- 下一步应优先把第一批 `default-in` 规则收成更小的 host-side classifier 映射，或者选择是否让某个更真实的默认入口开始调用这条 Codex 路径
+
+### 2026-04-29 - Codex 侧任务先分为 default-in guarded-in default-out 三类
+
+**Decision**
+
+Codex 默认接入 phase one 先采用三桶分类：
+
+- `default-in`
+  - 本地、低风险、工作流形态明确、可回退或可清楚解释失败的任务
+- `guarded-in`
+  - 有一定复用价值，但范围更大、分叉更多、边界更模糊的任务
+- `default-out`
+  - 开放式对话、高风险操作、外部系统依赖重、主要靠推理而不是靠稳定执行的任务
+
+当前默认只让 `default-in` 自动进入 runtime lane；`guarded-in` 继续保持更高门槛；`default-out` 继续走普通 Codex 路径。
+
+**Reason**
+
+如果不先把任务分桶，后续默认接入会退化成“遇到任务就先试 runtime”，这会把产品形态重新拉回隐式技能搜索，而不是受控后台能力层。三桶分类能把风险控制、产品体验和后续扩张路径一次说清。
+
+**Impact**
+
+- `docs/codex-task-classification-boundary.md` 成为 Codex 默认接入的第一道边界说明
+- 后续落代码时，应先实现一个小型 host-side classifier，而不是先改 silent reuse 规则
+- 第一处默认入口应只覆盖：
+  - 本地文本处理
+  - 结构化转换
+  - 项目状态文件维护
+  - 低风险工作区整理
+
+### 2026-04-29 - Codex 默认接入先采用受控低风险任务通道
+
+**Decision**
+
+当前不把 Skill Runtime 一次性挂到 Codex 的全部默认任务链上。先采用“受控默认接入”：
+
+- 只让低风险、本地、可回退、工作流形态明确的任务默认进入 runtime lane
+- 默认接入形态先停在：
+  - silent reuse gate
+  - 正常任务执行
+  - capture + recommendation
+- 继续排除：
+  - 开放式对话
+  - 高风险操作
+  - 外部系统依赖重的任务
+  - 成功标准不清晰的任务
+
+**Reason**
+
+当前 runtime 已经证明“先做事，再回收经验”这条主线成立，但还没有证明它适合无差别挂到所有 Codex 任务上。如果直接全量默认接入，风险会从“能力还不够成熟”迅速变成“默认产品行为越界”。受控低风险任务通道能让 Codex 版本先获得真实产品意义，同时避免过早把整条主链改得过重。
+
+**Impact**
+
+- Codex 版本的下一步主线正式变成“默认接入方案”，不再是继续扩通用 dogfood 或继续深挖更深自动入库
+- `docs/codex-default-integration-plan.md` 成为这条新主线的正式说明
+- 后续真正落代码时，应先做 Codex 侧任务分类边界，再选择低风险 default-in 任务集，而不是直接全量切换默认上层
+
+### 2026-04-29 - 当前层先以“capture + recommendation”作为阶段性收口点
+
+**Decision**
+
+当前实验路径先不默认继续推进到自动 `distill/promote`。现阶段把：
+
+- 静默自动复用
+- 欠覆盖任务的 plan-only 退回
+- 宿主执行后的 trajectory capture
+- 明确的后续 recommendation
+
+视为一个可用的阶段性收口点。
+
+**Reason**
+
+到现在为止，这一层已经通过两类验证：
+
+- 演示型文件工作流
+- 当前项目的真实维护工作流
+
+这已经足以证明“先做事，再回收经验”这条主线成立。继续默认冲向自动 `distill/promote`，会明显增加生成、审核、入库风险，但并没有同等明确的当前产品收益。
+
+**Impact**
+
+- 当前层被正式视为可用阶段，而不再只是过渡实验
+- 后续默认不再继续深入自动入库，除非出现明确产品需求
+- 下一步更适合转向：
+  - 第二类真实任务验证
+  - 或回到更高优先级的主线目标
+- `docs/agent-layer-stage-closure.md` 成为这次收口判断的正式说明
+
+### 2026-04-29 - 真实任务 dogfood 先选“更新项目接力文件”
+
+**Decision**
+
+真实任务 dogfood 的第一条验证样本，先选当前项目里最贴近实际使用的维护任务：
+
+- 更新 `HANDOFF.md`
+- 更新 `TASKS.md`
+- 更新 `DECISIONS.md`
+
+并验证实验路径能否把这类任务在执行后重新接回学习链。
+
+**Reason**
+
+这比继续用纯演示型 JSON/文本转换样本更接近当前项目的真实工作模式，而且不需要开始业务功能开发。它能直接回答一个更重要的问题：当前这层“capture + recommendation”是否已经足够承接你现在最常见的项目维护工作。
+
+**Impact**
+
+- 当前已通过快验证明：
+  - 实验路径可以承接“更新项目接力文件”这类真实维护任务
+  - finalize 后会真实生成 trajectory
+  - trajectory 中保留了 read / write 这类项目维护动作
+- 这说明当前层不只适用于演示型文件转换，也能覆盖当前项目管理型 workflow
+- 下一步若继续推进，应决定是停在 `capture + recommendation`，还是继续自动衔接到 `distill/promote`
+
+### 2026-04-29 - 实验入口学习承接先采用“计划后收尾”的双步形态
+
+**Decision**
+
+`run_agent_task_experimental` 不负责替宿主发明未知任务的执行过程；当它没有自动复用时，实验路径先返回 plan。宿主完成真实执行后，再通过新增的：
+
+- `finalize_agent_task_experimental`
+
+把执行结果交回 runtime，由它决定是否 capture trajectory，并返回后续蒸馏建议。
+
+**Reason**
+
+当前阶段的关键不是让实验入口一次包办所有事情，而是把“自动复用失败后如何继续学习”这条后半段接起来，同时不破坏“宿主自己完成任务”的边界。双步形态最小、最稳，也最接近真实代理生命周期。
+
+**Impact**
+
+- under-covered workflow 现在可以：
+  - 先返回 plan
+  - 再在任务完成后交回 execution payload
+  - 自动 capture trajectory
+  - 返回 `distill_trajectory` 后续建议
+- `AgentOrchestrationResult` 现在可携带 `learning_capture_payload`
+- 当前已通过快验证明实验入口不只会停下，也会把成功执行重新接回学习链
+
+### 2026-04-29 - 首轮实验入口边界先验证“可回退、会克制、尊重限制”
+
+**Decision**
+
+首轮围绕 `run_agent_task_experimental` 的边界验证，先不扩行为，优先验证三件事：
+
+- 自动执行时是否保留 rollback 操作线索
+- 欠覆盖工作流时是否干净退回 plan-only，而不是擅自执行
+- 显式关闭 silent reuse 时是否严格尊重
+
+**Reason**
+
+当前实验入口的价值首先不在于“会做更多事”，而在于“不会乱来”。如果这三条边界没有先守住，后面即使继续扩 learning capture 或未知工作流承接，也会把风险叠上去。
+
+**Impact**
+
+- 当前已通过快验证明：
+  - 自动执行路径保留了 `rollback_operations`
+  - 欠覆盖工作流返回 plan-only
+  - `allow_silent_reuse=False` 时不会偷跑
+- 当前尚未证明实验入口已经具备完整 post-task learning capture 输出
+- 下一步若继续推进，应聚焦 learning capture 和 under-covered workflow 的后续承接，而不是继续增加入口数量
+
+### 2026-04-29 - 首个受控试运行入口选择独立 MCP 实验工具
+
+**Decision**
+
+首个受控试运行入口选择为 MCP 层中的独立实验工具：
+
+- `run_agent_task_experimental`
+
+它直接调用 `skill_runtime.api.host.run_agent_task(...)`，但不替换现有：
+
+- `search_skill`
+- `execute_skill`
+
+**Reason**
+
+当前项目已经有 CLI、service helper 和 host facade，但还缺一条“真实宿主会怎么接”的小范围试运行路径。继续扩 CLI 不够真实；直接重写现有 MCP 主流程风险太高。独立 MCP 实验工具同时满足三件事：
+
+- 是真实宿主入口
+- 范围小、可回退
+- 不会破坏现有默认主线
+
+**Impact**
+
+- 当前已完成首个试运行入口选择，并已落成可运行代码
+- MCP 现在新增一个显式实验入口，可验证 agent-first 主线在真实 host 形态下的行为
+- 现有 MCP 主流程保持不变
+- 下一步应围绕这个实验入口验证是否需要补 rollback / learning capture / unknown-workflow 边界
+
+### 2026-04-29 - 当前不建议立即切换默认上层到新 host facade
+
+**Decision**
+
+当前不建议立刻把默认上层产品路径整体切换到 `skill_runtime.api.host` 这组 facade。它已经足够作为“首选实验路径”存在，但还不足以作为“所有默认上层入口都应改走的新主路径”。
+
+**Reason**
+
+当前 agent-first runtime 已经具备：
+
+- reuse planning
+- learning planning
+- lifecycle helper
+- minimal run-task flow
+- host-facing facade
+
+但它还缺少几件把默认路径全面切过去所需的条件：
+
+- `run_task(...)` 仍然只有最小执行策略
+- `improve_existing_skill` 还停留在决策层，不是完整 lifecycle
+- 未知工作流默认生成质量还不足以支撑无条件默认承诺
+- 搜索仍是可用级，不是成熟级
+
+**Impact**
+
+- 现在最合理的定位是“preferred experimental path”，不是“universal default path”
+- 下一步应选择一个受控、低风险、可回退的真实宿主路径来试运行 `skill_runtime.api.host`
+- 不应继续盲目扩底层，也不应现在就全量切默认上层
+
+### 2026-04-29 - 新增 host-facing API facade 作为更真实宿主入口
+
+**Decision**
+
+新增 `skill_runtime/api/host.py`，对外提供三类更适合宿主直接调用的公开 API：
+
+- `start_agent_task(...)`
+- `finalize_agent_task(...)`
+- `run_agent_task(...)`
+
+同时把它们导出到 `skill_runtime.api` 公共导出面中。
+
+**Reason**
+
+到上一阶段为止，项目已经有了 service-level 的最小真实任务流，但更真实的外部宿主如果想接入，仍需要自己 import 内部类、实例化 service、决定调用哪个 helper。新增 host-facing facade 后，宿主只需要拿公开 API 即可，不必了解内部拼装方式。这比继续扩 CLI 更接近最终形态，也比直接改 MCP 主流程更稳。
+
+**Impact**
+
+- 现在项目已经有一个不依赖 CLI 的公开宿主入口
+- 外部代理可直接调用：
+  - `run_agent_task(root, request)`
+  - `start_agent_task(root, request)`
+  - `finalize_agent_task(root, plan, execution_payload)`
+- 新增快验覆盖：host API 可直接跑通最小真实任务流
+- 下一步若继续推进，应决定是否需要让某个真实上层调用默认改走这组 facade
+
+### 2026-04-29 - 新增最小真实任务流入口 run_task
+
+**Decision**
+
+在 `AgentOrchestrationService` 中新增最小真实任务流入口：
+
+- `run_task(request)`
+
+这一版行为刻意保持保守：
+
+- 如果 `start_task(...)` 判断为 `auto_execute`，则直接调用现有 `RuntimeService.execute(...)`
+- 执行成功后再走 `finalize_task(...)`
+- 如果不是 `auto_execute`，则只返回 plan，不替上层发明新的执行策略
+
+**Reason**
+
+到上一阶段为止，系统已经有规则、有 service、有 lifecycle helper，也有 CLI 调用点，但还缺少一个真正能在 service 层把“判断 -> 执行 -> 学习回收”串起来的最小主线。`run_task(...)` 正好补上这个缺口，同时又不会过早变成一个过度聪明的大执行器。
+
+**Impact**
+
+- 现在 service 层已经有比 CLI 更贴近真实代理的最小任务流入口
+- 新增快验覆盖：
+  - 强匹配工作流会自动执行并回收学习判断
+  - 无自动复用条件时只返回 plan，不擅自执行
+- 下一步若继续推进，应决定这个 `run_task(...)` 由哪个更真实的宿主入口来调用
+
+### 2026-04-29 - 现有 agent-plan CLI 改为走 lifecycle helper
+
+**Decision**
+
+不再让 `agent-plan` / `agent-plan-learning` 各自直接调用底层单点判断，而是改为：
+
+- `agent-plan` 调 `start_task(...)`
+- `agent-plan-learning` 调 `finalize_task(...)`
+
+并允许 `agent-plan-learning` 直接接收上一轮 `plan-json`，把学习判断附着回同一份上层计划对象。
+
+**Reason**
+
+如果 CLI 继续只调用 `plan_reuse(...)` / `plan_learning(...)`，虽然能工作，但上层仍要自己拼任务生命周期。既然 `start_task(...)` / `finalize_task(...)` 已经存在，就应该让现有上层入口真正走这条生命周期，证明它不是只给未来代码预留的空壳。
+
+**Impact**
+
+- CLI 现在已经开始使用更贴近真实代理的双阶段 helper
+- `agent-plan` 返回完整 plan 结构，包括：
+  - `selected_skill_name`
+  - `selected_skill_args`
+  - `execution_payload`
+- `agent-plan-learning` 可基于已有 `plan-json` 做 finalize，而不是重复构造一份独立请求
+- 下一步若继续推进，应考虑哪个更真实的代理入口值得接这套 lifecycle helper
+
+### 2026-04-29 - service helper 先提供 start_task / finalize_task 双阶段接口
+
+**Decision**
+
+在 `AgentOrchestrationService` 里先新增两个更贴近真实代理调用方式的 helper：
+
+- `start_task(request)`
+- `finalize_task(plan, execution_payload)`
+
+其中：
+
+- `start_task(...)` 返回一份包含复用判断、选中技能名和已知参数的上层计划对象
+- `finalize_task(...)` 在任务结束后把学习判断附着回同一份计划对象
+
+仍然不在这一阶段直接帮上层执行技能，也不自动触发蒸馏链路。
+
+**Reason**
+
+CLI 入口已经证明这套判断能被真实调用，但上层如果还要分别手动拼 `plan_reuse(...)` 和 `plan_learning(...)`，离真实代理使用方式仍有一步距离。先提供双阶段 helper，可以让上层像正常任务生命周期一样接入这套能力，同时避免过早把执行动作和学习动作绑死。
+
+**Impact**
+
+- 上层现在可以用“开始任务 / 结束任务”的方式接入 orchestration
+- 新增快验覆盖：
+  - `start_task(...)` 返回组合后的上层计划
+  - `finalize_task(...)` 把学习判断附着回原计划
+- 下一步若继续推进，应开始考虑哪个现有上层流程最适合真正调用这两个 helper
+
+### 2026-04-29 - 第一处真实调用点先接到 CLI，而不是 MCP 主流程
+
+**Decision**
+
+第一处真实调用点先通过 CLI 落地，而不是直接改 MCP 主流程。新增两个最小命令：
+
+- `agent-plan`
+- `agent-plan-learning`
+
+它们分别调用：
+
+- `AgentOrchestrationService.plan_reuse(...)`
+- `AgentOrchestrationService.plan_learning(...)`
+
+**Reason**
+
+CLI 是当前最小、最安全、最好验证的真实入口。它能证明 orchestration 不只是库内 helper，而是已经有真实调用面；同时又不会过早改变 MCP host-style 主流程，避免把“新策略判断”与“现有主链重接”混在一起。
+
+**Impact**
+
+- 现在项目已经有一个可直接调用的 agent-facing 最小入口
+- 新增 CLI 测试覆盖：
+  - `agent-plan` 返回复用判断
+  - `agent-plan-learning` 返回学习判断
+- 下一步若继续推进，应优先考虑把这套入口接到更贴近真实代理的 service helper，而不是立刻重写 MCP 主流程
+
+### 2026-04-29 - 第一版 orchestration service 先只做规划，不直接接管执行
+
+**Decision**
+
+新增 `skill_runtime/api/orchestration.py`，落地第一版 `AgentOrchestrationService`。这一版只实现：
+
+- `plan_reuse(...)`
+- `plan_learning(...)`
+
+不在第一步就增加一个会直接执行技能、自动调用蒸馏链路、或重写现有 MCP / CLI 流程的“大一统 orchestrate”入口。
+
+**Reason**
+
+当前阶段的目标是先把“自动复用判断”和“自动学习判断”从文档变成可运行代码，并验证它们能和现有 runtime 共存。若第一步就把执行动作也接进来，变更面会明显扩大，很难分清是策略判断错了，还是整条执行链重构带来的问题。
+
+**Impact**
+
+- 现在项目已经有可运行的 agent-side planning service
+- 新增测试覆盖：
+  - 强匹配且参数齐全时允许 `auto_execute`
+  - 参数缺失时退回 `background_hint`
+  - 已有技能干净完成任务时学习决策为 `skip`
+  - 具体且成功的欠覆盖工作流可标记为 `new_skill_candidate`
+- 下一步不再是继续写规则文档，而是选择一个真实调用点接入 `plan_reuse(...)` / `plan_learning(...)`
+
+### 2026-04-29 - 第一版 orchestration 接口先收口为小边界
+
+**Decision**
+
+第一版 agent-side orchestration 不直接接管整条任务规划链，而是先收口为一个小边界，只负责两件事：
+
+- 任务开始前判断：`skip | background_hint | auto_execute`
+- 任务成功后判断：`skip | observed_only | new_skill_candidate | improve_existing_skill`
+
+并在 `skill_runtime/api/models.py` 中先落最小数据模型：
+
+- `AgentTaskRequest`
+- `ReuseDecision`
+- `LearningDecision`
+- `AgentOrchestrationResult`
+
+**Reason**
+
+如果第一步就让新 orchestration 接管完整任务规划，范围太大，容易把“默认复用/默认学习的规则设计”和“整个 agent 执行器重构”混在一起。先把最小边界和数据结构钉住，能更快进入可实现状态，也更不容易返工。
+
+**Impact**
+
+- 后续实现应优先新增一个靠近 `RuntimeService` 的小型 orchestration service
+- 第一版重点是决策边界，不是全量代理管理器
+- `skill_runtime/api/models.py` 现在已经为这条边界准备了最小请求/决策/结果结构
+- 后续如果要接代码，优先实现 `plan_reuse(...)` 和 `plan_learning(...)`
+
+### 2026-04-29 - 自动沉淀先采用“观测优先、蒸馏保守”策略
+
+**Decision**
+
+任务成功后，自动沉淀先采用四种结果分流：
+
+- `skip`：已有技能复用已足够，不新增学习动作
+- `observed_only`：只保留 observed task，不立刻蒸馏
+- `new_skill_candidate`：生成新的 staging 候选技能
+- `improve_existing_skill`：把这次成功任务作为优化已有技能的候选证据
+
+第一版默认策略偏保守：
+
+- 工作流型成功任务默认允许进入 observation
+- 纯对话型任务不自动蒸馏
+- 已经被强匹配已有技能干净复用的任务，不默认再蒸馏
+- 只要对复用价值、稳定输入、风险边界有疑问，就优先停在 `observed_only`
+
+**Reason**
+
+如果“任务成功”就等于“自动新增技能”，active skill 库很快会重新被噪音污染，重复之前已经清理过的问题。当前阶段更重要的是让系统先学会“什么时候值得学”，而不是“逢成功必入库”。
+
+**Impact**
+
+- 后续自动沉淀实现默认会比自动复用更保守
+- `observed task` 会成为自动学习的缓冲层，而不是所有成功任务都直接蒸馏
+- 下一步 orchestration 接口应返回 `skip | observed_only | new_skill_candidate | improve_existing_skill`
+- 后续如果要实现“优化已有技能”，需要给现有 skill lifecycle 增加对应承接路径
+
+### 2026-04-29 - 自动复用先采用“三段式决策带”
+
+**Decision**
+
+自动复用先采用三段式决策带：
+
+- `>= 0.85`：可进入静默自动复用候选，但仍必须通过参数完整性、scope compatibility、风险兼容性三道门
+- `>= 0.75` 且 `< 0.85`：只保留为后台提示，不默认自动执行
+- `< 0.75`：不复用，直接正常做任务
+
+第一处代码接入点不放在 MCP，而放在 `skill_runtime/api/` 附近的新 agent-facing orchestration / policy 边界上，由它统一决定是否静默调用 `RuntimeService.search(...)` 和 `RuntimeService.execute(...)`。
+
+**Reason**
+
+当前 `RuntimeService.RECOMMENDED_EXECUTION_SCORE = 0.75` 已经足够支持“推荐一个可执行技能”，但还不足以作为“静默自动执行”的默认门槛。自动复用比显式推荐更敏感，必须更保守。同时，若把这套逻辑先塞进 MCP，产品心智仍会停留在工具层，而不是转向代理内部的默认能力层。
+
+**Impact**
+
+- 后续自动复用实现会使用比当前推荐阈值更严格的门槛
+- `0.75` 继续可作为“值得提示”的下限，不等于“可以自动执行”
+- 下一步应在 `skill_runtime/api/` 增加新的 agent-side policy / orchestration 层
+- MCP / CLI 暂不需要先改成主承载层
+
+### 2026-04-29 - Skill Runtime 主形态转向 agent-first 自动沉淀层
+
+**Decision**
+
+从当前阶段开始，不再把“继续增加通用 dogfood 技能数量”作为默认主线。Skill Runtime 的目标主形态改为 agent-first：用户正常提任务，代理优先直接完成任务；runtime 在后台自动判断何时复用已有技能、何时沉淀新技能、何时优化旧技能。MCP、CLI 和治理脚本继续保留，但退居为接口层、调试层和治理层，而不是默认产品形态。
+
+**Reason**
+
+当前 6 个真实 dogfood 样本已经足够证明 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 这条链路不是假的。继续机械补第 7 个、第 8 个通用样本，已经不能显著提高对核心方向的信心，反而容易把项目推向“手动技能库”心智，偏离用户要的“任务执行时自动形成和优化能力”的目标。
+
+**Impact**
+
+- 后续默认不再追求通用 dogfood 技能数量增长
+- 下一阶段主线改为：
+  - agent 侧默认复用策略
+  - 任务完成后的自动沉淀策略
+  - 新技能创建与旧技能优化之间的决策边界
+- `docs/agent-first-runtime-architecture.md` 成为这轮架构转向的正式说明
+- 后续新增样本只应来自真实任务 dogfood 或明确的回归缺口，而不是为了凑通用样本数量
+
 ### 2026-04-29 - 第六个真实 dogfood 技能选择目录文本清洗
 
 **Decision**

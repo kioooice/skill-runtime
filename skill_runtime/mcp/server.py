@@ -1,8 +1,22 @@
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+from skill_runtime.api.host import (
+    finalize_agent_task,
+    finalize_codex_task,
+    run_agent_task,
+    run_codex_task,
+)
+from skill_runtime.api.models import (
+    AgentOrchestrationResult,
+    AgentTaskRequest,
+    CodexTaskClassification,
+    LearningDecision,
+    ReuseDecision,
+)
 from skill_runtime.api.service import RuntimeService, RuntimeServiceError
 
 
@@ -17,6 +31,60 @@ def _wrap_tool(service: RuntimeService, handler_name: str, **kwargs: Any) -> dic
             "details": exc.details,
         }
     return {"status": "ok", "data": data}
+
+
+def _wrap_agent_host_tool(handler, **kwargs: Any) -> dict[str, Any]:
+    try:
+        data = handler(**kwargs)
+    except RuntimeServiceError as exc:
+        return {
+            "status": "error",
+            "message": exc.message,
+            "code": exc.code,
+            "details": exc.details,
+        }
+    return {"status": "ok", "data": asdict(data)}
+
+
+def _agent_result_from_payload(raw_plan: dict[str, Any]) -> AgentOrchestrationResult:
+    raw_request = raw_plan.get("request")
+    raw_reuse = raw_plan.get("reuse_decision")
+    raw_learning = raw_plan.get("learning_decision")
+    if not isinstance(raw_request, dict) or not isinstance(raw_reuse, dict):
+        raise RuntimeServiceError(
+            "plan payload must contain request and reuse_decision objects",
+            "INVALID_AGENT_PLAN",
+        )
+    if not isinstance(raw_plan.get("selected_skill_args", {}), dict):
+        raise RuntimeServiceError(
+            "selected_skill_args must be an object",
+            "INVALID_AGENT_PLAN",
+        )
+
+    return AgentOrchestrationResult(
+        request=AgentTaskRequest(**raw_request),
+        reuse_decision=ReuseDecision(**raw_reuse),
+        learning_decision=LearningDecision(**raw_learning) if isinstance(raw_learning, dict) else None,
+        task_classification=CodexTaskClassification(**raw_plan["task_classification"])
+        if isinstance(raw_plan.get("task_classification"), dict)
+        else None,
+        runtime_lane_status=raw_plan.get("runtime_lane_status")
+        if isinstance(raw_plan.get("runtime_lane_status"), str)
+        else None,
+        runtime_lane_reason=raw_plan.get("runtime_lane_reason")
+        if isinstance(raw_plan.get("runtime_lane_reason"), str)
+        else None,
+        selected_skill_name=raw_plan.get("selected_skill_name")
+        if isinstance(raw_plan.get("selected_skill_name"), str)
+        else None,
+        selected_skill_args=dict(raw_plan.get("selected_skill_args", {})),
+        execution_payload=raw_plan.get("execution_payload")
+        if isinstance(raw_plan.get("execution_payload"), dict)
+        else None,
+        learning_capture_payload=raw_plan.get("learning_capture_payload")
+        if isinstance(raw_plan.get("learning_capture_payload"), dict)
+        else None,
+    )
 
 
 def build_mcp_server(root: str | Path) -> FastMCP:
@@ -224,5 +292,103 @@ def build_mcp_server(root: str | Path) -> FastMCP:
     )
     def archive_cold_skills(days: int = 30) -> dict[str, Any]:
         return _wrap_tool(service, "archive_cold", days=days)
+
+    @server.tool(
+        name="run_agent_task_experimental",
+        description=(
+            "Experimental host-facing task entry. "
+            "Runs the agent-first orchestration facade without replacing the existing MCP mainline."
+        ),
+        structured_output=True,
+    )
+    def run_agent_task_experimental(
+        task_description: str,
+        working_directory: str | None = None,
+        known_inputs: dict[str, Any] | None = None,
+        expected_outputs: list[str] | None = None,
+        risk_level: str = "medium",
+        task_kind: str = "workflow",
+        allow_silent_reuse: bool = True,
+        allow_learning: bool = True,
+    ) -> dict[str, Any]:
+        request = AgentTaskRequest(
+            task_description=task_description,
+            working_directory=working_directory,
+            known_inputs=known_inputs or {},
+            expected_outputs=expected_outputs or [],
+            risk_level=risk_level,
+            task_kind=task_kind,
+            allow_silent_reuse=allow_silent_reuse,
+            allow_learning=allow_learning,
+        )
+        return _wrap_agent_host_tool(run_agent_task, root=root, request=request)
+
+    @server.tool(
+        name="finalize_agent_task_experimental",
+        description=(
+            "Experimental host-facing task finalizer. "
+            "Feeds an actual execution result back into the agent-first learning path."
+        ),
+        structured_output=True,
+    )
+    def finalize_agent_task_experimental(
+        plan: dict[str, Any],
+        execution_payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        return _wrap_agent_host_tool(
+            finalize_agent_task,
+            root=root,
+            plan=_agent_result_from_payload(plan),
+            execution_payload=execution_payload,
+        )
+
+    @server.tool(
+        name="run_codex_task_experimental",
+        description=(
+            "Experimental Codex-facing task entry. "
+            "Classifies the task first, then only enters the runtime lane for default-in workflow tasks."
+        ),
+        structured_output=True,
+    )
+    def run_codex_task_experimental(
+        task_description: str,
+        working_directory: str | None = None,
+        known_inputs: dict[str, Any] | None = None,
+        expected_outputs: list[str] | None = None,
+        risk_level: str = "medium",
+        task_kind: str = "workflow",
+        allow_silent_reuse: bool = True,
+        allow_learning: bool = True,
+    ) -> dict[str, Any]:
+        request = AgentTaskRequest(
+            task_description=task_description,
+            working_directory=working_directory,
+            known_inputs=known_inputs or {},
+            expected_outputs=expected_outputs or [],
+            risk_level=risk_level,
+            task_kind=task_kind,
+            allow_silent_reuse=allow_silent_reuse,
+            allow_learning=allow_learning,
+        )
+        return _wrap_agent_host_tool(run_codex_task, root=root, request=request)
+
+    @server.tool(
+        name="finalize_codex_task_experimental",
+        description=(
+            "Experimental Codex-facing task finalizer. "
+            "Only default-in tasks continue into runtime-side post-task learning."
+        ),
+        structured_output=True,
+    )
+    def finalize_codex_task_experimental(
+        plan: dict[str, Any],
+        execution_payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        return _wrap_agent_host_tool(
+            finalize_codex_task,
+            root=root,
+            plan=_agent_result_from_payload(plan),
+            execution_payload=execution_payload,
+        )
 
     return server

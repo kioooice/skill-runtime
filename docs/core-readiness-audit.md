@@ -48,38 +48,50 @@ The current risk is not that the project cannot run. The risk is that several co
 
 Do not continue by adding unrelated new features.
 
-Recommended next stage:
+The project has already passed the “prove the loop is real” stage.
 
-Build a core dogfood acceptance pack that proves the existing loop on real local tasks.
+The next stage is not to keep growing a generic skill catalog.
 
-The acceptance pack should answer:
+The next stage is to shift the default product shape from explicit skill use to implicit background learning:
 
-- Can the runtime find a useful existing skill?
-- Can it execute the skill safely?
-- Can the execution produce a useful observed task?
-- Can that observed task become a candidate skill?
-- Can the candidate pass audit for the right reason?
-- Can promotion avoid polluting active search results?
-- Can the same workflow be reused in a later task?
+- complete the user task first
+- quietly reuse existing skills when the match is strong enough
+- automatically decide whether successful work should become a new skill or improve an old one
+- keep MCP as a support interface, not the main user experience
 
-This should come before heavier search or provider upgrades because it will expose which core gap is actually blocking usefulness.
+See:
+
+- `docs/agent-first-runtime-architecture.md`
+- `docs/agent-mainline-readiness-review.md`
+
+The current question is no longer only “can this direction exist”.
+
+That part is now sufficiently proven.
+
+The current question is:
+
+- should the default top-level product path switch to the new agent-first route yet
+
+Current answer:
+
+- not yet
 
 ## Next Options
 
-1. Core dogfood acceptance pack
-   - Benefit: proves the real product loop without adding a large new capability.
-   - Cost: mostly tests, fixtures, and documentation.
+1. Agent-side reuse policy
+   - Benefit: starts hiding skill search behind the agent, which is closer to the target product shape.
+   - Cost: needs careful boundaries so reuse does not trigger too aggressively.
 
-2. Real semantic audit and fallback provider path
-   - Benefit: attacks the biggest quality gap directly.
-   - Cost: higher complexity and may require provider configuration decisions.
+2. Post-task automatic distillation policy
+   - Benefit: moves the system toward self-improving behavior after real work.
+   - Cost: needs clear rules for when to create, improve, or skip a skill.
 
-3. Search quality evaluation
-   - Benefit: makes skill discovery measurable.
-   - Cost: useful only after there are enough real skills and task examples.
+3. Real-task dogfood on the new policy path
+   - Benefit: validates the intended product shape using real work instead of more generic samples.
+   - Cost: may expose several gaps at once and require tighter stage control.
 
 ## Recommended Choice
 
-Start with option 1: core dogfood acceptance pack.
+Start with option 1: agent-side reuse policy.
 
-Reason: it keeps the project focused on core completion, gives a concrete pass/fail signal, and avoids guessing whether search, audit, distillation, or MCP host flow is the biggest remaining blocker.
+Reason: the main missing piece is no longer proof that skills can exist. The main missing piece is that the agent still behaves like a user of a skill library instead of a system with a hidden learning layer.

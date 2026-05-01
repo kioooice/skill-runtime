@@ -2,300 +2,329 @@
 
 ## Current State
 
-已完成一轮 Skill Runtime 产品化收敛，并已转入核心功能完成度收敛。当前结论：项目已经有可用本地 MVP，核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在代码结构上存在，CLI / MCP / 测试 / 治理基础也已成型；但核心功能还不能宣称完全完成。三条核心 dogfood 验收路径已新增：已知技能可通过 MCP host-style 调用完成搜索、执行、observed task、提升、复用，并确认 active 搜索没有 fixture-tier 污染；未知工作流进入 mock fallback 后会被审核挡住，不会自动提升到 active；配置外部命令型 fallback / semantic provider 后，未知工作流可以生成、审核、入库并复用。仓库现在包含本地 demo provider 和 DeepSeek provider 示例，可从 fresh clone 验证 provider hook。DeepSeek 接入使用 `DEEPSEEK_API_KEY` 环境变量、默认模型 `deepseek-v4-flash`，不会把 key 写入仓库。已按用户要求用真实 DeepSeek API 做 live smoke：API 可连通，fallback / semantic provider 都能返回结果；DeepSeek fallback 本地质量门禁可以在 staging 前拦截语法错误、缺少入口/说明、缺少轨迹工具调用、缺少 schema kwargs、runtime 工具签名错误等坏输出，并已支持门禁失败后自动返修一次。最新 live smoke 已通过完整生成、审核、提升、复用闭环，并验证复制文件与 metadata sidecar。active 库已有 6 个真实 dogfood 技能：`merge_text_files`、`archive_log_files_dogfood`、`json_to_csv_dogfood`、`directory_json_to_csv_dogfood`、`text_replace_dogfood`、`directory_text_cleanup_dogfood`。搜索质量已有最小基线脚本，覆盖当前六个真实 active 技能；搜索分词已过滤英文停用词，避免无关查询产生弱相关结果。验证层已拆分为日常快验和全量慢验：`tests.test_runtime_fast` 当前 20 个测试，约 27 秒；`tests.test_runtime` 当前 366 个测试，约 9 分钟。剩余主要短板是：active skill 库样本仍少；搜索质量评估样本仍少。
+已完成一轮 Skill Runtime 产品化收敛，也已证明核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在本地 MVP 中真实存在。当前阶段的主要问题已经不是“底层零件有没有”，而是“Codex 默认执行任务时会不会自动用上这层”。此前 agent-first runtime 已完成一轮阶段性收口：静默自动复用、失败时不越界、任务完成后 capture trajectory 并给出 recommendation，这一层现在停在 `capture + recommendation`，不默认继续自动 `distill/promote`。新的主线已切到 Codex 默认接入：不是一次性把 Skill Runtime 全量挂到所有 Codex 任务上，而是先采用受控低风险任务通道。现在除了分类文档、host API、MCP 实验入口和 Codex CLI 默认通道以外，phase-one `default-in` 还进一步收窄成四类白名单家族：
+
+- `project-state-maintenance`
+- `local-text-transformation`
+- `structured-format-conversion`
+- `low-risk-workspace-organization`
+
+当前已经具备三种 Codex 接入层次：
+
+- host API
+- MCP 实验入口
+- CLI 默认通道
+
+并且都遵守同一套 `default-in / guarded-in / default-out` 分流规则，且 `default-in` 已经不是宽泛条件，而是小范围白名单。现在第一处现有入口也已经正式切过去：
+
+- `agent-plan`
+- `agent-plan-learning`
+
+它们默认走 Codex 默认通道，而不再直接走旧的纯 agent lifecycle helper。当前阶段已从“是否让某个现有入口正式改走 Codex 默认通道”推进到“要不要继续切第二处现有入口，还是先做更大范围验证”。
+它们默认走 Codex 默认通道，而不再直接走旧的纯 agent lifecycle helper。并且这一轮更大范围验证也已经通过：
+
+- `python scripts/check_mcp_architecture.py`
+- `python scripts/check_runtime_contracts.py`
+- `python -m skill_runtime.cli codex-run ...`
+- `python -m skill_runtime.cli agent-plan --task-description "Review this architecture and decide the roadmap."`
+
+当前阶段已从“要不要先做更大范围验证”推进到“第一处现有入口已经完成阶段性验证点收口，并进入观察期”。在此基础上，`skill_runtime` 也已经进一步上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 `skill_runtime` MCP 启动也不再写死在 `D:/02-Projects/vibe`，而会优先把当前工作区识别为 runtime root。默认不再继续马上切第二处现有入口，除非后续真实使用明确暴露出需要扩大默认通道覆盖面的价值。
+
+同时，仓库主说明已经完成一轮口径切换：现在不再把这套系统主要描述成 “MCP 工具集”，而是描述成 “Codex 下方的背景能力层”；MCP、CLI 和脚本保留为接口层和传输层。
+
+另外，仓库根入口也已切成中文默认：
+
+- `README.md` 现在作为中文主入口
+- `README.en.md` 保留英文版
+
+最新一轮已补上 Codex 默认通道的触发可见性：Codex-facing orchestration 结果现在会返回 `runtime_lane_status` 和 `runtime_lane_reason`，用于说明本次任务是实际使用了 runtime lane、只是进入判断、还是被跳过留在普通 Codex 路径。这解决了“在其他项目里没感觉到它存在时如何判断是否触发”的问题。
+
+用户随后提出希望做一个能看技能树和触发日志的可视化界面。当前已将第一版收窄为“只读观察面板”，不做完整后台、不做 skill 编辑、不做 promote/archive 操作。设计文档已写入 `docs/superpowers/specs/2026-05-01-runtime-observability-dashboard-design.md`。
+
+用户已批准该设计进入实现计划阶段。当前实现计划已写入 `docs/superpowers/plans/2026-05-01-runtime-observability-dashboard.md`，计划拆成事件日志、host 接入、dashboard 数据收集、HTML 渲染、CLI 入口和最终验证六个任务。
+
+当前实现也已经完成：`python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可以生成本地只读观察面板。页面展示 overview、Skill Tree、Trigger Log 和 Governance Snapshot。Codex-facing runtime lane 入口现在会把 `used / entered / skipped` 事件写入 `.skill_runtime/runtime_lane_events.jsonl`。
 
 ## Last Completed
 
 本轮已完成：
-- 新增 `docs/core-dogfood-acceptance.md`，记录核心 dogfood 验收范围
-- 新增 `tests/test_runtime_core_dogfood_acceptance.py`
-- 将核心 dogfood 验收接入 `tests.test_runtime`
-- 第一条验收路径覆盖：MCP 搜索、执行、observed task、提升、复用、active 搜索无 fixture-tier 污染
-- 第二条验收路径覆盖：未知工作流进入 mock fallback 后不自动提升为 active
-- 已运行：
+- 实现只读 runtime observability dashboard：
+  - 新增 runtime lane 事件日志 `.skill_runtime/runtime_lane_events.jsonl`
+  - 新增 dashboard 数据收集层
+  - 新增静态 HTML 渲染层
+  - 新增 `dashboard` CLI 命令
+  - README / README.zh-CN 已补充使用方式
+- 已验证：
+  - `python -m unittest tests.test_runtime_fast -v`，59 tests OK
   - `python scripts/check_mcp_architecture.py`
   - `python scripts/check_runtime_contracts.py`
-  - `python -m unittest tests.test_runtime -v`
-  - 结果：350 tests OK
-- 新增 `docs/core-readiness-audit.md`，记录核心完成度盘点
-- 明确当前状态是“可用本地 MVP”，不是“核心功能完成”
-- 将下一阶段主线从产品化收敛切回核心 dogfood 验收
-- 新增 `pyproject.toml`，声明 Python 3.11+ 和 MCP 运行依赖
-- README / README.zh-CN 增加本地安装与最小验证步骤
-- `.github/workflows/runtime-contracts.yml` 先执行 `python -m pip install -e .`
-- 新增最小 MCP smoke 测试：验证 `build_mcp_server` 可 import 且能构造 server
-- 修复 `RuntimeTools.copy_file` 在新建复制目标场景下的 rollback hint，与 `RuntimeService.rollback_operations` 保持一致
-- 已运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python -m unittest tests.test_runtime -v`
-- 已执行 active skill 治理清理，且明确保留真实 dogfood skill
-- 已重建 `skill_store/index.json`
-- 当前 active skill 只剩：
-  - `merge_text_files`
-  - `archive_log_files_dogfood`
-- 当前治理报告：
-  - `active_count = 2`
-  - `duplicate_candidates = []`
-  - `fixture_count = 0`
-- 当前搜索验证：
-  - 查询 `merge txt files into markdown` 时，不再出现测试技能污染结果
-- runtime 测试支撑层已切到隔离副本
-- 搜索 / 治理 / 生命周期测试已补齐自带样本，不再依赖历史污染的 active skill 库
-- 已重新运行：
-  - `python -m unittest tests.test_runtime -v`
-  - 结果：342 tests OK
-- 已补齐安装配置中的递归包发现
-- 已新增正式命令入口：
-  - `skill-runtime`
-  - `skill-runtime-mcp`
-- 已保留旧入口兼容：
-  - `python scripts/skill_cli.py`
-  - `python scripts/skill_mcp_server.py`
-- README / README.zh-CN 已补充：
-  - 安装后命令入口
-  - `python -m skill_runtime...` 模块入口
-- 已再次运行：
-  - `python -m pip install -e .`
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python -m unittest tests.test_runtime -v`
-  - 安装后入口 `--help`
-  - 结果：344 tests OK
-- 已补充 `.gitattributes`，统一仓库文本换行规范
-- 已将 `.claude/` 加入 `.gitignore`
-- 已保留 `docs/gitnexus-local-runbook.md` 作为正式仓库文档
-- 已将 active skill 的使用统计写回迁移到本地 `.skill_runtime/usage.json`
-- README / README.zh-CN 已补充本地 usage 状态文件说明
-- 已重新运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python -m unittest tests.test_runtime -v`
-  - 结果：345 tests OK
-- 已为治理维护动作补齐索引合并保存策略
-- 已新增回归测试，覆盖归档过程中出现晚到索引更新仍能保留
-- 已再次运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python -m unittest tests.test_runtime -v`
-  - 结果：346 tests OK
-- 已将 `AGENTS.md` 中的新会话接力、自动模式、GitNexus 使用规则纳入正式提交
-- 已按 `.gitattributes` 规范化 `skill_store` 文本文件，清理历史换行噪音
-- README / README.zh-CN 已补充 clone 后最短验证路径
-- 已修复模块入口：
-  - `python -m skill_runtime.cli ...`
-  - `python -m skill_runtime.mcp_stdio ...`
-- 已新增模块入口回归测试
-- 新增外部命令型 fallback provider：
-  - `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD`
-- 新增外部命令型 semantic provider：
-  - `SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD`
-- 新增 provider dogfood 验收：未知工作流经外部 provider 生成、审核、promote、reuse
-- 新增 semantic provider 阻断测试：外部审核器返回 high issue 时禁止 promote
-- 新增 `docs/provider-integration.md`
-- 已运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python -m unittest tests.test_runtime -v`
-  - 结果：352 tests OK
-- 新增日常快验套件 `tests.test_runtime_fast`
-- 新增慢测试定位脚本 `scripts/profile_runtime_tests.py`
-- README / README.zh-CN / TESTS / AGENTS 已改为优先提示快验，full suite 标注为慢速全量验证
-- CI 已增加快验步骤，并保留 full runtime suite
-- 已运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python -m unittest tests.test_runtime_fast -v`
-  - `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 10`
-  - 结果：快验 7 tests OK，约 10 秒；全量耗时分析 352 tests OK，约 11 分钟
-- 当前最慢单项：
-  - `test_check_runtime_contracts_script_passes`，约 47 秒
-- 已优化 contract 检查的隔离沙箱：默认只复制验证真正需要的 `demo`、`skill_store`、`trajectories`，不再反复复制历史 observed task 和 output
-- 已同步优化测试沙箱复制，跳过 `__pycache__`，减少 Windows 本地重复文件复制成本
-- 已新增回归测试，保证 contract 检查默认不会把历史运行产物带进沙箱
-- 已重新运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python -m unittest tests.test_runtime_fast -v`
-  - `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 10`
   - `git diff --check`
-  - 结果：contract 检查约 12 秒；快验 7 tests OK，约 9-10 秒；全量耗时分析 353 tests OK，约 9 分钟；`git diff --check` 只有历史 CRLF 提示
-- 新增仓库内本地 provider 示例：
-  - `examples/providers/copy_metadata_fallback_provider.py`
-  - `examples/providers/pass_semantic_review_provider.py`
-- provider dogfood 测试不再临时写 provider 脚本，改为直接使用仓库内示例脚本
-- README / README.zh-CN / provider 文档已补充本地 provider 示例启用方式
+  - `python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html`
+- 完成只读可视化观察面板设计：
+  - 第一版只看当前 runtime root
+  - 展示技能树、触发日志、治理快照和概览
+  - 需要新增 `.skill_runtime/runtime_lane_events.jsonl` 作为自动触发事件日志
+  - 不做编辑、promote、archive、跨工作区聚合或常驻 Web 服务
+- 完成只读 dashboard 实现计划：
+  - 计划文件：`docs/superpowers/plans/2026-05-01-runtime-observability-dashboard.md`
+  - 实现顺序：事件日志 -> host 接入 -> 数据收集 -> HTML 渲染 -> CLI 命令 -> 验证与状态收口
+- 新增 runtime lane 可见性字段：
+  - `runtime_lane_status`
+  - `runtime_lane_reason`
+- 统一 Codex host API、CLI 和 MCP payload 重建路径对这两个字段的传递
+- 补充快验，覆盖 default-in 被实际使用、default-out 被跳过、CLI plan 输出可见状态
+- 更新 README、Codex 接入文档和默认通道观察日志，说明如何判断是否触发
 - 已运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python -m unittest tests.test_runtime_fast -v`
-  - `git diff --check`
-  - 结果：全部通过；快验 7 tests OK，约 10 秒
-- 新增 DeepSeek provider 示例：
-  - `examples/providers/deepseek_fallback_provider.py`
-  - `examples/providers/deepseek_semantic_review_provider.py`
-- DeepSeek provider 通过 `DEEPSEEK_API_KEY`、`DEEPSEEK_MODEL`、`DEEPSEEK_API_BASE` 等环境变量配置，默认模型为 `deepseek-v4-flash`
-- 新增本地假 DeepSeek API 测试，验证两个脚本按 OpenAI-compatible Chat Completions 契约调用 `/chat/completions`
-- README / README.zh-CN / provider 文档已补充 DeepSeek 配置方式，并明确不要提交 API key
+  - `python -m unittest tests.test_runtime_fast.RuntimeFastTests.test_codex_host_api_run_task_executes_default_in_flow tests.test_runtime_fast.RuntimeFastTests.test_codex_host_api_run_task_keeps_default_out_work_on_normal_path tests.test_runtime_fast.RuntimeFastTests.test_agent_plan_cli_returns_reuse_decision_for_workflow_request tests.test_runtime_fast.RuntimeFastTests.test_agent_plan_cli_now_keeps_default_out_work_on_normal_path -v`
+  - 结果：4 tests OK
+- 完成第一处现有入口切换后的更大范围验证
+- 验证 `check_mcp_architecture` 通过
+- 验证 `check_runtime_contracts` 通过
+- 验证 `codex-run` 可真实执行 default-in 文本工作流
+- 验证 `agent-plan` 可真实把开放式 review 任务留在普通路径
+- 验证 `python -m unittest tests.test_runtime -v` 全量慢验通过，399 tests OK
+- 新增 `docs/codex-default-lane-stage-closure.md`
+- 新增 `docs/codex-default-lane-observation-plan.md`
+- 新增 `docs/codex-default-lane-observation-log.md`
+- 完成全局 `skill_runtime` 启动收口：
+  - 全局 `AGENTS.md` / `MEMORY.md` 已改
+  - 全局 `config.toml` 已改
+  - 新增 `C:\Users\Administrator\.codex\launch-skill-runtime.ps1`
+- 验证全局启动脚本在不同工作区会解析到不同 root
+- 完成仓库主文档口径切换：
+  - `README.md`
+  - `README.en.md`
+  - `README.zh-CN.md`
+  - `docs/mcp-integration.md`
+  - `docs/codex-integration.md`
+- 新增对外说明文档：
+  - `docs/multi-host-adaptation-plan.md`
+- 正式将第一处现有入口迁移收口为阶段性默认路径验证点
+- 正式将下一阶段切换为“观察期”，不再默认继续扩大入口数量
 - 已运行：
+  - `powershell -File C:\Users\Administrator\.codex\launch-skill-runtime.ps1 -PrintRoot`
+  - `python -m skill_runtime.cli --root D:\02-Projects\work search --query "test workflow"`
+  - `python -m unittest tests.test_runtime -v`
   - `python scripts/check_mcp_architecture.py`
   - `python scripts/check_runtime_contracts.py`
+  - `python -m skill_runtime.cli codex-run --task-description "merge txt files into markdown" ...`
+  - `python -m skill_runtime.cli agent-plan --task-description "Review this architecture and decide the roadmap."`
+  - `git diff --check`
+  - 结果：全量慢验 399 tests OK；架构检查通过；contract 检查通过；CLI smoke 通过；全局启动脚本可在不同工作区解析到不同 root；`python -m skill_runtime.cli --root D:\02-Projects\work search --query "test workflow"` 可正常空跑；`git diff --check` 仅剩既有 LF 换行提示
+- 将现有 `agent-plan` / `agent-plan-learning` 正式切换到 Codex 默认通道
+- 验证 `agent-plan` 现在会返回 `task_classification`
+- 验证 `agent-plan` 在 `default-out` 任务上会留在普通路径
+- 已运行：
+  - `python -m unittest tests.test_runtime_fast -v`
+  - `python -m py_compile skill_runtime/cli.py tests/test_runtime_agent_orchestration.py`
+  - `git diff --check`
+  - 结果：快验 53 tests OK；语法检查通过；格式检查通过
+- 将 phase-one `default-in` 收窄为四类白名单家族
+- 验证结构化转换任务会进入 `structured-format-conversion`
+- 验证低风险工作区整理任务会进入 `low-risk-workspace-organization`
+- 修复一个关键误判：
+  - 带本地输出路径的外部登录/网站任务不再因为有 `output_path` 就误入 `default-in`
+- 已运行：
+  - `python -m unittest tests.test_runtime_fast -v`
+  - `python -m py_compile skill_runtime/api/classification.py tests/test_runtime_agent_orchestration.py`
+  - `git diff --check`
+  - 结果：快验 52 tests OK；语法检查通过；格式检查通过
+- 新增 Codex CLI 默认通道：
+  - `codex-classify`
+  - `codex-run`
+  - `codex-finalize`
+- 验证 `codex-classify` 可正确识别项目状态文件维护任务为 `default-in`
+- 验证 `codex-run` 可让 `default-in` 任务自动进入 runtime lane 并执行
+- 验证 `codex-finalize` 可让 `default-in` 欠覆盖任务继续 capture trajectory 并给出 recommendation
+- 已运行：
+  - `python -m unittest tests.test_runtime_fast -v`
+  - `python -m py_compile skill_runtime/cli.py tests/test_runtime_agent_orchestration.py`
+  - `git diff --check`
+  - 结果：快验 49 tests OK；语法检查通过；格式检查通过
+- 新增 `skill_runtime/api/classification.py`
+- 把 Codex 任务分类边界落成可运行判断器
+- 新增 Codex host API：
+  - `classify_codex_task`
+  - `start_codex_task`
+  - `run_codex_task`
+  - `finalize_codex_task`
+- 新增 Codex MCP 实验入口：
+  - `run_codex_task_experimental`
+  - `finalize_codex_task_experimental`
+- 验证 `default-in` 任务可直接走新 Codex 路径并自动复用
+- 验证 `default-out` 任务会留在普通路径，不会误入 runtime lane
+- 验证 `default-in` 欠覆盖任务在完成后仍可 capture trajectory 并给出后续 recommendation
+- 已运行：
+  - `python -m unittest tests.test_runtime_fast -v`
+  - `python -m py_compile skill_runtime/api/classification.py skill_runtime/api/models.py skill_runtime/api/orchestration.py skill_runtime/api/host.py skill_runtime/api/__init__.py skill_runtime/mcp/server.py tests/test_runtime_agent_orchestration.py`
+  - `git diff --check`
+  - 结果：快验 46 tests OK；语法检查通过；格式检查通过
+- 新增 `docs/codex-task-classification-boundary.md`
+- 明确 Codex 任务先分为三类：
+  - `default-in`
+  - `guarded-in`
+  - `default-out`
+- 明确 phase one 默认只让 `default-in` 自动进入 runtime lane
+- 明确第一批推荐 `default-in`：
+  - 本地文本处理
+  - 结构化转换
+  - 项目状态文件维护
+  - 低风险工作区整理
+- 明确 `guarded-in` 先不静默自动进入
+- 明确 `default-out` 继续留在普通 Codex 路径
+- 新增 `docs/codex-default-integration-plan.md`
+- 明确 Codex 默认接入先采用受控低风险任务通道，而不是一次性全量切换
+- 明确 runtime 在 Codex 中的目标位置是：
+  - 任务开始前作为 reuse gate
+  - 任务完成后作为 learning gate
+- 明确 phase one 的 default-in 任务：
+  - 本地文件转换
+  - 本地文件整理
+  - 项目维护类任务
+  - 结构化导出和格式转换
+- 明确 phase one 的 default-out 任务：
+  - 开放式对话
+  - 高风险操作
+  - 外部系统依赖重的任务
+  - 成功标准不清晰的任务
+- 明确 Codex 默认接入当前仍停在 `capture + recommendation`，不默认自动继续 `distill/promote`
+- 停止默认继续补通用 dogfood 技能样本
+- 新增 `docs/agent-first-runtime-architecture.md`
+- 把目标应用形态明确改写为：代理先完成任务，runtime 在后台自动复用、自动沉淀、自动优化
+- 明确 MCP / CLI / 治理脚本继续保留，但定位退居接口层、调试层和治理层
+- 将“通用样本已足够，后续优先做自动沉淀主线”的判断写入 `docs/core-readiness-audit.md`
+- 将这一轮方向转向写入 `DECISIONS.md`、`TASKS.md` 和 `HANDOFF.md`
+- 新增 `docs/agent-side-reuse-policy.md`
+- 明确自动复用先采用三段式决策带：
+  - `>= 0.85` 才允许进入静默自动复用候选
+  - `0.75 ~ 0.85` 只做后台提示，不默认自动执行
+  - `< 0.75` 不复用
+- 明确自动复用第一处代码接入点应在 `skill_runtime/api/` 附近的新 orchestration / policy 边界，而不是 MCP 层
+- 新增 `docs/post-task-distillation-policy.md`
+- 明确自动沉淀先采用四种结果分流：
+  - `skip`
+  - `observed_only`
+  - `new_skill_candidate`
+  - `improve_existing_skill`
+- 明确自动沉淀默认采用“观测优先、蒸馏保守”策略，避免成功任务自动把 active skill 库重新搞脏
+- 新增 `docs/agent-orchestration-interface.md`
+- 明确第一版 orchestration 先收口为小边界，不接管完整任务规划
+- 在 `skill_runtime/api/models.py` 中加入最小请求/决策/结果结构：
+  - `AgentTaskRequest`
+  - `ReuseDecision`
+  - `LearningDecision`
+  - `AgentOrchestrationResult`
+- 新增 `skill_runtime/api/orchestration.py`
+- 落地第一版 `AgentOrchestrationService`
+- 新增并通过第一版 orchestration 快验：
+  - 强匹配且参数齐全时允许 `auto_execute`
+  - 参数缺失时退回 `background_hint`
+  - 已有技能干净完成任务时学习决策为 `skip`
+  - 具体且成功的欠覆盖工作流可标记为 `new_skill_candidate`
+- 已运行：
   - `python -m unittest tests.test_runtime_fast -v`
   - `git diff --check`
-  - 结果：全部通过；快验 9 tests OK，约 12 秒
-- 已按用户要求使用真实 DeepSeek API 做 live smoke
-- live smoke 结论：
-  - API 真实连通，DeepSeek provider 脚本可调用模型
-  - fallback provider 曾返回缺少 `reason` 的 JSON，已改为对非核心说明字段补默认值
-  - prompt 已加严，要求生成 skill 包含 docstring 结构、使用 runtime tools、参数化输入
-  - 完整闭环仍不稳定：一次诊断通过 promote，但重复完整执行时出现审核未通过或复用无目标产物
-- 已补测试确保关键 prompt 约束会发送给 DeepSeek
-- 已重新运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
+  - `python -m py_compile skill_runtime/api/models.py skill_runtime/api/__init__.py`
+  - 结果：快验 24 tests OK；格式检查通过；新 API 模型语法检查通过
+- 在 `skill_runtime/cli.py` 中新增最小真实调用点：
+  - `agent-plan`
+  - `agent-plan-learning`
+- 新增并通过 CLI 调用点快验：
+  - `agent-plan` 返回复用判断
+  - `agent-plan-learning` 返回学习判断
+- 已运行：
   - `python -m unittest tests.test_runtime_fast -v`
-  - secret grep
-  - 结果：检查和快验通过；未发现用户提供的 DeepSeek key 写入仓库文件
-- 已为 DeepSeek fallback provider 增加本地输出质量门禁：
-  - Python 语法
-  - `run(tools, **kwargs)` 入口
-  - `功能描述` / `输入参数` / `输出结果` docstring 结构
-  - 轨迹对应 runtime tool 调用
-  - `input_schema` 声明的实际 kwargs
-  - `copy_file` / `write_json` 等 runtime tool 的真实调用签名
-- 已兼容 DeepSeek 偶发返回双重转义代码字符串的情况
-- 已补充 3 个 DeepSeek 门禁回归测试
-- 最新真实 live smoke 结果：DeepSeek API 可连通，但模型仍生成了 `copy_file(destination_path=...)` 这类坏签名；门禁已在 fallback 阶段拦截，没有进入 staging / promote
-- 已重新运行：
-  - `python -m unittest tests.test_runtime_fast -v`
+  - `python -m py_compile skill_runtime/api/orchestration.py skill_runtime/cli.py tests/test_runtime_agent_orchestration.py`
   - `git diff --check`
-  - 结果：快验 13 tests OK，约 18 秒；空白检查通过
-- 已为 DeepSeek fallback provider 增加一次自动修复请求：
-  - 首次候选未过本地质量门禁时，把具体失败原因发回 DeepSeek
-  - 修复后的候选必须再次通过同一套本地门禁
-  - `DEEPSEEK_REPAIR_ATTEMPTS=0` 可关闭返修
-- 已补充 DeepSeek 返修回归测试：
-  - 一次返修成功
-  - 关闭返修时只失败一次、不重试
-- 最新真实 live smoke 结果：DeepSeek API 可连通，本轮 fallback 直接返回了可通过门禁的候选技能，没有触发返修
-- 已重新运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
+  - 结果：快验 26 tests OK；语法检查通过；格式检查通过
+- 在 `AgentOrchestrationService` 中新增双阶段 helper：
+  - `start_task(...)`
+  - `finalize_task(...)`
+- 新增并通过 helper 快验：
+  - `start_task(...)` 返回组合后的上层计划
+  - `finalize_task(...)` 把学习判断附着回原计划
+- 已运行：
   - `python -m unittest tests.test_runtime_fast -v`
+  - `python -m py_compile skill_runtime/api/orchestration.py tests/test_runtime_agent_orchestration.py`
   - `git diff --check`
-  - secret grep
-  - 结果：架构检查通过；contract 检查通过；快验 15 tests OK，约 20 秒；空白检查仅有历史 CRLF 提示；未发现用户提供的 DeepSeek key 写入仓库文件
-- 已新增 `scripts/smoke_deepseek_provider_loop.py`，用于手动验证真实 DeepSeek provider 完整闭环
-- 新脚本使用临时 runtime 沙箱，不写入真实 active skill 库
-- 本轮 smoke 首次暴露 `write_json(path, data)` 与真实 runtime 工具签名不一致；已修正为 `write_json(path, payload)`
-- 最新真实 DeepSeek provider dogfood 结果：
-  - fallback 生成成功
-  - semantic audit 通过
-  - promote 成功
-  - execute 复用成功
-  - 输出文件和 metadata sidecar 均存在且内容正确
-- 已重新运行：
-  - `python -m py_compile examples/providers/deepseek_fallback_provider.py tests/test_runtime_deepseek_provider_examples.py scripts/smoke_deepseek_provider_loop.py`
-  - `python -m unittest tests.test_runtime_fast.RuntimeFastTests.test_deepseek_fallback_provider_blocks_invalid_runtime_tool_signature tests.test_runtime_fast.RuntimeFastTests.test_deepseek_fallback_provider_repairs_candidate_once tests.test_runtime_fast.RuntimeFastTests.test_deepseek_fallback_provider_can_disable_repair -v`
-  - `python scripts/smoke_deepseek_provider_loop.py`
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
+  - 结果：快验 28 tests OK；语法检查通过；格式检查通过
+- 将现有 CLI 调用点改为真正走 lifecycle helper：
+  - `agent-plan -> start_task(...)`
+  - `agent-plan-learning -> finalize_task(...)`
+- `agent-plan-learning` 现在支持直接接收 `plan-json`，把学习判断附着回同一份 plan
+- 已运行：
   - `python -m unittest tests.test_runtime_fast -v`
-  - 结果：全部通过；真实 DeepSeek smoke 输出 `status=passed`
-- 已新增 `scripts/evaluate_search_quality.py`，用于评估当前 active 技能的最小搜索命中质量
-- 当前搜索质量基线覆盖：
-  - 合并文本到 markdown 命中 `merge_text_files`
-  - 归档日志文件命中 `archive_log_files_dogfood`
-  - 无关邮件营销查询不产生推荐技能
-- 已将搜索质量基线接入 `tests.test_runtime_fast`
-- 已在 `SkillIndex` 分词中加入英文停用词过滤
-- 搜索质量基线中的无关查询现在不仅不推荐技能，也不返回弱相关 top results
-- 已重新运行：
-  - `python scripts/evaluate_search_quality.py`
-  - `python -m py_compile scripts/evaluate_search_quality.py tests/test_runtime_search_quality.py tests/test_runtime_fast.py tests/test_runtime.py`
-  - `python -m unittest tests.test_runtime_fast.RuntimeFastTests.test_active_skill_search_quality_fixture_passes -v`
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python -m unittest tests.test_runtime_fast -v`
-  - `python -m unittest tests.test_runtime -v`
-  - 结果：搜索质量基线 5/5 通过；快验 16 tests OK；全量 362 tests OK，约 7 分钟
-- 已新增第三个真实 active dogfood skill：
-  - `json_to_csv_dogfood`
-  - 源 trajectory：`trajectories/dogfood_json_to_csv_20260429.json`
-  - demo 输入：`demo/input/records.json`
-  - audit：`audits/json_to_csv_dogfood.audit.json`
-- 已扩展搜索质量基线：
-  - JSON records 转 CSV 命中 `json_to_csv_dogfood`
-  - JSON list 导出 CSV 命中 `json_to_csv_dogfood`
-  - 当前基线 7/7 通过
-- 已新增 fast 回归：搜索命中 `json_to_csv_dogfood` 后执行技能并验证 CSV 内容
-- 已重新运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python scripts/evaluate_search_quality.py`
-  - `python -m unittest tests.test_runtime_fast -v`
-  - `python -m unittest tests.test_runtime -v`
-  - 结果：架构检查通过；contract 检查通过；搜索质量基线 7/7 通过；快验 17 tests OK；全量 363 tests OK，约 7 分钟
-- 已新增第四个真实 active dogfood skill：
-  - `directory_json_to_csv_dogfood`
-  - 源 trajectory：`trajectories/dogfood_directory_json_to_csv_20260429.json`
-  - demo 输入：`demo/input/json_records/`
-  - audit：`audits/directory_json_to_csv_dogfood.audit.json`
-- 新技能会把一个文件夹中的 JSON 记录批量导出为 CSV，并保持嵌套目录结构
-- 已扩展搜索质量基线：
-  - 目录 JSON 转 CSV 命中 `directory_json_to_csv_dogfood`
-  - batch / folder / records 表述命中 `directory_json_to_csv_dogfood`
-  - 当前基线 9/9 通过
-- 已新增 fast 回归：搜索命中 `directory_json_to_csv_dogfood` 后执行技能，并验证两个 CSV 输出内容
-- 已重新运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python scripts/evaluate_search_quality.py`
-  - `python -m unittest tests.test_runtime_fast -v`
-  - `python -m unittest tests.test_runtime -v`
+  - `python -m py_compile skill_runtime/cli.py skill_runtime/api/orchestration.py tests/test_runtime_agent_orchestration.py`
   - `git diff --check`
-  - secret grep
-  - 结果：架构检查通过；contract 检查通过；搜索质量基线 9/9 通过；快验 18 tests OK；全量 364 tests OK，约 7 分钟；空白检查只有历史 CRLF 提示；未发现用户提供的 DeepSeek key 写入仓库文件
-- 已新增第五个真实 active dogfood skill：
-  - `text_replace_dogfood`
-  - 源 trajectory：`trajectories/dogfood_text_replace_20260429.json`
-  - demo 输入：`demo/input/template_note.txt`
-  - audit：`audits/text_replace_dogfood.audit.json`
-- 新技能会把单个文本文件里的指定文字替换成新文字，并写出更新后的文件
-- 已扩展搜索质量基线：
-  - replace text in one file 命中 `text_replace_dogfood`
-  - update draft word in a text file 命中 `text_replace_dogfood`
-  - 当前基线 11/11 通过
-- 已新增 fast 回归：搜索命中 `text_replace_dogfood` 后执行技能，并验证替换后的文本内容
-- 已重新运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python scripts/evaluate_search_quality.py`
+  - 结果：快验 28 tests OK；语法检查通过；格式检查通过
+- 在 `AgentOrchestrationService` 中新增最小真实任务流入口：
+  - `run_task(...)`
+- 新增并通过 `run_task(...)` 快验：
+  - 强匹配工作流会自动执行并回收学习判断
+  - 无自动复用条件时只返回 plan，不擅自执行
+- 已运行：
   - `python -m unittest tests.test_runtime_fast -v`
-  - `python -m unittest tests.test_runtime -v`
-  - 结果：架构检查通过；contract 检查通过；搜索质量基线 11/11 通过；快验 19 tests OK；全量 365 tests OK，约 7 分钟
-- 已新增第六个真实 active dogfood skill：
-  - `directory_text_cleanup_dogfood`
-  - 源 trajectory：`trajectories/dogfood_directory_text_cleanup_20260429.json`
-  - demo 输入：`demo/input/text_notes/`
-  - audit：`audits/directory_text_cleanup_dogfood.audit.json`
-- 新技能会批量清理一个目录里的文本文件，去掉文件末尾多余空白并统一最终换行，同时保持嵌套目录结构
-- 已扩展搜索质量基线：
-  - clean text files in a directory 命中 `directory_text_cleanup_dogfood`
-  - normalize txt folder trailing whitespace 命中 `directory_text_cleanup_dogfood`
-  - 当前基线 13/13 通过
-- 已新增 fast 回归：搜索命中 `directory_text_cleanup_dogfood` 后执行技能，并验证两个清洗后的文本输出内容
-- 已重新运行：
-  - `python scripts/check_mcp_architecture.py`
-  - `python scripts/check_runtime_contracts.py`
-  - `python scripts/evaluate_search_quality.py`
+  - `python -m py_compile skill_runtime/api/orchestration.py tests/test_runtime_agent_orchestration.py`
+  - `git diff --check`
+  - 结果：快验 30 tests OK；语法检查通过；格式检查通过
+- 新增公开宿主入口 facade：
+  - `skill_runtime/api/host.py`
+  - `run_agent_task(...)`
+  - `start_agent_task(...)`
+  - `finalize_agent_task(...)`
+- 并将其导出到 `skill_runtime.api`
+- 新增并通过 facade 快验：
+  - 外部代理可直接通过 host API 跑通最小真实任务流
+- 已运行：
   - `python -m unittest tests.test_runtime_fast -v`
-  - `python -m unittest tests.test_runtime -v`
-  - 结果：架构检查通过；contract 检查通过；搜索质量基线 13/13 通过；快验 20 tests OK；全量 366 tests OK，约 9 分钟
+  - `python -m py_compile skill_runtime/api/host.py skill_runtime/api/__init__.py tests/test_runtime_agent_orchestration.py tests/test_runtime_contracts.py`
+  - `git diff --check`
+  - 结果：快验 31 tests OK；语法检查通过；格式检查通过
+- 新增 `docs/agent-mainline-readiness-review.md`
+- 盘点结论：
+  - 新 agent-first 路径已经真实存在
+  - 已具备 CLI、service、host API 三层入口
+  - 但当前仍不建议立刻把默认上层整体切到新 host facade
+  - 更合理定位是“preferred experimental path”
+- 选择首个受控试运行入口为独立 MCP 实验工具 `run_agent_task_experimental`
+- 将该实验入口直接接到 `skill_runtime.api.host.run_agent_task(...)`
+- 已运行：
+  - `python -m unittest tests.test_runtime_fast -v`
+  - `python -m py_compile skill_runtime/mcp/server.py tests/test_runtime_agent_orchestration.py`
+  - `git diff --check`
+  - 结果：快验 32 tests OK；语法检查通过；格式检查通过
+- 新增实验入口边界快验：
+  - 自动执行时保留 `rollback_operations`
+  - 欠覆盖工作流时只返回 plan-only
+  - `allow_silent_reuse=False` 时不会偷跑
+- 已运行：
+  - `python -m unittest tests.test_runtime_fast -v`
+  - `python -m py_compile tests/test_runtime_agent_orchestration.py`
+  - `git diff --check`
+  - 结果：快验 35 tests OK；语法检查通过；格式检查通过
+- 新增实验型学习收尾入口：
+  - `finalize_agent_task_experimental`
+- 验证 under-covered workflow 可在宿主执行后重新接回学习链
+- 验证 finalize 后会真实 capture trajectory，并返回 `distill_trajectory` 后续建议
+- 已运行：
+  - `python -m unittest tests.test_runtime_fast -v`
+  - `python -m py_compile skill_runtime/api/models.py skill_runtime/api/orchestration.py skill_runtime/mcp/server.py tests/test_runtime_agent_orchestration.py`
+  - `git diff --check`
+  - 结果：快验 36 tests OK；语法检查通过；格式检查通过
+- 用“更新 HANDOFF / TASKS / DECISIONS”完成第一条真实任务 dogfood 验证
+- 验证真实项目维护任务也能被 capture 为 trajectory，并给出 `distill_trajectory` 后续建议
+- 已运行：
+  - `python -m unittest tests.test_runtime_fast -v`
+  - `python -m py_compile tests/test_runtime_agent_orchestration.py`
+  - `git diff --check`
+  - 结果：快验 37 tests OK；语法检查通过；格式检查通过
+- 完成当前层阶段性收口判断：先停在 `capture + recommendation`
+- 新增 `docs/agent-layer-stage-closure.md`
+- 当前不再默认继续推进到自动 `distill/promote`
 
 ## Next Action
 
-下一步建议继续补充更多真实 dogfood 技能样本，优先覆盖目录文本替换这类批量文本工作流；如果先继续调搜索算法，应同步扩大 `scripts/evaluate_search_quality.py` 的样本集。日常小改动默认先跑 `python -m unittest tests.test_runtime_fast -v`，只有发布级或大范围 runtime 行为变化再跑 full suite，并使用至少 900 秒超时。
+下一步默认进入真实使用观察：运行 `skill-runtime dashboard` 或 `python -m skill_runtime.cli dashboard` 查看当前 runtime root 的技能树、触发日志和治理快照。如果用户要求继续增强 dashboard，优先考虑增加真实浏览器打开体验或更清楚的触发日志视图，而不是直接加写操作。
 
 ## Important Files
 
@@ -305,7 +334,30 @@
 - `HANDOFF.md`
 - `docs/gitnexus-local-runbook.md`
 - `docs/core-readiness-audit.md`
+- `docs/agent-first-runtime-architecture.md`
+- `docs/agent-side-reuse-policy.md`
+- `docs/post-task-distillation-policy.md`
+- `docs/agent-orchestration-interface.md`
 - `docs/core-dogfood-acceptance.md`
+- `skill_runtime/api/models.py`
+- `skill_runtime/api/orchestration.py`
+- `skill_runtime/api/host.py`
+- `skill_runtime/observability/events.py`
+- `skill_runtime/dashboard/collector.py`
+- `skill_runtime/dashboard/render.py`
+- `skill_runtime/dashboard/templates.py`
+- `skill_runtime/cli.py`
+- `skill_runtime/mcp/server.py`
+- `skill_runtime/api/classification.py`
+- `tests/test_runtime_agent_orchestration.py`
+- `docs/agent-mainline-readiness-review.md`
+- `docs/codex-default-integration-plan.md`
+- `docs/codex-task-classification-boundary.md`
+- `docs/codex-default-lane-stage-closure.md`
+- `docs/codex-default-lane-observation-plan.md`
+- `docs/codex-default-lane-observation-log.md`
+- `docs/superpowers/specs/2026-05-01-runtime-observability-dashboard-design.md`
+- `docs/superpowers/plans/2026-05-01-runtime-observability-dashboard.md`
 - `docs/provider-integration.md`
 - `examples/providers/copy_metadata_fallback_provider.py`
 - `examples/providers/pass_semantic_review_provider.py`
@@ -363,6 +415,7 @@
 - `tests/test_runtime_core_dogfood_acceptance.py`
 - `tests/test_runtime_audit_lifecycle.py`
 - `tests/test_runtime_search_quality.py`
+- `skill_runtime/mcp/server.py`
 
 ## Known Issues
 
@@ -373,7 +426,7 @@
 - 用户曾在聊天中暴露 DeepSeek API key；不要把该 key 写入文件或提交。本轮已按用户要求直接使用，但仓库文件中未检测到该 key。
 - DeepSeek live smoke 已证明 API 可连通，且完整 provider 闭环已在临时沙箱中跑通；仍不应把单次 live smoke 等同于长期稳定 SLA。
 - DeepSeek 质量门禁已经能阻止坏输出进入 staging，并默认允许一次自动返修；如果返修后仍失败，候选仍不会进入 staging。
-- active skill 当前已有 6 个真实技能，但复用价值还需要更多 dogfood 验证。
+- active skill 当前已有 6 个真实技能，已足够证明主链路存在；当前风险转为“默认工作方式仍偏手动技能库”，不是“样本数量继续不够”。
 - 当前仓库已完成 GitNexus 注册，但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
 - 未来新的 dogfood 执行默认不再改写版本管理下的 active metadata 和主索引。
 - 当前会话尝试 GitNexus MCP 查询时返回 `Transport closed`，本轮已退回普通文件检索。
@@ -385,6 +438,7 @@
 - 当前阶段仍不要开始业务功能开发。
 - 不要开始业务功能开发。
 - 不要把产品化收敛误当成核心功能已经完成。
+- 不要再把“增加通用 dogfood 技能数量”当作默认主线。
 - 长期上下文应优先写入项目文件，而不是聊天记录。
 - 自动模式阶段报告必须使用非技术语言，帮助非程序员用户理解项目进展。
 - 不要为了让测试通过而重新把测试技能放回真实 active skill 库。
@@ -394,4 +448,5 @@
 - 不要依赖旧对话历史恢复项目状态。
 - 不要要求旧会话再生成大段交接提示词。
 - 不要在没有必要时改动业务代码。
+- 不要为了增加样本数量继续机械补第 7 个、第 8 个通用技能。
 - 不要因为小改动、单个测试通过或单个文件修改完成就打断用户。

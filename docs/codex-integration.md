@@ -2,17 +2,38 @@
 
 This document is the Codex-specific wiring guide for the local skill runtime.
 
+It describes the current transition from:
+
+- MCP-first skill tooling
+
+to:
+
+- Codex-first background capability routing
+
 ## Recommended Integration Shape
 
-For Codex, this runtime should be treated as a local MCP-backed capability layer, not as a second chat agent.
+For Codex, this runtime should be treated as a local background capability layer, not as a second chat agent.
 
-Recommended flow:
+MCP is still an important host transport, but it is no longer the full product identity.
+
+Earlier integration flow:
 
 ```text
 Codex
 -> MCP server: skill_runtime
 -> runtime service
 -> skill store / trajectories / audits
+```
+
+Current preferred flow:
+
+```text
+User task
+-> Codex
+-> task classification
+-> runtime lane when appropriate
+-> normal execution
+-> capture + recommendation
 ```
 
 That keeps:
@@ -30,16 +51,25 @@ OpenAI’s App Server article also states:
 - MCP is a good fit when you already have an MCP-based workflow and want callable tools
 - App Server is the first-class protocol for full Codex harness integration
 
-For this project, MCP is the correct near-term integration because this runtime is a tool layer under Codex, not a replacement for the Codex harness.
+For this project, MCP remains the correct transport because this runtime is still a capability layer under Codex, not a replacement for the Codex harness.
+
+What changed is the product description:
+
+- before: “Codex calls MCP tools”
+- now: “Codex uses a background runtime lane, and MCP is one way that lane is exposed”
 
 ## Installed Codex Config
 
-The local Codex config now includes this MCP server entry:
+The local Codex config now includes a `skill_runtime` MCP server entry.
+
+It no longer needs to hard-bind the runtime to one repository root.
+
+The current setup uses a small launcher that prefers the active workspace as the runtime root and only falls back to `vibe` when no better root is available.
 
 ```toml
 [mcp_servers.skill_runtime]
-command = "python"
-args = ["D:/02-Projects/vibe/scripts/skill_mcp_server.py", "--root", "D:/02-Projects/vibe"]
+command = "powershell"
+args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:/Users/Administrator/.codex/launch-skill-runtime.ps1"]
 ```
 
 Config file:
@@ -68,15 +98,42 @@ The runtime currently exposes these MCP tools:
 
 ## Recommended Codex Workflow
 
-For repetitive or workflow-like tasks:
+For repetitive or workflow-like tasks, the preferred behavior is no longer “search skill first by ritual”.
 
-1. Ask Codex to call `search_skill` first
-2. If a good match exists, call `execute_skill`
-3. Successful execution now returns an `observed_task_record` path that can be reused later
-4. If no good match exists, let Codex complete the task normally
-5. Preferred short path: call `distill_and_promote_candidate`
-6. Explicit path: call `capture_trajectory`, `log_trajectory`, `distill_trajectory`, `audit_skill`, and `promote_skill`
-7. Use `governance_report`, `distill_coverage_report`, `reindex_skills`, `backfill_skill_provenance`, `archive_duplicate_candidates`, `archive_fixture_skills`, and `archive_cold_skills` for library maintenance
+The preferred behavior is:
+
+1. classify whether the task should enter the runtime lane
+2. if it should, try quiet reuse conservatively
+3. if reuse is weak or unsuitable, let Codex complete the task normally
+4. after success, keep `capture + recommendation` as the default learning depth
+5. use explicit MCP tools only when manual control, debugging, or governance is the real goal
+6. use `governance_report`, `distill_coverage_report`, `reindex_skills`, `backfill_skill_provenance`, `archive_duplicate_candidates`, `archive_fixture_skills`, and `archive_cold_skills` for library maintenance
+
+## Runtime Lane Visibility
+
+Codex-facing orchestration results expose runtime lane visibility directly:
+
+- `runtime_lane_status`
+- `runtime_lane_reason`
+
+`runtime_lane_status` has three values:
+
+- `used`: the lane actually auto-executed a reusable skill, or captured learning payload
+- `entered`: the task entered the lane, but no skill execution or learning capture happened
+- `skipped`: the task stayed on the normal Codex path
+
+`runtime_lane_reason` explains the status in one sentence, including the classifier bucket
+or reuse / learning decision when useful.
+
+This is the operator-facing check for "did Skill Runtime actually participate?".
+Normal Codex work should not require manual skill lookup just to answer that question.
+
+The explicit MCP-first loop still exists, but it is now a support path:
+
+1. `search_skill`
+2. `execute_skill`
+3. `recommended_host_operation`
+4. `distill_and_promote_candidate` or the explicit lifecycle path
 
 `governance_report` recommendations are now host-call aligned. A Codex host can read
 `recommended_actions[].host_operation` and directly call the named MCP tool with the
@@ -222,11 +279,17 @@ And keeps the runtime responsible for:
 
 ## Runtime Relocation
 
-If you move this runtime project, update the MCP args in:
+If you move this runtime project, update the launcher path or fallback root in:
 
 `C:/Users/Administrator/.codex/config.toml`
 
-Or keep the same script path and change only the `--root` value.
+The current launcher is:
+
+`C:/Users/Administrator/.codex/launch-skill-runtime.ps1`
+
+If the active workspace should be preferred, keep the launcher pattern.
+
+If you want to re-bind the runtime to a single fixed repository again, you can replace the launcher with a direct script call.
 
 ## Recommended Dogfooding Loop
 
@@ -243,8 +306,9 @@ That gives Codex a practical `reuse -> observe -> distill -> govern` loop withou
 
 ## Current Limits
 
-- This is tool-level integration, not full Codex App Server integration.
+- This is still not full Codex App Server integration.
 - You do not get richer Codex session semantics such as native diff-stream interactions through this runtime MCP layer.
+- The current system is already more than “a set of MCP tools”, but it is still not a universal always-on lane for every Codex task.
 - If you later want deeper integration with Codex itself, the next protocol to consider is Codex App Server rather than replacing this MCP layer.
 
 ## Sources

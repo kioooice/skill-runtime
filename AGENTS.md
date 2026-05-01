@@ -98,6 +98,8 @@ This workspace is `vibe`.
   - `TASKS.md` records task progress
   - `DECISIONS.md` records design and technical decisions
   - `HANDOFF.md` records the next handoff point
+- While the Codex default-lane observation period is active, if a real task touches the current default lane, append a short entry to `docs/codex-default-lane-observation-log.md`.
+- Keep observation entries lightweight and outcome-focused. Do not turn normal task execution into heavy manual reporting.
 - Do not pack long project summaries into chat context.
 - Long-term context must be written into files in the repository.
 - Before code changes, read only the smallest file set relevant to the current task. Do not scan the full repository without a clear reason.
