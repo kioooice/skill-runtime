@@ -23,6 +23,16 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Workflow error correction moved out of AGENTS
+
+- Task type: workflow governance correction
+- Classified as: `default-in` / `entered` because the task had explicit global skill, AGENTS, state-file, and test outputs
+- What happened: created global `workflow-error-correction` skill and removed case-specific runtime validation mistake rules from project and global `AGENTS.md`
+- Did the behavior feel correct: yes; AGENTS now keeps only a generic lightweight-boundary rule and a route to the correction workflow
+- Did the lane help: only as traceability; the real improvement is that repeated mistakes now have their own recording workflow instead of expanding AGENTS
+- Finalizer: returned `runtime_lane_status: entered` with `observed_only`; no trajectory was distilled
+- Follow-up: when the user points out a repeated process error, use `workflow-error-correction` and record the mistake in durable state files, not in AGENTS history
+
 ### 2026-05-03 - Pre-implementation review main process
 
 - Task type: workflow main-process reinforcement

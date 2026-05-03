@@ -428,6 +428,34 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         ]:
             self.assertIn(phrase, content)
 
+    def test_workflow_error_correction_keeps_agents_lightweight(self) -> None:
+        agents_content = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("workflow-error-correction", agents_content)
+        self.assertNotIn("Do not treat Skill Runtime, local skills", agents_content)
+        self.assertNotIn("Do not continue adding or validating skills just because auto mode can keep going", agents_content)
+        global_agents_content = Path("C:/Users/Administrator/.codex/AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("workflow-error-correction", global_agents_content)
+        self.assertNotIn("Do not treat Skill Runtime, local skills", global_agents_content)
+        self.assertNotIn(
+            "Do not continue adding or validating skills just because auto mode can keep going",
+            global_agents_content,
+        )
+
+        skill_path = (
+            Path("C:/Users/Administrator/.codex/skills")
+            / "workflow-error-correction"
+            / "SKILL.md"
+        )
+        self.assertTrue(skill_path.exists())
+        content = skill_path.read_text(encoding="utf-8")
+        for phrase in [
+            "Record the mistake outside AGENTS.md",
+            "classify the repeat pattern",
+            "prevention rule",
+            "Do not expand AGENTS.md with case-specific history",
+        ]:
+            self.assertIn(phrase, content)
+
     def test_agents_operational_workflow_skills_execute_from_search(self) -> None:
         sandbox_root, _, _ = self._make_runtime_sandbox()
         cases = [

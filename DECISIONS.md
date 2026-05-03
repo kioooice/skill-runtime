@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-03 - Workflow Error Records Do Not Belong In AGENTS
+
+**Decision**
+
+Create the global `workflow-error-correction` skill for recurring process mistakes, route drift, and avoidable assistant workflow errors. Keep `AGENTS.md` as lightweight standing rules and workflow routing, not a running incident log.
+
+**Reason**
+
+The user pointed out that the previous route-correction text should not have been added as detailed AGENTS rules. It was useful as a correction, but the durable place for this kind of mistake is a workflow that records the error pattern, prevention rule, and storage target.
+
+**Impact**
+
+- Project and global `AGENTS.md` no longer contain the two specific runtime-validation-loop mistake bullets
+- Both AGENTS files now keep one generic lightweight-boundary rule and route to `workflow-error-correction`
+- The new global skill defines how to classify, record, and prevent repeated workflow mistakes without bloating AGENTS
+- A fast regression test protects both project and global AGENTS from reintroducing those case-specific rules
+
 ### 2026-05-03 - Pre-Implementation Review Becomes The Main Development Gate
 
 **Decision**
