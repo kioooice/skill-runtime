@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-03 - Captured Trajectories Expose One-Step Promotion Follow-Ups
+
+**Decision**
+
+When finalizer capture produces a reusable trajectory, the recommendation payload still keeps `distill_trajectory` as the primary next action, but now also exposes two `distill_and_promote_candidate` host operations: one for project active promotion and one with `promotion_target="global_codex"` for global Codex skill promotion.
+
+**Reason**
+
+The previous capture payload stopped at “distill this trajectory,” even after the full `distill_and_promote` global target path existed. That made the closed loop available by command line, but not discoverable from the real finalizer output that captures successful work. Adding follow-up host operations connects capture to promotion without making promotion automatic.
+
+**Impact**
+
+- Captured trajectory recommendations now include one-step project and global promotion options
+- The default recommendation remains conservative: distill first
+- Global promotion is explicit through `promotion_target="global_codex"`
+- Fast verification remains 92 tests OK
+
 ### 2026-05-03 - Distill-And-Promote Can Target Global Codex Skills
 
 **Decision**

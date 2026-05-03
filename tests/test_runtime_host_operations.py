@@ -447,6 +447,26 @@ class RuntimeHostOperationTestsMixin:
         self.assertEqual("distill_trajectory", distill_recommendation["recommended_next_action"])
         self.assertEqual("distill_trajectory", registered_trajectory_follow_up["recommended_next_action"])
         self.assertEqual("distill_trajectory", captured_trajectory_follow_up["recommended_next_action"])
+        captured_promote_operations = [
+            operation
+            for operation in captured_trajectory_follow_up["available_host_operations"]
+            if operation["tool_name"] == "distill_and_promote_candidate"
+        ]
+        self.assertEqual(2, len(captured_promote_operations))
+        self.assertEqual(
+            {None, "global_codex"},
+            {operation["arguments"].get("promotion_target") for operation in captured_promote_operations},
+        )
+        self.assertEqual(
+            {False},
+            {operation["arguments"]["register_trajectory"] for operation in captured_promote_operations},
+        )
+        self.assertTrue(
+            all(
+                operation["arguments"]["trajectory_path"] == self.HOST_TRAJECTORY_PATH
+                for operation in captured_promote_operations
+            )
+        )
         self.assertEqual("audit_skill", audit_recommendation["recommended_next_action"])
         self.assertEqual("audit_skill", distilled_skill_follow_up["recommended_next_action"])
         self.assertEqual("archive_duplicate_candidates", archive_recommendation["recommended_next_action"])

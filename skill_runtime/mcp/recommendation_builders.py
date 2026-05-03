@@ -595,14 +595,46 @@ def registered_trajectory_recommendation(trajectory_path: str, *, task_id: str) 
 
 
 def captured_trajectory_recommendation(trajectory_path: str, *, task_id: str) -> dict[str, Any]:
+    source_ref = source_ref_trajectory(task_id)
     return distill_trajectory_recommendation(
         trajectory_path,
         display_label="Distill captured trajectory",
         effect_summary="Distill the captured trajectory into a staging skill draft.",
         risk_level="low",
         requires_confirmation=False,
-        source_ref=source_ref_trajectory(task_id),
+        source_ref=source_ref,
         reason="The observed task has been captured into a trajectory and is ready for distillation.",
+        additional_operations=[
+            distill_and_promote_operation(
+                trajectory_path=trajectory_path,
+                register_trajectory=False,
+                display_label="Promote captured workflow",
+                effect_summary=(
+                    "Distill, audit, and promote the captured trajectory into the active skill library."
+                ),
+                risk_level="low",
+                requires_confirmation=False,
+                source_ref=source_ref,
+                operation_group="captured_trajectory_promote",
+                delivery_mode="path",
+                variant_role="active",
+            ),
+            distill_and_promote_operation(
+                trajectory_path=trajectory_path,
+                register_trajectory=False,
+                promotion_target="global_codex",
+                display_label="Promote captured workflow globally",
+                effect_summary=(
+                    "Distill, audit, and promote the captured trajectory into the global Codex skill library."
+                ),
+                risk_level="medium",
+                requires_confirmation=False,
+                source_ref=source_ref,
+                operation_group="captured_trajectory_promote",
+                delivery_mode="path",
+                variant_role="global",
+            ),
+        ],
     )
 
 

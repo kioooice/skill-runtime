@@ -451,6 +451,26 @@ class RuntimeAgentOrchestrationTestsMixin:
             "distill_trajectory",
             data["learning_capture_payload"]["recommended_next_action"],
         )
+        captured_promote_operations = [
+            operation
+            for operation in data["learning_capture_payload"]["available_host_operations"]
+            if operation["tool_name"] == "distill_and_promote_candidate"
+        ]
+        self.assertEqual(2, len(captured_promote_operations))
+        self.assertEqual(
+            {None, "global_codex"},
+            {operation["arguments"].get("promotion_target") for operation in captured_promote_operations},
+        )
+        self.assertEqual(
+            {False},
+            {operation["arguments"]["register_trajectory"] for operation in captured_promote_operations},
+        )
+        self.assertTrue(
+            all(
+                operation["arguments"]["trajectory_path"] == str(trajectory_path)
+                for operation in captured_promote_operations
+            )
+        )
 
     def test_mcp_experimental_agent_finalize_captures_real_project_state_update_workflow(self) -> None:
         plan_payload = self._call_mcp_tool(

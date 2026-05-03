@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Captured workflow promotion follow-ups
+
+- Task type: auto-mode core Skill Runtime development
+- Classified as: `guarded-in` / `skipped` by the CLI runtime gate for this broad autonomous development round
+- What happened: captured trajectory recommendations now keep `distill_trajectory` as the primary conservative next action, while also exposing project active and global Codex `distill_and_promote_candidate` follow-up operations
+- Did the behavior feel correct: yes; the runtime now makes the full learning loop discoverable from finalizer output without automatically promoting new skills
+- Did the lane help: yes, because the work directly improves the `used` sample follow-up path that default-lane finalizers create
+- Follow-up: continue dogfooding real finalizer outputs and check whether hosts can surface the new follow-up operations clearly
+
 ### 2026-05-03 - Distill and promote directly to global Codex skills
 
 - Task type: real Codex feature development after direction review
