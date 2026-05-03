@@ -45,8 +45,10 @@ p, span, div, article, section, li { overflow-wrap: anywhere; word-break: break-
 .view-panel { margin-top: 16px; }
 .dashboard-view-page { display: none; }
 body[data-active-view="skill-tree"] [data-view-page="skill-tree"],
+body[data-active-view="collections"] [data-view-page="collections"],
 body[data-active-view="trigger-log"] [data-view-page="trigger-log"],
 body[data-active-view="governance"] [data-view-page="governance"],
+body[data-active-view="platforms"] [data-view-page="platforms"],
 body[data-active-view="global-projects"] [data-view-page="global-projects"],
 body[data-active-view="global-log"] [data-view-page="global-log"] { display: block; }
 .view-kicker { color: var(--muted); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; margin-bottom: 6px; }
@@ -155,6 +157,9 @@ body[data-active-view="global-log"] [data-view-page="global-log"] { display: blo
 .leaf-meta { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.35; }
 .skill-leaf .skill-summary { margin: 0 13px 8px; color: var(--ink); font-size: 13px; line-height: 1.55; }
 .leaf-detail { border-top: 1px dashed var(--line); color: var(--muted); font-size: 12px; margin: 8px 13px 12px; padding-top: 8px; }
+.group-skill .leaf-detail { margin-left: 0; margin-right: 0; margin-bottom: 0; }
+.import-detail { display: grid; gap: 5px; }
+.import-chip { border: 1px solid rgba(154,106,22,.32); border-radius: 999px; color: #8a5b13; display: inline-block; font-size: 11px; font-weight: 800; margin-right: 5px; padding: 2px 7px; }
 .empty-leaf, .more-leaf { border: 1px dashed var(--line); border-radius: 999px; padding: 10px 13px; color: var(--muted); background: rgba(255,253,247,.58); }
 .more-leaf { font-style: italic; }
 .badge { display: inline-block; border-radius: 999px; padding: 3px 9px; font-size: 12px; color: white; background: var(--skipped); }
@@ -169,6 +174,14 @@ body[data-active-view="global-log"] [data-view-page="global-log"] { display: blo
 .event:last-child { border-bottom: 0; }
 .reason { color: var(--muted); margin-top: 4px; }
 .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.collection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.collection-card { border: 1px solid var(--line); border-radius: 20px; background: rgba(255,253,247,.76); padding: 14px; box-shadow: 0 12px 28px rgba(79,54,27,.06); }
+.collection-head { align-items: start; display: flex; gap: 12px; justify-content: space-between; }
+.collection-head p { margin: 4px 0 0; }
+.collection-head strong { color: #8a5b13; font-size: 30px; line-height: 1; }
+.collection-skill-list { display: grid; gap: 8px; margin-top: 12px; }
+.collection-skill { align-items: center; border-top: 1px dashed var(--line); display: flex; gap: 7px; padding-top: 8px; }
+.collection-missing { border-top: 1px dashed var(--line); color: var(--muted); font-size: 12px; margin-top: 10px; padding-top: 8px; }
 .project-card { border: 1px solid var(--line); border-radius: 20px; background: rgba(255,253,247,.76); padding: 14px; box-shadow: 0 12px 28px rgba(79,54,27,.06); }
 .project-name { font-size: 20px; font-weight: 800; margin-bottom: 5px; }
 .project-path { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
@@ -179,7 +192,7 @@ body[data-active-view="global-log"] [data-view-page="global-log"] { display: blo
 pre { white-space: pre-wrap; word-break: break-word; background: #2b2118; color: #fff6e8; padding: 12px; border-radius: 14px; }
 @media (max-width: 860px) {
   main { width: min(calc(100% - 24px), 1180px); margin: 20px auto; }
-  .grid, .two, .project-grid { grid-template-columns: 1fr; }
+  .grid, .two, .project-grid, .collection-grid { grid-template-columns: 1fr; }
   .hero { display: block; }
   h1 { font-size: 31px; }
   .panel { padding: 18px; }
@@ -215,8 +228,10 @@ SCRIPT = """
   var defaultView = "skill-tree";
   var viewHashes = {
     "skill-tree": "#skill-tree-view",
+    "collections": "#collections-view",
     "trigger-log": "#trigger-log-view",
     "governance": "#governance-view",
+    "platforms": "#platforms-view",
     "global-projects": "#global-projects-view",
     "global-log": "#global-log-view"
   };
@@ -232,8 +247,14 @@ SCRIPT = """
     if (window.location.hash === "#trigger-log-view") {
       return "trigger-log";
     }
+    if (window.location.hash === "#collections-view") {
+      return "collections";
+    }
     if (window.location.hash === "#governance-view") {
       return "governance";
+    }
+    if (window.location.hash === "#platforms-view") {
+      return "platforms";
     }
     if (window.location.hash === "#global-projects-view") {
       return "global-projects";

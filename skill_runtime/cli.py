@@ -16,6 +16,8 @@ from skill_runtime.api.host import classify_codex_task, finalize_codex_task, run
 from skill_runtime.api.service import RuntimeService, RuntimeServiceError
 from skill_runtime.dashboard.collector import collect_dashboard_data, collect_global_dashboard_data
 from skill_runtime.dashboard.render import render_dashboard_html
+from skill_runtime.importers.local_skill_importer import SkillImportError, import_local_skill_to_staging
+from skill_runtime.platforms.export_plan import plan_platform_export
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -591,6 +593,25 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
     return ok(payload)
 
 
+def cmd_platform_export_plan(args: argparse.Namespace) -> int:
+    return ok(
+        plan_platform_export(
+            Path(args.root).resolve(),
+            args.skill,
+            args.platform,
+            target_dir=args.target_dir,
+            force_copy=args.copy,
+        )
+    )
+
+
+def cmd_import_skill_to_staging(args: argparse.Namespace) -> int:
+    try:
+        return ok(import_local_skill_to_staging(Path(args.root).resolve(), args.source))
+    except SkillImportError as exc:
+        return error(exc.message, exc.code, exc.details, exit_code=EXIT_VALIDATION_ERROR)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="skill-runtime")
     parser.add_argument("--root", default=str(ROOT))
@@ -671,6 +692,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory whose immediate child projects should be scanned for runtime lane events",
     )
     dashboard_parser.set_defaults(func=cmd_dashboard)
+
+    platform_export_parser = subparsers.add_parser("platform-export-plan")
+    platform_export_parser.add_argument("--skill", required=True)
+    platform_export_parser.add_argument("--platform", required=True)
+    platform_export_parser.add_argument("--target-dir")
+    platform_export_parser.add_argument("--copy", action="store_true", help="Plan copy fallback instead of symlink export")
+    platform_export_parser.set_defaults(func=cmd_platform_export_plan)
+
+    import_skill_parser = subparsers.add_parser("import-skill-to-staging")
+    import_skill_parser.add_argument("--source", required=True)
+    import_skill_parser.set_defaults(func=cmd_import_skill_to_staging)
 
     distill_coverage_parser = subparsers.add_parser("distill-coverage-report")
     distill_coverage_parser.add_argument(

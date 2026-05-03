@@ -217,11 +217,57 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("setDashboardView", html)
         self.assertNotIn('href="#trigger-log-view"', html)
         self.assertIn("治理快照", html)
+        self.assertIn("平台与项目", html)
+        self.assertIn('data-view-target="platforms"', html)
+        self.assertIn('data-view-page="platforms"', html)
         self.assertIn("目录 JSON 批量转 CSV", html)
         self.assertIn("将文件夹中的所有 JSON 记录批量导出为 CSV 文件。", html)
         self.assertIn('data-skill-name="directory_json_to_csv_dogfood"', html)
         self.assertIn("合并文本文件", html)
         self.assertNotIn("Batch export all JSON records in a folder into CSV files.", html)
+
+    def test_dashboard_collector_includes_imported_staging_provenance(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+        from skill_runtime.importers.local_skill_importer import import_local_skill_to_staging
+
+        source_dir = self.runtime_root / "external-skills" / "dashboard-import"
+        source_dir.mkdir(parents=True)
+        (source_dir / "SKILL.md").write_text(
+            "---\nname: dashboard-import\ndescription: Imported dashboard skill.\n---\n\n# Dashboard Import\n",
+            encoding="utf-8",
+        )
+
+        result = import_local_skill_to_staging(self.runtime_root, source_dir)
+        data = collect_dashboard_data(self.runtime_root)
+        imported = next(skill for skill in data["skills"] if skill["skill_name"] == "dashboard-import")
+
+        self.assertEqual("staging", imported["status"])
+        self.assertEqual("requires_review", imported["audit_status"])
+        self.assertEqual(str(source_dir.resolve()), imported["import_source"])
+        self.assertEqual(result["content_hash"], imported["content_hash"])
+        self.assertEqual("local_skill_import", imported["provenance"]["type"])
+        self.assertTrue(imported["is_imported"])
+
+    def test_dashboard_renderer_shows_imported_candidate_provenance(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+        from skill_runtime.dashboard.render import render_dashboard_html
+        from skill_runtime.importers.local_skill_importer import import_local_skill_to_staging
+
+        source_dir = self.runtime_root / "external-skills" / "dashboard-import"
+        source_dir.mkdir(parents=True)
+        (source_dir / "SKILL.md").write_text(
+            "---\nname: dashboard-import\ndescription: Imported dashboard skill.\n---\n\n# Dashboard Import\n",
+            encoding="utf-8",
+        )
+        result = import_local_skill_to_staging(self.runtime_root, source_dir)
+
+        html = render_dashboard_html(collect_dashboard_data(self.runtime_root))
+
+        self.assertIn('data-skill-name="dashboard-import"', html)
+        self.assertIn("外部导入", html)
+        self.assertIn("需要审核", html)
+        self.assertIn(str(source_dir.resolve()), html)
+        self.assertIn(result["content_hash"][:12], html)
 
     def test_dashboard_cli_writes_static_html_file(self) -> None:
         output_path = self.runtime_root / ".skill_runtime" / "dashboard.html"

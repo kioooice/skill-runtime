@@ -56,6 +56,7 @@ This project focuses on a different goal:
 - `Explainable`: search results can expose match reasons, rule provenance, and recommended next action
 - `Extensible`: the same runtime is exposed through CLI and MCP, but neither is the final product shape
 - `Local-first`: storage is file-based and easy to inspect
+- `Provenance-visible`: imported, distilled, exported, and legacy skills should keep explicit source history
 
 ## Product Shape
 
@@ -135,6 +136,7 @@ Architecture maintenance guard:
 - run `python scripts/check_runtime_contracts.py` to validate host-operation and recommendation payload invariants
 - deeper MCP contract details live in [MCP Integration](./docs/mcp-integration.md)
 - Codex-facing default-lane details live in [Codex Integration](./docs/codex-integration.md)
+- privacy, external provider, and provenance boundaries live in [Privacy And Provenance](./docs/privacy-and-provenance.md)
 - the current architecture pivot is summarized in [Agent-First Runtime Architecture](./docs/agent-first-runtime-architecture.md)
 - the current runtime layering guard explicitly covers `service / governance / retrieval`
 - it also covers `memory / distill / audit / execution`
@@ -539,6 +541,20 @@ See:
 
 ## Demo and Verification
 
+Generate the local read-only dashboard:
+
+```bash
+python -m skill_runtime.cli dashboard --open
+```
+
+The dashboard is static local HTML. It reads the current runtime root and shows the skill tree, capability collections, runtime lane trigger log, governance snapshot, and platform inventory as separate views. Capability collections are read-only organization overlays and do not change execution, audit, promotion, or archive semantics.
+
+To inspect runtime lane records across sibling projects:
+
+```bash
+python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open
+```
+
 Run the fast local validation suite:
 
 ```bash
@@ -613,6 +629,7 @@ python scripts/skill_cli.py execute --skill merge_text_files_generated --args-fi
 - [Project Report](./docs/skill-runtime-project-report.md)
 - [MCP Integration](./docs/mcp-integration.md)
 - [Codex Integration](./docs/codex-integration.md)
+- [Privacy And Provenance](./docs/privacy-and-provenance.md)
 - [Multi-Host Adaptation Plan](./docs/multi-host-adaptation-plan.md)
 - [Dogfooding Workflow](./docs/dogfooding-workflow.md)
 - [Video Script Pack](./docs/skill-runtime-video-cover.md)

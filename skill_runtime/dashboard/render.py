@@ -145,8 +145,10 @@ def render_dashboard_html(data: dict[str, Any]) -> str:
     {_global_overview(global_data.get("overview", {})) if global_data else ""}
     {_view_nav(global_enabled=bool(global_data))}
     {_skill_tree(data.get("skills", []))}
+    {_capability_collections(data.get("capability_collections", []))}
     {_trigger_log(data.get("events", []))}
     {_governance(data.get("governance", {}), data.get("diagnostics", []))}
+    {_platform_inventory(data.get("platform_inventory", {}))}
     {_global_projects_view(global_data) if global_data else ""}
     {_global_log_view(global_data) if global_data else ""}
   </main>
@@ -210,7 +212,7 @@ def _global_event_row(event: dict[str, Any]) -> str:
 
 def _global_projects_view(global_data: dict[str, Any]) -> str:
     return f"""<section id="global-projects-view" class="panel view-panel dashboard-view-page" data-view-page="global-projects" hidden>
-  <div class="view-kicker">视图 04</div>
+  <div class="view-kicker">视图 06</div>
   <h2>全局项目概览</h2>
   {_project_overview_body(global_data.get("projects", []))}
   <h3>扫描范围</h3>
@@ -225,7 +227,7 @@ def _global_log_view(global_data: dict[str, Any]) -> str:
     else:
         body = "\n".join(_global_event_row(event) for event in events[:100])
     return f"""<section id="global-log-view" class="panel view-panel dashboard-view-page" data-view-page="global-log" hidden>
-  <div class="view-kicker">视图 05</div>
+  <div class="view-kicker">视图 07</div>
   <h2>全局触发日志</h2>
   {body}
 </section>"""
@@ -253,8 +255,10 @@ def _view_nav(*, global_enabled: bool = False) -> str:
   <button class="view-link" type="button" data-view-target="global-log" aria-controls="global-log-view" aria-current="false"><strong>全局日志</strong><span>跨项目事件</span></button>"""
     return f"""<nav class="view-nav" aria-label="面板视图">
   <button class="view-link is-active" type="button" data-view-target="skill-tree" aria-controls="skill-tree-view" aria-current="page"><strong>技能树</strong><span>生命周期分支</span></button>
+  <button class="view-link" type="button" data-view-target="collections" aria-controls="collections-view" aria-current="false"><strong>能力集合</strong><span>组织层</span></button>
   <button class="view-link" type="button" data-view-target="trigger-log" aria-controls="trigger-log-view" aria-current="false"><strong>触发日志</strong><span>运行通道事件</span></button>
   <button class="view-link" type="button" data-view-target="governance" aria-controls="governance-view" aria-current="false"><strong>治理快照</strong><span>技能库健康</span></button>
+  <button class="view-link" type="button" data-view-target="platforms" aria-controls="platforms-view" aria-current="false"><strong>平台与项目</strong><span>只读来源</span></button>
   {global_links}
 </nav>"""
 
@@ -454,12 +458,87 @@ def _skill_group_member(skill: dict[str, Any]) -> str:
     source_text = _source_display_text(sources)
     source_ids = ",".join(str(item) for item in sources)
     usage_count = skill.get("usage_count", 0)
+    import_detail = _import_provenance_detail(skill)
     return f"""<article class="group-skill" data-skill-name="{text(raw_name)}" data-source-trajectories="{text(source_ids)}">
   <div>{badge(status)} <span class="skill-name">{text(_skill_display_name(raw_name))}</span></div>
   <div class="group-skill-meta">复用 {text(usage_count)} 次 · 来源 {text(len(sources))} 条</div>
   <p class="skill-summary">{text(_skill_display_summary(skill.get("summary")))}</p>
   <div class="leaf-detail">来源轨迹：{text(source_text)}</div>
+  {import_detail}
 </article>"""
+
+
+def _capability_collections(collections: list[dict[str, Any]]) -> str:
+    if collections:
+        body = '<div class="collection-grid">' + "\n".join(_collection_card(collection) for collection in collections[:40]) + "</div>"
+    else:
+        body = '<p class="muted">暂无能力集合。</p>'
+    return f"""<section id="collections-view" class="panel view-panel dashboard-view-page" data-view-page="collections" hidden>
+  <div class="view-kicker">视图 02</div>
+  <h2>能力集合</h2>
+  <p class="muted">集合是只读组织层，不改变执行、审核、提升或归档语义。</p>
+  {body}
+</section>"""
+
+
+def _collection_card(collection: dict[str, Any]) -> str:
+    skills = collection.get("skills") if isinstance(collection.get("skills"), list) else []
+    status_counts = collection.get("status_counts") if isinstance(collection.get("status_counts"), dict) else {}
+    missing = collection.get("missing_skill_names") if isinstance(collection.get("missing_skill_names"), list) else []
+    skill_items = "\n".join(_collection_skill_item(skill) for skill in skills[:8])
+    if not skill_items:
+        skill_items = '<p class="muted">该集合暂未匹配到当前技能。</p>'
+    missing_text = ""
+    if missing:
+        missing_text = f'<div class="collection-missing">缺失引用：{text("、".join(str(item) for item in missing[:8]))}</div>'
+    return f"""<article class="collection-card" data-collection-id="{text(collection.get("collection_id"))}">
+  <div class="collection-head">
+    <div>
+      <div class="project-name">{text(collection.get("label"))}</div>
+      <p class="muted">{text(collection.get("description"))}</p>
+    </div>
+    <strong>{text(len(skills))}</strong>
+  </div>
+  <div class="project-stats">
+    <span>活跃 {text(status_counts.get("active", 0))}</span>
+    <span>候选 {text(status_counts.get("staging", 0))}</span>
+    <span>归档 {text(status_counts.get("archived", 0))}</span>
+  </div>
+  <div class="collection-skill-list">{skill_items}</div>
+  {missing_text}
+</article>"""
+
+
+def _collection_skill_item(skill: dict[str, Any]) -> str:
+    status = str(skill.get("status") or "skipped")
+    return f"""<div class="collection-skill">
+  {badge(status)} <span>{text(_skill_display_name(skill.get("skill_name")))}</span>
+</div>"""
+
+
+def _import_provenance_detail(skill: dict[str, Any]) -> str:
+    if not skill.get("is_imported"):
+        return ""
+    audit_label = _audit_status_label(skill.get("audit_status"))
+    source = skill.get("import_source") or "未知来源"
+    content_hash = str(skill.get("content_hash") or "")
+    hash_text = content_hash[:12] if content_hash else "未记录"
+    imported_at = skill.get("imported_at") or "未记录"
+    return f"""<div class="leaf-detail import-detail">
+    <span class="import-chip">外部导入</span>
+    <span class="import-chip">{text(audit_label)}</span>
+    <div>来源：{text(source)}</div>
+    <div>内容哈希：{text(hash_text)} · 导入时间：{text(imported_at)}</div>
+  </div>"""
+
+
+def _audit_status_label(value: Any) -> str:
+    labels = {
+        "requires_review": "需要审核",
+        "passed": "已通过审核",
+        "failed": "审核未通过",
+    }
+    return labels.get(str(value or ""), str(value or "未记录审核状态"))
 
 
 def _trigger_log(events: list[dict[str, Any]]) -> str:
@@ -468,7 +547,7 @@ def _trigger_log(events: list[dict[str, Any]]) -> str:
     else:
         body = "\n".join(_event_row(event) for event in events[:50])
     return f"""<section id="trigger-log-view" class="panel view-panel dashboard-view-page" data-view-page="trigger-log" hidden>
-  <div class="view-kicker">视图 02</div>
+  <div class="view-kicker">视图 03</div>
   <h2>触发日志视图</h2>
   {body}
 </section>"""
@@ -492,9 +571,44 @@ def _governance(governance: dict[str, Any], diagnostics: list[str]) -> str:
         duplicate_body = '<p class="muted">没有发现重复候选。</p>'
     diagnostics_body = "".join(f"<li>{text(item)}</li>" for item in diagnostics) or "<li>没有诊断信息。</li>"
     return f"""<section id="governance-view" class="panel view-panel dashboard-view-page" data-view-page="governance" hidden>
-  <div class="view-kicker">视图 03</div>
+  <div class="view-kicker">视图 04</div>
   <h2>治理快照</h2>
   {duplicate_body}
   <h3>诊断信息</h3>
   <ul>{diagnostics_body}</ul>
 </section>"""
+
+
+def _platform_inventory(inventory: dict[str, Any]) -> str:
+    items = inventory.get("items") if isinstance(inventory, dict) else []
+    diagnostics = inventory.get("diagnostics") if isinstance(inventory, dict) else []
+    if not isinstance(items, list):
+        items = []
+    if not isinstance(diagnostics, list):
+        diagnostics = []
+    if items:
+        body = '<div class="project-grid">' + "\n".join(_platform_item_card(item) for item in items[:80]) + "</div>"
+    else:
+        body = '<p class="muted">尚未在已知平台目录中发现 SKILL.md 技能。</p>'
+    diagnostics_body = "".join(f"<li>{text(item)}</li>" for item in diagnostics[:20]) or "<li>没有平台目录诊断信息。</li>"
+    return f"""<section id="platforms-view" class="panel view-panel dashboard-view-page" data-view-page="platforms" hidden>
+  <div class="view-kicker">视图 05</div>
+  <h2>平台与项目</h2>
+  <p class="muted">只读查看 Codex、Claude Code、Cursor、Gemini CLI 和共享 Agents 技能目录，不复制、不链接、不安装。</p>
+  {body}
+  <h3>平台诊断</h3>
+  <ul class="scan-list">{diagnostics_body}</ul>
+</section>"""
+
+
+def _platform_item_card(item: dict[str, Any]) -> str:
+    return f"""<article class="project-card">
+  <div class="project-name">{text(item.get("skill_name"))}</div>
+  <div class="project-path">{text(item.get("skill_path"))}</div>
+  <div class="project-stats">
+    <span>{text(item.get("display_name"))}</span>
+    <span>{text(item.get("ownership"))}</span>
+    <span>{text(item.get("link_type"))}</span>
+  </div>
+  <div class="muted">来源：{text(item.get("source_root"))}</div>
+</article>"""

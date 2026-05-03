@@ -7,6 +7,7 @@ from tests.test_runtime_generated_skill_regressions import RuntimeGeneratedSkill
 from tests.runtime_test_support import RuntimeTestCase
 from tests.test_runtime_architecture import RuntimeArchitectureTestsMixin
 from tests.test_runtime_agent_orchestration import RuntimeAgentOrchestrationTestsMixin
+from tests.test_runtime_collections import RuntimeCollectionsTestsMixin
 from tests.test_runtime_contracts import RuntimeContractTestsMixin
 from tests.test_runtime_core_dogfood_acceptance import RuntimeCoreDogfoodAcceptanceTestsMixin
 from tests.test_runtime_dashboard import RuntimeDashboardTestsMixin
@@ -18,13 +19,17 @@ from tests.test_runtime_host_operations import RuntimeHostOperationTestsMixin
 from tests.test_runtime_isolation import RuntimeIsolationTestsMixin
 from tests.test_runtime_lifecycle import RuntimeLifecycleTestsMixin
 from tests.test_runtime_mcp_smoke import RuntimeMcpSmokeTestsMixin
+from tests.test_runtime_platform_inventory import RuntimePlatformInventoryTestsMixin
+from tests.test_runtime_platform_export import RuntimePlatformExportTestsMixin
 from tests.test_runtime_search_quality import RuntimeSearchQualityTestsMixin
+from tests.test_runtime_skill_import import RuntimeSkillImportTestsMixin
 from tests.test_runtime_trajectory_search import RuntimeTrajectorySearchTestsMixin
 
 
 class RuntimeTests(
     RuntimeArchitectureTestsMixin,
     RuntimeAgentOrchestrationTestsMixin,
+    RuntimeCollectionsTestsMixin,
     RuntimeContractTestsMixin,
     RuntimeCoreDogfoodAcceptanceTestsMixin,
     RuntimeDashboardTestsMixin,
@@ -37,7 +42,10 @@ class RuntimeTests(
     RuntimeHostOperationTestsMixin,
     RuntimeIsolationTestsMixin,
     RuntimeMcpSmokeTestsMixin,
+    RuntimePlatformExportTestsMixin,
+    RuntimePlatformInventoryTestsMixin,
     RuntimeSearchQualityTestsMixin,
+    RuntimeSkillImportTestsMixin,
     RuntimeFileGeneratedSkillTestsMixin,
     RuntimeDirectoryGeneratedSkillTestsMixin,
     RuntimeGeneratedSkillRegressionTestsMixin,

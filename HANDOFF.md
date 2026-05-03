@@ -43,13 +43,74 @@
 
 用户已批准该设计进入实现计划阶段。当前实现计划已写入 `docs/superpowers/plans/2026-05-01-runtime-observability-dashboard.md`，计划拆成事件日志、host 接入、dashboard 数据收集、HTML 渲染、CLI 入口和最终验证六个任务。
 
-当前实现也已经完成：`python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可以生成本地只读观察面板。页面展示总览、技能树视图、触发日志视图和治理快照。Codex-facing runtime lane 入口现在会把 `used / entered / skipped` 事件写入 `.skill_runtime/runtime_lane_events.jsonl`。最新一轮根据用户反馈，已把 Skill Tree 从单列长列表改成中心向四周发散的径向布局：运行时根节点在中心，active / staging / archived / rejected 四个状态分支分布在四个象限；分支内第一层展示能力组别，例如格式转换、文本处理、文件整理和运行时治理；中心节点已放到上下分支之间，避免压到组别卡片；点击组别时，组内技能会在居中凸显的详情界面中展开，页面不自动滚动，也不再把树枝撑长；同时去掉交叉连接线和硬分界线，改用位置、状态圆点和组别卡片表达结构。随后又把 Trigger Log 和治理快照都改成独立页面式视图，顶部导航不再用同页锚点滚动；点击触发日志只显示日志页，点击治理快照只显示库健康页。dashboard CLI 现在还支持 `--open`，可一键生成并用系统默认浏览器打开本地面板。现在又新增全局只读 dashboard，并已按用户反馈与普通 dashboard 合并：`python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 仍然显示当前项目技能树、当前项目触发日志、当前项目治理快照，同时增加“全局项目”和“全局日志”两页，用来查看其他工作区是否触发过 Skill Runtime。固定界面文案、技能名称和技能说明已经中文显示；内部执行、检索和索引仍使用原始英文 `skill_name`。当前还把全局和项目 `AGENTS.md` 规则加严：具体项目开发任务在实质性读代码或改动前必须先调用 Codex-facing runtime gate，优先走 `run_codex_task_experimental`，必要时用 CLI `codex-run` 兜底产生 dashboard 可见事件；任务完成后如有结构化执行结果，再调用 `finalize_codex_task_experimental`。
+当前实现也已经完成：`python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可以生成本地只读观察面板。页面展示总览、技能树视图、触发日志视图和治理快照。Codex-facing runtime lane 入口现在会把 `used / entered / skipped` 事件写入 `.skill_runtime/runtime_lane_events.jsonl`。最新一轮根据用户反馈，已把 Skill Tree 从单列长列表改成中心向四周发散的径向布局：运行时根节点在中心，active / staging / archived / rejected 四个状态分支分布在四个象限；分支内第一层展示能力组别，例如格式转换、文本处理、文件整理和运行时治理；中心节点已放到上下分支之间，避免压到组别卡片；点击组别时，组内技能会在居中凸显的详情界面中展开，页面不自动滚动，也不再把树枝撑长；同时去掉交叉连接线和硬分界线，改用位置、状态圆点和组别卡片表达结构。随后又把 Trigger Log 和治理快照都改成独立页面式视图，顶部导航不再用同页锚点滚动；点击触发日志只显示日志页，点击治理快照只显示库健康页。dashboard CLI 现在还支持 `--open`，可一键生成并用系统默认浏览器打开本地面板。现在又新增全局只读 dashboard，并已按用户反馈与普通 dashboard 合并：`python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 仍然显示当前项目技能树、当前项目触发日志、当前项目治理快照，同时增加“全局项目”和“全局日志”两页，用来查看其他工作区是否触发过 Skill Runtime。固定界面文案、技能名称和技能说明已经中文显示；内部执行、检索和索引仍使用原始英文 `skill_name`。当前还把全局和项目 `AGENTS.md` 规则加严：具体项目开发任务在实质性读代码或改动前必须先调用 Codex-facing runtime gate，优先走 `run_codex_task_experimental`，必要时用 CLI `codex-run` 兜底产生 dashboard 可见事件；任务完成后如有结构化执行结果，再调用 `finalize_codex_task_experimental`。本轮继续主线时，MCP `run_codex_task_experimental` 和 `finalize_codex_task_experimental` 都已确认会返回 `runtime_lane_status: skipped`，并把对应事件写入 `.skill_runtime/runtime_lane_events.jsonl`，说明 dashboard 可见触发链路已经覆盖 MCP start gate 和 finalizer 路径。用户随后确认其他项目目前也可以正常调用 Skill Runtime，因此观察期已从“是否能跨项目触发”推进到“跨项目触发是否稳定、是否产生有价值的 `entered` / `used` 样本”。用户又指出 `iamzhihuix/skills-manage` 与本项目相似。当前结论是：`skills-manage` 更像跨平台 skill asset manager / control plane，本项目更像 runtime lane / learning engine。已新增方案 `docs/superpowers/plans/2026-05-03-skills-manage-lessons-integration.md`，建议吸收中央技能库、平台 inventory、导出计划、import-to-staging、collections、隐私和 provenance 表达等外围经验，但不改变“创造、蒸馏、进化、治理”的主线。当前已完成第一阶段 read-only 平台/项目 inventory：新增平台目录注册表、只读 `SKILL.md` 发现器、dashboard `平台与项目` 视图和 `docs/platform-skill-inventory-design.md`。该阶段不创建目录、不复制、不 symlink、不安装。第二阶段 `platform-export-plan` 也已完成：新增导出预览策略文档、只读导出计划模块和 CLI 命令，能预览 active skill 暴露到平台目录时的目标路径、copy/symlink 计划和冲突，不执行任何写操作。
 
-GitNexus 当前结论：之前“一直没效果”不是因为没安装，也不是仓库没索引，而是查询路径在 Windows 上加载 LadybugDB FTS/VECTOR 扩展时触发 native crash。这个 crash 会把 MCP transport 直接带断，所以 Codex 里表现为 `Transport closed`。本机已在全局安装的 GitNexus 包里增加临时补丁：查询池不再加载 FTS/VECTOR，BM25 搜索在 Windows 下退回较慢的 `CONTAINS` 扫描；当前仓库索引已重建到提交 `992f36e`，CLI 的 `status` / `list` / `cypher` / `query` / `context` 已验证可用。当前会话里的 GitNexus MCP 已被早先崩溃打断，需要新 Codex 会话或重启后再复测 MCP 工具。
+GitNexus 当前结论：之前“一直没效果”不是因为没安装，也不是仓库没索引，而是查询路径在 Windows 上加载 LadybugDB FTS/VECTOR 扩展时触发 native crash。这个 crash 会把 MCP transport 直接带断，所以 Codex 里表现为 `Transport closed`。本机已在全局安装的 GitNexus 包里增加临时补丁：查询池不再加载 FTS/VECTOR，BM25 搜索在 Windows 下退回较慢的 `CONTAINS` 扫描；当前仓库索引已重建到提交 `992f36e`，CLI 的 `status` / `list` / `cypher` / `query` / `context` 已验证可用。本轮新会话已能通过 GitNexus MCP `list_repos` 看到当前仓库，但索引提示比 `HEAD` 落后 1 个提交；后续如要依赖精确影响分析，先更新索引。
 
 ## Last Completed
 
 本轮已完成：
+- 完成 `skills-manage` 吸收方案第一阶段：
+  - 新增 `docs/platform-skill-inventory-design.md`
+  - 新增 `skill_runtime/platforms/registry.py`
+  - 新增 `skill_runtime/platforms/discovery.py`
+  - 新增 `tests/test_runtime_platform_inventory.py`
+  - dashboard collector 现在会收集 `platform_inventory`
+  - dashboard 新增 `平台与项目` 只读视图
+  - 快验 `python -m unittest tests.test_runtime_fast -v` 通过，66 tests OK
+- 完成 `skills-manage` 吸收方案第二阶段：
+  - 新增 `docs/platform-export-policy.md`
+  - 新增 `skill_runtime/platforms/export_plan.py`
+  - 新增 `tests/test_runtime_platform_export.py`
+  - 新增 CLI `platform-export-plan`
+  - 预览只支持 active 技能，非 active 技能返回 `skill_not_active`
+  - 真实目录/文件冲突会标记为不 eligible
+  - 快验 `python -m unittest tests.test_runtime_fast -v` 通过，70 tests OK
+- 完成 `skills-manage` 吸收方案第三阶段本地导入部分：
+  - 新增 `docs/import-to-staging-policy.md`
+  - 新增 `skill_runtime/importers/local_skill_importer.py`
+  - 新增 `tests/test_runtime_skill_import.py`
+  - 新增 CLI `import-skill-to-staging`
+  - 导入结果只进入 `skill_store/staging/imported/<skill_name>` 和 staging metadata
+  - metadata 包含 `audit_status: requires_review`、`import_source`、`content_hash` 和 `provenance`
+  - 快验 `python -m unittest tests.test_runtime_fast -v` 通过，73 tests OK
+- 完成 `skills-manage` 吸收方案第三阶段 follow-up：
+  - dashboard collector 现在保留导入候选的 `audit_status`、`import_source`、`imported_at`、`content_hash` 和 `provenance`
+  - dashboard 组内技能详情会显示“外部导入”“需要审核”、来源路径和短 hash
+  - 新增 dashboard 回归测试覆盖导入候选 provenance
+  - dashboard 子集验证通过
+- 完成 `skills-manage` 吸收方案第四阶段 capability collections：
+  - 新增 `docs/capability-collections-design.md`
+  - 新增 `skill_runtime/collections/model.py`
+  - 新增 `skill_runtime/collections/store.py`
+  - 新增 `tests/test_runtime_collections.py`
+  - dashboard collector 现在会返回 `capability_collections`
+  - dashboard 新增 `能力集合` 只读视图
+  - 集合只作为组织层，不改变执行、审核、提升或归档语义
+- 完成 `skills-manage` 吸收方案第五阶段 privacy and provenance：
+  - 新增 `docs/privacy-and-provenance.md`
+  - 说明哪些数据默认留在本地：skill store、trajectories、audits、runtime lane events、usage overlay、dashboard HTML
+  - 说明哪些路径可能离开机器：外部 provider、DeepSeek provider、future GitHub/marketplace import、宿主外部转发
+  - 明确 provider/GitHub/marketplace 凭据不能写入仓库
+  - README / README.en 已增加 privacy and provenance 文档入口
+- 分析 `iamzhihuix/skills-manage` 并形成具体吸收方案：
+  - 明确它是 skill asset manager / control plane，本项目是 runtime lane / learning engine
+  - 新增 `docs/superpowers/plans/2026-05-03-skills-manage-lessons-integration.md`
+  - 新增决策：吸收 control-plane 经验但不转向桌面技能管理器
+  - 推荐第一阶段先做 read-only 平台/项目 inventory 设计
+- 记录用户确认的跨项目调用成功：
+  - 用户确认其他项目目前可以正常调用 Skill Runtime
+  - 已将该正样本写入 `docs/codex-default-lane-observation-log.md`
+  - `TASKS.md` 中“观察全局默认能力在真实工作区中的表现”已标为完成
+  - 下一步观察重点转为跨项目调用质量和 `entered` / `used` 样本
+- 回到 Skill Runtime 默认触发和 dashboard 观察主线：
+  - 按项目规则先调用 `mcp__skill_runtime__.run_codex_task_experimental`
+  - 本轮任务被分类为 `default-out`
+  - MCP gate 返回 `runtime_lane_status: skipped`
+  - 同一事件已写入 `.skill_runtime/runtime_lane_events.jsonl`
+  - MCP finalizer 也返回 `runtime_lane_status: skipped`
+  - finalization 事件也已写入 `.skill_runtime/runtime_lane_events.jsonl`
+  - 已将该真实样本补入 `docs/codex-default-lane-observation-log.md`
 - 定位 GitNexus 查询失败根因：
   - GitNexus 已安装，仓库也已注册
   - 原索引落后当前提交 33 个提交
@@ -440,7 +501,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-下一步默认进入真实开发任务观察：后续具体项目开发任务开始时先调用 `mcp__skill_runtime__.run_codex_task_experimental`；如果它不可用或没有返回可见 `runtime_lane_status`，用 `python -m skill_runtime.cli --root <workspace> codex-run ...` 兜底。任务完成后，如果有结构化执行结果或操作日志，再调用 `mcp__skill_runtime__.finalize_codex_task_experimental`。查看当前项目用 `python -m skill_runtime.cli dashboard --open`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`。如果下一轮要验证 GitNexus MCP 是否恢复，先开启新 Codex 会话或重启 MCP，再执行 `list_repos`、`cypher RETURN 1` 和一次 dashboard 相关查询；不要把当前会话里已经断开的 transport 当作补丁失败。
+下一步默认继续真实开发任务观察：后续具体项目开发任务开始时仍先调用 `mcp__skill_runtime__.run_codex_task_experimental`；如果它不可用或没有返回可见 `runtime_lane_status`，用 `python -m skill_runtime.cli --root <workspace> codex-run ...` 兜底。当前已确认 MCP start gate 和 finalizer 都会写 dashboard 可见事件，且用户已确认其他项目可以正常调用 Skill Runtime。所以下一个观察重点是收集跨项目中的 `entered` 或 `used` 样本，判断它是否真的减少重复工作，而不是只继续证明 `skipped` 正常。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。推荐先用当前静态 dashboard 做真实观察，只有出现重复过滤、对比、批量选择、多步导入评审或跨项目信息过密等真实需求时，再进入 Phase 6 rich UI decision gate。查看当前项目用 `python -m skill_runtime.cli dashboard --open`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
 
 ## Important Files
 

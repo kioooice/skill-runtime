@@ -2,6 +2,128 @@
 
 ## Decision Log
 
+### 2026-05-03 - GitHub Import 和 Rich UI 继续设计门控
+
+**Decision**
+
+在完成 platform inventory、export preview、local import-to-staging、dashboard provenance、capability collections 和 privacy/provenance 文档后，不默认马上进入 GitHub import 或 rich UI。GitHub/marketplace import 只有在 provenance、凭据、staging-only 和外部数据流边界清楚后才实现；rich UI 只有在静态 dashboard 被真实使用证明不足后才启动。
+
+**Reason**
+
+当前 `skills-manage` 的可借鉴 control-plane 经验已经覆盖了观察、预览、导入候选、组织和隐私说明。继续直接做网络 import 或管理后台，会增加外部 side effect、凭据和 UI 复杂度，而这些需求还没有被真实重复使用证明。
+
+**Impact**
+
+- 新增 `docs/privacy-and-provenance.md`
+- README / README.en 增加隐私与 provenance 入口
+- 下一步默认回到真实使用观察，而不是自动扩展 GitHub import 或桌面/本地 Web UI
+
+### 2026-05-03 - Capability Collections 是只读组织层
+
+**Decision**
+
+新增 capability collections 作为 `skill_store/collections.json` 支持的持久组织层。集合只引用现有 `skill_name`，dashboard 会解析集合成员、生命周期数量和缺失引用，并新增只读 `能力集合` 页面。没有集合文件时使用默认集合兜底，但不会自动写文件。
+
+**Reason**
+
+dashboard 里的能力组已经证明“按能力理解技能库”比只看原始技能列表更适合用户。但集合不能变成第五种 lifecycle，也不能影响复用、搜索、审核、提升或归档。把集合做成只读 overlay，可以吸收 `skills-manage` 的组织经验，同时保持 Skill Runtime 的治理边界。
+
+**Impact**
+
+- 新增 `docs/capability-collections-design.md`
+- 新增 `skill_runtime/collections/model.py` 和 `skill_runtime/collections/store.py`
+- dashboard 数据新增 `capability_collections`
+- dashboard 新增 `能力集合` 页面
+- 下一步推荐补隐私与 provenance 文档，再考虑 GitHub import
+
+### 2026-05-03 - 导入候选必须在 Dashboard 中显示来源和审核状态
+
+**Decision**
+
+本地导入到 staging 的外部 skill 不只写入 metadata，还必须在 dashboard 的候选详情中可见。dashboard collector 会保留 `audit_status`、`import_source`、`imported_at`、`content_hash`、`provenance` 和 `is_imported`；HTML 详情会显示“外部导入”“需要审核”、来源路径和短 hash。该展示仍然只读，不增加 promote、安装或编辑按钮。
+
+**Reason**
+
+如果外部 skill 只进入 staging 但用户看不见来源和审核状态，后续 GitHub/marketplace import 会变成不可解释的黑箱。先让本地导入候选可见，可以验证 provenance 和治理语言是否清楚，再决定是否接网络来源。
+
+**Impact**
+
+- dashboard 能区分普通候选和外部导入候选
+- 导入候选的 `requires_review` 状态对用户可见
+- GitHub import 继续延后，下一步优先做 capability collections
+
+### 2026-05-03 - 外部 Skill 先本地导入 Staging
+
+**Decision**
+
+第三阶段只支持本地 `import-skill-to-staging --source <path>`，且导入结果只能进入 `skill_store/staging/`。导入会复制外部 `SKILL.md` 目录到 `skill_store/staging/imported/<skill_name>/`，并写入 staging metadata，标记 `audit_status: requires_review`、source path、content hash 和 provenance。不会写入 `skill_store/active/`，不会把外部 skill 变成可静默复用的 active skill。
+
+**Reason**
+
+`skills-manage` 的 import 体验有价值，但 Skill Runtime 的治理边界更重要。外部技能必须先作为候选被观察和审核，不能绕过 audit/promote 生命周期。先做本地导入也避免过早引入 GitHub/marketplace 网络导入和凭据风险。
+
+**Impact**
+
+- 新增 `docs/import-to-staging-policy.md`
+- 新增 `skill_runtime/importers/local_skill_importer.py`
+- 新增 CLI：`python -m skill_runtime.cli import-skill-to-staging --source <path>`
+- 新增测试覆盖本地导入、缺少 `SKILL.md` 拒绝、CLI 输出和不进入 active
+- 下一步推荐做 dashboard provenance 展示，再考虑 GitHub import
+
+### 2026-05-03 - Platform Export 先做预览不写目录
+
+**Decision**
+
+平台导出第二阶段只新增 `platform-export-plan` 预览能力，不执行 copy、不创建 symlink、不创建平台目录。只有 `active` 技能可以得到 eligible 预览；staging、archived、rejected 或未知技能都会被标记为 `skill_not_active`。真实目录或文件冲突会被标记为不 eligible。
+
+**Reason**
+
+`skills-manage` 的跨平台安装体验有借鉴价值，但 Skill Runtime 当前主线仍是蒸馏、审核和治理。先做导出预览可以让用户看清目标路径、冲突和 link/copy 计划，同时避免过早引入外部目录写操作风险。
+
+**Impact**
+
+- 新增 `docs/platform-export-policy.md`
+- 新增 `skill_runtime/platforms/export_plan.py`
+- 新增 CLI：`python -m skill_runtime.cli platform-export-plan --skill <skill> --platform <platform>`
+- 新增测试覆盖 active-only、真实目录冲突、只读无写入和 CLI JSON 输出
+- 下一阶段如继续吸收 `skills-manage` 经验，应做本地 `import-skill-to-staging`，外部技能仍不能直接进入 active
+
+### 2026-05-03 - 平台与项目 Inventory 第一阶段保持只读
+
+**Decision**
+
+平台与项目 skill inventory 第一阶段只做发现和展示，不创建平台目录、不复制 skill、不创建 symlink、不安装或卸载任何技能。dashboard 新增 `平台与项目` 视图，用来显示 Codex、Claude Code、Cursor、Gemini CLI 和 Shared Agents 等已知平台 skill 目录里的 `SKILL.md` 技能。
+
+**Reason**
+
+当前目标是吸收 `skills-manage` 的 control-plane 可见性经验，而不是把 Skill Runtime 变成写平台目录的管理器。先只读观察可以验证目录模型、归属判断和 dashboard 信息结构，避免过早引入外部目录写操作风险。
+
+**Impact**
+
+- 新增 `docs/platform-skill-inventory-design.md`
+- 新增 `skill_runtime/platforms/registry.py`
+- 新增 `skill_runtime/platforms/discovery.py`
+- dashboard 数据中包含 `platform_inventory`
+- dashboard 新增 `平台与项目` 页面
+- 下一阶段如继续推进，应先做 `platform-export-plan` 预览命令，仍然不写平台目录
+
+### 2026-05-03 - 吸收 skills-manage 的 Control Plane 经验但不改主线
+
+**Decision**
+
+`iamzhihuix/skills-manage` 的经验应作为 Skill Runtime 的外围 control-plane 参考，而不是作为主产品形态替代。当前只吸收中央技能库、平台目录观察、导出规划、import-to-staging、collections、隐私与 provenance 表达等经验；Skill Runtime 的主线仍然是任务触发、复用、记录、蒸馏、审核、提升和治理。
+
+**Reason**
+
+`skills-manage` 解决的是“已有 skill 资产如何跨平台管理”，而 Skill Runtime 要解决的是“skill 如何从真实任务中生成、沉淀、进化并受治理”。如果直接转向桌面技能管理器，会稀释当前最有差异化的 runtime lane 和学习闭环。
+
+**Impact**
+
+- 新方案写入 `docs/superpowers/plans/2026-05-03-skills-manage-lessons-integration.md`
+- 第一阶段推荐做 read-only 平台/项目 inventory，而不是马上做平台写操作
+- 外部 skill 导入默认进入 staging，不能绕过 audit 进入 active
+- 暂不启动 Tauri 或完整管理后台路线，除非 dashboard/control-plane 静态方案被真实使用证明不够
+
 ### 2026-05-02 - GitNexus Windows 查询路径采用降级保活策略
 
 **Decision**

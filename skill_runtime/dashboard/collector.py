@@ -6,7 +6,9 @@ from typing import Any
 
 from skill_runtime.api.models import SkillMetadata
 from skill_runtime.api.service import RuntimeService
+from skill_runtime.collections.store import load_capability_collections
 from skill_runtime.observability.events import RUNTIME_LANE_EVENTS_FILE, read_runtime_lane_events
+from skill_runtime.platforms.discovery import collect_platform_inventory
 from skill_runtime.retrieval.skill_index import SkillIndex, SkillIndexError
 
 
@@ -16,6 +18,8 @@ def collect_dashboard_data(root: str | Path, *, event_limit: int = 50) -> dict[s
     skills = _collect_skills(runtime_root, diagnostics)
     events = list(reversed(read_runtime_lane_events(runtime_root, limit=event_limit)))
     governance = _collect_governance(runtime_root, diagnostics)
+    platform_inventory = collect_platform_inventory(runtime_root)
+    capability_collections = load_capability_collections(runtime_root, skills, diagnostics)
     overview = _build_overview(skills, events, governance)
     return {
         "root": str(runtime_root),
@@ -23,6 +27,8 @@ def collect_dashboard_data(root: str | Path, *, event_limit: int = 50) -> dict[s
         "skills": skills,
         "events": events,
         "governance": governance,
+        "capability_collections": capability_collections,
+        "platform_inventory": platform_inventory,
         "diagnostics": diagnostics,
     }
 
@@ -183,6 +189,13 @@ def _skill_payload(
         usage_count = indexed_metadata.usage_count
         last_used_at = indexed_metadata.last_used_at
     file_path = str(payload.get("file_path") or "")
+    tags = payload.get("tags") if isinstance(payload.get("tags"), list) else []
+    provenance = payload.get("provenance") if isinstance(payload.get("provenance"), dict) else {}
+    audit_status = payload.get("audit_status")
+    import_source = payload.get("import_source")
+    imported_at = payload.get("imported_at")
+    content_hash = payload.get("content_hash")
+    provenance_type = provenance.get("type")
     return {
         "skill_name": skill_name,
         "status": status,
@@ -191,9 +204,15 @@ def _skill_payload(
         "relative_file_path": _relative_path(file_path, root),
         "source_trajectory_ids": [str(item) for item in source_trajectory_ids],
         "audit_score": payload.get("audit_score"),
+        "audit_status": audit_status if isinstance(audit_status, str) else None,
         "usage_count": usage_count if isinstance(usage_count, int) else 0,
         "last_used_at": last_used_at if isinstance(last_used_at, str) else None,
-        "tags": payload.get("tags") if isinstance(payload.get("tags"), list) else [],
+        "tags": tags,
+        "import_source": import_source if isinstance(import_source, str) else None,
+        "imported_at": imported_at if isinstance(imported_at, str) else None,
+        "content_hash": content_hash if isinstance(content_hash, str) else None,
+        "provenance": provenance,
+        "is_imported": "imported" in tags or provenance_type == "local_skill_import",
     }
 
 

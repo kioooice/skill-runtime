@@ -51,6 +51,7 @@
 - `可解释`：搜索结果可以返回命中原因、规则来源和推荐下一步动作
 - `可扩展`：同一套 runtime 同时暴露 CLI 和 MCP，但它们都不是最终产品形态本身
 - `本地优先`：文件型存储，容易检查和调试
+- `来源可见`：导入、蒸馏、导出和 legacy skill 的 provenance 边界需要显式记录
 
 ## 产品形态
 
@@ -130,6 +131,7 @@ docs/
 - 运行 `python scripts/check_runtime_contracts.py` 可验证 host-operation 和 recommendation payload 不变量
 - 更细的 MCP contract 说明见 [MCP Integration](./docs/mcp-integration.md)
 - Codex 默认通道说明见 [Codex Integration](./docs/codex-integration.md)
+- 隐私、外部 provider 和 provenance 边界见 [Privacy And Provenance](./docs/privacy-and-provenance.md)
 - 当前这次架构转向的总说明见 [Agent-First Runtime Architecture](./docs/agent-first-runtime-architecture.md)
 - 当前运行时分层 guard 明确覆盖 `service / governance / retrieval`
 - 也覆盖 `memory / distill / audit / execution`
@@ -565,7 +567,7 @@ python -m skill_runtime.cli dashboard --open
 skill-runtime dashboard --open
 ```
 
-默认输出到 `.skill_runtime/dashboard.html`。它只读取当前 runtime root 的本地数据，用于查看技能树、runtime lane 触发日志和治理快照；三者在面板中是独立视图，不混在同一页。技能树采用中心向四周发散的径向布局，四个象限分别展示 active / staging / archived / rejected 分支；分支内优先展示“格式转换、文本处理、文件整理、运行时治理”等组别，而不是逐个技能堆叠。点击组别时，组内技能会在居中的详情界面中凸显出来；页面不会自动滚动，技能树本身也不会被撑开。面板默认中文显示；技能调用仍使用原始英文 `skill_name`，页面只在展示层把技能名称和说明翻译成中文。
+默认输出到 `.skill_runtime/dashboard.html`。它只读取当前 runtime root 的本地数据，用于查看技能树、能力集合、runtime lane 触发日志、治理快照和平台目录观察；这些内容在面板中是独立视图，不混在同一页。技能树采用中心向四周发散的径向布局，四个象限分别展示 active / staging / archived / rejected 分支；分支内优先展示“格式转换、文本处理、文件整理、运行时治理”等组别，而不是逐个技能堆叠。点击组别时，组内技能会在居中的详情界面中凸显出来；页面不会自动滚动，技能树本身也不会被撑开。能力集合是只读组织层，不改变执行、审核、提升或归档语义。面板默认中文显示；技能调用仍使用原始英文 `skill_name`，页面只在展示层把技能名称和说明翻译成中文。
 
 查看多个项目的全局触发记录：
 
@@ -649,6 +651,7 @@ python scripts/skill_cli.py execute --skill merge_text_files_generated --args-fi
 - [项目详细报告](./docs/skill-runtime-project-report.md)
 - [MCP 接入说明](./docs/mcp-integration.md)
 - [Codex 接入说明](./docs/codex-integration.md)
+- [隐私与 Provenance 边界](./docs/privacy-and-provenance.md)
 - [多宿主适配方案](./docs/multi-host-adaptation-plan.md)
 - [Codex 默认通道阶段收口](./docs/codex-default-lane-stage-closure.md)
 - [Codex 默认通道观察计划](./docs/codex-default-lane-observation-plan.md)
