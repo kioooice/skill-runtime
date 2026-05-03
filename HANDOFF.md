@@ -48,7 +48,7 @@
 
 当前实现也已经完成：`python -m skill_runtime.cli dashboard --output .skill_runtime/dashboard.html` 可以生成本地只读观察面板。页面展示总览、技能树视图、触发日志视图和治理快照。Codex-facing runtime lane 入口现在会把 `used / entered / skipped` 事件写入 `.skill_runtime/runtime_lane_events.jsonl`。最新一轮根据用户反馈，已把 Skill Tree 从单列长列表改成中心向四周发散的径向布局：运行时根节点在中心，active / staging / archived / rejected 四个状态分支分布在四个象限；分支内第一层展示能力组别，例如格式转换、文本处理、文件整理和运行时治理；中心节点已放到上下分支之间，避免压到组别卡片；点击组别时，组内技能会在居中凸显的详情界面中展开，页面不自动滚动，也不再把树枝撑长；同时去掉交叉连接线和硬分界线，改用位置、状态圆点和组别卡片表达结构。随后又把 Trigger Log 和治理快照都改成独立页面式视图，顶部导航不再用同页锚点滚动；点击触发日志只显示日志页，点击治理快照只显示库健康页。dashboard CLI 现在还支持 `--open`，可一键生成并用系统默认浏览器打开本地面板。现在又新增全局只读 dashboard，并已按用户反馈与普通 dashboard 合并：`python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 仍然显示当前项目技能树、当前项目触发日志、当前项目治理快照，同时增加“全局项目”和“全局日志”两页，用来查看其他工作区是否触发过 Skill Runtime。固定界面文案、技能名称和技能说明已经中文显示；内部执行、检索和索引仍使用原始英文 `skill_name`。当前还把全局和项目 `AGENTS.md` 规则加严：具体项目开发任务在实质性读代码或改动前必须先调用 Codex-facing runtime gate，优先走 `run_codex_task_experimental`，必要时用 CLI `codex-run` 兜底产生 dashboard 可见事件；任务完成后如有结构化执行结果，再调用 `finalize_codex_task_experimental`。本轮继续主线时，MCP `run_codex_task_experimental` 和 `finalize_codex_task_experimental` 都已确认会返回 `runtime_lane_status: skipped`，并把对应事件写入 `.skill_runtime/runtime_lane_events.jsonl`，说明 dashboard 可见触发链路已经覆盖 MCP start gate 和 finalizer 路径。用户随后确认其他项目目前也可以正常调用 Skill Runtime，因此观察期已从“是否能跨项目触发”推进到“跨项目触发是否稳定、是否产生有价值的 `entered` / `used` 样本”。用户又指出 `iamzhihuix/skills-manage` 与本项目相似。当前结论是：`skills-manage` 更像跨平台 skill asset manager / control plane，本项目更像 runtime lane / learning engine。已新增方案 `docs/superpowers/plans/2026-05-03-skills-manage-lessons-integration.md`，建议吸收中央技能库、平台 inventory、导出计划、import-to-staging、collections、隐私和 provenance 表达等外围经验，但不改变“创造、蒸馏、进化、治理”的主线。当前已完成第一阶段 read-only 平台/项目 inventory：新增平台目录注册表、只读 `SKILL.md` 发现器、dashboard `平台与项目` 视图和 `docs/platform-skill-inventory-design.md`。该阶段不创建目录、不复制、不 symlink、不安装。第二阶段 `platform-export-plan` 也已完成：新增导出预览策略文档、只读导出计划模块和 CLI 命令，能预览 active skill 暴露到平台目录时的目标路径、copy/symlink 计划和冲突，不执行任何写操作。
 
-GitNexus 当前结论：之前“一直没效果”不是因为没安装，也不是仓库没索引，而是查询路径在 Windows 上加载 LadybugDB FTS/VECTOR 扩展时触发 native crash。这个 crash 会把 MCP transport 直接带断，所以 Codex 里表现为 `Transport closed`。本机已在全局安装的 GitNexus 包里增加临时补丁：查询池不再加载 FTS/VECTOR，BM25 搜索在 Windows 下退回较慢的 `CONTAINS` 扫描；当前仓库索引已重建到提交 `992f36e`，CLI 的 `status` / `list` / `cypher` / `query` / `context` 已验证可用。本轮新会话已能通过 GitNexus MCP `list_repos` 看到当前仓库，但索引提示比 `HEAD` 落后 1 个提交；后续如要依赖精确影响分析，先更新索引。
+GitNexus 当前结论：之前“一直没效果”不是因为没安装，也不是仓库没索引，而是查询路径在 Windows 上加载 LadybugDB FTS/VECTOR 扩展时触发 native crash。这个 crash 会把 MCP transport 直接带断，所以 Codex 里表现为 `Transport closed`。本机已在全局安装的 GitNexus 包里增加临时补丁：查询池不再加载 FTS/VECTOR，BM25 搜索在 Windows 下退回较慢的 `CONTAINS` 扫描；当前仓库索引已在 2026-05-03 重新运行 `gitnexus analyze`，更新到提交 `c9f2c2c`，CLI 的 `status` / `cypher` / `query` / `context RuntimeService` 已验证可用。搜索排序仍低于正常 FTS/vector 路径，复杂影响分析优先用 `cypher` 或 `context`。
 
 ## Last Completed
 
@@ -199,6 +199,14 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
   - contract 单测覆盖 JSON shape，CLI smoke 已写出 `.skill_runtime\profile-runtime-tests-smoke.json`
   - `python -m unittest tests.test_runtime_fast -v` 通过，103 tests OK
   - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/add_json_output_support_to_the_runtime_test_prof_20260503091829.json`
+- GitNexus 索引刷新：
+  - `gitnexus status` 原先显示索引停在 `992f36e`，当前提交为 `c9f2c2c`
+  - 已运行 `gitnexus analyze`，12.0s 完成，9,282 nodes / 13,651 edges / 124 clusters / 300 flows
+  - `gitnexus status` 现在为 up-to-date at `c9f2c2c`
+  - `gitnexus cypher "RETURN 1 AS c" --repo skill-runtime` 成功
+  - `gitnexus query "runtime profiler json output" --repo skill-runtime --limit 3` 成功
+  - `gitnexus context RuntimeService --repo skill-runtime` 成功
+  - `gitnexus analyze` 自动写入的 AGENTS/CLAUDE 通用指令块已移除，保持本项目 AGENTS 瘦身策略
 - 完成 `skills-manage` 吸收方案第一阶段：
   - 新增 `docs/platform-skill-inventory-design.md`
   - 新增 `skill_runtime/platforms/registry.py`

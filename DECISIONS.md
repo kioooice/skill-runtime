@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-03 - GitNexus Index Refreshed To Current Commit
+
+**Decision**
+
+Refresh the local GitNexus index for this repository after the runtime lane and workflow-skill changes. Keep the Windows degraded query strategy in place, but treat the local index as current again for impact analysis.
+
+**Reason**
+
+The repository index was still at `992f36e` while the working branch had advanced to `c9f2c2c`. Relying on stale GitNexus results would make structure lookup and impact analysis less trustworthy.
+
+**Impact**
+
+- `gitnexus status` reports `up-to-date` at commit `c9f2c2c`
+- CLI `cypher`, `query`, and `context RuntimeService` all exit successfully
+- Search ranking is still subject to the local Windows FTS fallback described in `docs/gitnexus-local-runbook.md`
+
 ### 2026-05-03 - Runtime Test Profiler Can Write JSON Reports
 
 **Decision**

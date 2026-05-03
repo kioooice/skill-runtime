@@ -23,6 +23,16 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - GitNexus index refresh
+
+- Task type: repository impact-analysis maintenance
+- Classified as: no runtime finalizer; this was a local index refresh with no runtime code or tracked artifact change beyond state files
+- What happened: refreshed the GitNexus index from stale commit `992f36e` to current commit `c9f2c2c`
+- Did the behavior feel correct: yes; `status`, `cypher`, `query`, and `context RuntimeService` all succeeded after the refresh
+- Did the lane help: not directly; this maintains the auxiliary repository lookup layer used by future runtime work
+- Verification: `gitnexus analyze` completed in 12.0s with 9,282 nodes, 13,651 edges, 124 clusters, and 300 flows
+- Follow-up: keep using `cypher` or `context` for precise lookups because Windows keyword ranking still uses the degraded FTS fallback
+
 ### 2026-05-03 - Runtime profiler JSON output
 
 - Task type: verification tooling improvement
