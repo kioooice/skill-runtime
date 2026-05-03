@@ -17,6 +17,7 @@ from skill_runtime.api.service import RuntimeService, RuntimeServiceError
 from skill_runtime.dashboard.collector import collect_dashboard_data, collect_global_dashboard_data
 from skill_runtime.dashboard.render import render_dashboard_html
 from skill_runtime.importers.local_skill_importer import SkillImportError, import_local_skill_to_staging
+from skill_runtime.observability.events import read_runtime_lane_events
 from skill_runtime.platforms.export_plan import plan_platform_export
 
 
@@ -616,6 +617,48 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
     return ok(payload)
 
 
+def cmd_runtime_events(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    limit = max(1, int(args.limit))
+    if getattr(args, "global_view", False):
+        global_data = collect_global_dashboard_data(
+            root,
+            scan_roots=getattr(args, "scan_root", None),
+            event_limit=limit,
+        )
+        return ok(
+            {
+                "root": str(root),
+                "global": True,
+                "scan_roots": global_data["scan_roots"],
+                "event_count": len(global_data["events"]),
+                "recent_event_counts": global_data["overview"]["recent_event_counts"],
+                "projects": global_data["projects"],
+                "events": global_data["events"],
+            }
+        )
+
+    events = list(reversed(read_runtime_lane_events(root, limit=limit)))
+    return ok(
+        {
+            "root": str(root),
+            "global": False,
+            "event_count": len(events),
+            "recent_event_counts": _runtime_event_counts(events),
+            "events": events,
+        }
+    )
+
+
+def _runtime_event_counts(events: list[dict]) -> dict[str, int]:
+    counts = {"used": 0, "entered": 0, "skipped": 0}
+    for event in events:
+        status = event.get("runtime_lane_status")
+        if status in counts:
+            counts[status] += 1
+    return counts
+
+
 def cmd_platform_export_plan(args: argparse.Namespace) -> int:
     return ok(
         plan_platform_export(
@@ -730,6 +773,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory whose immediate child projects should be scanned for runtime lane events",
     )
     dashboard_parser.set_defaults(func=cmd_dashboard)
+
+    runtime_events_parser = subparsers.add_parser("runtime-events")
+    runtime_events_parser.add_argument("--limit", type=int, default=20)
+    runtime_events_parser.add_argument(
+        "--global",
+        dest="global_view",
+        action="store_true",
+        help="Return aggregated runtime lane events across project roots",
+    )
+    runtime_events_parser.add_argument(
+        "--scan-root",
+        action="append",
+        help="Directory whose immediate child projects should be scanned for runtime lane events",
+    )
+    runtime_events_parser.set_defaults(func=cmd_runtime_events)
 
     platform_export_parser = subparsers.add_parser("platform-export-plan")
     platform_export_parser.add_argument("--skill", required=True)

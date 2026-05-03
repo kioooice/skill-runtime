@@ -386,6 +386,66 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("全局触发日志", html)
         self.assertIn("merge alpha notes", html)
 
+    def test_runtime_events_cli_returns_recent_follow_up_actions(self) -> None:
+        self._write_dashboard_event(
+            self.runtime_root,
+            timestamp="2026-05-03T06:40:00+00:00",
+            task_description="capture a reusable workflow",
+            runtime_lane_status="used",
+            runtime_lane_reason="captured learning payload",
+            recommended_next_action="distill_trajectory",
+            available_host_operation_labels=[
+                "Distill captured trajectory",
+                "Promote captured workflow globally",
+            ],
+        )
+
+        payload = self._run_cli(
+            "runtime-events",
+            "--limit",
+            "5",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        self.assertFalse(payload["data"]["global"])
+        self.assertEqual(1, payload["data"]["event_count"])
+        self.assertEqual({"used": 1, "entered": 0, "skipped": 0}, payload["data"]["recent_event_counts"])
+        event = payload["data"]["events"][0]
+        self.assertEqual("distill_trajectory", event["recommended_next_action"])
+        self.assertIn("Promote captured workflow globally", event["available_host_operation_labels"])
+
+    def test_runtime_events_cli_can_return_global_events(self) -> None:
+        workspace_parent = self.runtime_root / "global-events-cli-workspaces"
+        project_alpha = workspace_parent / "alpha"
+        self._write_dashboard_event(
+            project_alpha,
+            timestamp="2026-05-03T06:41:00+00:00",
+            task_description="capture alpha workflow",
+            runtime_lane_status="used",
+            runtime_lane_reason="captured learning payload",
+            recommended_next_action="distill_trajectory",
+            available_host_operation_labels=["Promote captured workflow globally"],
+        )
+
+        payload = self._run_cli(
+            "runtime-events",
+            "--global",
+            "--scan-root",
+            str(workspace_parent),
+            "--limit",
+            "10",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        self.assertTrue(payload["data"]["global"])
+        self.assertEqual(1, payload["data"]["event_count"])
+        self.assertEqual("alpha", payload["data"]["events"][0]["project_name"])
+        self.assertIn("Promote captured workflow globally", payload["data"]["events"][0]["available_host_operation_labels"])
+
     def test_dashboard_command_can_open_generated_html(self) -> None:
         from skill_runtime.cli import cmd_dashboard
 

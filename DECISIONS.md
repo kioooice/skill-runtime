@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-03 - Runtime Events Have A Read-Only CLI
+
+**Decision**
+
+Add `python -m skill_runtime.cli runtime-events` as a read-only command for inspecting recent runtime lane events. It returns JSON with event counts, recent events, and learning follow-up fields; `--global --scan-root <dir>` returns the same shape across project roots.
+
+**Reason**
+
+The dashboard can show follow-up actions, but automated checks and cross-workspace inspection also need a lightweight command that does not generate HTML or open a browser. This keeps observability scriptable without adding mutation controls.
+
+**Impact**
+
+- Local runtime events are inspectable through CLI JSON
+- Global cross-project events are inspectable through CLI JSON
+- Follow-up labels and recommended next actions are available to scripts and tests
+
 ### 2026-05-03 - Runtime Events Record Learning Follow-Up Actions
 
 **Decision**

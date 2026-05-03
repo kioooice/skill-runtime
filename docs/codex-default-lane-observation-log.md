@@ -23,6 +23,16 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Runtime events JSON CLI
+
+- Task type: runtime lane observability improvement
+- Classified as: `default-in` / `entered` because the task had explicit project development outputs; finalizer returned `runtime_lane_status: used`
+- What happened: added a read-only `runtime-events` CLI for local and global runtime lane event inspection, including learning follow-up fields
+- Did the behavior feel correct: yes; this exposes the same information as the dashboard in scriptable JSON without adding any mutation controls
+- Did the lane help: yes, because it keeps the observation path usable even when the browser dashboard is not opened
+- Finalizer: captured `trajectories/add_a_read_only_cli_command_to_inspect_recent_ru_20260503083440.json`
+- Follow-up: use this command during cross-project observation to inspect `entered` / `used` samples quickly
+
 ### 2026-05-03 - Dashboard shows learning follow-up actions
 
 - Task type: runtime lane observability improvement
