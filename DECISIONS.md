@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-03 - Governance Index Writes Merge Only Changed Metadata
+
+**Decision**
+
+Governance write paths now call `save_merged` with only the metadata objects they actually changed. Archive and provenance backfill paths no longer pass the full pre-operation index snapshot back into the merge step.
+
+**Reason**
+
+Passing the full loaded skill list preserves newly added skills, but it can still overwrite a late update to an existing non-target skill with stale metadata from the beginning of the operation. This showed up in an archive fixture regression where a concurrent same-skill summary update was lost.
+
+**Impact**
+
+- Archive cold, archive duplicate, archive fixture, and provenance backfill preserve late same-name index updates for untouched skills
+- Existing archive behavior and governance follow-ups remain unchanged
+- The regression is covered by a targeted governance test
+
 ### 2026-05-03 - Codex CLI JSON Inputs Can Be Passed By File
 
 **Decision**

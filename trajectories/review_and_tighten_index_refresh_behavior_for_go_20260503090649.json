@@ -1,0 +1,129 @@
+{
+  "task_id": "review_and_tighten_index_refresh_behavior_for_go_20260503090649",
+  "session_id": "capture_review_and_tighten_index_refresh_behavior_for_go_20260503090649",
+  "task_description": "Review and tighten index refresh behavior for governance write paths to reduce future divergence.",
+  "steps": [
+    {
+      "step_id": "1",
+      "tool_name": "write_test",
+      "tool_input": {
+        "path": "test_runtime_governance.py"
+      },
+      "observation": "write_test expected_failure: test_runtime_governance.py",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "2",
+      "tool_name": "run_tests",
+      "tool_input": {
+        "path": "late_same_skill_index_update"
+      },
+      "observation": "run_tests expected_failure: late_same_skill_index_update",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "3",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "service.py"
+      },
+      "observation": "write_text success: service.py",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "4",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "provenance_backfill.py"
+      },
+      "observation": "write_text success: provenance_backfill.py",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "5",
+      "tool_name": "run_tests",
+      "tool_input": {
+        "path": "governance_targeted"
+      },
+      "observation": "run_tests success: governance_targeted",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "6",
+      "tool_name": "py_compile",
+      "tool_input": {
+        "path": "service_and_provenance_backfill"
+      },
+      "observation": "py_compile success: service_and_provenance_backfill",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "7",
+      "tool_name": "run_tests",
+      "tool_input": {
+        "path": "tests.test_runtime_fast"
+      },
+      "observation": "run_tests success: tests.test_runtime_fast",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "8",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "HANDOFF.md"
+      },
+      "observation": "write_text success: HANDOFF.md",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "9",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "TASKS.md"
+      },
+      "observation": "write_text success: TASKS.md",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "10",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "DECISIONS.md"
+      },
+      "observation": "write_text success: DECISIONS.md",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "11",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "codex-default-lane-observation-log.md"
+      },
+      "observation": "write_text success: codex-default-lane-observation-log.md",
+      "status": "success",
+      "thought_summary": null
+    }
+  ],
+  "final_status": "success",
+  "artifacts": [
+    "skill_runtime/api/service.py",
+    "skill_runtime/governance/provenance_backfill.py",
+    "tests/test_runtime_governance.py",
+    "HANDOFF.md",
+    "TASKS.md",
+    "DECISIONS.md",
+    "docs/codex-default-lane-observation-log.md"
+  ],
+  "started_at": "2026-05-03T09:06:49.783107+00:00",
+  "ended_at": "2026-05-03T09:06:49.783107+00:00"
+}

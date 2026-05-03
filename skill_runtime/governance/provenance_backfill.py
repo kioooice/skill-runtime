@@ -12,8 +12,8 @@ class ProvenanceBackfill:
 
     def run(self) -> list[dict[str, str | int]]:
         updated: list[dict[str, str | int]] = []
+        changed_metadata: list[SkillMetadata] = []
         skills = self.index.load_all()
-        changed = False
 
         for metadata in skills:
             if metadata.rule_name:
@@ -36,10 +36,10 @@ class ProvenanceBackfill:
                     "rule_priority": rule_priority,
                 }
             )
-            changed = True
+            changed_metadata.append(metadata)
 
-        if changed:
-            self.index.save_merged(skills)
+        if changed_metadata:
+            self.index.save_merged(changed_metadata)
 
         return updated
 

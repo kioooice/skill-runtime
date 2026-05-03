@@ -744,6 +744,7 @@ class RuntimeService:
         index = SkillIndex(self.index_path)
         skills = index.load_all()
         archived: list[str] = []
+        changed_metadata: list[SkillMetadata] = []
 
         for metadata in skills:
             if metadata.status != "active":
@@ -759,8 +760,10 @@ class RuntimeService:
                 continue
             if self._archive_skill_metadata(metadata):
                 archived.append(metadata.skill_name)
+                changed_metadata.append(metadata)
 
-        index.save_merged(skills)
+        if changed_metadata:
+            index.save_merged(changed_metadata)
         return with_recommendation(
             {"days": days, "archived": archived},
             governance_report_recommendation(
@@ -834,6 +837,7 @@ class RuntimeService:
         report = LibraryReport(self.root, index).build()
         archived: list[str] = []
         planned: list[str] = []
+        changed_metadata: list[SkillMetadata] = []
         target_names = set(skill_names or [])
 
         for cluster in report["duplicate_candidates"]:
@@ -848,9 +852,10 @@ class RuntimeService:
                     continue
                 if self._archive_skill_metadata(metadata):
                     archived.append(skill_name)
+                    changed_metadata.append(metadata)
 
-        if not dry_run:
-            index.save_merged(skills)
+        if not dry_run and changed_metadata:
+            index.save_merged(changed_metadata)
         recommendation = archive_duplicate_candidates_follow_up_recommendation(
             sorted(set(planned)),
             dry_run=dry_run,
@@ -876,6 +881,7 @@ class RuntimeService:
         target_names = set(skill_names or [])
         archived: list[str] = []
         planned: list[str] = []
+        changed_metadata: list[SkillMetadata] = []
 
         for metadata in skills:
             if metadata.status != "active":
@@ -889,9 +895,10 @@ class RuntimeService:
                 continue
             if self._archive_skill_metadata(metadata):
                 archived.append(metadata.skill_name)
+                changed_metadata.append(metadata)
 
-        if not dry_run:
-            index.save_merged(skills)
+        if not dry_run and changed_metadata:
+            index.save_merged(changed_metadata)
         recommendation = archive_fixture_skills_follow_up_recommendation(
             sorted(set(planned)),
             dry_run=dry_run,

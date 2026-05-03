@@ -23,6 +23,17 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Governance index merge narrowing
+
+- Task type: governance write-path reliability improvement
+- Classified as: `default-in` / `entered` because the task touched project state and runtime code paths
+- What happened: found and fixed a stale-snapshot overwrite risk in governance archive/backfill paths by merging only changed metadata into the index
+- Did the behavior feel correct: yes; the change is narrow and protects unrelated same-name late updates without changing archive outcomes
+- Did the lane help: yes, because this came from the remaining task list and produced a concrete regression test before implementation
+- Verification: the new same-skill late-update test failed first, then passed; related governance tests passed; Python compile checks passed; fast suite passed with 102 tests
+- Finalizer: returned `runtime_lane_status: used` and captured `trajectories/review_and_tighten_index_refresh_behavior_for_go_20260503090649.json`
+- Follow-up: apply the same changed-only merge pattern to any future governance write path
+
 ### 2026-05-03 - Codex CLI JSON file arguments
 
 - Task type: runtime lane CLI reliability improvement
