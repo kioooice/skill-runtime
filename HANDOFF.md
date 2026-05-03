@@ -161,6 +161,13 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
   - `python -m unittest tests.test_runtime_fast -v` 通过，98 tests OK
   - `python scripts/evaluate_search_quality.py` 通过，23/23
   - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/add_a_read_only_mcp_tool_for_inspecting_recent_r_20260503084625.json`
+- runtime event payload 去重：
+  - 新增 `build_runtime_events_payload` 和 `build_global_runtime_events_payload`
+  - `runtime-events` CLI 和 `runtime_events` MCP 现在共用同一套输出组装逻辑
+  - TDD 红灯确认 builder 不存在时失败，随后 6 个事件相关 targeted tests 通过
+  - `python -m py_compile skill_runtime\observability\events.py skill_runtime\cli.py skill_runtime\mcp\server.py` 通过
+  - `python -m unittest tests.test_runtime_fast -v` 通过，100 tests OK
+  - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/share_runtime_event_payload_assembly_between_cli_20260503085311.json`
 - 完成 `skills-manage` 吸收方案第一阶段：
   - 新增 `docs/platform-skill-inventory-design.md`
   - 新增 `skill_runtime/platforms/registry.py`

@@ -23,6 +23,17 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Runtime event payload builders
+
+- Task type: runtime lane observability maintenance
+- Classified as: `default-in` / `entered` because the task had explicit project development outputs
+- What happened: moved local and global runtime event JSON payload assembly into shared observability builders used by both CLI and MCP
+- Did the behavior feel correct: yes; this removes duplicated output-shape code without changing the user-facing command or tool contract
+- Did the lane help: yes, because it captured another small development workflow observation sample while the implementation stayed low risk
+- Verification: targeted event tests passed, Python compile checks passed, and `python -m unittest tests.test_runtime_fast -v` passed with 100 tests
+- Finalizer: returned `runtime_lane_status: used` and captured `trajectories/share_runtime_event_payload_assembly_between_cli_20260503085311.json`
+- Follow-up: keep future runtime event fields in the shared builder first so CLI and MCP remain aligned
+
 ### 2026-05-03 - Runtime events MCP tool
 
 - Task type: runtime lane observability improvement

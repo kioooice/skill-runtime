@@ -40,6 +40,50 @@ def read_runtime_lane_events(root: str | Path, limit: int | None = None) -> list
     return events[-limit:]
 
 
+def build_runtime_events_payload(root: str | Path, *, limit: int = 20) -> dict[str, Any]:
+    runtime_root = Path(root).resolve()
+    event_limit = max(1, int(limit))
+    events = list(reversed(read_runtime_lane_events(runtime_root, limit=event_limit)))
+    return {
+        "root": str(runtime_root),
+        "global": False,
+        "event_count": len(events),
+        "recent_event_counts": runtime_event_counts(events),
+        "events": events,
+    }
+
+
+def build_global_runtime_events_payload(
+    root: str | Path,
+    *,
+    scan_roots: list[str | Path] | None = None,
+    limit: int = 20,
+) -> dict[str, Any]:
+    from skill_runtime.dashboard.collector import collect_global_dashboard_data
+
+    runtime_root = Path(root).resolve()
+    event_limit = max(1, int(limit))
+    global_data = collect_global_dashboard_data(runtime_root, scan_roots=scan_roots, event_limit=event_limit)
+    return {
+        "root": str(runtime_root),
+        "global": True,
+        "scan_roots": global_data["scan_roots"],
+        "event_count": len(global_data["events"]),
+        "recent_event_counts": global_data["overview"]["recent_event_counts"],
+        "projects": global_data["projects"],
+        "events": global_data["events"],
+    }
+
+
+def runtime_event_counts(events: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {"used": 0, "entered": 0, "skipped": 0}
+    for event in events:
+        status = event.get("runtime_lane_status")
+        if status in counts:
+            counts[status] += 1
+    return counts
+
+
 def _event_from_result(root: Path, result: AgentOrchestrationResult) -> dict[str, Any]:
     classification = result.task_classification
     learning_capture = result.learning_capture_payload if isinstance(result.learning_capture_payload, dict) else {}

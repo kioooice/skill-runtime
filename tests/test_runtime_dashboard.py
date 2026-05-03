@@ -446,6 +446,50 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual("alpha", payload["data"]["events"][0]["project_name"])
         self.assertIn("Promote captured workflow globally", payload["data"]["events"][0]["available_host_operation_labels"])
 
+    def test_runtime_events_payload_builder_matches_cli_shape(self) -> None:
+        from skill_runtime.observability.events import build_runtime_events_payload
+
+        self._write_dashboard_event(
+            self.runtime_root,
+            timestamp="2026-05-03T06:44:00+00:00",
+            task_description="capture shared payload workflow",
+            runtime_lane_status="entered",
+            runtime_lane_reason="default lane observation",
+        )
+
+        payload = build_runtime_events_payload(self.runtime_root, limit=5)
+
+        self.assertFalse(payload["global"])
+        self.assertEqual(str(self.runtime_root.resolve()), payload["root"])
+        self.assertEqual(1, payload["event_count"])
+        self.assertEqual({"used": 0, "entered": 1, "skipped": 0}, payload["recent_event_counts"])
+        self.assertEqual("capture shared payload workflow", payload["events"][0]["task_description"])
+
+    def test_global_runtime_events_payload_builder_matches_cli_shape(self) -> None:
+        from skill_runtime.observability.events import build_global_runtime_events_payload
+
+        workspace_parent = self.runtime_root / "global-events-builder-workspaces"
+        project_alpha = workspace_parent / "alpha"
+        self._write_dashboard_event(
+            project_alpha,
+            timestamp="2026-05-03T06:45:00+00:00",
+            task_description="capture shared global payload workflow",
+            runtime_lane_status="skipped",
+            runtime_lane_reason="outside default lane",
+        )
+
+        payload = build_global_runtime_events_payload(
+            self.runtime_root,
+            scan_roots=[str(workspace_parent)],
+            limit=5,
+        )
+
+        self.assertTrue(payload["global"])
+        self.assertEqual(str(self.runtime_root.resolve()), payload["root"])
+        self.assertEqual(1, payload["event_count"])
+        self.assertEqual({"used": 0, "entered": 0, "skipped": 1}, payload["recent_event_counts"])
+        self.assertEqual("alpha", payload["events"][0]["project_name"])
+
     def test_mcp_runtime_events_reads_recent_follow_up_actions(self) -> None:
         self._write_dashboard_event(
             self.runtime_root,

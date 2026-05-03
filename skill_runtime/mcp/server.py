@@ -18,8 +18,7 @@ from skill_runtime.api.models import (
     ReuseDecision,
 )
 from skill_runtime.api.service import RuntimeService, RuntimeServiceError
-from skill_runtime.dashboard.collector import collect_global_dashboard_data
-from skill_runtime.observability.events import read_runtime_lane_events
+from skill_runtime.observability.events import build_global_runtime_events_payload, build_runtime_events_payload
 
 
 def _wrap_tool(service: RuntimeService, handler_name: str, **kwargs: Any) -> dict[str, Any]:
@@ -46,15 +45,6 @@ def _wrap_agent_host_tool(handler, **kwargs: Any) -> dict[str, Any]:
             "details": exc.details,
         }
     return {"status": "ok", "data": asdict(data)}
-
-
-def _runtime_event_counts(events: list[dict[str, Any]]) -> dict[str, int]:
-    counts = {"used": 0, "entered": 0, "skipped": 0}
-    for event in events:
-        status = event.get("runtime_lane_status")
-        if status in counts:
-            counts[status] += 1
-    return counts
 
 
 def _agent_result_from_payload(raw_plan: dict[str, Any]) -> AgentOrchestrationResult:
@@ -349,35 +339,18 @@ def build_mcp_server(root: str | Path) -> FastMCP:
         scan_roots: list[str] | None = None,
     ) -> dict[str, Any]:
         resolved_root = Path(root).resolve()
-        resolved_limit = max(1, int(limit))
         if global_events:
-            global_data = collect_global_dashboard_data(
-                resolved_root,
-                scan_roots=scan_roots,
-                event_limit=resolved_limit,
-            )
             return {
                 "status": "ok",
-                "data": {
-                    "root": str(resolved_root),
-                    "global": True,
-                    "scan_roots": global_data["scan_roots"],
-                    "event_count": len(global_data["events"]),
-                    "recent_event_counts": global_data["overview"]["recent_event_counts"],
-                    "projects": global_data["projects"],
-                    "events": global_data["events"],
-                },
+                "data": build_global_runtime_events_payload(
+                    resolved_root,
+                    scan_roots=scan_roots,
+                    limit=int(limit),
+                ),
             }
-        events = list(reversed(read_runtime_lane_events(resolved_root, limit=resolved_limit)))
         return {
             "status": "ok",
-            "data": {
-                "root": str(resolved_root),
-                "global": False,
-                "event_count": len(events),
-                "recent_event_counts": _runtime_event_counts(events),
-                "events": events,
-            },
+            "data": build_runtime_events_payload(resolved_root, limit=int(limit)),
         }
 
     @server.tool(

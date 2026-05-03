@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-03 - Runtime Event Payloads Use One Shared Builder
+
+**Decision**
+
+Move runtime event JSON payload assembly into `skill_runtime.observability.events` and have both the CLI `runtime-events` command and MCP `runtime_events` tool call the same local/global builder functions.
+
+**Reason**
+
+The CLI and MCP entrypoints intentionally expose the same read-only event shape. Keeping separate payload construction in both places makes future follow-up fields or count changes easy to update in one entrypoint and miss in the other.
+
+**Impact**
+
+- CLI and MCP runtime event inspection now share the same payload contract
+- Future event fields and count changes have one implementation point
+- The change is internal and preserves the existing command/tool output shape
+
 ### 2026-05-03 - Runtime Events Are Exposed Through MCP
 
 **Decision**
