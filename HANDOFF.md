@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新可视化收口：用户不需要在默认技能树里看到普通本地文件处理技能，只想看 workflow skills。当前 dashboard collector 已给技能增加 `skill_surface`，renderer 默认只展示 `workflow` 技能；`merge_text_files`、JSON 转 CSV、文本替换、目录清理等普通 helpers 被归入内置 `basic-skills` / `基础本地技能` 能力集合，不删除、不丢失，但不再占用工作流主视图。相关快验已覆盖 workflow skill 保持可见、basic skill 从默认树移出、基础集合仍可访问。
+
 最新语义纠正：用户澄清 `workflow-error-correction` 不应该只是记录工具，而是要让 Codex 以后少犯同类错误。当前已把全局 `workflow-error-correction` 改成已知错误防复发 guard：主要产物是“改变下一步行为”，不是更好的错误日志。它现在在 AGENTS 编辑、runtime 验证循环、方向未审先实现、重复纠错、auto-mode 漂移、AGENTS 膨胀等风险场景下，要求先应用已知 guard；只有新错误模式才新增记录。
 
 最新错误修正规则：用户进一步澄清，已有错误记录后不应该继续等用户指出同一个错误；只有新问题才需要新记录。当前已升级全局 `workflow-error-correction` 为 prevention-first：执行时先查 `HANDOFF.md`、`TASKS.md`、`DECISIONS.md`、相关专门文档和全局 workflow skills 中的既有纠错；如果匹配，就直接应用预防规则并说明复用了旧纠错；只有新模式、范围明显扩大或缺少可用预防规则时才新增记录。
@@ -63,6 +65,13 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 ## Last Completed
 
 本轮已完成：
+- dashboard 默认工作流视图收口：
+  - 技能 payload 新增 `skill_surface`
+  - 默认技能树只展示 workflow skills
+  - 普通本地 helpers 移入 `基础本地技能` 能力集合
+  - imported/global workflow candidates 保持在默认树可见
+  - `python -m unittest tests.test_runtime_fast -v` 通过，106 tests OK
+  - `git diff --check` 通过
 - 已知错误防复发 guard：
   - `workflow-error-correction` 不再以记录为主要目标
   - 明确主要产物是减少重复错误
@@ -690,7 +699,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-开发前方向审核已经升级为主流程门禁。下一次任何新产品方向、新工具、新功能路线或“继续开发还是换方向”的问题，都先用全局 `pre-implementation-workflow-review` 输出 verdict；只有 `build_now` 可以进入实现，其余结论都先验证、改路线或停止。不要默认继续 runtime/sample/dashboard 验证，除非它直接服务于方向审核。下一次进入 AGENTS 编辑、runtime 验证、路线纠正、自动模式延续、方向审核等已知风险场景时，先应用全局 `workflow-error-correction` 里的 known guards，直接改变下一步行为；不要等用户重复指出，也不要把它当成单纯记录工具。后续新增通用工作流时，默认创建或提升为全局 Codex skill，再让项目 `AGENTS.md`、runtime inventory 或薄 adapter 指向它，不在项目内复制完整流程。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。查看当前项目用 `python -m skill_runtime.cli dashboard --open` 或 `python -m skill_runtime.cli runtime-events`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 或 `python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
+开发前方向审核已经升级为主流程门禁。下一次任何新产品方向、新工具、新功能路线或“继续开发还是换方向”的问题，都先用全局 `pre-implementation-workflow-review` 输出 verdict；只有 `build_now` 可以进入实现，其余结论都先验证、改路线或停止。不要默认继续 runtime/sample/dashboard 验证，除非它直接服务于方向审核。下一次进入 AGENTS 编辑、runtime 验证、路线纠正、自动模式延续、方向审核等已知风险场景时，先应用全局 `workflow-error-correction` 里的 known guards，直接改变下一步行为；不要等用户重复指出，也不要把它当成单纯记录工具。后续新增通用工作流时，默认创建或提升为全局 Codex skill，再让项目 `AGENTS.md`、runtime inventory 或薄 adapter 指向它，不在项目内复制完整流程。dashboard 默认技能树应继续保持 workflow-first；普通本地 helpers 只放在 `基础本地技能` 集合或类似二级入口中。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。查看当前项目用 `python -m skill_runtime.cli dashboard --open` 或 `python -m skill_runtime.cli runtime-events`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 或 `python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
 
 ## Important Files
 

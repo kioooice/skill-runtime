@@ -217,7 +217,20 @@ def _skill_payload(
         "content_hash": content_hash if isinstance(content_hash, str) else None,
         "provenance": provenance,
         "is_imported": "imported" in tags or provenance_type == "local_skill_import",
+        "skill_surface": _skill_surface(payload),
     }
+
+
+def _skill_surface(payload: dict[str, Any]) -> str:
+    tags = [str(tag).lower() for tag in payload.get("tags") or []]
+    summary = str(payload.get("summary") or "").lower()
+    docstring = str(payload.get("docstring") or "").lower()
+    provenance = payload.get("provenance") if isinstance(payload.get("provenance"), dict) else {}
+    if "imported" in tags or provenance.get("type") == "local_skill_import":
+        return "workflow"
+    if "workflow" in tags or "global codex skill" in summary or "global codex skill" in docstring:
+        return "workflow"
+    return "basic"
 
 
 def _collect_governance(root: Path, diagnostics: list[str]) -> dict[str, Any]:

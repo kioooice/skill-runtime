@@ -9,6 +9,11 @@ from skill_runtime.collections.model import CapabilityCollectionDefinition
 
 DEFAULT_COLLECTIONS = [
     CapabilityCollectionDefinition(
+        collection_id="basic-skills",
+        label="基础本地技能",
+        description="普通本地文件处理技能，默认不占用工作流技能主视图。",
+    ),
+    CapabilityCollectionDefinition(
         collection_id="text-processing",
         label="文本处理",
         description="合并、清理、替换、Markdown 输出。",
@@ -132,6 +137,8 @@ def _default_skill_names(collection_id: str, skills: list[dict[str, Any]]) -> li
 
 
 def _matches_collection(collection_id: str, skill: dict[str, Any]) -> bool:
+    if collection_id == "basic-skills":
+        return skill.get("skill_surface") == "basic"
     raw_name = str(skill.get("skill_name") or "").lower()
     summary = str(skill.get("summary") or "").lower()
     tags = " ".join(str(tag).lower() for tag in skill.get("tags") or [])

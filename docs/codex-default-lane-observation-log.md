@@ -23,6 +23,16 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Workflow skills become the primary visible surface
+
+- Task type: dashboard skill-surface cleanup
+- Classified as: `default-in` / `entered` because the task had explicit dashboard, collection, test, and state-file outputs
+- What happened: ordinary local file-processing skills were classified as `basic` and moved out of the default skill tree into the built-in `基础本地技能` collection; workflow skills remain the default visible tree
+- Did the behavior feel correct: yes; the user wants to judge workflow capability, not keep seeing low-level local helpers as if they were the main project value
+- Did the lane help: only as traceability; the product improvement is clearer workflow-first visibility
+- Verification: `python -m unittest tests.test_runtime_fast -v` passed with 106 tests; `git diff --check` passed
+- Follow-up: keep future basic helper skills out of the primary workflow view unless the user explicitly asks to inspect foundational utilities
+
 ### 2026-05-03 - Workflow error correction is a prevention guard
 
 - Task type: workflow correction semantics

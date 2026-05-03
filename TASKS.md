@@ -2,6 +2,7 @@
 
 ## Current Focus
 
+- 最新收口：dashboard 默认技能树现在只展示 workflow skills。普通本地文件处理技能没有删除，但已标记为 `basic`，并集中放到 `基础本地技能` 能力集合里；默认视图不再把合并文本、JSON 转 CSV、批量清理等基础 helpers 当成主线工作流能力展示。
 - 当前目标：把 Skill Runtime 真正接到 Codex 默认工作方式上，但先采用受控低风险任务通道，而不是一次性全量切换
 - 当前状态：agent-first runtime 的实验路径已经完成阶段性收口，当前层已证明“先做事，再回收经验”真实可用；当前主线已从“继续证明底层存在”切换到“如何让 Codex 默认使用这层”。现在除了分类文档、host API、MCP 实验入口和 Codex CLI 默认通道以外，phase-one `default-in` 还进一步收窄成四类白名单家族：
   - `project-state-maintenance`
@@ -19,6 +20,7 @@
 - [x] 新增全局 `workflow-error-correction`，把重复流程错误和路线漂移记录从 `AGENTS.md` 移出
 - [x] 将 `workflow-error-correction` 改成先复用已有错误记录防复发，只有新错误模式才新增记录
 - [x] 将 `workflow-error-correction` 重新定位为已知错误防复发守卫，优先改变下一步行为而不是产生日志
+- [x] 将普通本地文件处理技能移入 `基础本地技能` 集合，dashboard 默认技能树只展示 workflow skills
 - [ ] 下一次启动新功能或新路线前，使用 `pre-implementation-workflow-review` 输出四类 verdict，确认它能先审开发方向价值、替代方案、成功指标和停止条件
 - [ ] 如果后续建议继续验证 runtime / 本地技能 / `entered` / `used` 样本，先检查是否又滑回低价值验证循环；除非它直接服务于方向审核，否则停止
 - [ ] 在下一次自动模式或部署任务中 dogfood 对应 workflow skill，确认从 `AGENTS.md` 下沉后的流程仍好用

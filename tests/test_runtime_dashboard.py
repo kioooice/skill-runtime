@@ -91,6 +91,12 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual({"used": 1, "entered": 0, "skipped": 0}, data["overview"]["recent_event_counts"])
         self.assertTrue(any(skill["skill_name"] == "merge_text_files" for skill in data["skills"]))
         self.assertEqual("used", data["events"][0]["runtime_lane_status"])
+        merge_skill = next(skill for skill in data["skills"] if skill["skill_name"] == "merge_text_files")
+        workflow_skill = next(
+            skill for skill in data["skills"] if skill["skill_name"] == "pre_implementation_workflow_review"
+        )
+        self.assertEqual("basic", merge_skill["skill_surface"])
+        self.assertEqual("workflow", workflow_skill["skill_surface"])
 
     def test_dashboard_collector_prefers_active_metadata_when_staging_duplicate_exists(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
@@ -210,6 +216,8 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("运行时可观察面板", html)
         self.assertIn("当前项目总览", html)
         self.assertIn("技能树视图", html)
+        self.assertIn("默认技能树只展示工作流技能", html)
+        self.assertIn("基础本地技能", html)
         self.assertIn("tree-fan", html)
         self.assertIn("radial-tree", html)
         self.assertIn("radial-center", html)
@@ -233,8 +241,9 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("has-skill-group-open", html)
         self.assertIn('event.key === "Escape"', html)
         self.assertNotIn("scrollIntoView", html)
-        self.assertIn('data-skill-group="structured-conversion"', html)
-        self.assertIn('data-skill-group="text-processing"', html)
+        self.assertIn('data-skill-group="runtime-governance"', html)
+        self.assertNotIn('data-skill-group="structured-conversion"', html)
+        self.assertNotIn('data-skill-group="text-processing"', html)
         self.assertIn("格式转换", html)
         self.assertIn("文本处理", html)
         self.assertNotIn('<details class="skill-group', html)
@@ -254,9 +263,9 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("平台与项目", html)
         self.assertIn('data-view-target="platforms"', html)
         self.assertIn('data-view-page="platforms"', html)
+        self.assertIn("基础本地技能", html)
         self.assertIn("目录 JSON 批量转 CSV", html)
-        self.assertIn("将文件夹中的所有 JSON 记录批量导出为 CSV 文件。", html)
-        self.assertIn('data-skill-name="directory_json_to_csv_dogfood"', html)
+        self.assertNotIn('data-skill-name="directory_json_to_csv_dogfood"', html)
         self.assertIn("合并文本文件", html)
         self.assertIn("进入 runtime 观察", html)
         self.assertNotIn("Batch export all JSON records in a folder into CSV files.", html)

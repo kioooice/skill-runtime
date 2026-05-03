@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-03 - Basic Local Skills Are Secondary To Workflow Skills
+
+**Decision**
+
+Dashboard and collection surfaces now treat ordinary local file-processing skills as `basic` skills, not as the primary workflow skill surface. The default skill tree shows only workflow skills. Basic local skills are still available through the `基础本地技能` capability collection.
+
+**Reason**
+
+The user does not need to see low-level local helpers such as text merge, JSON to CSV, or cleanup skills when reviewing workflow capability. Keeping them in the main skill tree makes the project look like it is still centered on basic dogfood utilities instead of reusable workflow judgment and governance.
+
+**Impact**
+
+- Dashboard collection data now marks each skill with `skill_surface`
+- Global/imported workflow candidates and workflow-tagged skills remain visible in the default tree
+- Ordinary local file-processing skills move to the built-in `basic-skills` collection
+- Tests now protect that default skill tree excludes basic helper groups while the collection still exposes them
+
 ### 2026-05-03 - Workflow Error Correction Is A Prevention Guard
 
 **Decision**

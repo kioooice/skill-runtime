@@ -59,6 +59,22 @@ class RuntimeCollectionsTestsMixin:
         self.assertEqual("文本处理", collection["label"])
         self.assertTrue(any(skill["skill_name"] == "merge_text_files" for skill in collection["skills"]))
 
+    def test_default_capability_collections_include_basic_local_skills(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+
+        data = collect_dashboard_data(self.runtime_root)
+        collections = {collection["collection_id"]: collection for collection in data["capability_collections"]}
+
+        self.assertIn("basic-skills", collections)
+        self.assertEqual("基础本地技能", collections["basic-skills"]["label"])
+        self.assertTrue(any(skill["skill_name"] == "merge_text_files" for skill in collections["basic-skills"]["skills"]))
+        self.assertFalse(
+            any(
+                skill["skill_name"] == "pre_implementation_workflow_review"
+                for skill in collections["basic-skills"]["skills"]
+            )
+        )
+
     def test_dashboard_renderer_includes_capability_collections_view(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
         from skill_runtime.dashboard.render import render_dashboard_html

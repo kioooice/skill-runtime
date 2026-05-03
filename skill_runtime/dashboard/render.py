@@ -349,13 +349,19 @@ def _group_skills_by_type(skills: list[dict[str, Any]]) -> list[tuple[str, list[
 
 
 def _skill_tree(skills: list[dict[str, Any]]) -> str:
-    if not skills:
-        body = '<p class="muted">当前运行根目录没有找到技能。</p>'
+    workflow_skills = [skill for skill in skills if skill.get("skill_surface") == "workflow"]
+    hidden_basic_count = len([skill for skill in skills if skill.get("skill_surface") == "basic"])
+    if not workflow_skills:
+        body = '<p class="muted">当前运行根目录没有找到工作流技能。</p>'
     else:
-        body = _skill_tree_branches(skills[:80])
+        body = _skill_tree_branches(workflow_skills[:80])
+    basic_note = ""
+    if hidden_basic_count:
+        basic_note = f'<p class="muted">已将 {text(hidden_basic_count)} 个普通本地技能移入“基础本地技能”集合，默认技能树只展示工作流技能。</p>'
     return f"""<section id="skill-tree-view" class="panel view-panel dashboard-view-page" data-view-page="skill-tree">
   <div class="view-kicker">视图 01</div>
   <h2>技能树视图</h2>
+  {basic_note}
   {body}
 </section>"""
 
