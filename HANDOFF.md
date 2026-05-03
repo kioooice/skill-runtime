@@ -195,6 +195,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
   - `scripts/profile_runtime_tests.py` 新增 `--json-output <path>`
   - JSON 包含 `successful`、`tests_run`、`total_elapsed_seconds` 和 `slowest_tests`
   - 原有文本输出保持不变
+  - README 已补充 `--json-output` 示例
   - contract 单测覆盖 JSON shape，CLI smoke 已写出 `.skill_runtime\profile-runtime-tests-smoke.json`
   - `python -m unittest tests.test_runtime_fast -v` 通过，103 tests OK
   - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/add_json_output_support_to_the_runtime_test_prof_20260503091829.json`

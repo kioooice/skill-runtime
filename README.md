@@ -256,6 +256,12 @@ python -m unittest tests.test_runtime -v
 python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 20
 ```
 
+需要保留可比较的耗时基线时，增加 JSON 输出：
+
+```bash
+python scripts/profile_runtime_tests.py --suite tests.test_runtime_fast --top 20 --json-output .skill_runtime/test-profile-fast.json
+```
+
 如果安装后当前 shell 找不到 `skill-runtime` 或 `skill-runtime-mcp`，请优先使用上面的 `python -m skill_runtime...` 模块入口。
 
 在项目根目录执行可编辑安装：
