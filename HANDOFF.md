@@ -188,6 +188,9 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
   - targeted governance tests 通过，`python -m py_compile skill_runtime\api\service.py skill_runtime\governance\provenance_backfill.py` 通过
   - `python -m unittest tests.test_runtime_fast -v` 通过，102 tests OK
   - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/review_and_tighten_index_refresh_behavior_for_go_20260503090649.json`
+  - 该回归已抽入 `RuntimeGovernanceFastTestsMixin` 并接入 `tests.test_runtime_fast`
+  - 最新 `python -m unittest tests.test_runtime_fast -v` 通过，103 tests OK
+  - 快测覆盖 finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/add_the_governance_same_skill_late_update_regres_20260503091127.json`
 - 完成 `skills-manage` 吸收方案第一阶段：
   - 新增 `docs/platform-skill-inventory-design.md`
   - 新增 `skill_runtime/platforms/registry.py`

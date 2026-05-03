@@ -6,6 +6,7 @@ from tests.test_runtime_collections import RuntimeCollectionsTestsMixin
 from tests.test_runtime_core_dogfood_acceptance import RuntimeCoreDogfoodAcceptanceTestsMixin
 from tests.test_runtime_dashboard import RuntimeDashboardTestsMixin
 from tests.test_runtime_deepseek_provider_examples import RuntimeDeepSeekProviderExampleTestsMixin
+from tests.test_runtime_governance import RuntimeGovernanceFastTestsMixin
 from tests.test_runtime_isolation import RuntimeIsolationTestsMixin
 from tests.test_runtime_mcp_smoke import RuntimeMcpSmokeTestsMixin
 from tests.test_runtime_platform_inventory import RuntimePlatformInventoryTestsMixin
@@ -20,6 +21,7 @@ class RuntimeFastTests(
     RuntimeCoreDogfoodAcceptanceTestsMixin,
     RuntimeDashboardTestsMixin,
     RuntimeDeepSeekProviderExampleTestsMixin,
+    RuntimeGovernanceFastTestsMixin,
     RuntimeIsolationTestsMixin,
     RuntimeMcpSmokeTestsMixin,
     RuntimePlatformExportTestsMixin,

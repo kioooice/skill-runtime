@@ -1315,3 +1315,8 @@ class RuntimeGovernanceTestsMixin:
             tool_name="archive_duplicate_candidates",
         )
         self._assert_operation_role(payload["data"]["available_host_operations"][0], "primary")
+
+
+class RuntimeGovernanceFastTestsMixin:
+    def test_archive_fixture_skills_preserves_late_same_skill_index_updates(self) -> None:
+        RuntimeGovernanceTestsMixin.test_archive_fixture_skills_preserves_late_same_skill_index_updates(self)

@@ -1,0 +1,107 @@
+{
+  "task_id": "add_the_governance_same_skill_late_update_regres_20260503091127",
+  "session_id": "capture_add_the_governance_same_skill_late_update_regres_20260503091127",
+  "task_description": "Add the governance same-skill late-update regression to the fast runtime suite.",
+  "steps": [
+    {
+      "step_id": "1",
+      "tool_name": "run_tests",
+      "tool_input": {
+        "path": "fast_missing_governance_regression"
+      },
+      "observation": "run_tests expected_failure: fast_missing_governance_regression",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "2",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "test_runtime_governance.py"
+      },
+      "observation": "write_text success: test_runtime_governance.py",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "3",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "test_runtime_fast.py"
+      },
+      "observation": "write_text success: test_runtime_fast.py",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "4",
+      "tool_name": "run_tests",
+      "tool_input": {
+        "path": "fast_governance_regression"
+      },
+      "observation": "run_tests success: fast_governance_regression",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "5",
+      "tool_name": "py_compile",
+      "tool_input": {
+        "path": "fast_test_files"
+      },
+      "observation": "py_compile success: fast_test_files",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "6",
+      "tool_name": "run_tests",
+      "tool_input": {
+        "path": "tests.test_runtime_fast"
+      },
+      "observation": "run_tests success: tests.test_runtime_fast",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "7",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "HANDOFF.md"
+      },
+      "observation": "write_text success: HANDOFF.md",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "8",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "TASKS.md"
+      },
+      "observation": "write_text success: TASKS.md",
+      "status": "success",
+      "thought_summary": null
+    },
+    {
+      "step_id": "9",
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "codex-default-lane-observation-log.md"
+      },
+      "observation": "write_text success: codex-default-lane-observation-log.md",
+      "status": "success",
+      "thought_summary": null
+    }
+  ],
+  "final_status": "success",
+  "artifacts": [
+    "tests/test_runtime_governance.py",
+    "tests/test_runtime_fast.py",
+    "HANDOFF.md",
+    "TASKS.md",
+    "docs/codex-default-lane-observation-log.md"
+  ],
+  "started_at": "2026-05-03T09:11:27.606451+00:00",
+  "ended_at": "2026-05-03T09:11:27.606451+00:00"
+}

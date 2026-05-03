@@ -32,6 +32,8 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the lane help: yes, because this came from the remaining task list and produced a concrete regression test before implementation
 - Verification: the new same-skill late-update test failed first, then passed; related governance tests passed; Python compile checks passed; fast suite passed with 102 tests
 - Finalizer: returned `runtime_lane_status: used` and captured `trajectories/review_and_tighten_index_refresh_behavior_for_go_20260503090649.json`
+- Fast coverage: the same-skill late-update regression now runs through `tests.test_runtime_fast`, which passed with 103 tests
+- Fast coverage finalizer: returned `runtime_lane_status: used` and captured `trajectories/add_the_governance_same_skill_late_update_regres_20260503091127.json`
 - Follow-up: apply the same changed-only merge pattern to any future governance write path
 
 ### 2026-05-03 - Codex CLI JSON file arguments
