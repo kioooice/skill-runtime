@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-03 - Development Observation Can Be Triggered By Explicit Output Paths
+
+**Decision**
+
+The Codex task classifier now treats explicit development output paths as a valid `development-workflow-observation` signal, even when the task description uses neutral wording. Outputs under project development areas such as `skill_runtime/`, `tests/`, `docs/`, `scripts/`, and `.github/` with development file extensions can enter `default-in`.
+
+**Reason**
+
+Real Codex development requests often say what changed without using words like implement, refactor, test, or docs. The previous classifier could skip an obvious code/test/documentation task simply because the description was neutral, even though expected outputs clearly pointed at project development files.
+
+**Impact**
+
+- Clear code/test/doc/config output paths can enter the runtime observation lane
+- Broad local work without explicit outputs remains `guarded-in`
+- Silent reuse is still disabled for broad development tasks when requested
+
 ### 2026-05-03 - Captured Trajectories Expose One-Step Promotion Follow-Ups
 
 **Decision**

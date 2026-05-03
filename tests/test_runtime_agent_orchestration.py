@@ -145,6 +145,25 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertIn("family:development-workflow-observation", classification.matched_signals)
         self.assertIn("workspace-scoped", classification.matched_signals)
 
+    def test_codex_task_classifier_uses_development_output_paths_as_observation_signal(self) -> None:
+        from skill_runtime.api.host import classify_codex_task
+
+        classification = classify_codex_task(
+            AgentTaskRequest(
+                task_description="Expose captured trajectory promotion follow-ups.",
+                working_directory=str(self.runtime_root),
+                expected_outputs=[
+                    "skill_runtime/mcp/recommendation_builders.py",
+                    "tests/test_runtime_host_operations.py",
+                ],
+                risk_level="medium",
+                task_kind="workflow",
+            )
+        )
+
+        self.assertEqual("default-in", classification.bucket)
+        self.assertIn("family:development-workflow-observation", classification.matched_signals)
+
     def test_codex_host_api_run_task_enters_runtime_lane_for_development_workflow_without_auto_execution(self) -> None:
         from skill_runtime.api.host import run_codex_task
 

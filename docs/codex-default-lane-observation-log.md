@@ -23,6 +23,16 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Development output paths as observation signal
+
+- Task type: Codex default-lane classifier improvement
+- Classified as: `default-in` / `entered` after the classifier began using explicit development output paths as a signal; finalizer returned `runtime_lane_status: used`
+- What happened: tasks with neutral descriptions can now enter `development-workflow-observation` when expected outputs clearly point to project code, tests, docs, scripts, or CI/config files
+- Did the behavior feel correct: yes; the runtime should observe clear development work even when the user or agent does not use exact implementation keywords
+- Did the lane help: yes, because the previous skipped/guarded behavior exposed a real classifier blind spot during auto-mode development
+- Finalizer: captured `trajectories/teach_the_codex_default_classifier_to_recognize__20260503063126.json` and exposed the new captured workflow promotion follow-up operations
+- Follow-up: keep broad tasks without explicit outputs in `guarded-in`, and continue checking real finalizer samples for `used` trajectories
+
 ### 2026-05-03 - Captured workflow promotion follow-ups
 
 - Task type: auto-mode core Skill Runtime development

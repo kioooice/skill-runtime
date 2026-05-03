@@ -81,6 +81,25 @@ class CodexTaskClassifier:
         "folder",
     )
     STATE_FILE_NAMES = {"handoff.md", "tasks.md", "decisions.md"}
+    DEVELOPMENT_OUTPUT_PREFIXES = (
+        ".github/",
+        "docs/",
+        "scripts/",
+        "skill_runtime/",
+        "tests/",
+    )
+    DEVELOPMENT_OUTPUT_EXTENSIONS = {
+        ".js",
+        ".jsx",
+        ".json",
+        ".md",
+        ".py",
+        ".toml",
+        ".ts",
+        ".tsx",
+        ".yaml",
+        ".yml",
+    }
     ALLOWED_DEFAULT_IN_FAMILIES = {
         "project-state-maintenance",
         "local-text-transformation",
@@ -210,12 +229,23 @@ class CodexTaskClassifier:
     def _is_development_workflow(self, request: AgentTaskRequest, description: str) -> bool:
         if not request.working_directory or not request.expected_outputs:
             return False
-        if not self._has_keyword(description, self.DEVELOPMENT_WORKFLOW_KEYWORDS):
-            return False
-        return self._mentions_extension_or_path(
-            request,
-            {".py", ".js", ".jsx", ".ts", ".tsx", ".md", ".toml", ".yaml", ".yml", ".json"},
-        )
+        if self._has_keyword(description, self.DEVELOPMENT_WORKFLOW_KEYWORDS):
+            return self._mentions_extension_or_path(
+                request,
+                {".py", ".js", ".jsx", ".ts", ".tsx", ".md", ".toml", ".yaml", ".yml", ".json"},
+            )
+        return self._has_development_output_path(request)
+
+    def _has_development_output_path(self, request: AgentTaskRequest) -> bool:
+        for value in request.expected_outputs:
+            if not isinstance(value, str):
+                continue
+            normalized = value.replace("\\", "/").lower()
+            if not any(normalized.startswith(prefix) for prefix in self.DEVELOPMENT_OUTPUT_PREFIXES):
+                continue
+            if any(normalized.endswith(extension) for extension in self.DEVELOPMENT_OUTPUT_EXTENSIONS):
+                return True
+        return False
 
     def _mentions_extension_or_path(self, request: AgentTaskRequest, extensions: set[str]) -> bool:
         values = list(request.known_inputs.values()) + list(request.expected_outputs)
