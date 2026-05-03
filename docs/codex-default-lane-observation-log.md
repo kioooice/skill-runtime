@@ -23,6 +23,16 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Dashboard shows learning follow-up actions
+
+- Task type: runtime lane observability improvement
+- Classified as: `default-in` / `entered` because the task had explicit project development outputs; finalizer returned `runtime_lane_status: used`
+- What happened: runtime lane event records now include recommended next action and available follow-up operation labels, and dashboard trigger logs render those fields
+- Did the behavior feel correct: yes; this keeps the dashboard read-only while making captured learning outputs actionable
+- Did the lane help: yes, because the previous finalizer output proved the follow-up actions existed but the dashboard could not show them
+- Finalizer: captured `trajectories/show_finalizer_learning_follow_up_actions_in_the_20260503063848.json`
+- Follow-up: keep checking whether these labels are enough in real use before adding any clickable mutation controls
+
 ### 2026-05-03 - Development output paths as observation signal
 
 - Task type: Codex default-lane classifier improvement

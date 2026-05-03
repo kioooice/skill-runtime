@@ -230,6 +230,18 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertEqual("new_skill_candidate", finalized.learning_decision.decision)
         self.assertEqual("used", finalized.runtime_lane_status)
         self.assertTrue(finalized.learning_capture_payload["captured"])
+        event_path = self.runtime_root / ".skill_runtime" / "runtime_lane_events.jsonl"
+        events = [
+            json.loads(line)
+            for line in event_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.assertEqual("used", events[-1]["runtime_lane_status"])
+        self.assertEqual("distill_trajectory", events[-1]["recommended_next_action"])
+        self.assertIn(
+            "Promote captured workflow globally",
+            events[-1]["available_host_operation_labels"],
+        )
 
     def test_codex_host_api_run_task_executes_default_in_flow(self) -> None:
         from skill_runtime.api.host import run_codex_task

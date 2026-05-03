@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-03 - Runtime Events Record Learning Follow-Up Actions
+
+**Decision**
+
+Runtime lane events now persist finalizer learning follow-up fields: `recommended_next_action`, available host operation count, operation labels, and operation tool names. The dashboard trigger log renders the next action and the visible follow-up operation labels for both project and global log rows.
+
+**Reason**
+
+After capture recommendations learned to expose one-step promotion follow-ups, the event log still only showed lane status and a trajectory path. That made the real next step visible in the API response but invisible in the dashboard users inspect later.
+
+**Impact**
+
+- `used` runtime events can show the captured workflow's next action
+- Dashboard trigger logs can surface promotion follow-ups without adding mutation buttons
+- The dashboard remains read-only
+
 ### 2026-05-03 - Development Observation Can Be Triggered By Explicit Output Paths
 
 **Decision**

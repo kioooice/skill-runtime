@@ -42,6 +42,8 @@ def read_runtime_lane_events(root: str | Path, limit: int | None = None) -> list
 
 def _event_from_result(root: Path, result: AgentOrchestrationResult) -> dict[str, Any]:
     classification = result.task_classification
+    learning_capture = result.learning_capture_payload if isinstance(result.learning_capture_payload, dict) else {}
+    available_operations = _available_host_operations(learning_capture)
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "working_directory": str(root),
@@ -55,6 +57,10 @@ def _event_from_result(root: Path, result: AgentOrchestrationResult) -> dict[str
         "learning_decision": result.learning_decision.decision if result.learning_decision else None,
         "selected_skill_name": result.selected_skill_name,
         "observed_task_record": _observed_task_record(result),
+        "recommended_next_action": _string_or_none(learning_capture.get("recommended_next_action")),
+        "available_host_operation_count": len(available_operations),
+        "available_host_operation_labels": _operation_values(available_operations, "display_label"),
+        "available_host_operation_tools": _operation_values(available_operations, "tool_name"),
     }
 
 
@@ -68,3 +74,23 @@ def _observed_task_record(result: AgentOrchestrationResult) -> str | None:
         if isinstance(value, str):
             return value
     return None
+
+
+def _available_host_operations(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    operations = payload.get("available_host_operations")
+    if not isinstance(operations, list):
+        return []
+    return [operation for operation in operations if isinstance(operation, dict)]
+
+
+def _operation_values(operations: list[dict[str, Any]], key: str) -> list[str]:
+    values: list[str] = []
+    for operation in operations:
+        value = operation.get(key)
+        if isinstance(value, str) and value:
+            values.append(value)
+    return values
+
+
+def _string_or_none(value: Any) -> str | None:
+    return value if isinstance(value, str) and value else None

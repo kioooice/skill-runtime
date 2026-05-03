@@ -15,6 +15,8 @@ class RuntimeDashboardTestsMixin:
         runtime_lane_status: str,
         runtime_lane_reason: str,
         selected_skill_name: str | None = None,
+        recommended_next_action: str | None = None,
+        available_host_operation_labels: list[str] | None = None,
     ) -> None:
         event_dir = project_root / ".skill_runtime"
         event_dir.mkdir(parents=True, exist_ok=True)
@@ -32,6 +34,8 @@ class RuntimeDashboardTestsMixin:
                     "learning_decision": "skip",
                     "selected_skill_name": selected_skill_name,
                     "observed_task_record": None,
+                    "recommended_next_action": recommended_next_action,
+                    "available_host_operation_labels": available_host_operation_labels or [],
                 },
                 ensure_ascii=False,
             )
@@ -256,6 +260,28 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("合并文本文件", html)
         self.assertIn("进入 runtime 观察", html)
         self.assertNotIn("Batch export all JSON records in a folder into CSV files.", html)
+
+    def test_dashboard_renderer_shows_runtime_follow_up_actions(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+        from skill_runtime.dashboard.render import render_dashboard_html
+
+        self._write_dashboard_event(
+            self.runtime_root,
+            timestamp="2026-05-03T06:40:00+00:00",
+            task_description="capture a reusable workflow",
+            runtime_lane_status="used",
+            runtime_lane_reason="captured learning payload",
+            recommended_next_action="distill_trajectory",
+            available_host_operation_labels=[
+                "Distill captured trajectory",
+                "Promote captured workflow globally",
+            ],
+        )
+
+        html = render_dashboard_html(collect_dashboard_data(self.runtime_root))
+
+        self.assertIn("下一步：distill_trajectory", html)
+        self.assertIn("Promote captured workflow globally", html)
 
     def test_dashboard_collector_includes_imported_staging_provenance(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data

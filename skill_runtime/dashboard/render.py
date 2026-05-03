@@ -210,6 +210,7 @@ def _global_event_row(event: dict[str, Any]) -> str:
   <div><span class="event-project">{text(event.get("project_name"))}</span> {badge(event.get("runtime_lane_status"))} <strong>{text(event.get("task_description"))}</strong></div>
   <div class="muted">{text(event.get("timestamp"))} - {text(skill)}</div>
   <div class="reason">{text(event.get("runtime_lane_reason"))}</div>
+  {_event_follow_up(event)}
 </article>"""
 
 
@@ -573,7 +574,20 @@ def _event_row(event: dict[str, Any]) -> str:
   <div>{badge(event.get("runtime_lane_status"))} <strong>{text(event.get("task_description"))}</strong></div>
   <div class="muted">{text(event.get("timestamp"))} - {text(skill)}</div>
   <div class="reason">{text(event.get("runtime_lane_reason"))}</div>
+  {_event_follow_up(event)}
 </article>"""
+
+
+def _event_follow_up(event: dict[str, Any]) -> str:
+    next_action = event.get("recommended_next_action")
+    labels = event.get("available_host_operation_labels")
+    if not isinstance(next_action, str) or not next_action:
+        return ""
+    operation_labels = [str(label) for label in labels if isinstance(label, str)] if isinstance(labels, list) else []
+    labels_html = ""
+    if operation_labels:
+        labels_html = f"""<div class="event-actions">{text("；".join(operation_labels[:4]))}</div>"""
+    return f"""<div class="event-followup"><strong>下一步：{text(next_action)}</strong>{labels_html}</div>"""
 
 
 def _governance(governance: dict[str, Any], diagnostics: list[str]) -> str:

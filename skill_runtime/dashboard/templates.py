@@ -173,6 +173,9 @@ body[data-active-view="global-log"] [data-view-page="global-log"] { display: blo
 .event { border-bottom: 1px solid var(--line); padding: 12px 0; }
 .event:last-child { border-bottom: 0; }
 .reason { color: var(--muted); margin-top: 4px; }
+.event-followup { border-left: 3px solid var(--line-strong); color: var(--muted); margin-top: 8px; padding-left: 10px; }
+.event-followup strong { color: #8a5b13; display: block; margin-bottom: 2px; }
+.event-actions { font-size: 13px; }
 .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
 .collection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
 .collection-card { border: 1px solid var(--line); border-radius: 20px; background: rgba(255,253,247,.76); padding: 14px; box-shadow: 0 12px 28px rgba(79,54,27,.06); }
