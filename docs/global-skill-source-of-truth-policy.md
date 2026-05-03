@@ -43,6 +43,20 @@ Use:
 python -m skill_runtime.cli promote-global-codex-skill --file <staging-skill.py>
 ```
 
+For the full captured-workflow path, use:
+
+```text
+python -m skill_runtime.cli distill-and-promote --trajectory <trajectory.json> --skill-name <name> --promotion-target global-codex
+```
+
+or start from an observed task record:
+
+```text
+python -m skill_runtime.cli distill-and-promote --observed-task <observed-task.json> --skill-name <name> --promotion-target global-codex
+```
+
+The same target is available through the service API and MCP `distill_and_promote_candidate` tool as `promotion_target: "global_codex"`.
+
 Workflow staging metadata tagged with `workflow`, `global-workflow`, or `codex-skill` should recommend `promote_global_codex_skill` after a passing audit. The resulting global skill writes:
 
 - `<global skills dir>/<skill-name>/SKILL.md`

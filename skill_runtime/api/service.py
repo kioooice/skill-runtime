@@ -943,7 +943,12 @@ class RuntimeService:
         observed_task: dict[str, Any] | None = None,
         skill_name: str | None = None,
         register_trajectory: bool = True,
+        promotion_target: str = "active",
+        global_skills_dir: str | Path | None = None,
+        global_skill_name: str | None = None,
+        overwrite_global_skill: bool = False,
     ) -> dict[str, Any]:
+        resolved_promotion_target = _normalize_promotion_target(promotion_target)
         provided_inputs = [
             value
             for value in (trajectory_path, observed_task_path, observed_task)
@@ -970,8 +975,19 @@ class RuntimeService:
         promotion_result: dict[str, Any] | None = None
         skipped_reason: str | None = None
         if promoted:
-            promotion_result = self.promote(distill_result["staging_file"])
-            recommendation = recommendation_from_payload(promotion_result)
+            if resolved_promotion_target == "global_codex":
+                promotion_result = self.promote_to_global_codex_skill(
+                    distill_result["staging_file"],
+                    global_skills_dir=global_skills_dir,
+                    global_skill_name=global_skill_name,
+                    overwrite=overwrite_global_skill,
+                )
+                recommendation = no_recommendation(
+                    "The workflow was promoted to the global Codex skill library."
+                )
+            else:
+                promotion_result = self.promote(distill_result["staging_file"])
+                recommendation = recommendation_from_payload(promotion_result)
         else:
             skipped_reason = "promotion skipped because audit did not pass"
             recommendation = no_recommendation(
@@ -985,6 +1001,7 @@ class RuntimeService:
                 "distillation": distill_result,
                 "audit": audit_result,
                 "promotion": promotion_result,
+                "promotion_target": resolved_promotion_target,
                 "promoted": promoted,
                 "skipped_reason": skipped_reason,
             },
@@ -1065,6 +1082,17 @@ def _global_skill_directory_name(raw_name: str) -> str:
     if not name:
         raise RuntimeServiceError("global skill name cannot be empty", "INVALID_GLOBAL_SKILL_NAME")
     return name
+
+
+def _normalize_promotion_target(raw_target: str) -> str:
+    target = raw_target.strip().replace("-", "_").lower()
+    if target not in {"active", "global_codex"}:
+        raise RuntimeServiceError(
+            "promotion_target must be active or global_codex",
+            "INVALID_PROMOTION_TARGET",
+            {"promotion_target": raw_target},
+        )
+    return target
 
 
 def _prefers_global_codex_skill(metadata: dict[str, Any]) -> bool:

@@ -110,6 +110,103 @@ class RuntimePlatformExportTestsMixin:
         self.assertEqual("authoritative_global_skill", data["source_role"])
         self.assertTrue((global_skills_dir / "manual-validation-before-mvp" / "SKILL.md").exists())
 
+    def test_service_distill_and_promote_can_target_global_codex_skill(self) -> None:
+        global_skills_dir = self.runtime_root / "global-distill-promote"
+        result = self.service.distill_and_promote(
+            trajectory_path=self.runtime_root / "trajectories" / "demo_merge_text_files.json",
+            skill_name="review_global_promotion_target",
+            promotion_target="global_codex",
+            global_skills_dir=global_skills_dir,
+        )
+
+        self.assertTrue(result["promoted"])
+        self.assertEqual("global_codex", result["promotion_target"])
+        self.assertEqual("review-global-promotion-target", result["promotion"]["global_skill_name"])
+        self.assertEqual("authoritative_global_skill", result["promotion"]["source_role"])
+        self.assertFalse((self.runtime_root / "skill_store" / "active" / "review_global_promotion_target.py").exists())
+        self.assertIsNone(self.index.get("review_global_promotion_target"))
+        self.assertTrue((global_skills_dir / "review-global-promotion-target" / "SKILL.md").exists())
+
+    def test_cli_distill_and_promote_can_target_global_codex_skill(self) -> None:
+        global_skills_dir = self.runtime_root / "global-distill-promote-cli"
+        payload = self._run_cli(
+            "distill-and-promote",
+            "--trajectory",
+            str(self.runtime_root / "trajectories" / "demo_merge_text_files.json"),
+            "--skill-name",
+            "cli_review_global_promotion_target",
+            "--promotion-target",
+            "global-codex",
+            "--global-skills-dir",
+            str(global_skills_dir),
+            root=self.runtime_root,
+            expect_json=True,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        data = payload["data"]
+        self.assertTrue(data["promoted"])
+        self.assertEqual("global_codex", data["promotion_target"])
+        self.assertEqual("cli-review-global-promotion-target", data["promotion"]["global_skill_name"])
+        self.assertTrue((global_skills_dir / "cli-review-global-promotion-target" / "SKILL.md").exists())
+
+    def test_mcp_distill_and_promote_can_target_global_codex_skill(self) -> None:
+        global_skills_dir = self.runtime_root / "global-distill-promote-mcp"
+        payload = self._call_mcp_tool(
+            "distill_and_promote_candidate",
+            {
+                "trajectory_path": str(self.runtime_root / "trajectories" / "demo_merge_text_files.json"),
+                "skill_name": "mcp_review_global_promotion_target",
+                "register_trajectory": True,
+                "promotion_target": "global_codex",
+                "global_skills_dir": str(global_skills_dir),
+            },
+            root=self.runtime_root,
+        )
+
+        data = payload["data"]
+        self.assertTrue(data["promoted"])
+        self.assertEqual("global_codex", data["promotion_target"])
+        self.assertEqual("mcp-review-global-promotion-target", data["promotion"]["global_skill_name"])
+        self.assertTrue((global_skills_dir / "mcp-review-global-promotion-target" / "SKILL.md").exists())
+
+    def test_observed_task_distill_and_promote_can_target_global_codex_skill(self) -> None:
+        observed_path = self._write_json_file(
+            self.runtime_root / "demo" / "observed_global_distill_promote.json",
+            self._build_move_logs_observed_task(variant="steps", artifact=None),
+        )
+        global_skills_dir = self.runtime_root / "global-observed-distill-promote"
+
+        result = self.service.distill_and_promote(
+            observed_task_path=observed_path,
+            skill_name="observed_review_global_promotion_target",
+            promotion_target="global_codex",
+            global_skills_dir=global_skills_dir,
+        )
+
+        self.assertTrue(result["promoted"])
+        self.assertIsNotNone(result["capture"])
+        self.assertIsNone(result["trajectory"])
+        self.assertEqual("global_codex", result["promotion_target"])
+        self.assertEqual("observed-review-global-promotion-target", result["promotion"]["global_skill_name"])
+        self.assertFalse(
+            (self.runtime_root / "skill_store" / "active" / "observed_review_global_promotion_target.py").exists()
+        )
+        self.assertIsNone(self.index.get("observed_review_global_promotion_target"))
+        self.assertTrue((global_skills_dir / "observed-review-global-promotion-target" / "SKILL.md").exists())
+
+    def test_distill_and_promote_rejects_unknown_promotion_target(self) -> None:
+        from skill_runtime.api.service import RuntimeServiceError
+
+        with self.assertRaises(RuntimeServiceError) as blocked:
+            self.service.distill_and_promote(
+                trajectory_path=self.runtime_root / "trajectories" / "demo_merge_text_files.json",
+                skill_name="invalid_promotion_target_test",
+                promotion_target="global",
+            )
+
+        self.assertEqual("INVALID_PROMOTION_TARGET", blocked.exception.code)
+
     def test_platform_export_plan_previews_active_skill_without_writing_target(self) -> None:
         from skill_runtime.platforms.export_plan import plan_platform_export
         from skill_runtime.platforms.registry import PlatformRoot

@@ -153,6 +153,10 @@ def build_mcp_server(root: str | Path) -> FastMCP:
         observed_task: dict[str, Any] | None = None,
         skill_name: str | None = None,
         register_trajectory: bool = True,
+        promotion_target: str = "active",
+        global_skills_dir: str | None = None,
+        global_skill_name: str | None = None,
+        overwrite_global_skill: bool = False,
     ) -> dict[str, Any]:
         return _wrap_tool(
             service,
@@ -162,6 +166,10 @@ def build_mcp_server(root: str | Path) -> FastMCP:
             observed_task=observed_task,
             skill_name=skill_name,
             register_trajectory=register_trajectory,
+            promotion_target=promotion_target,
+            global_skills_dir=global_skills_dir,
+            global_skill_name=global_skill_name,
+            overwrite_global_skill=overwrite_global_skill,
         )
 
     @server.tool(

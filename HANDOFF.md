@@ -100,6 +100,14 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
   - 全局 promotion 写入 `SKILL.md` 和 `agents/openai.yaml`，不创建项目 active copy，不更新项目 active index
   - `python -m unittest tests.test_runtime_fast -v` 通过，87 tests OK
   - `python scripts/evaluate_search_quality.py` 通过，23/23
+- `distill-and-promote` 全局目标闭环：
+  - `RuntimeService.distill_and_promote(...)` 新增 `promotion_target`
+  - CLI 新增 `distill-and-promote --promotion-target global-codex`
+  - MCP `distill_and_promote_candidate` 支持 `promotion_target: global_codex`
+  - 默认仍为项目 active promotion；只有显式指定全局目标时才写入全局 Codex skills
+  - 全局目标不会创建项目 active copy，也不会更新 active index
+  - `python -m unittest tests.test_runtime_fast -v` 通过，90 tests OK
+  - `python scripts/evaluate_search_quality.py` 通过，23/23
 - 新增开发方向价值门禁 active skill：
   - 新增 `skill_store/active/pre_implementation_workflow_review.py`
   - 新增 `skill_store/active/pre_implementation_workflow_review.metadata.json`
@@ -564,7 +572,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-AGENTS 瘦身、workflow skill 下沉、全局 Codex skills 安装、“全局 skill 单一权威来源”策略、项目 workflow active skills adapter 化，以及全局 Codex skill promotion 生命周期路径都已经落地。下一步如果用户同意进入版本收口，检查当前 diff 后提交项目内这批 workflow skill 改造；全局 `C:\Users\Administrator\.codex` 下的 skill 安装属于本机配置，不会随仓库提交。后续新增通用工作流时，默认创建或提升为全局 Codex skill，再让项目 `AGENTS.md`、runtime inventory 或薄 adapter 指向它，不在项目内复制完整流程。当前可用命令是 `python -m skill_runtime.cli promote-global-codex-skill --file <staging-skill.py>`；带 `workflow`、`global-workflow` 或 `codex-skill` 标签的 staging metadata 在 audit 通过后会优先推荐 `promote_global_codex_skill`。对广义开发任务仍传 `allow_silent_reuse=false`，任务完成后如有结构化 execution payload，继续确认 finalizer 是否能产生 `runtime_lane_status: used` 和 captured trajectory。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。查看当前项目用 `python -m skill_runtime.cli dashboard --open`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
+AGENTS 瘦身、workflow skill 下沉、全局 Codex skills 安装、“全局 skill 单一权威来源”策略、项目 workflow active skills adapter 化、全局 Codex skill promotion 生命周期路径，以及 `distill-and-promote --promotion-target global-codex` 都已经落地。后续新增通用工作流时，默认创建或提升为全局 Codex skill，再让项目 `AGENTS.md`、runtime inventory 或薄 adapter 指向它，不在项目内复制完整流程。当前可用命令有两条：`python -m skill_runtime.cli promote-global-codex-skill --file <staging-skill.py>` 适合已有 staging skill；`python -m skill_runtime.cli distill-and-promote --trajectory <trajectory.json> --skill-name <name> --promotion-target global-codex` 适合从 trajectory/observed task 直接走完整闭环。对广义开发任务仍传 `allow_silent_reuse=false`，任务完成后如有结构化 execution payload，继续确认 finalizer 是否能产生 `runtime_lane_status: used` 和 captured trajectory。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。查看当前项目用 `python -m skill_runtime.cli dashboard --open`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
 
 ## Important Files
 

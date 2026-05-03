@@ -571,6 +571,10 @@ def cmd_distill_and_promote(args: argparse.Namespace) -> int:
                 observed_task=observed_task,
                 skill_name=args.skill_name,
                 register_trajectory=not args.skip_log,
+                promotion_target=args.promotion_target,
+                global_skills_dir=args.global_skills_dir,
+                global_skill_name=args.global_skill_name,
+                overwrite_global_skill=args.overwrite_global_skill,
             )
         )
     except RuntimeServiceError as exc:
@@ -660,6 +664,14 @@ def build_parser() -> argparse.ArgumentParser:
     distill_promote_parser.add_argument("--observed-task-json-file")
     distill_promote_parser.add_argument("--skill-name")
     distill_promote_parser.add_argument("--skip-log", action="store_true")
+    distill_promote_parser.add_argument(
+        "--promotion-target",
+        choices=("active", "global-codex", "global_codex"),
+        default="active",
+    )
+    distill_promote_parser.add_argument("--global-skills-dir")
+    distill_promote_parser.add_argument("--global-skill-name")
+    distill_promote_parser.add_argument("--overwrite-global-skill", action="store_true")
     distill_promote_parser.set_defaults(func=cmd_distill_and_promote)
 
     audit_parser = subparsers.add_parser("audit")

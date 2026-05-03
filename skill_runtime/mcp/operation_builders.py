@@ -26,6 +26,10 @@ TOOL_PRESETS = {
             "observed_task": {"type": "object", "required": False, "prefilled": False},
             "skill_name": {"type": "string", "required": False, "prefilled": False},
             "register_trajectory": {"type": "boolean", "required": False, "prefilled": False},
+            "promotion_target": {"type": "string", "required": False, "prefilled": False},
+            "global_skills_dir": {"type": "string", "required": False, "prefilled": False},
+            "global_skill_name": {"type": "string", "required": False, "prefilled": False},
+            "overwrite_global_skill": {"type": "boolean", "required": False, "prefilled": False},
         },
         "risk_level": "low",
         "requires_confirmation": False,
@@ -773,6 +777,10 @@ def distill_and_promote_operation(
     observed_task: dict[str, Any] | None = None,
     skill_name: str | None = None,
     register_trajectory: bool | None = None,
+    promotion_target: str | None = None,
+    global_skills_dir: str | None = None,
+    global_skill_name: str | None = None,
+    overwrite_global_skill: bool | None = None,
     display_label: str | None = None,
     effect_summary: str | None = None,
     argument_schema: dict[str, Any] | None = None,
@@ -796,6 +804,14 @@ def distill_and_promote_operation(
         arguments["skill_name"] = skill_name
     if register_trajectory is not None:
         arguments["register_trajectory"] = register_trajectory
+    if promotion_target is not None:
+        arguments["promotion_target"] = promotion_target
+    if global_skills_dir is not None:
+        arguments["global_skills_dir"] = global_skills_dir
+    if global_skill_name is not None:
+        arguments["global_skill_name"] = global_skill_name
+    if overwrite_global_skill is not None:
+        arguments["overwrite_global_skill"] = overwrite_global_skill
     return tool_call(
         "distill_and_promote_candidate",
         arguments,

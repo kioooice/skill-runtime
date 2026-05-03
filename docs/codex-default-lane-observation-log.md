@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Distill and promote directly to global Codex skills
+
+- Task type: real Codex feature development after direction review
+- Classified as: `guarded-in` via the runtime gate because the work changes lifecycle semantics and should not be silently reused
+- What happened: extended `distill_and_promote` so service, CLI, and MCP callers can choose `promotion_target: global_codex`; the default target remains project active
+- Did the behavior feel correct: yes; this was a valuable small feature because it closes the global workflow skill lifecycle without starting rich UI or GitHub import
+- Did the lane help: yes, because the direction review avoided a broad UI detour and kept the work centered on the core closed loop
+- Follow-up: dogfood this path with a real broadly reusable workflow candidate before widening any automatic promotion behavior
+
 ### 2026-05-03 - Global Codex skill promotion lifecycle
 
 - Task type: real Codex development workflow and lifecycle routing update

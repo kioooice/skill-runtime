@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-03 - Distill-And-Promote Can Target Global Codex Skills
+
+**Decision**
+
+`distill_and_promote` now accepts a promotion target. The default remains project `active`, but callers can pass `promotion_target="global_codex"` or CLI `--promotion-target global-codex` to run the full `capture/register -> distill -> audit -> promote` path into the global Codex skill library.
+
+**Reason**
+
+The previous global promotion path still required a staging skill to already exist, then a separate command to promote it globally. That left a gap in the real lifecycle: successful reusable workflows could still be easiest to promote into project active. Adding the target to `distill_and_promote` closes the workflow loop without adding UI or broader platform writes.
+
+**Impact**
+
+- Service, CLI, and MCP `distill_and_promote_candidate` support the global target
+- Global target writes `SKILL.md` and `agents/openai.yaml`
+- Global target does not create a project active copy or update the active index
+- Fast verification now passes 90 tests; search quality remains 23/23
+
 ### 2026-05-03 - Reusable Workflow Promotion Defaults To Global Codex Skills
 
 **Decision**
