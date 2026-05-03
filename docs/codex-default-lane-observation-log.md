@@ -23,6 +23,63 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Global Codex skill promotion lifecycle
+
+- Task type: real Codex development workflow and lifecycle routing update
+- Classified as: `guarded-in` through the CLI fallback gate, with `runtime_lane_status: skipped` because the task was broader than the current phase-one default-in families
+- What happened: added a concrete global Codex skill promotion path for reusable workflow skills, including service API, CLI command, MCP host operation, audit follow-up routing, tests, and policy docs
+- Did the behavior feel correct: yes; this task should be observed and finalized, but not silently executed by the runtime because it changes lifecycle semantics
+- Did the lane help: yes, because it exposed the exact boundary: the runtime should record this governance change, while Codex implements it normally
+- Follow-up: use `promote-global-codex-skill` for future broadly reusable workflow candidates instead of project active promotion
+
+### 2026-05-03 - Runtime workflow skills converted to adapters
+
+- Task type: real Codex development workflow and source-of-truth cleanup
+- Classified as: `default-in` via structured local workflow conversion, with `runtime_lane_status: entered`
+- What happened: converted the 8 project workflow active skills into thin global Codex skill adapters, keeping Runtime search/execution visibility while removing duplicated workflow logic from project active scripts
+- Did the behavior feel correct: yes; this matches the new source-of-truth policy and keeps project Runtime entries as adapters rather than second full copies
+- Did the lane help: yes, because it made this cleanup observable as a reusable source-of-truth governance pattern
+- Finalizer: returned `runtime_lane_status: used` and captured `trajectories/convert_project_workflow_runtime_skills_to_thin__20260503054607.json`
+- Follow-up: in a fresh Codex session, confirm the global skills trigger directly and use runtime adapters only when explicit Runtime search/execute is requested
+
+### 2026-05-03 - Global skill source of truth policy
+
+- Task type: real Codex development workflow and governance adjustment
+- Classified as: `default-in` via `development-workflow-observation`, with `runtime_lane_status: entered`
+- What happened: made global Codex skills the default authoritative home for reusable workflow skills, documented the policy, updated global and project `AGENTS.md`, and extended platform inventory/dashboard to mark global Codex skills as `authoritative_global_skill`
+- Did the behavior feel correct: yes; this is broad workflow governance work that should be observed but not silently executed
+- Did the lane help: yes, because it kept the distinction visible between global skill source-of-truth, project routing, and runtime adapters
+- Finalizer: returned `runtime_lane_status: used` and captured `trajectories/global_skills_as_authoritative_source_for_new_wo_20260503053856.json`
+- Follow-up: remove or convert duplicated project runtime workflow skills into thin adapters once the global skill inventory path has been used in a fresh session
+
+### 2026-05-03 - Global workflow skill installation
+
+- Task type: real Codex project/global configuration workflow
+- Classified as: `default-in` via `project-state-maintenance`, with `runtime_lane_status: entered`
+- What happened: synced the slim workflow routing into global `C:\Users\Administrator\.codex\AGENTS.md`, installed 8 extracted workflows as global Codex skills under `C:\Users\Administrator\.codex\skills`, and aligned project `AGENTS.md` routing names with the global hyphenated skill names
+- Did the behavior feel correct: yes; the runtime gate observed the configuration work without silently executing, while the actual global skill installation used the Codex skill-creator structure and validation path
+- Did the lane help: yes, because it made the difference clear between project runtime active skills and globally discoverable Codex skills
+- Finalizer: returned `runtime_lane_status: used` and captured `trajectories/sync_global_agents_workflow_routing_20260503052119.json`
+- Follow-up: confirm in a fresh Codex session that the 8 new global skills appear in the available skills list
+
+### 2026-05-03 - AGENTS workflow skill extraction
+
+- Task type: real Codex development workflow inside the Skill Runtime project
+- Classified as: start gate was conservative for the broad workflow refactor; finalizer returned `default-in` via `development-workflow-observation` with `runtime_lane_status: used`
+- What happened: slimmed `AGENTS.md` down to standing rules and workflow-skill routing, then moved auto mode, deployment strategy, session handoff, runtime gate, verification selection, repo impact analysis, and nontechnical stage reporting into active runtime workflow skills
+- Did the behavior feel correct: yes; this was a broad process refactor that should not silently auto-execute, but it should still leave a reusable workflow layer behind
+- Did the lane help: yes, because it confirmed the gate stays conservative while the resulting workflows become searchable, executable, and test-covered skills
+- Follow-up: dogfood the extracted workflow skills on the next auto-mode, deployment, handoff, runtime-gate, verification, repo-impact, or stage-report task; captured trajectory: `trajectories/agents_workflow_skill_extraction_20260503043555.json`
+
+### 2026-05-03 - Development direction value gate skill
+
+- Task type: real Codex development workflow inside the Skill Runtime project
+- Classified as: `default-in` via `development-workflow-observation`, with `runtime_lane_status: entered`
+- What happened: added and upgraded an active review workflow skill that audits a proposed development direction before coding, flags low-value routes, asks missing questions, suggests research queries, defines a validation plan, and writes a structured JSON value-gate report
+- Did the behavior feel correct: yes; this is exactly the kind of project development workflow that should enter observation without silent auto-execution
+- Did the lane help: yes, because the task came directly from a route-quality failure that should become reusable process knowledge
+- Follow-up: dogfood this skill before the next new feature or route shift, and do not implement until the value hypothesis, alternatives, success metric, and stop condition are clear
+
 ### 2026-05-03 - Development workflow observation lane
 
 - Task type: real Codex development workflow inside the Skill Runtime project

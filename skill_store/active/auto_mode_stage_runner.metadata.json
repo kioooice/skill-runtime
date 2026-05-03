@@ -1,0 +1,33 @@
+{
+  "skill_name": "auto_mode_stage_runner",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\auto_mode_stage_runner.py",
+  "summary": "Thin runtime adapter that points to the global auto-mode stage runner Codex skill.",
+  "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill auto-mode-stage-runner. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+  "input_schema": {
+    "trigger": "str",
+    "task_goal": "str",
+    "current_stage": "str",
+    "plan_items": "list[str]",
+    "output_path": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "adapter_role": "str",
+    "global_skill_name": "str",
+    "global_skill_path": "str",
+    "source_role": "str",
+    "next_action": "str"
+  },
+  "source_trajectory_ids": [],
+  "created_at": "2026-05-03T00:00:00+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "active",
+  "audit_score": 100,
+  "rule_name": "auto_mode_stage_runner",
+  "rule_priority": 82,
+  "rule_reason": "Extracted from AGENTS.md Auto Mode Protocol to reduce persistent instruction weight.",
+  "tags": ["auto", "autonomous", "stage", "runner", "report", "workflow"],
+  "scope_policy": null
+}

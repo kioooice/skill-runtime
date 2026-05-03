@@ -62,16 +62,20 @@ def _inventory_item(
     project_roots: list[Path],
 ) -> dict[str, Any]:
     ownership = _ownership(runtime_root, source_root, skill_dir, project_roots)
+    skill_metadata = _read_skill_frontmatter(skill_file)
     return {
         "platform_id": platform.platform_id,
         "display_name": platform.display_name,
         "skills_dir": str(source_root),
-        "skill_name": skill_dir.name,
+        "skill_name": skill_metadata.get("name") or skill_dir.name,
+        "directory_name": skill_dir.name,
+        "description": skill_metadata.get("description"),
         "skill_path": str(skill_dir),
         "skill_file": str(skill_file),
         "ownership": ownership,
         "link_type": _link_type(skill_dir),
         "source_root": str(source_root),
+        "source_role": _source_role(platform, ownership),
         "is_read_only": True,
     }
 
@@ -89,6 +93,39 @@ def _link_type(skill_dir: Path) -> str:
     if skill_dir.is_symlink():
         return "symlink_export"
     return "read_only"
+
+
+def _source_role(platform: PlatformRoot, ownership: str) -> str:
+    if platform.platform_id == "codex" and ownership == "external":
+        return "authoritative_global_skill"
+    if ownership == "managed_by_runtime":
+        return "runtime_managed_skill"
+    if ownership == "project_local":
+        return "project_local_skill"
+    return "external_skill"
+
+
+def _read_skill_frontmatter(skill_file: Path) -> dict[str, str]:
+    try:
+        content = skill_file.read_text(encoding="utf-8-sig")
+    except OSError:
+        return {}
+    if not content.startswith("---"):
+        return {}
+    parts = content.split("---", 2)
+    if len(parts) < 3:
+        return {}
+    metadata: dict[str, str] = {}
+    for raw_line in parts[1].splitlines():
+        line = raw_line.strip()
+        if not line or ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        key = key.strip()
+        if key not in {"name", "description"}:
+            continue
+        metadata[key] = value.strip().strip('"').strip("'")
+    return metadata
 
 
 def _safe_resolve(path: str | Path, diagnostics: list[str]) -> Path | None:

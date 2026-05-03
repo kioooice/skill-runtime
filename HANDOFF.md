@@ -2,7 +2,7 @@
 
 ## Current State
 
-最新一轮回应用户指出的关键问题：此前 dashboard 里真实开发任务几乎全部是 `skipped`，而 phase-one `default-in` 的低风险文件任务在日常 Codex 开发中价值不高。当前已新增 `development-workflow-observation` Codex 默认通道家族：当任务有明确工作区、明确产物，并且属于代码、测试、dashboard、文档或配置类开发工作流时，会进入 `default-in`，但仍建议对这类广义开发任务传 `allow_silent_reuse=false`，让 runtime 参与检索、观察和收尾学习，而不是静默自动执行。dashboard 总览也新增 `已进入` 指标，用来区分“runtime 已观察但未自动执行”和“完全跳过”。本轮实际本地 API gate 已从变更前的 `runtime_lane_status: skipped` 改成变更后的 `runtime_lane_status: entered`，finalizer 已产生 `runtime_lane_status: used` 和 captured trajectory。新 Codex 会话里的 app 级 MCP 连接已复测通过：`mcp__skill_runtime__.run_codex_task_experimental` 对明确工作区和明确输出的仓库状态维护工作流返回 `task_classification.bucket: default-in` 和 `runtime_lane_status: entered`，这条主线可以进入提交前检查。
+最新一轮回应用户指出的关键问题：此前 dashboard 里真实开发任务几乎全部是 `skipped`，而 phase-one `default-in` 的低风险文件任务在日常 Codex 开发中价值不高。当前已新增 `development-workflow-observation` Codex 默认通道家族：当任务有明确工作区、明确产物，并且属于代码、测试、dashboard、文档或配置类开发工作流时，会进入 `default-in`，但仍建议对这类广义开发任务传 `allow_silent_reuse=false`，让 runtime 参与检索、观察和收尾学习，而不是静默自动执行。dashboard 总览也新增 `已进入` 指标，用来区分“runtime 已观察但未自动执行”和“完全跳过”。本轮实际本地 API gate 已从变更前的 `runtime_lane_status: skipped` 改成变更后的 `runtime_lane_status: entered`，finalizer 已产生 `runtime_lane_status: used` 和 captured trajectory。新 Codex 会话里的 app 级 MCP 连接已复测通过：`mcp__skill_runtime__.run_codex_task_experimental` 对明确工作区和明确输出的仓库状态维护工作流返回 `task_classification.bucket: default-in` 和 `runtime_lane_status: entered`。随后按用户反馈新增并升级 `pre_implementation_workflow_review` active skill 和 `AGENTS.md` 规则，把“开发方向是否正确、有无价值、是否值得继续做”的判断放到实现前。最新一轮又将 `AGENTS.md` 从长操作手册收成短规则和 workflow skill 路由，自动模式、部署判断、session handoff、runtime gate、验证选择、仓库影响分析和非技术阶段报告都已下沉为 active runtime workflow skills，并同步安装为全局 Codex skills，供新会话和其他项目直接触发。当前原则已经明确：通用工作流技能的唯一权威来源是全局 Codex skills，项目内只保留路由、局部约束、索引或薄适配。
 
 已完成一轮 Skill Runtime 产品化收敛，也已证明核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在本地 MVP 中真实存在。当前阶段的主要问题已经不是“底层零件有没有”，而是“Codex 默认执行任务时会不会自动用上这层”。此前 agent-first runtime 已完成一轮阶段性收口：静默自动复用、失败时不越界、任务完成后 capture trajectory 并给出 recommendation，这一层现在停在 `capture + recommendation`，不默认继续自动 `distill/promote`。新的主线已切到 Codex 默认接入：不是一次性把 Skill Runtime 全量挂到所有 Codex 任务上，而是先采用受控低风险任务通道。现在除了分类文档、host API、MCP 实验入口和 Codex CLI 默认通道以外，phase-one `default-in` 还进一步收窄成四类白名单家族：
 
@@ -53,6 +53,60 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 ## Last Completed
 
 本轮已完成：
+- `AGENTS.md` 瘦身和 workflow skill 下沉：
+  - `AGENTS.md` 现在只保留 workspace purpose、standing rules、workflow skill routing 和 minimal handoff rule
+  - 新增 `auto_mode_stage_runner`
+  - 新增 `deployment_strategy_review`
+  - 新增 `session_handoff_maintenance`
+  - 新增 `runtime_gate_workflow`
+  - 新增 `runtime_verification_selector`
+  - 新增 `repo_impact_analysis`
+  - 新增 `nontechnical_stage_report`
+  - active skill 数量从 7 增加到 14
+  - 搜索质量基线扩展到 23/23
+  - 新增执行测试覆盖这些从 `AGENTS.md` 下沉的 workflow skills
+  - `python -m unittest tests.test_runtime_fast -v` 通过，83 tests OK
+  - `python scripts/evaluate_search_quality.py --root .` 通过，23/23
+  - `git diff --check` 无 whitespace error，仅有 `skill_store/index.json` 后续 LF 规范化提示
+  - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/agents_workflow_skill_extraction_20260503043555.json`
+- 全局配置同步：
+  - `C:\Users\Administrator\.codex\AGENTS.md` 已同步为短规则和全局 workflow skill routing
+  - 新增 8 个全局 Codex skills：`pre-implementation-workflow-review`、`auto-mode-stage-runner`、`deployment-strategy-review`、`session-handoff-maintenance`、`runtime-gate-workflow`、`runtime-verification-selector`、`repo-impact-analysis`、`nontechnical-stage-report`
+  - 8 个全局 skills 均通过 `C:\Users\Administrator\.codex\skills\.system\skill-creator\scripts\quick_validate.py`
+  - 项目 `AGENTS.md` 路由名已对齐全局连字符 skill 名；直接调用 Skill Runtime active skills 时仍使用下划线 runtime 名
+  - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/sync_global_agents_workflow_routing_20260503052119.json`
+- 全局 skill 单一权威来源策略：
+  - 新增 `docs/global-skill-source-of-truth-policy.md`
+  - 全局 `C:\Users\Administrator\.codex\AGENTS.md` 和项目 `AGENTS.md` 都记录新通用 workflow skills 默认进入全局 skills 目录
+  - `skill_runtime/platforms/discovery.py` 现在解析 `SKILL.md` frontmatter，并把外部 Codex skills 标记为 `source_role: authoritative_global_skill`
+  - dashboard 平台视图会显示 global skill 的 source role 和 description
+  - 修复 dashboard 同名 skill 计数：active 与 staging 同名时优先显示 active，当前 dashboard active_count 为 14
+  - `python -m unittest tests.test_runtime_fast -v` 通过，85 tests OK
+  - `python scripts/evaluate_search_quality.py --root .` 通过，23/23
+  - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/convert_project_workflow_runtime_skills_to_thin__20260503054607.json`
+  - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/global_skills_as_authoritative_source_for_new_wo_20260503053856.json`
+- 项目 workflow active skills adapter 化：
+  - 新增 `skill_runtime/execution/global_skill_adapter.py`
+  - 8 个 workflow active skills 现在只作为全局 Codex skills 的薄 adapter
+  - 执行结果写出 `adapter_role: global_codex_skill_adapter`、`global_skill_name`、`global_skill_path` 和 `source_role: authoritative_global_skill`
+  - active metadata 已改成 adapter 口径，输入 schema 保留用于搜索和执行提示
+  - `python -m unittest tests.test_runtime_fast -v` 通过，85 tests OK
+  - `python scripts/evaluate_search_quality.py --root .` 通过，23/23
+- 全局 Codex skill promotion 生命周期：
+  - 新增 `RuntimeService.promote_to_global_codex_skill(...)`
+  - 新增 CLI `promote-global-codex-skill`
+  - 新增 MCP/host operation `promote_global_codex_skill`
+  - 带 `workflow`、`global-workflow` 或 `codex-skill` 标签的 staging metadata 在 audit 通过后优先推荐全局 promotion
+  - 全局 promotion 写入 `SKILL.md` 和 `agents/openai.yaml`，不创建项目 active copy，不更新项目 active index
+  - `python -m unittest tests.test_runtime_fast -v` 通过，87 tests OK
+  - `python scripts/evaluate_search_quality.py` 通过，23/23
+- 新增开发方向价值门禁 active skill：
+  - 新增 `skill_store/active/pre_implementation_workflow_review.py`
+  - 新增 `skill_store/active/pre_implementation_workflow_review.metadata.json`
+  - 更新 `AGENTS.md`，新增 Development Direction Value Gate
+  - 重建 `skill_store/index.json`，active skill 数量为 7
+  - 搜索质量基线新增 review / audit / direction value 查询
+  - 新增执行测试覆盖低价值本地基础技能路线会返回 `change_route_before_implementation`，并输出 research queries、validation plan 和 stop condition
 - 新增开发工作流 observation lane：
   - `skill_runtime/api/classification.py` 新增 `development-workflow-observation` 家族
   - 有明确工作区和明确产物的代码、测试、dashboard、文档、配置类开发工作流会进入 `default-in`
@@ -510,7 +564,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-下一步默认进入提交前检查：确认当前变更范围、运行快验和 `git diff --check`，再按需要提交这条 Codex 默认通道主线。对广义开发任务仍传 `allow_silent_reuse=false`，任务完成后如有结构化 execution payload，再验证 finalizer 是否能产生 `runtime_lane_status: used` 和 captured trajectory。当前观察重点已经从“能不能跨项目调用 / app 级 MCP 能不能进入”推进到“开发工作流 observation lane 是否真的减少重复工作、能否沉淀可复用流程”。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。查看当前项目用 `python -m skill_runtime.cli dashboard --open`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
+AGENTS 瘦身、workflow skill 下沉、全局 Codex skills 安装、“全局 skill 单一权威来源”策略、项目 workflow active skills adapter 化，以及全局 Codex skill promotion 生命周期路径都已经落地。下一步如果用户同意进入版本收口，检查当前 diff 后提交项目内这批 workflow skill 改造；全局 `C:\Users\Administrator\.codex` 下的 skill 安装属于本机配置，不会随仓库提交。后续新增通用工作流时，默认创建或提升为全局 Codex skill，再让项目 `AGENTS.md`、runtime inventory 或薄 adapter 指向它，不在项目内复制完整流程。当前可用命令是 `python -m skill_runtime.cli promote-global-codex-skill --file <staging-skill.py>`；带 `workflow`、`global-workflow` 或 `codex-skill` 标签的 staging metadata 在 audit 通过后会优先推荐 `promote_global_codex_skill`。对广义开发任务仍传 `allow_silent_reuse=false`，任务完成后如有结构化 execution payload，继续确认 finalizer 是否能产生 `runtime_lane_status: used` 和 captured trajectory。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。查看当前项目用 `python -m skill_runtime.cli dashboard --open`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
 
 ## Important Files
 
@@ -519,6 +573,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 - `DECISIONS.md`
 - `HANDOFF.md`
 - `docs/gitnexus-local-runbook.md`
+- `docs/global-skill-source-of-truth-policy.md`
 - `docs/core-readiness-audit.md`
 - `docs/agent-first-runtime-architecture.md`
 - `docs/agent-side-reuse-policy.md`
@@ -572,6 +627,8 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 - `.gitignore`
 - `skill_runtime/retrieval/skill_index.py`
 - `skill_runtime/api/service.py`
+- `skill_runtime/mcp/operation_builders.py`
+- `skill_runtime/mcp/recommendation_builders.py`
 - `skill_runtime/governance/provenance_backfill.py`
 - `tests/test_runtime_governance.py`
 - `skill_store/active/merge_text_files.metadata.json`

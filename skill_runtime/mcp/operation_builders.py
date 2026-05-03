@@ -118,6 +118,18 @@ TOOL_PRESETS = {
         "risk_level": "medium",
         "requires_confirmation": False,
     },
+    "promote_global_codex_skill": {
+        "display_label": "Promote global Codex skill",
+        "effect_summary": "Promote a passing staging workflow skill into the global Codex skill library.",
+        "argument_schema": {
+            "file_path": {"type": "string", "required": True, "prefilled": True},
+            "global_skills_dir": {"type": "string", "required": False, "prefilled": False},
+            "global_skill_name": {"type": "string", "required": False, "prefilled": False},
+            "overwrite": {"type": "boolean", "required": False, "prefilled": False},
+        },
+        "risk_level": "medium",
+        "requires_confirmation": False,
+    },
     "rollback_operations": {
         "display_label": "Rollback operations",
         "effect_summary": "Rollback a safe subset of execution-side file changes from an operation log.",
@@ -158,6 +170,7 @@ __all__ = [
     "distill_trajectory_operation",
     "audit_skill_operation",
     "promote_skill_operation",
+    "promote_global_codex_skill_operation",
     "governance_report_operation",
     "distill_coverage_report_operation",
     "refresh_governance_report_operation",
@@ -491,6 +504,40 @@ def promote_skill_operation(
     return tool_call(
         "promote_skill",
         {"file_path": file_path},
+        display_label=display_label,
+        effect_summary=effect_summary,
+        risk_level=risk_level,
+        requires_confirmation=requires_confirmation,
+        confirmation_message=confirmation_message,
+        operation_role=operation_role,
+        source_ref=source_ref,
+    )
+
+
+def promote_global_codex_skill_operation(
+    file_path: str,
+    *,
+    global_skills_dir: str | None = None,
+    global_skill_name: str | None = None,
+    overwrite: bool | None = None,
+    display_label: str | None = None,
+    effect_summary: str | None = None,
+    risk_level: str | None = None,
+    requires_confirmation: bool | None = None,
+    confirmation_message: str | None = None,
+    operation_role: str = "default",
+    source_ref: str | None = None,
+) -> dict[str, Any]:
+    arguments: dict[str, Any] = {"file_path": file_path}
+    if global_skills_dir is not None:
+        arguments["global_skills_dir"] = global_skills_dir
+    if global_skill_name is not None:
+        arguments["global_skill_name"] = global_skill_name
+    if overwrite is not None:
+        arguments["overwrite"] = overwrite
+    return tool_call(
+        "promote_global_codex_skill",
+        arguments,
         display_label=display_label,
         effect_summary=effect_summary,
         risk_level=risk_level,

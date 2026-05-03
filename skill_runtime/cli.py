@@ -180,6 +180,25 @@ def cmd_promote(args: argparse.Namespace) -> int:
         return error(exc.message, exc.code, exc.details, exit_code=exit_code)
 
 
+def cmd_promote_global_codex_skill(args: argparse.Namespace) -> int:
+    try:
+        return ok(
+            service_for_args(args).promote_to_global_codex_skill(
+                args.file,
+                global_skills_dir=args.global_skills_dir,
+                global_skill_name=args.global_skill_name,
+                overwrite=args.overwrite,
+            )
+        )
+    except RuntimeServiceError as exc:
+        exit_code = EXIT_POLICY_BLOCKED if exc.code in {
+            "INVALID_PROMOTION_SOURCE",
+            "AUDIT_NOT_PASSED",
+            "GLOBAL_SKILL_EXISTS",
+        } else EXIT_NOT_FOUND
+        return error(exc.message, exc.code, exc.details, exit_code=exit_code)
+
+
 def cmd_log_trajectory(args: argparse.Namespace) -> int:
     try:
         return ok(service_for_args(args).log_trajectory(args.file))
@@ -651,6 +670,13 @@ def build_parser() -> argparse.ArgumentParser:
     promote_parser = subparsers.add_parser("promote")
     promote_parser.add_argument("--file", required=True)
     promote_parser.set_defaults(func=cmd_promote)
+
+    promote_global_parser = subparsers.add_parser("promote-global-codex-skill")
+    promote_global_parser.add_argument("--file", required=True)
+    promote_global_parser.add_argument("--global-skills-dir")
+    promote_global_parser.add_argument("--global-skill-name")
+    promote_global_parser.add_argument("--overwrite", action="store_true")
+    promote_global_parser.set_defaults(func=cmd_promote_global_codex_skill)
 
     log_parser = subparsers.add_parser("log-trajectory")
     log_parser.add_argument("--file", required=True)

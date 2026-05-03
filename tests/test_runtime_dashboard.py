@@ -88,6 +88,36 @@ class RuntimeDashboardTestsMixin:
         self.assertTrue(any(skill["skill_name"] == "merge_text_files" for skill in data["skills"]))
         self.assertEqual("used", data["events"][0]["runtime_lane_status"])
 
+    def test_dashboard_collector_prefers_active_metadata_when_staging_duplicate_exists(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+
+        duplicate_name = "dashboard_duplicate"
+        active_dir = self.runtime_root / "skill_store" / "active"
+        staging_dir = self.runtime_root / "skill_store" / "staging"
+        active_dir.mkdir(parents=True, exist_ok=True)
+        staging_dir.mkdir(parents=True, exist_ok=True)
+        base_payload = {
+            "skill_name": duplicate_name,
+            "file_path": str(active_dir / f"{duplicate_name}.py"),
+            "summary": "Active copy",
+            "source_trajectory_ids": [],
+            "audit_score": 100,
+            "usage_count": 0,
+            "last_used_at": None,
+            "tags": [],
+        }
+        (active_dir / f"{duplicate_name}.metadata.json").write_text(json.dumps(base_payload), encoding="utf-8")
+        staging_payload = dict(base_payload)
+        staging_payload["summary"] = "Staging duplicate"
+        staging_payload["file_path"] = str(staging_dir / f"{duplicate_name}.py")
+        (staging_dir / f"{duplicate_name}.metadata.json").write_text(json.dumps(staging_payload), encoding="utf-8")
+
+        data = collect_dashboard_data(self.runtime_root)
+        duplicate = next(skill for skill in data["skills"] if skill["skill_name"] == duplicate_name)
+
+        self.assertEqual("active", duplicate["status"])
+        self.assertEqual("Active copy", duplicate["summary"])
+
     def test_global_dashboard_collector_aggregates_project_events(self) -> None:
         from skill_runtime.dashboard.collector import collect_global_dashboard_data
 

@@ -1,0 +1,33 @@
+{
+  "skill_name": "runtime_gate_workflow",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\runtime_gate_workflow.py",
+  "summary": "Thin runtime adapter that points to the global runtime gate workflow Codex skill.",
+  "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill runtime-gate-workflow. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+  "input_schema": {
+    "task_description": "str",
+    "working_directory": "str",
+    "expected_outputs": "list[str]",
+    "risk_level": "str",
+    "output_path": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "adapter_role": "str",
+    "global_skill_name": "str",
+    "global_skill_path": "str",
+    "source_role": "str",
+    "next_action": "str"
+  },
+  "source_trajectory_ids": [],
+  "created_at": "2026-05-03T00:00:00+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "active",
+  "audit_score": 100,
+  "rule_name": "runtime_gate_workflow",
+  "rule_priority": 82,
+  "rule_reason": "Extracted Skill Runtime gate instructions from AGENTS.md.",
+  "tags": ["runtime", "gate", "finalizer", "workflow", "visibility", "mcp"],
+  "scope_policy": null
+}

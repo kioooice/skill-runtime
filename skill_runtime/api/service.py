@@ -1,4 +1,5 @@
 import json
+import re
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,6 +24,7 @@ from skill_runtime.mcp.host_operations import (
     executed_skill_promotion_recommendation,
     governance_report_recommendation,
     no_recommendation,
+    promote_global_codex_skill_recommendation,
     promote_skill_recommendation,
     promoted_skill_execution_recommendation,
     recommendation_from_payload,
@@ -412,18 +414,50 @@ class RuntimeService:
         report_file.write_text(json.dumps(asdict(report), ensure_ascii=False, indent=2), encoding="utf-8")
         payload = {"report": asdict(report), "report_file": str(report_file.resolve())}
         if report.status == "passed":
-            payload = with_recommendation(
-                payload,
-                promote_skill_recommendation(
-                    str(file_ref.resolve()),
-                    display_label="Promote audited skill",
-                    effect_summary="Promote this staging skill now that the audit has passed.",
-                    risk_level="medium",
-                    requires_confirmation=False,
-                    source_ref=source_ref_audit(file_ref.stem),
-                    reason="The audit passed, so this staging skill can be promoted.",
+            staging_metadata = self._load_staging_metadata(file_ref)
+            if _prefers_global_codex_skill(staging_metadata):
+                payload = with_recommendation(
+                    payload,
+                    promote_global_codex_skill_recommendation(
+                        str(file_ref.resolve()),
+                        display_label="Promote global Codex skill",
+                        effect_summary=(
+                            "Promote this reusable workflow into the global Codex skill library."
+                        ),
+                        risk_level="medium",
+                        requires_confirmation=False,
+                        source_ref=source_ref_audit(file_ref.stem),
+                        reason=(
+                            "The audit passed and the skill is marked as a reusable workflow, so the "
+                            "authoritative copy should live in the global Codex skill library."
+                        ),
+                        additional_operations=[
+                            promote_skill_recommendation(
+                                str(file_ref.resolve()),
+                                display_label="Promote project active skill",
+                                effect_summary=(
+                                    "Promote this staging skill into the project active runtime library instead."
+                                ),
+                                risk_level="medium",
+                                requires_confirmation=False,
+                                source_ref=source_ref_audit(file_ref.stem),
+                            )["recommended_host_operation"]
+                        ],
+                    )
                 )
-            )
+            else:
+                payload = with_recommendation(
+                    payload,
+                    promote_skill_recommendation(
+                        str(file_ref.resolve()),
+                        display_label="Promote audited skill",
+                        effect_summary="Promote this staging skill now that the audit has passed.",
+                        risk_level="medium",
+                        requires_confirmation=False,
+                        source_ref=source_ref_audit(file_ref.stem),
+                        reason="The audit passed, so this staging skill can be promoted.",
+                    )
+                )
         else:
             payload = with_recommendation(
                 payload,
@@ -519,6 +553,90 @@ class RuntimeService:
             },
             promoted_skill_execution_recommendation(skill_name, metadata.input_schema),
         )
+
+    def promote_to_global_codex_skill(
+        self,
+        file_path: str | Path,
+        *,
+        global_skills_dir: str | Path | None = None,
+        global_skill_name: str | None = None,
+        overwrite: bool = False,
+    ) -> dict[str, Any]:
+        file_ref = Path(file_path)
+        if not file_ref.exists():
+            raise RuntimeServiceError(
+                "staging skill file not found",
+                "SKILL_FILE_NOT_FOUND",
+                {"path": str(file_ref)},
+            )
+
+        if "staging" not in {part.lower() for part in file_ref.parts}:
+            raise RuntimeServiceError(
+                "only staging skills can be promoted to a global Codex skill",
+                "INVALID_PROMOTION_SOURCE",
+                {"path": str(file_ref)},
+            )
+
+        runtime_skill_name = file_ref.stem
+        try:
+            report = PromotionGuard(self.audits_dir).assert_promotable(runtime_skill_name)
+        except FileNotFoundError as exc:
+            raise RuntimeServiceError(
+                "audit report not found",
+                "AUDIT_NOT_FOUND",
+                {"skill_name": runtime_skill_name},
+            ) from exc
+        except PromotionGuardError as exc:
+            raise RuntimeServiceError(
+                "latest audit did not pass",
+                "AUDIT_NOT_PASSED",
+                {"skill_name": runtime_skill_name, "reason": str(exc)},
+            ) from exc
+
+        metadata = self._load_staging_metadata(file_ref)
+        target_root = self._resolve_global_skills_dir(global_skills_dir)
+        resolved_global_skill_name = _global_skill_directory_name(global_skill_name or runtime_skill_name)
+        target_dir = target_root / resolved_global_skill_name
+        skill_file = target_dir / "SKILL.md"
+        agent_file = target_dir / "agents" / "openai.yaml"
+
+        if target_dir.exists() and not overwrite:
+            raise RuntimeServiceError(
+                "global Codex skill already exists",
+                "GLOBAL_SKILL_EXISTS",
+                {"global_skill_name": resolved_global_skill_name, "target_dir": str(target_dir)},
+            )
+
+        target_dir.mkdir(parents=True, exist_ok=True)
+        agent_file.parent.mkdir(parents=True, exist_ok=True)
+
+        description = self._global_skill_description(metadata, report.optimized_docstring, runtime_skill_name)
+        skill_file.write_text(
+            _render_global_skill_markdown(
+                global_skill_name=resolved_global_skill_name,
+                description=description,
+                runtime_skill_name=runtime_skill_name,
+                optimized_docstring=report.optimized_docstring,
+                metadata=metadata,
+            ),
+            encoding="utf-8",
+        )
+        agent_file.write_text(
+            _render_global_skill_openai_yaml(resolved_global_skill_name, description),
+            encoding="utf-8",
+        )
+
+        return {
+            "runtime_skill_name": runtime_skill_name,
+            "global_skill_name": resolved_global_skill_name,
+            "global_skill_path": str(target_dir.resolve()),
+            "skill_file": str(skill_file.resolve()),
+            "agent_file": str(agent_file.resolve()),
+            "source_role": "authoritative_global_skill",
+            "audit_score": report.security_score,
+            "index_updated": False,
+            "active_copy_created": False,
+        }
 
     def log_trajectory(self, file_path: str | Path) -> dict[str, Any]:
         try:
@@ -789,6 +907,35 @@ class RuntimeService:
             recommendation,
         )
 
+    def _load_staging_metadata(self, file_ref: Path) -> dict[str, Any]:
+        metadata_path = file_ref.with_name(f"{file_ref.stem}.metadata.json")
+        if not metadata_path.exists():
+            return {}
+        try:
+            payload = json.loads(metadata_path.read_text(encoding="utf-8-sig"))
+        except (json.JSONDecodeError, OSError):
+            return {}
+        return payload if isinstance(payload, dict) else {}
+
+    def _resolve_global_skills_dir(self, global_skills_dir: str | Path | None) -> Path:
+        if global_skills_dir is not None:
+            return Path(global_skills_dir).expanduser().resolve()
+        home = Path.home()
+        return (home / ".codex" / "skills").resolve()
+
+    def _global_skill_description(
+        self,
+        metadata: dict[str, Any],
+        optimized_docstring: str,
+        runtime_skill_name: str,
+    ) -> str:
+        summary = metadata.get("summary")
+        if isinstance(summary, str) and summary.strip():
+            return _single_line(summary)
+        if optimized_docstring.strip():
+            return _single_line(optimized_docstring)
+        return f"Reusable workflow promoted from runtime skill {runtime_skill_name}."
+
     def distill_and_promote(
         self,
         trajectory_path: str | Path | None = None,
@@ -909,3 +1056,71 @@ class RuntimeService:
                 {"path": str(path)},
             ) from exc
         return target
+
+
+def _global_skill_directory_name(raw_name: str) -> str:
+    name = raw_name.strip().replace("_", "-").lower()
+    name = re.sub(r"[^a-z0-9-]+", "-", name)
+    name = re.sub(r"-{2,}", "-", name).strip("-")
+    if not name:
+        raise RuntimeServiceError("global skill name cannot be empty", "INVALID_GLOBAL_SKILL_NAME")
+    return name
+
+
+def _prefers_global_codex_skill(metadata: dict[str, Any]) -> bool:
+    tags = metadata.get("tags")
+    if not isinstance(tags, list):
+        return False
+    normalized = {str(tag).strip().lower() for tag in tags}
+    return bool({"workflow", "global-workflow", "codex-skill"} & normalized)
+
+
+def _single_line(value: str) -> str:
+    return " ".join(value.strip().split())
+
+
+def _yaml_double_quoted(value: str) -> str:
+    return json.dumps(_single_line(value), ensure_ascii=False)
+
+
+def _markdown_heading_from_name(name: str) -> str:
+    return " ".join(part.capitalize() for part in name.split("-") if part)
+
+
+def _render_global_skill_markdown(
+    *,
+    global_skill_name: str,
+    description: str,
+    runtime_skill_name: str,
+    optimized_docstring: str,
+    metadata: dict[str, Any],
+) -> str:
+    trajectory_ids = metadata.get("source_trajectory_ids")
+    if not isinstance(trajectory_ids, list):
+        trajectory_ids = []
+    source_note = ", ".join(str(item) for item in trajectory_ids) or "not recorded"
+    body_description = optimized_docstring.strip() or description
+    return (
+        "---\n"
+        f"name: {global_skill_name}\n"
+        f"description: {_yaml_double_quoted(description)}\n"
+        "---\n\n"
+        f"# {_markdown_heading_from_name(global_skill_name)}\n\n"
+        f"{body_description.strip()}\n\n"
+        "## Workflow\n\n"
+        "- Use this global Codex skill as the authoritative workflow instruction.\n"
+        f"- Treat the source runtime skill `{runtime_skill_name}` as promotion history, not the runtime owner.\n"
+        "- Keep project-local runtime skills as thin adapters only when a project needs explicit routing.\n\n"
+        "## Provenance\n\n"
+        f"- source runtime skill: `{runtime_skill_name}`\n"
+        f"- source trajectories: {source_note}\n"
+    )
+
+
+def _render_global_skill_openai_yaml(global_skill_name: str, description: str) -> str:
+    return (
+        "interface:\n"
+        f"  display_name: {_yaml_double_quoted(_markdown_heading_from_name(global_skill_name))}\n"
+        f"  short_description: {_yaml_double_quoted(description)}\n"
+        f"  default_prompt: {_yaml_double_quoted(f'Use ${global_skill_name} for this workflow.')}\n"
+    )

@@ -371,6 +371,150 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         self.assertEqual("Daily note\nStatus: open\n", day_output.read_text(encoding="utf-8"))
         self.assertEqual("Runbook\nStep: verify\n", runbook_output.read_text(encoding="utf-8"))
 
+    def test_pre_implementation_workflow_review_runtime_skill_points_to_global_authority(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+
+        search_payload = self._call_mcp_tool(
+            "search_skill",
+            {"query": "review workflow before implementation", "top_k": 5},
+            root=sandbox_root,
+        )
+        search_data = search_payload["data"]
+        self.assertEqual("pre_implementation_workflow_review", search_data["recommended_skill_name"])
+
+        execute_args = dict(search_data["recommended_host_operation"]["arguments"])
+        execute_args["args"] = {
+            "task_description": "Build local basic active skills for merge txt, json to csv, and replace text.",
+            "proposed_approach": "Spend several days implementing file skills before validating whether they help normal development.",
+            "user_value_hypothesis": "Developers need less repeated setup work in real Codex development workflows.",
+            "known_context": ["Codex can already handle simple local file operations with Python or shell commands."],
+            "expected_outputs": ["skill_store/active/*.py"],
+            "alternatives": ["Focus on default workflow integration and dashboard entered/used signals."],
+            "output_path": "demo/output/pre_implementation_review.json",
+        }
+        execute_payload = self._call_mcp_tool(
+            search_data["recommended_host_operation"]["tool_name"],
+            execute_args,
+            root=sandbox_root,
+        )
+        review_output = sandbox_root / "demo" / "output" / "pre_implementation_review.json"
+        review_payload = self._read_json_file(review_output)
+
+        self.assertEqual("completed", execute_payload["data"]["result"]["status"])
+        self.assertEqual("pre_implementation_workflow_review", execute_payload["data"]["skill_name"])
+        self.assertEqual("global_codex_skill_adapter", review_payload["adapter_role"])
+        self.assertEqual("pre-implementation-workflow-review", review_payload["global_skill_name"])
+        self.assertEqual("authoritative_global_skill", review_payload["source_role"])
+        self.assertIn("C:\\Users\\Administrator\\.codex\\skills", review_payload["global_skill_path"])
+        self.assertIn("Use the global Codex skill", review_payload["next_action"])
+
+    def test_agents_operational_workflow_skills_execute_from_search(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+        cases = [
+            (
+                "run auto mode stage report",
+                "auto_mode_stage_runner",
+                {
+                    "trigger": "自动模式开始",
+                    "task_goal": "Finish the current stage.",
+                    "current_stage": "stage one",
+                    "plan_items": ["inspect", "change", "verify"],
+                    "output_path": "demo/output/auto_mode_stage.json",
+                },
+                "auto-mode-stage-runner",
+            ),
+            (
+                "choose deployment strategy docker nextjs static node",
+                "deployment_strategy_review",
+                {
+                    "project_files": ["package.json", "next.config.js"],
+                    "user_label": "static",
+                    "output_path": "demo/output/deployment_strategy.json",
+                },
+                "deployment-strategy-review",
+            ),
+            (
+                "resume handoff update tasks decisions",
+                "session_handoff_maintenance",
+                {
+                    "command": "继续",
+                    "changed_state": ["stage completed"],
+                    "output_path": "demo/output/session_handoff.json",
+                },
+                "session-handoff-maintenance",
+            ),
+            (
+                "prepare runtime gate finalizer workflow",
+                "runtime_gate_workflow",
+                {
+                    "task_description": "Update docs.",
+                    "working_directory": ".",
+                    "expected_outputs": ["HANDOFF.md"],
+                    "output_path": "demo/output/runtime_gate.json",
+                },
+                "runtime-gate-workflow",
+            ),
+            (
+                "choose fast full verification commands",
+                "runtime_verification_selector",
+                {
+                    "change_scope": "single file syntax change",
+                    "output_path": "demo/output/verification_selector.json",
+                },
+                "runtime-verification-selector",
+            ),
+            (
+                "repo impact analysis symbols call chain gitnexus",
+                "repo_impact_analysis",
+                {
+                    "target": "RuntimeService",
+                    "gitnexus_available": True,
+                    "indexed": True,
+                    "output_path": "demo/output/repo_impact.json",
+                },
+                "repo-impact-analysis",
+            ),
+            (
+                "write nontechnical stage progress report",
+                "nontechnical_stage_report",
+                {
+                    "stage_name": "direction cleanup",
+                    "completed": ["Moved rules into workflow skills."],
+                    "changed_files": ["AGENTS.md"],
+                    "risks": ["Needs dogfood."],
+                    "output_path": "demo/output/nontechnical_stage_report.json",
+                },
+                "nontechnical-stage-report",
+            ),
+        ]
+
+        for query, expected_skill, args, global_skill_name in cases:
+            with self.subTest(skill=expected_skill):
+                search_payload = self._call_mcp_tool(
+                    "search_skill",
+                    {"query": query, "top_k": 5},
+                    root=sandbox_root,
+                )
+                search_data = search_payload["data"]
+                self.assertEqual(expected_skill, search_data["recommended_skill_name"])
+
+                execute_args = dict(search_data["recommended_host_operation"]["arguments"])
+                execute_args["args"] = args
+                execute_payload = self._call_mcp_tool(
+                    search_data["recommended_host_operation"]["tool_name"],
+                    execute_args,
+                    root=sandbox_root,
+                )
+                output_path = sandbox_root / args["output_path"]
+                payload = self._read_json_file(output_path)
+
+                self.assertEqual("completed", execute_payload["data"]["result"]["status"])
+                self.assertEqual(expected_skill, execute_payload["data"]["skill_name"])
+                self.assertEqual("global_codex_skill_adapter", payload["adapter_role"])
+                self.assertEqual(global_skill_name, payload["global_skill_name"])
+                self.assertEqual("authoritative_global_skill", payload["source_role"])
+                self.assertIn("C:\\Users\\Administrator\\.codex\\skills", payload["global_skill_path"])
+
     def _restore_env(self, name: str, value: str | None) -> None:
         if value is None:
             os.environ.pop(name, None)

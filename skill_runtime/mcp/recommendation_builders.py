@@ -13,6 +13,7 @@ from skill_runtime.mcp.operation_builders import (
     execute_skill_operation,
     governance_report_operation,
     operation_list,
+    promote_global_codex_skill_operation,
     promote_skill_operation,
     rollback_operations_operation,
     refresh_governance_report_operation,
@@ -49,6 +50,7 @@ __all__ = [
     "distill_trajectory_recommendation",
     "audit_skill_recommendation",
     "promote_skill_recommendation",
+    "promote_global_codex_skill_recommendation",
     "governance_report_recommendation",
     "distill_coverage_report_recommendation",
     "archive_duplicate_candidates_recommendation",
@@ -215,6 +217,21 @@ def promote_skill_recommendation(
     return recommendation_from_operation(
         "promote_skill",
         promote_skill_operation(file_path, **operation_kwargs),
+        reason=reason,
+        additional_operations=additional_operations,
+    )
+
+
+def promote_global_codex_skill_recommendation(
+    file_path: str,
+    *,
+    reason: str | None = None,
+    additional_operations: list[dict[str, Any] | None] | None = None,
+    **operation_kwargs: Any,
+) -> dict[str, Any]:
+    return recommendation_from_operation(
+        "promote_global_codex_skill",
+        promote_global_codex_skill_operation(file_path, **operation_kwargs),
         reason=reason,
         additional_operations=additional_operations,
     )

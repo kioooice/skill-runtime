@@ -2,6 +2,110 @@
 
 ## Decision Log
 
+### 2026-05-03 - Reusable Workflow Promotion Defaults To Global Codex Skills
+
+**Decision**
+
+Staging Runtime skills that are tagged as reusable workflows should recommend `promote_global_codex_skill` after a passing audit. This path writes a global Codex `SKILL.md` and `agents/openai.yaml`, and deliberately avoids creating a project `skill_store/active` copy or updating the project active index.
+
+**Reason**
+
+The earlier source-of-truth decision said global Codex skills are authoritative, but the lifecycle still only had a concrete promotion path into project active skills. That would make the old behavior the easiest behavior and would recreate duplicate workflow copies. The promotion path now matches the policy.
+
+**Impact**
+
+- Added `RuntimeService.promote_to_global_codex_skill(...)`
+- Added CLI `promote-global-codex-skill`
+- Added MCP/host operation `promote_global_codex_skill`
+- Passing audits on metadata tagged `workflow`, `global-workflow`, or `codex-skill` now recommend global promotion first, with project active promotion kept as an alternate operation
+- Fast verification now passes 87 tests; search quality remains 23/23
+
+### 2026-05-03 - 项目内 Workflow Runtime Skills 降级为全局 Skill Adapters
+
+**Decision**
+
+保留 `skill_store/active` 中的 workflow 条目用于 Runtime 搜索、执行测试和 dashboard 可见性，但它们不再保存完整工作流逻辑。它们现在调用共享 `global_skill_adapter`，执行时只写出全局 Codex skill 的引用报告。
+
+**Reason**
+
+用户确认后续新技能应以全局 Codex skills 为权威来源。如果项目 active skill 继续保存完整流程，就会产生第二份可执行真相。改成薄 adapter 后，Runtime 仍能检索和记录这些 workflow，但真正的流程说明只维护在全局 `C:\Users\Administrator\.codex\skills`。
+
+**Impact**
+
+- 新增 `skill_runtime/execution/global_skill_adapter.py`
+- 8 个项目 workflow active skills 现在只返回 `adapter_role: global_codex_skill_adapter`、`global_skill_name`、`global_skill_path`、`source_role: authoritative_global_skill`
+- active metadata 已改成 adapter 口径，保留输入 schema 以维持搜索和执行参数提示
+- 搜索质量仍为 23/23，快验为 85 tests OK
+
+### 2026-05-03 - Global Codex Skill 是通用工作流的唯一权威来源
+
+**Decision**
+
+后续新建的通用工作流技能默认放到全局 `C:\Users\Administrator\.codex\skills`。项目 `AGENTS.md` 只做路由，Skill Runtime active skill 只做可执行适配、实验、测试和治理，不再作为通用工作流说明的最终归宿。
+
+**Reason**
+
+如果全局 Codex skill 和项目 `skill_store/active` 都保存完整流程，就会形成两份真相，后续修改必然漂移。全局 Codex skill 才能被新会话和其他项目直接发现；项目内只应保留局部约束、引用、索引或薄适配。
+
+**Impact**
+
+- 新增 `docs/global-skill-source-of-truth-policy.md`
+- 项目和全局 `AGENTS.md` 都写明新通用 workflow skill 的默认落点是全局 skills 目录
+- platform inventory 现在解析全局 `SKILL.md` frontmatter，并将外部 Codex skills 标记为 `source_role: authoritative_global_skill`
+- dashboard 平台视图会显示 global skill 的 source role 和 description，帮助区分“权威全局 skill”和“项目/Runtime 适配层”
+
+### 2026-05-03 - Workflow Skills 同步为全局 Codex Skills
+
+**Decision**
+
+将全局 `C:\Users\Administrator\.codex\AGENTS.md` 同步为短规则和 workflow skill routing，并把这批工作流安装到 `C:\Users\Administrator\.codex\skills` 作为全局 Codex skills。全局 skill 名使用 Codex 标准连字符命名，例如 `pre-implementation-workflow-review`；项目内 Skill Runtime active skill 继续保留下划线命名，例如 `pre_implementation_workflow_review`。
+
+**Reason**
+
+只在 `vibe` 的 `AGENTS.md` 和 `skill_store/active` 中保留工作流，会导致其他项目或新 Codex 会话只能看到规则的一部分，无法通过 Codex 的全局 skill 发现机制稳定触发。把流程做成全局 skills 后，方向审核、自动模式、部署判断、handoff、runtime gate、验证选择、仓库影响分析和非技术阶段报告都能跨工作区复用。
+
+**Impact**
+
+- 全局 `AGENTS.md` 保留通用默认规则，并新增全局 workflow skill routing
+- 新增 8 个全局 Codex skills：`pre-implementation-workflow-review`、`auto-mode-stage-runner`、`deployment-strategy-review`、`session-handoff-maintenance`、`runtime-gate-workflow`、`runtime-verification-selector`、`repo-impact-analysis`、`nontechnical-stage-report`
+- 8 个全局 skills 均通过 `skill-creator` 的 `quick_validate.py`
+- 项目 `AGENTS.md` 的路由名已对齐全局 Codex skill 名；直接调用 Skill Runtime active skill 时仍使用 `skill_store/active` 中的下划线名
+
+### 2026-05-03 - AGENTS 只保留常驻规则，长流程下沉为 Workflow Skills
+
+**Decision**
+
+将 `AGENTS.md` 从长操作手册收成短规则和 workflow skill 路由。自动模式、部署策略、session handoff、runtime gate、验证选择、仓库影响分析和非技术阶段报告都转为 active runtime workflow skills。
+
+**Reason**
+
+`AGENTS.md` 原本混合了常驻红线、流程细节和报告模板，导致每次会话都携带过多上下文。真正需要常驻的是“什么时候触发什么流程”，而不是每个流程的完整执行细节。把长流程下沉到技能后，默认上下文更轻，流程仍可复用、可搜索、可测试。
+
+**Impact**
+
+- 新增 7 个 active workflow skills：`auto_mode_stage_runner`、`deployment_strategy_review`、`session_handoff_maintenance`、`runtime_gate_workflow`、`runtime_verification_selector`、`repo_impact_analysis`、`nontechnical_stage_report`
+- `AGENTS.md` 保留 workspace purpose、standing rules、skill routing 和 minimal handoff rule
+- active skill 数量从 7 增加到 14
+- 搜索质量基线扩展到 23/23
+- 新增执行测试覆盖这些从 `AGENTS.md` 下沉的 workflow skills
+
+### 2026-05-03 - 开发方向价值门禁沉淀为 Active Skill
+
+**Decision**
+
+新增并升级 `pre_implementation_workflow_review` active skill。它在实现前审核开发方向、候选方案、预期产物、替代路线、已知上下文和用户价值假设，输出 `recommendation`、`risk_flags`、`must_answer_questions`、`research_queries`、`validation_plan`、`stop_condition` 和 JSON 报告。重点不是只拦截低价值本地基础技能，而是把“方向是否有价值、是否值得继续做”放在实现前。
+
+**Reason**
+
+用户指出，低风险本地文件技能在 Codex 日常开发里价值有限，这个判断本应在项目前期路线审核中出现，而不是开发几天后才通过 dashboard 观察反证。用户进一步明确，希望以后给出开发方向时，Codex 先持续询问、搜索、补全和判断方向是否正确、有无价值，直到项目有真正开发意义，再进入实现。需要把这类方向判断变成默认工作流和可复用技能，而不是只靠聊天中的临时反思。
+
+**Impact**
+
+- active skill 数量从 6 个增加到 7 个
+- 搜索质量基线新增开工前 review / audit / direction value 查询，当前 16/16 通过
+- 项目 `AGENTS.md` 新增 Development Direction Value Gate，要求新方向先审价值、用户、替代方案、成功指标和停止条件
+- 该技能不会替代用户决策，但会在实现前明确指出低价值路线、缺少问题验证、已有本地工具重叠、缺少成功指标和需要继续搜索/追问的问题
+
 ### 2026-05-03 - 开发工作流进入 Runtime Observation Lane
 
 **Decision**

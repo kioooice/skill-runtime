@@ -41,6 +41,85 @@
       "scope_policy": null
     },
     {
+      "skill_name": "auto_mode_stage_runner",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\auto_mode_stage_runner.py",
+      "summary": "Thin runtime adapter that points to the global auto-mode stage runner Codex skill.",
+      "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill auto-mode-stage-runner. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+      "input_schema": {
+        "trigger": "str",
+        "task_goal": "str",
+        "current_stage": "str",
+        "plan_items": "list[str]",
+        "output_path": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "adapter_role": "str",
+        "global_skill_name": "str",
+        "global_skill_path": "str",
+        "source_role": "str",
+        "next_action": "str"
+      },
+      "source_trajectory_ids": [],
+      "created_at": "2026-05-03T00:00:00+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "auto_mode_stage_runner",
+      "rule_priority": 82,
+      "rule_reason": "Extracted from AGENTS.md Auto Mode Protocol to reduce persistent instruction weight.",
+      "tags": [
+        "auto",
+        "autonomous",
+        "stage",
+        "runner",
+        "report",
+        "workflow"
+      ],
+      "scope_policy": null
+    },
+    {
+      "skill_name": "deployment_strategy_review",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\deployment_strategy_review.py",
+      "summary": "Thin runtime adapter that points to the global deployment strategy review Codex skill.",
+      "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill deployment-strategy-review. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+      "input_schema": {
+        "project_files": "list[str]",
+        "user_label": "str",
+        "output_path": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "adapter_role": "str",
+        "global_skill_name": "str",
+        "global_skill_path": "str",
+        "source_role": "str",
+        "next_action": "str"
+      },
+      "source_trajectory_ids": [],
+      "created_at": "2026-05-03T00:00:00+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "deployment_strategy_review",
+      "rule_priority": 82,
+      "rule_reason": "Extracted deployment and Docker selection rules from AGENTS.md into a reusable workflow.",
+      "tags": [
+        "deployment",
+        "docker",
+        "nextjs",
+        "node",
+        "static",
+        "strategy",
+        "workflow"
+      ],
+      "scope_policy": null
+    },
+    {
       "skill_name": "directory_json_to_csv_dogfood",
       "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_json_to_csv_dogfood.py",
       "summary": "Batch export all JSON records in a folder into CSV files.",
@@ -197,6 +276,253 @@
         "text",
         "markdown",
         "files"
+      ],
+      "scope_policy": null
+    },
+    {
+      "skill_name": "nontechnical_stage_report",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\nontechnical_stage_report.py",
+      "summary": "Thin runtime adapter that points to the global nontechnical stage report Codex skill.",
+      "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill nontechnical-stage-report. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+      "input_schema": {
+        "stage_name": "str",
+        "completed": "list[str]",
+        "changed_files": "list[str]",
+        "risks": "list[str]",
+        "output_path": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "adapter_role": "str",
+        "global_skill_name": "str",
+        "global_skill_path": "str",
+        "source_role": "str",
+        "next_action": "str"
+      },
+      "source_trajectory_ids": [],
+      "created_at": "2026-05-03T00:00:00+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "nontechnical_stage_report",
+      "rule_priority": 82,
+      "rule_reason": "Extracted non-technical stage report format from AGENTS.md Auto Mode Protocol.",
+      "tags": [
+        "nontechnical",
+        "stage",
+        "report",
+        "progress",
+        "options",
+        "workflow"
+      ],
+      "scope_policy": null
+    },
+    {
+      "skill_name": "pre_implementation_workflow_review",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\pre_implementation_workflow_review.py",
+      "summary": "Thin runtime adapter that points to the global pre-implementation workflow review Codex skill.",
+      "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill pre-implementation-workflow-review. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+      "input_schema": {
+        "task_description": "str",
+        "proposed_approach": "str",
+        "output_path": "str",
+        "expected_outputs": "list[str]",
+        "alternatives": "list[str]",
+        "known_context": "list[str]",
+        "user_value_hypothesis": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "adapter_role": "str",
+        "global_skill_name": "str",
+        "global_skill_path": "str",
+        "source_role": "str",
+        "next_action": "str"
+      },
+      "source_trajectory_ids": [],
+      "created_at": "2026-05-03T00:00:00+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "pre_implementation_review",
+      "rule_priority": 88,
+      "rule_reason": "Added as a human-approved direction value gate after local basic skill work proved lower value than default runtime lane integration.",
+      "tags": [
+        "audit",
+        "before",
+        "development",
+        "direction",
+        "implementation",
+        "planning",
+        "research",
+        "review",
+        "route",
+        "skill",
+        "validation",
+        "value",
+        "workflow"
+      ],
+      "scope_policy": null
+    },
+    {
+      "skill_name": "repo_impact_analysis",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\repo_impact_analysis.py",
+      "summary": "Thin runtime adapter that points to the global repo impact analysis Codex skill.",
+      "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill repo-impact-analysis. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+      "input_schema": {
+        "target": "str",
+        "gitnexus_available": "bool",
+        "indexed": "bool",
+        "output_path": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "adapter_role": "str",
+        "global_skill_name": "str",
+        "global_skill_path": "str",
+        "source_role": "str",
+        "next_action": "str"
+      },
+      "source_trajectory_ids": [],
+      "created_at": "2026-05-03T00:00:00+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "repo_impact_analysis",
+      "rule_priority": 82,
+      "rule_reason": "Extracted GitNexus preference and fallback analysis rules from AGENTS.md.",
+      "tags": [
+        "repo",
+        "impact",
+        "analysis",
+        "symbols",
+        "callchain",
+        "gitnexus",
+        "workflow"
+      ],
+      "scope_policy": null
+    },
+    {
+      "skill_name": "runtime_gate_workflow",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\runtime_gate_workflow.py",
+      "summary": "Thin runtime adapter that points to the global runtime gate workflow Codex skill.",
+      "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill runtime-gate-workflow. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+      "input_schema": {
+        "task_description": "str",
+        "working_directory": "str",
+        "expected_outputs": "list[str]",
+        "risk_level": "str",
+        "output_path": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "adapter_role": "str",
+        "global_skill_name": "str",
+        "global_skill_path": "str",
+        "source_role": "str",
+        "next_action": "str"
+      },
+      "source_trajectory_ids": [],
+      "created_at": "2026-05-03T00:00:00+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "runtime_gate_workflow",
+      "rule_priority": 82,
+      "rule_reason": "Extracted Skill Runtime gate instructions from AGENTS.md.",
+      "tags": [
+        "runtime",
+        "gate",
+        "finalizer",
+        "workflow",
+        "visibility",
+        "mcp"
+      ],
+      "scope_policy": null
+    },
+    {
+      "skill_name": "runtime_verification_selector",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\runtime_verification_selector.py",
+      "summary": "Thin runtime adapter that points to the global runtime verification selector Codex skill.",
+      "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill runtime-verification-selector. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+      "input_schema": {
+        "change_scope": "str",
+        "output_path": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "adapter_role": "str",
+        "global_skill_name": "str",
+        "global_skill_path": "str",
+        "source_role": "str",
+        "next_action": "str"
+      },
+      "source_trajectory_ids": [],
+      "created_at": "2026-05-03T00:00:00+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "runtime_verification_selector",
+      "rule_priority": 82,
+      "rule_reason": "Extracted verification command selection rules from AGENTS.md.",
+      "tags": [
+        "verification",
+        "fast",
+        "full",
+        "profile",
+        "suite",
+        "validation",
+        "workflow"
+      ],
+      "scope_policy": null
+    },
+    {
+      "skill_name": "session_handoff_maintenance",
+      "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\session_handoff_maintenance.py",
+      "summary": "Thin runtime adapter that points to the global session handoff maintenance Codex skill.",
+      "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill session-handoff-maintenance. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+      "input_schema": {
+        "command": "str",
+        "next_action": "str",
+        "changed_state": "list[str]",
+        "output_path": "str"
+      },
+      "output_schema": {
+        "status": "str",
+        "artifacts": "list[str]",
+        "adapter_role": "str",
+        "global_skill_name": "str",
+        "global_skill_path": "str",
+        "source_role": "str",
+        "next_action": "str"
+      },
+      "source_trajectory_ids": [],
+      "created_at": "2026-05-03T00:00:00+00:00",
+      "last_used_at": null,
+      "usage_count": 0,
+      "status": "active",
+      "audit_score": 100,
+      "rule_name": "session_handoff_maintenance",
+      "rule_priority": 82,
+      "rule_reason": "Extracted session resume and state-file maintenance rules from AGENTS.md.",
+      "tags": [
+        "handoff",
+        "session",
+        "resume",
+        "state",
+        "tasks",
+        "decisions",
+        "workflow"
       ],
       "scope_policy": null
     },

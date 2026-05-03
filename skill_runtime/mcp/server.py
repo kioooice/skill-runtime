@@ -181,6 +181,29 @@ def build_mcp_server(root: str | Path) -> FastMCP:
         return _wrap_tool(service, "promote", file_path=file_path)
 
     @server.tool(
+        name="promote_global_codex_skill",
+        description=(
+            "Promote a passing staging workflow skill into the global Codex skill library "
+            "without creating a project active-skill copy."
+        ),
+        structured_output=True,
+    )
+    def promote_global_codex_skill(
+        file_path: str,
+        global_skills_dir: str | None = None,
+        global_skill_name: str | None = None,
+        overwrite: bool = False,
+    ) -> dict[str, Any]:
+        return _wrap_tool(
+            service,
+            "promote_to_global_codex_skill",
+            file_path=file_path,
+            global_skills_dir=global_skills_dir,
+            global_skill_name=global_skill_name,
+            overwrite=overwrite,
+        )
+
+    @server.tool(
         name="log_trajectory",
         description="Validate and register a trajectory JSON file into the local trajectory store.",
         structured_output=True,

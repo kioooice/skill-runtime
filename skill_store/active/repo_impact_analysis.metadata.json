@@ -1,0 +1,32 @@
+{
+  "skill_name": "repo_impact_analysis",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\repo_impact_analysis.py",
+  "summary": "Thin runtime adapter that points to the global repo impact analysis Codex skill.",
+  "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill repo-impact-analysis. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+  "input_schema": {
+    "target": "str",
+    "gitnexus_available": "bool",
+    "indexed": "bool",
+    "output_path": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "adapter_role": "str",
+    "global_skill_name": "str",
+    "global_skill_path": "str",
+    "source_role": "str",
+    "next_action": "str"
+  },
+  "source_trajectory_ids": [],
+  "created_at": "2026-05-03T00:00:00+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "active",
+  "audit_score": 100,
+  "rule_name": "repo_impact_analysis",
+  "rule_priority": 82,
+  "rule_reason": "Extracted GitNexus preference and fallback analysis rules from AGENTS.md.",
+  "tags": ["repo", "impact", "analysis", "symbols", "callchain", "gitnexus", "workflow"],
+  "scope_policy": null
+}

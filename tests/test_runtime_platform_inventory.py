@@ -18,7 +18,10 @@ class RuntimePlatformInventoryTestsMixin:
         platform_root = self.runtime_root / "platforms" / "codex" / "skills"
         skill_dir = platform_root / "merge-text"
         skill_dir.mkdir(parents=True)
-        (skill_dir / "SKILL.md").write_text("---\nname: merge-text\n---\n\nMerge text files.\n", encoding="utf-8")
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: merge-text\ndescription: Merge text files globally.\n---\n\nMerge text files.\n",
+            encoding="utf-8",
+        )
 
         before_paths = sorted(path.relative_to(platform_root) for path in platform_root.rglob("*"))
         inventory = collect_platform_inventory(
@@ -39,8 +42,11 @@ class RuntimePlatformInventoryTestsMixin:
         self.assertEqual("codex", item["platform_id"])
         self.assertEqual("Codex", item["display_name"])
         self.assertEqual("merge-text", item["skill_name"])
+        self.assertEqual("merge-text", item["directory_name"])
+        self.assertEqual("Merge text files globally.", item["description"])
         self.assertEqual("external", item["ownership"])
         self.assertEqual("read_only", item["link_type"])
+        self.assertEqual("authoritative_global_skill", item["source_role"])
         self.assertTrue(item["is_read_only"])
         self.assertEqual(str(platform_root.resolve()), item["source_root"])
 
@@ -72,5 +78,31 @@ class RuntimePlatformInventoryTestsMixin:
         item = inventory["items"][0]
         self.assertEqual("agents-shared", item["platform_id"])
         self.assertEqual("external", item["ownership"])
+        self.assertEqual("external_skill", item["source_role"])
         self.assertEqual(str(shared_root.resolve()), item["source_root"])
         self.assertNotEqual(str(project_root.resolve()), item["source_root"])
+
+    def test_platform_inventory_marks_runtime_and_project_skills_as_non_authoritative(self) -> None:
+        from skill_runtime.platforms.discovery import collect_platform_inventory
+        from skill_runtime.platforms.registry import PlatformRoot
+
+        runtime_skill = self.runtime_root / "skill_store" / "active" / "runtime-skill"
+        project_root = self.runtime_root / "workspace" / "project-a"
+        project_skill = project_root / ".codex" / "skills" / "project-skill"
+        runtime_skill.mkdir(parents=True)
+        project_skill.mkdir(parents=True)
+        (runtime_skill / "SKILL.md").write_text("---\nname: runtime-skill\n---\n", encoding="utf-8")
+        (project_skill / "SKILL.md").write_text("---\nname: project-skill\n---\n", encoding="utf-8")
+
+        inventory = collect_platform_inventory(
+            self.runtime_root,
+            platform_roots=[
+                PlatformRoot("codex", "Codex", self.runtime_root / "skill_store" / "active"),
+                PlatformRoot("codex-project", "Codex Project", project_root / ".codex" / "skills"),
+            ],
+            project_roots=[project_root],
+        )
+
+        roles = {item["skill_name"]: item["source_role"] for item in inventory["items"]}
+        self.assertEqual("runtime_managed_skill", roles["runtime-skill"])
+        self.assertEqual("project_local_skill", roles["project-skill"])

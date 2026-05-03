@@ -305,19 +305,29 @@ def _skill_group_key(skill: dict[str, Any]) -> str:
         "bridge",
         "config",
         "demo",
+        "deployment",
         "distill",
         "explainable",
         "fallback",
         "followup",
+        "gate",
         "generated",
         "generalized",
+        "handoff",
+        "impact",
         "manual",
         "provider",
         "registry",
+        "repo",
+        "review",
         "rule",
         "semantic",
         "service",
         "test",
+        "implementation",
+        "verification",
+        "stage",
+        "report",
     )
     if any(marker in raw_hint for marker in governance_markers):
         return "runtime-governance"
@@ -605,9 +615,12 @@ def _platform_inventory(inventory: dict[str, Any]) -> str:
 
 
 def _platform_item_card(item: dict[str, Any]) -> str:
+    description = item.get("description")
+    description_html = f"""  <div class="muted">{text(description)}</div>\n""" if description else ""
     return f"""<article class="project-card">
   <div class="project-name">{text(item.get("skill_name"))}</div>
   <div class="project-path">{text(item.get("skill_path"))}</div>
+{description_html}  <div class="muted">角色：{text(item.get("source_role"))}</div>
   <div class="project-stats">
     <span>{text(item.get("display_name"))}</span>
     <span>{text(item.get("ownership"))}</span>

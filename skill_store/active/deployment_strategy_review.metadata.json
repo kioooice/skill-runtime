@@ -1,0 +1,31 @@
+{
+  "skill_name": "deployment_strategy_review",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\deployment_strategy_review.py",
+  "summary": "Thin runtime adapter that points to the global deployment strategy review Codex skill.",
+  "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill deployment-strategy-review. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+  "input_schema": {
+    "project_files": "list[str]",
+    "user_label": "str",
+    "output_path": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "adapter_role": "str",
+    "global_skill_name": "str",
+    "global_skill_path": "str",
+    "source_role": "str",
+    "next_action": "str"
+  },
+  "source_trajectory_ids": [],
+  "created_at": "2026-05-03T00:00:00+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "active",
+  "audit_score": 100,
+  "rule_name": "deployment_strategy_review",
+  "rule_priority": 82,
+  "rule_reason": "Extracted deployment and Docker selection rules from AGENTS.md into a reusable workflow.",
+  "tags": ["deployment", "docker", "nextjs", "node", "static", "strategy", "workflow"],
+  "scope_policy": null
+}

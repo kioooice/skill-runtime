@@ -63,6 +63,46 @@ SEARCH_CASES = [
         "query": "normalize txt folder trailing whitespace",
         "expected_skill": "directory_text_cleanup_dogfood",
     },
+    {
+        "query": "review workflow before implementation",
+        "expected_skill": "pre_implementation_workflow_review",
+    },
+    {
+        "query": "audit proposed development route before building",
+        "expected_skill": "pre_implementation_workflow_review",
+    },
+    {
+        "query": "validate product direction value before coding",
+        "expected_skill": "pre_implementation_workflow_review",
+    },
+    {
+        "query": "run auto mode stage report",
+        "expected_skill": "auto_mode_stage_runner",
+    },
+    {
+        "query": "choose deployment strategy docker nextjs static node",
+        "expected_skill": "deployment_strategy_review",
+    },
+    {
+        "query": "resume handoff update tasks decisions",
+        "expected_skill": "session_handoff_maintenance",
+    },
+    {
+        "query": "prepare runtime gate finalizer workflow",
+        "expected_skill": "runtime_gate_workflow",
+    },
+    {
+        "query": "choose fast full verification commands",
+        "expected_skill": "runtime_verification_selector",
+    },
+    {
+        "query": "repo impact analysis symbols call chain gitnexus",
+        "expected_skill": "repo_impact_analysis",
+    },
+    {
+        "query": "write nontechnical stage progress report",
+        "expected_skill": "nontechnical_stage_report",
+    },
 ]
 
 NO_RECOMMENDATION_CASES = [

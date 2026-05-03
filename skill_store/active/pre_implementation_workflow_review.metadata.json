@@ -1,0 +1,49 @@
+{
+  "skill_name": "pre_implementation_workflow_review",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\pre_implementation_workflow_review.py",
+  "summary": "Thin runtime adapter that points to the global pre-implementation workflow review Codex skill.",
+  "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill pre-implementation-workflow-review. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+  "input_schema": {
+    "task_description": "str",
+    "proposed_approach": "str",
+    "output_path": "str",
+    "expected_outputs": "list[str]",
+    "alternatives": "list[str]",
+    "known_context": "list[str]",
+    "user_value_hypothesis": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "adapter_role": "str",
+    "global_skill_name": "str",
+    "global_skill_path": "str",
+    "source_role": "str",
+    "next_action": "str"
+  },
+  "source_trajectory_ids": [],
+  "created_at": "2026-05-03T00:00:00+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "active",
+  "audit_score": 100,
+  "rule_name": "pre_implementation_review",
+  "rule_priority": 88,
+  "rule_reason": "Added as a human-approved direction value gate after local basic skill work proved lower value than default runtime lane integration.",
+  "tags": [
+    "audit",
+    "before",
+    "development",
+    "direction",
+    "implementation",
+    "planning",
+    "research",
+    "review",
+    "route",
+    "skill",
+    "validation",
+    "value",
+    "workflow"
+  ],
+  "scope_policy": null
+}

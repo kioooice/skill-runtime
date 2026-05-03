@@ -84,6 +84,7 @@ def _collect_skills(root: Path, diagnostics: list[str]) -> list[dict[str, Any]]:
         indexed = {}
 
     skills: dict[str, dict[str, Any]] = {}
+    status_rank = {"active": 0, "staging": 1, "archived": 2, "rejected": 3}
     for status, directory_name in (
         ("active", "active"),
         ("staging", "staging"),
@@ -99,6 +100,9 @@ def _collect_skills(root: Path, diagnostics: list[str]) -> list[dict[str, Any]]:
             if not isinstance(payload, dict):
                 continue
             skill_name = str(payload.get("skill_name") or metadata_path.name.replace(".metadata.json", ""))
+            existing = skills.get(skill_name)
+            if existing is not None and status_rank.get(existing["status"], 99) <= status_rank.get(status, 99):
+                continue
             indexed_metadata = indexed.get(skill_name)
             skills[skill_name] = _skill_payload(skill_name, status, payload, indexed_metadata, root)
     return sorted(skills.values(), key=lambda item: (item["status"], item["skill_name"]))
