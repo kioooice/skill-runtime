@@ -11,6 +11,8 @@ This workspace is `vibe`.
 ## Standing Rules
 
 - New development directions must pass the development direction value gate before implementation.
+- Do not treat Skill Runtime, local skills, `entered / used` samples, dashboard events, or trigger validation as the product goal. If work starts drifting into "prove the runtime works" loops, stop and return to the development-direction value gate.
+- Do not continue adding or validating skills just because auto mode can keep going. Runtime work is only justified when it directly supports valuable development decisions, especially preventing low-value implementation.
 - Concrete project development tasks must call the Codex-facing Skill Runtime gate before substantive reads or edits.
 - Resume commands such as `继续`, `继续完成任务`, `继续 HANDOFF`, or `continue` must start from `HANDOFF.md`.
 - Prefer the fast runtime suite for routine validation: `python -m unittest tests.test_runtime_fast -v`.

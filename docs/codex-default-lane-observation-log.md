@@ -23,6 +23,16 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Route correction away from runtime validation loops
+
+- Task type: process correction / value gate reinforcement
+- Classified as: `default-in` / `entered` for state-file maintenance; no code change intended
+- What happened: user caught that the assistant was drifting back toward the old low-value loop of continuing to validate local skills, runtime triggers, and `entered / used` samples
+- Did the behavior feel correct: the correction is correct; runtime validation must not become the project goal
+- Did the lane help: only as bookkeeping; the useful lesson is to stop runtime-validation loops and return to the development-direction value gate
+- Finalizer: returned `runtime_lane_status: used` and captured `trajectories/record_route_correction_stop_repeating_local_ski_20260503093009.json`
+- Follow-up: future automatic development should prioritize `pre_implementation_workflow_review` and reject runtime/sample collection work unless it directly supports preventing low-value development
+
 ### 2026-05-03 - GitNexus index refresh
 
 - Task type: repository impact-analysis maintenance

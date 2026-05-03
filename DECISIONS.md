@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-03 - Runtime Validation Is Not The Product Goal
+
+**Decision**
+
+Stop treating additional Skill Runtime trigger validation, `entered / used` sample collection, dashboard events, or local skill growth as a default development goal. Future work must route back through the development-direction value gate when it starts to look like "keep proving the runtime works".
+
+**Reason**
+
+The user caught a repeat of the earlier failure mode: continuing to validate local skills and runtime behavior can create busy progress without proving project value. If the user had not pointed it out, the workflow could have drifted back into adding skills and collecting samples instead of preventing low-value development.
+
+**Impact**
+
+- Project and global `AGENTS.md` now explicitly block runtime-validation loops as a default route
+- The main product value is restated as pre-development direction/value review
+- Runtime work remains allowed only when it directly supports valuable decisions or prevents low-value implementation
+
 ### 2026-05-03 - GitNexus Index Refreshed To Current Commit
 
 **Decision**

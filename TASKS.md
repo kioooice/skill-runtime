@@ -10,13 +10,13 @@
   - `low-risk-workspace-organization`
   - `development-workflow-observation`
   这意味着当前默认接入已经不再只是“有入口”，而是“有入口且第一批任务边界更小更可信”。同时，第一处现有入口 `agent-plan` / `agent-plan-learning` 已正式切换到 Codex 默认通道，且更大范围验证已经通过：架构检查通过、contract 检查通过、CLI 级 default-in/default-out smoke 都通过，full slow runtime suite 也已通过 399 个测试。当前默认先把这一处入口作为阶段性默认路径验证点，而不是继续马上切第二处现有入口。现在又进一步把 `skill_runtime` 上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 MCP 启动也已不再写死在 `vibe` 根目录，而会优先识别当前工作区。当前已进一步把规则加严：具体项目开发任务在实质性读代码或改动前必须先走 Codex-facing runtime gate，优先调用 `run_codex_task_experimental`，必要时用 CLI `codex-run` 兜底写入可见触发事件；任务完成后如有结构化执行结果再走 `finalize_codex_task_experimental`。只读可视化观察面板已完成，并已把“技能树”从长列表改成中心向四周发散的径向布局，active / staging / archived / rejected 分支分布在四个象限；分支内现在优先展示能力组别，例如格式转换、文本处理、文件整理和运行时治理，而不是逐个技能铺开；当前也已去掉交叉连接线和硬分界线，让能力地图更干净。中心运行时根节点已重新放到上下分支之间，避免压到组别卡片。点击组别时，组内技能现在进入居中凸显的详情界面，页面不会自动滚动，也不再把树枝撑长。Trigger Log 和治理快照也都是独立页面式视图。dashboard 命令支持 `--open` 一键生成并打开本地页面。现在新增全局只读 dashboard，并已和普通 dashboard 合并：`dashboard --global --scan-root <目录>` 仍然能看当前项目技能树、触发日志、治理快照，同时增加全局项目概览和全局触发日志，用于查看其他工作区是否触发过 Skill Runtime。dashboard 固定界面文案、技能名称和技能说明都已中文显示；内部调用仍保留原始英文 `skill_name`。快验基线为 103 个测试通过
-- 下一步：`AGENTS.md` 已从长操作手册收成短规则和 workflow skill 路由，自动模式、部署判断、session handoff、runtime gate、验证选择、仓库影响分析和非技术阶段汇报已转成 active workflow skills；这些工作流也已同步为全局 Codex skills，安装在 `C:\Users\Administrator\.codex\skills`，后续新会话和其他项目可直接触发连字符命名的全局技能。当前原则已明确：全局 Codex skill 是通用工作流的唯一权威来源，项目只保留路由、局部约束、索引或薄适配。项目内 8 个 workflow active skills 已改为薄 adapter，不再复制完整流程；Runtime 现在支持 `promote-global-codex-skill`，也支持 `distill-and-promote --promotion-target global-codex`，并且 finalizer 捕获 trajectory 后会同时给出项目 active 与全局 Codex 的一键 `distill_and_promote_candidate` 后续操作。成功工作流已经能从捕获、蒸馏、审核到全局 Codex skill promotion 串成可发现闭环，但不会自动替用户提升。Codex task classifier 现在还能根据明确的开发产物路径进入 `development-workflow-observation`，不再只依赖任务描述里出现“实现/重构/测试”等关键词。runtime lane 事件和 dashboard 触发日志现在会显示 finalizer 推荐的下一步和可用 follow-up 标签，用户能从只读面板看到捕获后该做什么；CLI 新增 `runtime-events` 只读 JSON 入口，MCP 也新增 `runtime_events` 只读工具，且两者已经共用同一套事件 payload builder，便于脚本或 Codex app 跨项目检查。Codex-facing CLI 现在也支持 `--known-inputs-json-file`、`--expected-outputs-json-file`、`--plan-json-file` 和 `--execution-json-file`，全局 `runtime-gate-workflow` skill 也已同步提醒 PowerShell 场景优先使用文件参数，避免内联 JSON 转义失败。治理写路径现在只 merge 实际变更的 metadata，避免归档/回填时覆盖非目标技能的晚到同名索引更新。runtime test profiler 现在支持 `--json-output`，后续可以保存快测/全量测试耗时趋势。后续继续观察其他项目中的真实触发质量，尤其是能产生 `entered` 或 `used` 的样本。需要看跨项目记录时，运行 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`、`python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects`，或通过 MCP 调用 `runtime_events`
+- 下一步：主线纠偏为“开发前方向审核 / 防止无意义开发”。不要再把继续验证 Skill Runtime、本地技能、`entered / used` 样本或 dashboard 事件当作默认目标；这些只能作为底层支撑。后续如果自动模式开始滑向“继续证明 runtime 能触发”，必须停止并回到 development-direction value gate。`AGENTS.md` 已从长操作手册收成短规则和 workflow skill 路由，自动模式、部署判断、session handoff、runtime gate、验证选择、仓库影响分析和非技术阶段汇报已转成 active workflow skills；这些工作流也已同步为全局 Codex skills，安装在 `C:\Users\Administrator\.codex\skills`，后续新会话和其他项目可直接触发连字符命名的全局技能。当前原则已明确：全局 Codex skill 是通用工作流的唯一权威来源，项目只保留路由、局部约束、索引或薄适配。Runtime 相关能力已经够支撑观察和回收经验，继续开发必须直接服务于“审核开发方向是否值得做”。
 - GitNexus 状态：本机查询崩溃已定位为 Windows 下 LadybugDB FTS/VECTOR 扩展加载导致 native crash；已用本机补丁让 CLI 的 `cypher` / `query` / `context` 恢复可用。当前已重新运行 `gitnexus analyze`，索引更新到当前提交 `c9f2c2c`，`status` 显示 up-to-date，CLI `cypher` / `query` / `context RuntimeService` 均已验证通过。搜索排序仍受 Windows FTS fallback 限制。
 
 ## Todo
 
-- [ ] 在下一条真实项目开发任务中继续 dogfood `development-workflow-observation`，重点看 finalizer 是否稳定产生有价值的 `used` / trajectory 样本
-- [ ] 在下一次启动新功能或新路线前，dogfood `pre_implementation_workflow_review`，确认它能先审开发方向价值、替代方案、成功指标和停止条件
+- [ ] 下一次启动新功能或新路线前，优先 dogfood `pre_implementation_workflow_review`，确认它能先审开发方向价值、替代方案、成功指标和停止条件
+- [ ] 如果后续建议继续验证 runtime / 本地技能 / `entered` / `used` 样本，先检查是否又滑回低价值验证循环；除非它直接服务于方向审核，否则停止
 - [ ] 在下一次自动模式或部署任务中 dogfood 对应 workflow skill，确认从 `AGENTS.md` 下沉后的流程仍好用
 - [x] 在下一次可复用 workflow staging 候选出现时 dogfood `promote-global-codex-skill`，确认全局 skill 写入和新会话触发链路
 - [x] 让 `distill-and-promote` 支持 `--promotion-target global-codex`，打通 observed/trajectory 到全局 Codex skill 的一条链路
@@ -31,7 +31,7 @@
 - [x] 将 JSON file 参数用法同步进全局 `runtime-gate-workflow` skill
 - [x] 新开 Codex 会话或重载 MCP 后复测 `mcp__skill_runtime__.run_codex_task_experimental`，确认 app 级 MCP 也能返回 `default-in/entered`
 - [x] 观察这条全局默认能力在真实工作区中的表现，用户已确认其他项目可以正常调用
-- [ ] 继续观察后续真实任务中的 `entered` / `used` 样本，不只收集 `skipped` 样本
+- [x] 记录路线纠偏：不再把继续收集 `entered` / `used` 样本当成默认主线
 - [ ] 继续用当前静态 dashboard 做真实观察，只有出现重复过滤、对比、批量选择或多步导入评审需求时，再进入 rich UI decision gate
 - [ ] 持续补充 `docs/codex-default-lane-observation-log.md` 中的真实样本
 - [ ] 仅在观察期出现明确价值时，再决定是否继续切第二处现有入口到 Codex 默认通道
