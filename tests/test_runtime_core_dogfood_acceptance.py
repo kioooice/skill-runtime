@@ -408,6 +408,26 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         self.assertIn("C:\\Users\\Administrator\\.codex\\skills", review_payload["global_skill_path"])
         self.assertIn("Use the global Codex skill", review_payload["next_action"])
 
+    def test_global_pre_implementation_workflow_review_defines_main_process_guardrails(self) -> None:
+        skill_path = (
+            Path("C:/Users/Administrator/.codex/skills")
+            / "pre-implementation-workflow-review"
+            / "SKILL.md"
+        )
+        self.assertTrue(skill_path.exists())
+        content = skill_path.read_text(encoding="utf-8")
+
+        for phrase in [
+            "Do not start implementation until the workflow reaches a build-now verdict.",
+            "`build_now`",
+            "`manual_validation_first`",
+            "`revise_direction`",
+            "`do_not_build_now`",
+            "smallest closed-loop validation",
+            "Do not treat Skill Runtime, local skills, entered/used samples, dashboard events, or trigger validation as the product goal.",
+        ]:
+            self.assertIn(phrase, content)
+
     def test_agents_operational_workflow_skills_execute_from_search(self) -> None:
         sandbox_root, _, _ = self._make_runtime_sandbox()
         cases = [

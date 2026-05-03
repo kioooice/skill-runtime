@@ -23,6 +23,16 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Pre-implementation review main process
+
+- Task type: workflow main-process reinforcement
+- Classified as: `default-in` / `entered` because the task had explicit workflow, docs, and test outputs
+- What happened: upgraded the global `pre-implementation-workflow-review` skill from a checklist into a blocking main process with four verdicts: `build_now`, `manual_validation_first`, `revise_direction`, and `do_not_build_now`
+- Did the behavior feel correct: yes; the runtime gate stayed as bookkeeping, while the actual product value moved to preventing low-value implementation before coding starts
+- Did the lane help: only as traceability; the useful outcome is the stronger direction-review workflow and the regression test that protects it
+- Finalizer: returned `runtime_lane_status: entered` with `observed_only`; no trajectory was distilled
+- Follow-up: use this workflow before the next new product route, and do not resume runtime/sample validation unless it directly supports a build/no-build judgment
+
 ### 2026-05-03 - Route correction away from runtime validation loops
 
 - Task type: process correction / value gate reinforcement

@@ -10,7 +10,7 @@ This workspace is `vibe`.
 
 ## Standing Rules
 
-- New development directions must pass the development direction value gate before implementation.
+- New development directions must pass the development direction value gate before implementation; only a `build_now` verdict permits same-flow implementation.
 - Do not treat Skill Runtime, local skills, `entered / used` samples, dashboard events, or trigger validation as the product goal. If work starts drifting into "prove the runtime works" loops, stop and return to the development-direction value gate.
 - Do not continue adding or validating skills just because auto mode can keep going. Runtime work is only justified when it directly supports valuable development decisions, especially preventing low-value implementation.
 - Concrete project development tasks must call the Codex-facing Skill Runtime gate before substantive reads or edits.
@@ -21,7 +21,7 @@ This workspace is `vibe`.
 
 ## Workflow Skill Routing
 
-- Use `pre-implementation-workflow-review` for new development directions, product ideas, route changes, and value checks before coding.
+- Use `pre-implementation-workflow-review` as the main process for new development directions, product ideas, route changes, and value checks before coding.
 - Use `runtime-gate-workflow` for Skill Runtime gate/finalizer setup, fallback, and event visibility.
 - Use `auto-mode-stage-runner` for `自动模式开始`, autonomous stage execution, stage reports, and auto-mode stopping rules.
 - Use `nontechnical-stage-report` when a stage report must be understandable to a non-technical user.

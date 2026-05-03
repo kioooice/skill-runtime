@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-03 - Pre-Implementation Review Becomes The Main Development Gate
+
+**Decision**
+
+Upgrade the global `pre-implementation-workflow-review` skill from a general checklist into the main workflow gate before new development directions. The workflow now blocks implementation unless it reaches a `build_now` verdict; otherwise it returns `manual_validation_first`, `revise_direction`, or `do_not_build_now`.
+
+**Reason**
+
+The user clarified that the important capability is not more local skills or runtime samples. Codex should challenge a proposed direction before implementation: whether the problem is real, whether existing/manual alternatives already solve it, whether the smallest validation loop is clear, and whether building now has value.
+
+**Impact**
+
+- The authoritative global skill now defines a build gate, output contract, current-alternative research behavior, and runtime-loop guardrail
+- Project and global `AGENTS.md` now say only `build_now` permits same-flow implementation
+- A fast regression test protects the global skill from losing the main-process guardrails
+- Future work should apply this gate before new product routes instead of continuing internal runtime validation by default
+
 ### 2026-05-03 - Runtime Validation Is Not The Product Goal
 
 **Decision**
