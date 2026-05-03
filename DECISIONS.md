@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-03 - Recorded Workflow Mistakes Must Be Reused Before New Records
+
+**Decision**
+
+`workflow-error-correction` is not a passive log. When a similar situation appears, Codex must first check existing correction records and apply the prevention rule. A new error record is only created when the pattern is new, materially broader, or lacks a usable prevention rule.
+
+**Reason**
+
+The user should not need to repeatedly say "you made this same mistake again." Recording an error only has value if future sessions reuse the record to avoid the same behavior.
+
+**Impact**
+
+- The global skill now starts with "check existing correction records before creating a new one"
+- It explicitly says not to require the user to repeat an already recorded mistake
+- A fast regression test protects this prevention-first behavior
+- Future corrections should report whether they reused an existing correction or created a new record
+
 ### 2026-05-03 - Workflow Error Records Do Not Belong In AGENTS
 
 **Decision**

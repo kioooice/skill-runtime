@@ -450,6 +450,9 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         content = skill_path.read_text(encoding="utf-8")
         for phrase in [
             "Record the mistake outside AGENTS.md",
+            "Check existing correction records before creating a new one",
+            "Do not require the user to repeat an already recorded mistake",
+            "Create a new error record only when the repeat pattern is new",
             "classify the repeat pattern",
             "prevention rule",
             "Do not expand AGENTS.md with case-specific history",

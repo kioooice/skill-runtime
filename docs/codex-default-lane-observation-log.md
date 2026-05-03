@@ -23,6 +23,16 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Recorded workflow mistakes must be reused
+
+- Task type: workflow correction semantics
+- Classified as: `default-in` / `entered` because the task had explicit global skill, state-file, and test outputs
+- What happened: updated `workflow-error-correction` so recorded mistakes are reused proactively; new records are created only for new or materially different error patterns
+- Did the behavior feel correct: yes; the user should not have to repeatedly say the same recorded error
+- Did the lane help: only as traceability; the product improvement is the prevention-first correction behavior
+- Finalizer: returned `runtime_lane_status: entered` with `observed_only`; no trajectory was distilled
+- Follow-up: before recording another workflow error, check whether an existing correction already covers it and apply that rule directly
+
 ### 2026-05-03 - Workflow error correction moved out of AGENTS
 
 - Task type: workflow governance correction
