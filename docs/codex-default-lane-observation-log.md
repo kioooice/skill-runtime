@@ -32,6 +32,8 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the lane help: yes, because the issue appeared while using the runtime lane itself and became a small, testable improvement
 - Verification: new file-argument tests failed first, then passed; targeted Codex CLI tests passed; `python -m py_compile skill_runtime\cli.py` passed; fast suite passed with 102 tests
 - Finalizer: file-based `codex-finalize` path returned `runtime_lane_status: used` and captured `trajectories/add_json_file_argument_support_for_codex_task_cl_20260503085918.json`
+- Global sync: updated `C:\Users\Administrator\.codex\skills\runtime-gate-workflow\SKILL.md` so future sessions prefer JSON file flags for PowerShell CLI fallback
+- Global sync finalizer: returned `runtime_lane_status: used` and captured `trajectories/update_the_global_runtime_gate_workflow_skill_to_20260503090117.json`
 - Follow-up: prefer JSON file flags for complex local CLI dogfood commands in PowerShell sessions
 
 ### 2026-05-03 - Runtime event payload builders

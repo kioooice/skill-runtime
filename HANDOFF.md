@@ -176,6 +176,11 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
   - `python -m unittest tests.test_runtime_fast -v` 通过，102 tests OK
   - 使用 `--known-inputs-json-file`、`--expected-outputs-json-file` 和 `--execution-json-file` 跑通真实 `codex-finalize`
   - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/add_json_file_argument_support_for_codex_task_cl_20260503085918.json`
+- 全局 runtime gate skill 同步：
+  - 已更新 `C:\Users\Administrator\.codex\skills\runtime-gate-workflow\SKILL.md`
+  - 新会话使用 CLI fallback 时，会看到 PowerShell 场景优先使用 JSON file 参数的规则
+  - 这项改动在全局配置目录，不在本仓库 git 跟踪范围内
+  - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/update_the_global_runtime_gate_workflow_skill_to_20260503090117.json`
 - 完成 `skills-manage` 吸收方案第一阶段：
   - 新增 `docs/platform-skill-inventory-design.md`
   - 新增 `skill_runtime/platforms/registry.py`
