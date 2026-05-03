@@ -224,6 +224,7 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("将文件夹中的所有 JSON 记录批量导出为 CSV 文件。", html)
         self.assertIn('data-skill-name="directory_json_to_csv_dogfood"', html)
         self.assertIn("合并文本文件", html)
+        self.assertIn("进入 runtime 观察", html)
         self.assertNotIn("Batch export all JSON records in a folder into CSV files.", html)
 
     def test_dashboard_collector_includes_imported_staging_provenance(self) -> None:

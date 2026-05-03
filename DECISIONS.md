@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-03 - 开发工作流进入 Runtime Observation Lane
+
+**Decision**
+
+Codex 默认通道新增 `development-workflow-observation` 家族。它覆盖有明确工作区和明确产物的开发工作流，例如代码、测试、dashboard、文档和配置改动。该家族进入 `default-in`，让 runtime 可以参与检索、观察和收尾学习；但对这类广义开发任务仍建议使用 `allow_silent_reuse=false`，避免未知开发工作被静默自动执行。
+
+**Reason**
+
+用户指出当前 dashboard 中真实项目开发任务基本都是 `skipped`，而此前 `default-in` 的低风险本地文件任务在实际 Codex 开发里价值不高，因为 Codex 自己就能直接用 Python 或本地命令处理。要证明 Skill Runtime 真正参与主线，默认接入点必须覆盖可复用的开发流程，而不是只覆盖简单文件工具。
+
+**Impact**
+
+- 本地开发工作流可以显示为 `entered`，不再只显示为普通 Codex 路径 `skipped`
+- 完成后如有结构化执行日志，finalizer 可以捕获 trajectory，并在 dashboard 中形成 `used` 样本
+- dashboard 总览新增 `已进入` 指标，区分“runtime 已观察但未自动执行”和“完全跳过”
+- 低风险文件技能仍保留，但不再被视为默认接入的唯一代表样本
+
 ### 2026-05-03 - GitHub Import 和 Rich UI 继续设计门控
 
 **Decision**

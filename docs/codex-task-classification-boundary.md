@@ -41,6 +41,7 @@ All of the following should be true:
 - structured format conversion
 - project maintenance with named files
 - repetitive workspace operations with predictable inputs and outputs
+- development workflow observation with an explicit workspace and artifacts
 
 ### Examples
 
@@ -49,6 +50,7 @@ All of the following should be true:
 - convert JSON records into CSV
 - update `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md`
 - archive local files by a clear pattern
+- implement a dashboard/test/docs change with explicit output files, while silent reuse is disabled
 
 ## 2. Guarded-In
 
@@ -66,7 +68,7 @@ They are not safe enough for broad default-in, but they are also not broad enoug
 
 ### Typical task classes
 
-- medium-scope repository refactors with explicit file targets
+- medium-scope repository refactors without stable output artifacts
 - local code generation tasks with clear output paths
 - multi-step content reshaping with human-readable success criteria
 - local tasks that touch many files but still stay within one workspace
@@ -133,10 +135,11 @@ For the first production-like Codex lane, the recommended starting set is:
 - local structured conversion tasks
 - project state-file maintenance tasks
 - low-risk workspace organization tasks
+- development workflow observation tasks with explicit workspace and artifacts
 
-This starting set is narrow on purpose.
+This starting set is still narrow on purpose.
 
-It is broad enough to create real product value, but narrow enough to avoid pretending Codex is already runtime-ready for everything.
+It is broad enough to create real product value, including normal Codex development work, but narrow enough to avoid pretending Codex is already runtime-ready for everything. For broad development workflows, hosts should normally pass `allow_silent_reuse=false`, so the runtime observes and learns without silently executing unknown code changes.
 
 ## What Counts As Success
 

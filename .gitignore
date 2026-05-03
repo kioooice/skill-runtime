@@ -13,6 +13,7 @@ output/
 .DS_Store
 Thumbs.db
 .claude/
+.codex/
 .gitnexus
 .skill_runtime/
 skill_runtime.egg-info/

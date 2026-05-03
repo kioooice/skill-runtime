@@ -8,12 +8,15 @@
   - `local-text-transformation`
   - `structured-format-conversion`
   - `low-risk-workspace-organization`
-  这意味着当前默认接入已经不再只是“有入口”，而是“有入口且第一批任务边界更小更可信”。同时，第一处现有入口 `agent-plan` / `agent-plan-learning` 已正式切换到 Codex 默认通道，且更大范围验证已经通过：架构检查通过、contract 检查通过、CLI 级 default-in/default-out smoke 都通过，full slow runtime suite 也已通过 399 个测试。当前默认先把这一处入口作为阶段性默认路径验证点，而不是继续马上切第二处现有入口。现在又进一步把 `skill_runtime` 上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 MCP 启动也已不再写死在 `vibe` 根目录，而会优先识别当前工作区。当前已进一步把规则加严：具体项目开发任务在实质性读代码或改动前必须先走 Codex-facing runtime gate，优先调用 `run_codex_task_experimental`，必要时用 CLI `codex-run` 兜底写入可见触发事件；任务完成后如有结构化执行结果再走 `finalize_codex_task_experimental`。只读可视化观察面板已完成，并已把“技能树”从长列表改成中心向四周发散的径向布局，active / staging / archived / rejected 分支分布在四个象限；分支内现在优先展示能力组别，例如格式转换、文本处理、文件整理和运行时治理，而不是逐个技能铺开；当前也已去掉交叉连接线和硬分界线，让能力地图更干净。中心运行时根节点已重新放到上下分支之间，避免压到组别卡片。点击组别时，组内技能现在进入居中凸显的详情界面，页面不会自动滚动，也不再把树枝撑长。Trigger Log 和治理快照也都是独立页面式视图。dashboard 命令支持 `--open` 一键生成并打开本地页面。现在新增全局只读 dashboard，并已和普通 dashboard 合并：`dashboard --global --scan-root <目录>` 仍然能看当前项目技能树、触发日志、治理快照，同时增加全局项目概览和全局触发日志，用于查看其他工作区是否触发过 Skill Runtime。dashboard 固定界面文案、技能名称和技能说明都已中文显示；内部调用仍保留原始英文 `skill_name`。快验基线为 63 个测试通过
-- 下一步：继续观察其他项目中的真实触发质量，尤其是能产生 `entered` 或 `used` 的样本；用户已确认其他项目现在可以正常调用 Skill Runtime，当前重点从“能不能跨项目调用”转为“跨项目调用是否稳定、是否真的减少重复工作”。需要看跨项目记录时，运行 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`
+  - `development-workflow-observation`
+  这意味着当前默认接入已经不再只是“有入口”，而是“有入口且第一批任务边界更小更可信”。同时，第一处现有入口 `agent-plan` / `agent-plan-learning` 已正式切换到 Codex 默认通道，且更大范围验证已经通过：架构检查通过、contract 检查通过、CLI 级 default-in/default-out smoke 都通过，full slow runtime suite 也已通过 399 个测试。当前默认先把这一处入口作为阶段性默认路径验证点，而不是继续马上切第二处现有入口。现在又进一步把 `skill_runtime` 上收成 Codex 全局默认背景能力：全局规则已改为优先采用 runtime lane，全局 MCP 启动也已不再写死在 `vibe` 根目录，而会优先识别当前工作区。当前已进一步把规则加严：具体项目开发任务在实质性读代码或改动前必须先走 Codex-facing runtime gate，优先调用 `run_codex_task_experimental`，必要时用 CLI `codex-run` 兜底写入可见触发事件；任务完成后如有结构化执行结果再走 `finalize_codex_task_experimental`。只读可视化观察面板已完成，并已把“技能树”从长列表改成中心向四周发散的径向布局，active / staging / archived / rejected 分支分布在四个象限；分支内现在优先展示能力组别，例如格式转换、文本处理、文件整理和运行时治理，而不是逐个技能铺开；当前也已去掉交叉连接线和硬分界线，让能力地图更干净。中心运行时根节点已重新放到上下分支之间，避免压到组别卡片。点击组别时，组内技能现在进入居中凸显的详情界面，页面不会自动滚动，也不再把树枝撑长。Trigger Log 和治理快照也都是独立页面式视图。dashboard 命令支持 `--open` 一键生成并打开本地页面。现在新增全局只读 dashboard，并已和普通 dashboard 合并：`dashboard --global --scan-root <目录>` 仍然能看当前项目技能树、触发日志、治理快照，同时增加全局项目概览和全局触发日志，用于查看其他工作区是否触发过 Skill Runtime。dashboard 固定界面文案、技能名称和技能说明都已中文显示；内部调用仍保留原始英文 `skill_name`。快验基线为 81 个测试通过
+- 下一步：新会话 app 级 MCP 已复测到 `default-in/entered`，这条默认通道主线可以进入提交前检查；后续继续观察其他项目中的真实触发质量，尤其是能产生 `entered` 或 `used` 的样本。需要看跨项目记录时，运行 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`
 - GitNexus 状态：本机查询崩溃已定位为 Windows 下 LadybugDB FTS/VECTOR 扩展加载导致 native crash；已用本机补丁让 CLI 的 `cypher` / `query` / `context` 恢复可用，并重建到当前提交 `992f36e`。当前 Codex 会话里的 GitNexus MCP transport 曾被崩溃打断，需要新会话或重启后再复测 MCP 工具。
 
 ## Todo
 
+- [ ] 在下一条真实项目开发任务中继续 dogfood `development-workflow-observation`，重点看 finalizer 是否稳定产生有价值的 `used` / trajectory 样本
+- [x] 新开 Codex 会话或重载 MCP 后复测 `mcp__skill_runtime__.run_codex_task_experimental`，确认 app 级 MCP 也能返回 `default-in/entered`
 - [x] 观察这条全局默认能力在真实工作区中的表现，用户已确认其他项目可以正常调用
 - [ ] 继续观察后续真实任务中的 `entered` / `used` 样本，不只收集 `skipped` 样本
 - [ ] 继续用当前静态 dashboard 做真实观察，只有出现重复过滤、对比、批量选择或多步导入评审需求时，再进入 rich UI decision gate
@@ -223,6 +226,9 @@
 - [x] 完成 `skills-manage` 吸收方案第三阶段 follow-up：dashboard 现在能显示外部导入候选的来源、内容哈希和 `requires_review` 审核状态
 - [x] 完成 `skills-manage` 吸收方案第四阶段：capability collections 设计、只读 collection store、dashboard `能力集合` 视图和测试
 - [x] 完成 `skills-manage` 吸收方案第五阶段：privacy and provenance 文档，README / README.en 本地与外部数据流入口
+- [x] 新增 `development-workflow-observation` Codex 默认通道家族，让有明确工作区和产物的代码/测试/dashboard/文档开发任务进入 runtime 观察，而不是继续全部显示为 `skipped`
+- [x] dashboard 总览新增 `已进入` 指标，用来区分 runtime 已观察但未自动执行的开发工作流
+- [x] 新会话 app 级 MCP 复测通过，`run_codex_task_experimental` 对明确输出的仓库状态维护工作流返回 `default-in/entered`
 
 ## Blocked
 

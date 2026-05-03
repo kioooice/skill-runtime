@@ -2,12 +2,15 @@
 
 ## Current State
 
+最新一轮回应用户指出的关键问题：此前 dashboard 里真实开发任务几乎全部是 `skipped`，而 phase-one `default-in` 的低风险文件任务在日常 Codex 开发中价值不高。当前已新增 `development-workflow-observation` Codex 默认通道家族：当任务有明确工作区、明确产物，并且属于代码、测试、dashboard、文档或配置类开发工作流时，会进入 `default-in`，但仍建议对这类广义开发任务传 `allow_silent_reuse=false`，让 runtime 参与检索、观察和收尾学习，而不是静默自动执行。dashboard 总览也新增 `已进入` 指标，用来区分“runtime 已观察但未自动执行”和“完全跳过”。本轮实际本地 API gate 已从变更前的 `runtime_lane_status: skipped` 改成变更后的 `runtime_lane_status: entered`，finalizer 已产生 `runtime_lane_status: used` 和 captured trajectory。新 Codex 会话里的 app 级 MCP 连接已复测通过：`mcp__skill_runtime__.run_codex_task_experimental` 对明确工作区和明确输出的仓库状态维护工作流返回 `task_classification.bucket: default-in` 和 `runtime_lane_status: entered`，这条主线可以进入提交前检查。
+
 已完成一轮 Skill Runtime 产品化收敛，也已证明核心闭环 `search -> execute -> observed task -> distill -> audit -> promote -> reuse` 在本地 MVP 中真实存在。当前阶段的主要问题已经不是“底层零件有没有”，而是“Codex 默认执行任务时会不会自动用上这层”。此前 agent-first runtime 已完成一轮阶段性收口：静默自动复用、失败时不越界、任务完成后 capture trajectory 并给出 recommendation，这一层现在停在 `capture + recommendation`，不默认继续自动 `distill/promote`。新的主线已切到 Codex 默认接入：不是一次性把 Skill Runtime 全量挂到所有 Codex 任务上，而是先采用受控低风险任务通道。现在除了分类文档、host API、MCP 实验入口和 Codex CLI 默认通道以外，phase-one `default-in` 还进一步收窄成四类白名单家族：
 
 - `project-state-maintenance`
 - `local-text-transformation`
 - `structured-format-conversion`
 - `low-risk-workspace-organization`
+- `development-workflow-observation`
 
 当前已经具备三种 Codex 接入层次：
 
@@ -50,6 +53,12 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 ## Last Completed
 
 本轮已完成：
+- 新增开发工作流 observation lane：
+  - `skill_runtime/api/classification.py` 新增 `development-workflow-observation` 家族
+  - 有明确工作区和明确产物的代码、测试、dashboard、文档、配置类开发工作流会进入 `default-in`
+  - 对广义开发任务仍通过 `allow_silent_reuse=false` 避免静默自动执行
+  - `skill_runtime/dashboard/render.py` 当前项目和全局总览新增 `已进入` 指标
+  - 新增回归测试覆盖分类、进入 runtime lane、finalizer 捕获和 dashboard 展示
 - 完成 `skills-manage` 吸收方案第一阶段：
   - 新增 `docs/platform-skill-inventory-design.md`
   - 新增 `skill_runtime/platforms/registry.py`
@@ -501,7 +510,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-下一步默认继续真实开发任务观察：后续具体项目开发任务开始时仍先调用 `mcp__skill_runtime__.run_codex_task_experimental`；如果它不可用或没有返回可见 `runtime_lane_status`，用 `python -m skill_runtime.cli --root <workspace> codex-run ...` 兜底。当前已确认 MCP start gate 和 finalizer 都会写 dashboard 可见事件，且用户已确认其他项目可以正常调用 Skill Runtime。所以下一个观察重点是收集跨项目中的 `entered` 或 `used` 样本，判断它是否真的减少重复工作，而不是只继续证明 `skipped` 正常。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。推荐先用当前静态 dashboard 做真实观察，只有出现重复过滤、对比、批量选择、多步导入评审或跨项目信息过密等真实需求时，再进入 Phase 6 rich UI decision gate。查看当前项目用 `python -m skill_runtime.cli dashboard --open`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
+下一步默认进入提交前检查：确认当前变更范围、运行快验和 `git diff --check`，再按需要提交这条 Codex 默认通道主线。对广义开发任务仍传 `allow_silent_reuse=false`，任务完成后如有结构化 execution payload，再验证 finalizer 是否能产生 `runtime_lane_status: used` 和 captured trajectory。当前观察重点已经从“能不能跨项目调用 / app 级 MCP 能不能进入”推进到“开发工作流 observation lane 是否真的减少重复工作、能否沉淀可复用流程”。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。查看当前项目用 `python -m skill_runtime.cli dashboard --open`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
 
 ## Important Files
 
@@ -605,6 +614,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 - DeepSeek 质量门禁已经能阻止坏输出进入 staging，并默认允许一次自动返修；如果返修后仍失败，候选仍不会进入 staging。
 - active skill 当前已有 6 个真实技能，已足够证明主链路存在；当前风险转为“默认工作方式仍偏手动技能库”，不是“样本数量继续不够”。
 - 当前仓库 GitNexus 索引已更新到当前提交，CLI 查询已恢复；但成功依赖本机 GitNexus 安装中的临时修改，不应误判为“默认官方路径已完全无问题”。
+- 新会话 app 级 `mcp__skill_runtime__` 连接已能返回 `default-in/entered`；早先同一会话里的旧 MCP server 热加载问题已不再是当前提交阻塞点。
 - 未来新的 dogfood 执行默认不再改写版本管理下的 active metadata 和主索引。
 - 当前会话尝试 GitNexus MCP 查询时返回 `Transport closed`；根因已定位为 native crash，CLI 已恢复，但当前会话内 MCP transport 仍需新会话或重启后复测。
 - 本轮内置 Browser/IAB 预览因为本机 Node 版本低于插件要求不可用，已退回本机 Chrome headless 截图检查。

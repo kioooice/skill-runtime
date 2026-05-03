@@ -165,7 +165,8 @@ def _overview(overview: dict[str, Any]) -> str:
   <div class="grid">
     {_metric("活跃", overview.get("active_count", 0), "可用技能")}
     {_metric("候选", overview.get("staging_count", 0), "候选技能")}
-    {_metric("已使用", counts.get("used", 0), "最近通道事件")}
+    {_metric("已使用", counts.get("used", 0), "runtime 完成参与")}
+    {_metric("已进入", counts.get("entered", 0), "进入 runtime 观察")}
     {_metric("已跳过", counts.get("skipped", 0), "普通 Codex 路径")}
   </div>
   <p class="muted">最近事件：{text(overview.get("latest_event_time") or "暂无运行通道事件")}</p>
@@ -179,7 +180,8 @@ def _global_overview(overview: dict[str, Any]) -> str:
   <div class="grid">
     {_metric("项目数", overview.get("project_count", 0), "发现调用记录的工作区")}
     {_metric("事件数", overview.get("event_count", 0), "最近全局事件")}
-    {_metric("已使用", counts.get("used", 0), "runtime 真的参与")}
+    {_metric("已使用", counts.get("used", 0), "runtime 完成参与")}
+    {_metric("已进入", counts.get("entered", 0), "进入 runtime 观察")}
     {_metric("已跳过", counts.get("skipped", 0), "普通 Codex 路径")}
   </div>
   <p class="muted">最近事件：{text(overview.get("latest_event_time") or "暂无全局运行通道事件")}</p>
@@ -194,6 +196,7 @@ def _project_card(project: dict[str, Any]) -> str:
   <div class="project-stats">
     <span>{text(project.get("event_count", 0))} 条事件</span>
     <span>{text(counts.get("used", 0))} 次使用</span>
+    <span>{text(counts.get("entered", 0))} 次进入</span>
     <span>{text(counts.get("skipped", 0))} 次跳过</span>
   </div>
   <div class="muted">最近：{text(project.get("latest_event_time") or "暂无")}</div>

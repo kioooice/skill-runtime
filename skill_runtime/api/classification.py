@@ -9,6 +9,35 @@ class CodexTaskClassifier:
     STRUCTURED_CONVERSION_KEYWORDS = {"convert", "export", "transform", "json", "csv", "tsv"}
     WORKSPACE_ORGANIZATION_KEYWORDS = {"copy", "rename", "archive", "organize", "move", "sort"}
     STATE_FILE_ACTION_KEYWORDS = {"update", "refresh", "sync", "record"}
+    DEVELOPMENT_WORKFLOW_KEYWORDS = {
+        "add",
+        "bug",
+        "config",
+        "dashboard",
+        "dev",
+        "docs",
+        "feature",
+        "fix",
+        "implement",
+        "module",
+        "regression",
+        "refactor",
+        "runtime",
+        "test",
+        "ui",
+        "workflow",
+        "修复",
+        "实现",
+        "开发",
+        "接入",
+        "测试",
+        "重构",
+        "配置",
+        "文档",
+        "观察",
+        "面板",
+        "工作流",
+    }
     OPEN_ENDED_KEYWORDS = {
         "review",
         "architecture",
@@ -57,6 +86,7 @@ class CodexTaskClassifier:
         "local-text-transformation",
         "structured-format-conversion",
         "low-risk-workspace-organization",
+        "development-workflow-observation",
     }
 
     def classify(self, request: AgentTaskRequest) -> CodexTaskClassification:
@@ -84,6 +114,8 @@ class CodexTaskClassifier:
 
         if local_targets:
             signals.append("local-targets")
+        if request.working_directory:
+            signals.append("workspace-scoped")
         if state_file_task:
             signals.append("state-files")
         if default_in_family:
@@ -108,8 +140,6 @@ class CodexTaskClassifier:
             )
 
         if local_targets or request.working_directory:
-            if request.working_directory:
-                signals.append("workspace-scoped")
             return CodexTaskClassification(
                 bucket="guarded-in",
                 reason="task looks local and reusable, but it does not match a phase-one default-in family yet",
@@ -155,6 +185,8 @@ class CodexTaskClassifier:
             return "structured-format-conversion"
         if self._is_workspace_organization(request, description):
             return "low-risk-workspace-organization"
+        if self._is_development_workflow(request, description):
+            return "development-workflow-observation"
         return None
 
     def _is_project_state_maintenance(self, request: AgentTaskRequest, description: str) -> bool:
@@ -174,6 +206,16 @@ class CodexTaskClassifier:
         if not self._has_keyword(description, self.WORKSPACE_ORGANIZATION_KEYWORDS):
             return False
         return self._has_local_targets(request)
+
+    def _is_development_workflow(self, request: AgentTaskRequest, description: str) -> bool:
+        if not request.working_directory or not request.expected_outputs:
+            return False
+        if not self._has_keyword(description, self.DEVELOPMENT_WORKFLOW_KEYWORDS):
+            return False
+        return self._mentions_extension_or_path(
+            request,
+            {".py", ".js", ".jsx", ".ts", ".tsx", ".md", ".toml", ".yaml", ".yml", ".json"},
+        )
 
     def _mentions_extension_or_path(self, request: AgentTaskRequest, extensions: set[str]) -> bool:
         values = list(request.known_inputs.values()) + list(request.expected_outputs)

@@ -12,7 +12,7 @@ It means Codex should quietly use the runtime by default only where the task is:
 
 - local
 - workflow-like
-- low-risk
+- low-risk, or a medium-risk development workflow that is observation-only
 - reversible enough
 - likely to benefit from reuse
 
@@ -62,6 +62,7 @@ These are the first tasks that should enter the runtime lane by default:
 - project maintenance tasks with explicit file targets
 - structured export or format conversion tasks
 - repetitive workspace workflows with predictable inputs and outputs
+- development workflow observation tasks with an explicit workspace and output artifacts
 
 Examples:
 
@@ -69,6 +70,7 @@ Examples:
 - update project state files
 - convert JSON records into CSV
 - copy, rename, normalize, or archive workspace files
+- implement a code/test/dashboard/docs change while disabling silent reuse
 
 ### Default-out tasks for phase one
 
@@ -102,6 +104,7 @@ The answer should be `yes` only if all of the following are true:
 - the likely side effects are bounded
 - rollback or failure explanation is realistic
 - reuse could plausibly save future work
+- broad development work can enter for observation, but should normally disable silent reuse
 
 If any of those fail, Codex should skip the runtime lane and continue normally.
 

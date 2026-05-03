@@ -23,6 +23,18 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Development workflow observation lane
+
+- Task type: real Codex development workflow inside the Skill Runtime project
+- Classified as: before change `guarded-in` and `runtime_lane_status: skipped`; after change `default-in` via `development-workflow-observation` and `runtime_lane_status: entered`
+- What happened: added a development-workflow observation family for workspace-scoped code/docs/test work with explicit artifacts, and dashboard overview now separately shows `entered` events as runtime observation rather than hiding them between `used` and `skipped`
+- Did the behavior feel correct: yes; broad development work still does not silently auto-execute when `allow_silent_reuse=false`, but runtime now participates in search, observation, and finalization instead of disappearing as a skipped event
+- Did the lane help: yes, because it directly addresses the user's dashboard finding that real development tasks were all skipped and the existing low-risk file families were not representative of normal Codex work
+- Note: the already-running MCP server returned the previous `guarded-in/skipped` classification until reload; the current CLI/API path returned `entered` and finalizer returned `used`
+- MCP retest: stopping the old Skill Runtime MCP Python processes in the same Codex app session caused the current MCP tool transport to close instead of automatically reconnecting; local API still returned `default-in/entered`, so the remaining verification point is a fresh Codex app MCP connection
+- Fresh-session MCP retest: a new Codex app MCP connection returned `task_classification.bucket: default-in` and `runtime_lane_status: entered` for a workspace-scoped repository state maintenance workflow with explicit outputs (`docs/codex-default-lane-observation-log.md`, `HANDOFF.md`, `TASKS.md`)
+- Follow-up: dogfood this lane on the next project development task and check whether finalization produces useful `used` samples through captured trajectories
+
 ### 2026-05-03 - Privacy and provenance documentation
 
 - Task type: Skill Runtime control-plane governance documentation

@@ -127,6 +127,91 @@ class RuntimeAgentOrchestrationTestsMixin:
 
         self.assertEqual("guarded-in", classification.bucket)
 
+    def test_codex_task_classifier_marks_development_workflow_as_default_in_observation(self) -> None:
+        from skill_runtime.api.host import classify_codex_task
+
+        classification = classify_codex_task(
+            AgentTaskRequest(
+                task_description="Implement a dashboard runtime lane regression test and update related docs.",
+                working_directory=str(self.runtime_root),
+                known_inputs={"target_module": "skill_runtime/dashboard"},
+                expected_outputs=["tests/test_runtime_dashboard.py", "docs/codex-default-lane-observation-log.md"],
+                risk_level="medium",
+                task_kind="workflow",
+            )
+        )
+
+        self.assertEqual("default-in", classification.bucket)
+        self.assertIn("family:development-workflow-observation", classification.matched_signals)
+        self.assertIn("workspace-scoped", classification.matched_signals)
+
+    def test_codex_host_api_run_task_enters_runtime_lane_for_development_workflow_without_auto_execution(self) -> None:
+        from skill_runtime.api.host import run_codex_task
+
+        request = AgentTaskRequest(
+            task_description="Refactor the local runtime modules and add regression tests.",
+            working_directory=str(self.runtime_root),
+            known_inputs={"target_module": "skill_runtime/api"},
+            expected_outputs=["skill_runtime/api/classification.py", "tests/test_runtime_agent_orchestration.py"],
+            risk_level="medium",
+            task_kind="workflow",
+            allow_silent_reuse=False,
+        )
+
+        result = run_codex_task(self.runtime_root, request)
+
+        self.assertEqual("default-in", result.task_classification.bucket)
+        self.assertIn("family:development-workflow-observation", result.task_classification.matched_signals)
+        self.assertEqual("skip", result.reuse_decision.decision)
+        self.assertIsNone(result.execution_payload)
+        self.assertEqual("entered", result.runtime_lane_status)
+        self.assertIn("entered Codex runtime lane", result.runtime_lane_reason)
+
+        event_path = self.runtime_root / ".skill_runtime" / "runtime_lane_events.jsonl"
+        events = [
+            json.loads(line)
+            for line in event_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.assertEqual("entered", events[-1]["runtime_lane_status"])
+        self.assertEqual("default-in", events[-1]["classification_bucket"])
+        self.assertIn("family:development-workflow-observation", events[-1]["matched_signals"])
+
+    def test_codex_finalize_captures_development_workflow_as_used_runtime_participation(self) -> None:
+        from skill_runtime.api.host import finalize_codex_task, run_codex_task
+
+        request = AgentTaskRequest(
+            task_description="Update the dashboard runtime lane test and observation log after a development workflow.",
+            working_directory=str(self.runtime_root),
+            known_inputs={"target_module": "skill_runtime/dashboard"},
+            expected_outputs=["tests/test_runtime_dashboard.py", "docs/codex-default-lane-observation-log.md"],
+            risk_level="medium",
+            task_kind="workflow",
+            allow_silent_reuse=False,
+        )
+        plan = run_codex_task(self.runtime_root, request)
+
+        finalized = finalize_codex_task(
+            self.runtime_root,
+            plan,
+            {
+                "result": {
+                    "status": "completed",
+                    "artifacts": ["tests/test_runtime_dashboard.py", "docs/codex-default-lane-observation-log.md"],
+                },
+                "operation_log": [
+                    {"tool_name": "read_text", "status": "success", "path": "tests/test_runtime_dashboard.py"},
+                    {"tool_name": "write_text", "status": "success", "path": "tests/test_runtime_dashboard.py"},
+                    {"tool_name": "write_text", "status": "success", "path": "docs/codex-default-lane-observation-log.md"},
+                ],
+            },
+        )
+
+        self.assertEqual("default-in", finalized.task_classification.bucket)
+        self.assertEqual("new_skill_candidate", finalized.learning_decision.decision)
+        self.assertEqual("used", finalized.runtime_lane_status)
+        self.assertTrue(finalized.learning_capture_payload["captured"])
+
     def test_codex_host_api_run_task_executes_default_in_flow(self) -> None:
         from skill_runtime.api.host import run_codex_task
 
