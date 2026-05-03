@@ -577,6 +577,20 @@ python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open
 
 全局面板默认输出到 `.skill_runtime/global-dashboard.html`。它和普通面板是同一套界面：仍然可以看当前项目的技能树、触发日志和治理快照，同时额外增加“全局项目”和“全局日志”两页，用来回答“其他工作区有没有触发过 runtime lane”。它只扫描指定目录下一层项目里的 `.skill_runtime/runtime_lane_events.jsonl`。如果不传 `--scan-root`，默认扫描当前 runtime root 的父目录。
 
+如果不想打开 HTML，也可以直接查看只读 JSON 事件：
+
+```bash
+python -m skill_runtime.cli runtime-events --limit 20
+```
+
+查看多个项目的 JSON 事件：
+
+```bash
+python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects --limit 20
+```
+
+`runtime-events` 会返回最近事件、`used / entered / skipped` 统计，以及 finalizer 捕获后推荐的 `recommended_next_action` 和可用 follow-up 操作标签。
+
 运行本地快验：
 
 ```bash

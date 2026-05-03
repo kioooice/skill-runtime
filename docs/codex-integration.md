@@ -128,6 +128,17 @@ or reuse / learning decision when useful.
 This is the operator-facing check for "did Skill Runtime actually participate?".
 Normal Codex work should not require manual skill lookup just to answer that question.
 
+For scriptable local inspection, use:
+
+```bash
+python -m skill_runtime.cli runtime-events --limit 20
+python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects --limit 20
+```
+
+This reads `.skill_runtime/runtime_lane_events.jsonl` and returns JSON with recent
+events, `used / entered / skipped` counts, and learning follow-up fields such as
+`recommended_next_action` and available host operation labels.
+
 The explicit MCP-first loop still exists, but it is now a support path:
 
 1. `search_skill`

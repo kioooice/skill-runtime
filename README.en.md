@@ -555,6 +555,15 @@ To inspect runtime lane records across sibling projects:
 python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open
 ```
 
+To inspect the same runtime lane records as read-only JSON without opening HTML:
+
+```bash
+python -m skill_runtime.cli runtime-events --limit 20
+python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects --limit 20
+```
+
+`runtime-events` returns recent events, `used / entered / skipped` counts, and finalizer follow-up fields such as `recommended_next_action` and available operation labels.
+
 Run the fast local validation suite:
 
 ```bash

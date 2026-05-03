@@ -148,6 +148,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
   - `--limit` 控制返回最近事件数量
   - `--global --scan-root <dir>` 返回跨项目事件、项目列表和事件统计
   - 输出包含 `recommended_next_action` 和 follow-up operation 标签
+  - README、README.en 和 `docs/codex-integration.md` 已记录本地与全局 JSON 查看命令
   - `python -m unittest tests.test_runtime_fast -v` 通过，96 tests OK
   - `python scripts/evaluate_search_quality.py` 通过，23/23
   - 本地和全局 `runtime-events` CLI smoke 均已通过
