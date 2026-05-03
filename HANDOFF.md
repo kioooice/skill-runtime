@@ -153,6 +153,14 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
   - `python scripts/evaluate_search_quality.py` 通过，23/23
   - 本地和全局 `runtime-events` CLI smoke 均已通过
   - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/add_a_read_only_cli_command_to_inspect_recent_ru_20260503083440.json`
+- runtime lane 事件 MCP：
+  - 新增只读 MCP 工具 `runtime_events`
+  - `limit` 控制返回最近事件数量
+  - `global_events=true` 加 `scan_roots=[...]` 返回跨项目事件、项目列表和事件统计
+  - 输出与 CLI 事件检查保持同一结构
+  - `python -m unittest tests.test_runtime_fast -v` 通过，98 tests OK
+  - `python scripts/evaluate_search_quality.py` 通过，23/23
+  - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/add_a_read_only_mcp_tool_for_inspecting_recent_r_20260503084625.json`
 - 完成 `skills-manage` 吸收方案第一阶段：
   - 新增 `docs/platform-skill-inventory-design.md`
   - 新增 `skill_runtime/platforms/registry.py`

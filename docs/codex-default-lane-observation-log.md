@@ -23,6 +23,16 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Runtime events MCP tool
+
+- Task type: runtime lane observability improvement
+- Classified as: `default-in` / `entered` because the task had explicit project development outputs
+- What happened: added a read-only `runtime_events` MCP tool for local and global runtime lane event inspection
+- Did the behavior feel correct: yes; Codex app sessions can now inspect runtime lane participation without falling back to shell commands
+- Did the lane help: yes, because the CLI event view exposed a useful shape and MCP now mirrors it for host integrations
+- Finalizer: returned `runtime_lane_status: used` and captured `trajectories/add_a_read_only_mcp_tool_for_inspecting_recent_r_20260503084625.json`
+- Follow-up: use the MCP tool in fresh sessions when validating cross-project runtime lane behavior
+
 ### 2026-05-03 - Runtime events JSON CLI
 
 - Task type: runtime lane observability improvement

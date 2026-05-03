@@ -446,6 +446,56 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual("alpha", payload["data"]["events"][0]["project_name"])
         self.assertIn("Promote captured workflow globally", payload["data"]["events"][0]["available_host_operation_labels"])
 
+    def test_mcp_runtime_events_reads_recent_follow_up_actions(self) -> None:
+        self._write_dashboard_event(
+            self.runtime_root,
+            timestamp="2026-05-03T06:42:00+00:00",
+            task_description="capture a reusable workflow through mcp",
+            runtime_lane_status="used",
+            runtime_lane_reason="captured learning payload",
+            recommended_next_action="distill_trajectory",
+            available_host_operation_labels=["Promote captured workflow globally"],
+        )
+
+        payload = self._call_mcp_tool(
+            "runtime_events",
+            {"limit": 10},
+            root=self.runtime_root,
+        )
+
+        self.assertFalse(payload["data"]["global"])
+        self.assertEqual(1, payload["data"]["event_count"])
+        event = payload["data"]["events"][0]
+        self.assertEqual("distill_trajectory", event["recommended_next_action"])
+        self.assertIn("Promote captured workflow globally", event["available_host_operation_labels"])
+
+    def test_mcp_runtime_events_can_return_global_events(self) -> None:
+        workspace_parent = self.runtime_root / "global-events-mcp-workspaces"
+        project_alpha = workspace_parent / "alpha"
+        self._write_dashboard_event(
+            project_alpha,
+            timestamp="2026-05-03T06:43:00+00:00",
+            task_description="capture alpha workflow through mcp",
+            runtime_lane_status="used",
+            runtime_lane_reason="captured learning payload",
+            recommended_next_action="distill_trajectory",
+            available_host_operation_labels=["Promote captured workflow globally"],
+        )
+
+        payload = self._call_mcp_tool(
+            "runtime_events",
+            {
+                "global_events": True,
+                "scan_roots": [str(workspace_parent)],
+                "limit": 10,
+            },
+            root=self.runtime_root,
+        )
+
+        self.assertTrue(payload["data"]["global"])
+        self.assertEqual(1, payload["data"]["event_count"])
+        self.assertEqual("alpha", payload["data"]["events"][0]["project_name"])
+
     def test_dashboard_command_can_open_generated_html(self) -> None:
         from skill_runtime.cli import cmd_dashboard
 

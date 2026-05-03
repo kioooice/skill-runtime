@@ -95,6 +95,7 @@ The runtime currently exposes these MCP tools:
 - `archive_duplicate_candidates`
 - `archive_fixture_skills`
 - `archive_cold_skills`
+- `runtime_events`
 
 ## Recommended Codex Workflow
 
@@ -138,6 +139,9 @@ python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects -
 This reads `.skill_runtime/runtime_lane_events.jsonl` and returns JSON with recent
 events, `used / entered / skipped` counts, and learning follow-up fields such as
 `recommended_next_action` and available host operation labels.
+
+Codex MCP hosts can read the same data with the read-only `runtime_events` tool.
+Use `global_events=true` and `scan_roots=[...]` to aggregate sibling project event logs.
 
 The explicit MCP-first loop still exists, but it is now a support path:
 

@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-03 - Runtime Events Are Exposed Through MCP
+
+**Decision**
+
+Add a read-only MCP tool named `runtime_events`. It mirrors the CLI event inspection shape for local and cross-project runtime lane events, including counts, recent events, and learning follow-up labels.
+
+**Reason**
+
+Codex app sessions should not have to fall back to shell commands just to inspect whether the runtime lane entered, used, or skipped a task. Exposing the same read-only event data through MCP keeps observability available through the host integration surface without adding mutation controls.
+
+**Impact**
+
+- MCP hosts can inspect recent local runtime lane events
+- MCP hosts can aggregate sibling project events via `global_events=true`
+- The tool is read-only and does not execute, promote, archive, or edit skills
+
 ### 2026-05-03 - Runtime Events Have A Read-Only CLI
 
 **Decision**
