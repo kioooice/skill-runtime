@@ -51,6 +51,16 @@ def load_json_arg(raw_value: str | None, *, file_path: str | None, error_flag: s
     return json.loads(raw_value)
 
 
+def load_optional_json_arg(raw_value: str | None, *, file_path: str | None, error_flag: str) -> object | None:
+    if raw_value and file_path:
+        raise ValueError(f"provide only one of {error_flag} or {error_flag}-file")
+    if file_path:
+        return load_json_file(file_path)
+    if raw_value:
+        return json.loads(raw_value)
+    return None
+
+
 def extract_execute_data(payload: object) -> dict:
     if not isinstance(payload, dict):
         raise ValueError("execute response must decode to a JSON object")
@@ -372,14 +382,24 @@ def _build_agent_task_request(args: argparse.Namespace) -> AgentTaskRequest:
         raise ValueError("--task-description is required unless --plan-json already provides the request")
 
     known_inputs = {}
-    if getattr(args, "known_inputs_json", None):
-        known_inputs = json.loads(args.known_inputs_json)
+    raw_known_inputs = load_optional_json_arg(
+        getattr(args, "known_inputs_json", None),
+        file_path=getattr(args, "known_inputs_json_file", None),
+        error_flag="--known-inputs-json",
+    )
+    if raw_known_inputs is not None:
+        known_inputs = raw_known_inputs
         if not isinstance(known_inputs, dict):
             raise ValueError("--known-inputs-json must decode to a JSON object")
 
     expected_outputs = []
-    if getattr(args, "expected_outputs_json", None):
-        expected_outputs = json.loads(args.expected_outputs_json)
+    raw_expected_outputs = load_optional_json_arg(
+        getattr(args, "expected_outputs_json", None),
+        file_path=getattr(args, "expected_outputs_json_file", None),
+        error_flag="--expected-outputs-json",
+    )
+    if raw_expected_outputs is not None:
+        expected_outputs = raw_expected_outputs
         if not isinstance(expected_outputs, list) or not all(isinstance(item, str) for item in expected_outputs):
             raise ValueError("--expected-outputs-json must decode to a JSON array of strings")
 
@@ -444,11 +464,20 @@ def _build_agent_orchestration_result(raw_plan: object) -> AgentOrchestrationRes
 
 def cmd_agent_plan_learning(args: argparse.Namespace) -> int:
     try:
-        execution_payload = json.loads(args.execution_json)
+        execution_payload = load_json_arg(
+            args.execution_json,
+            file_path=getattr(args, "execution_json_file", None),
+            error_flag="--execution-json",
+        )
         if not isinstance(execution_payload, dict):
             raise ValueError("--execution-json must decode to a JSON object")
-        if args.plan_json:
-            plan = _build_codex_orchestration_result(json.loads(args.plan_json))
+        raw_plan = load_optional_json_arg(
+            getattr(args, "plan_json", None),
+            file_path=getattr(args, "plan_json_file", None),
+            error_flag="--plan-json",
+        )
+        if raw_plan is not None:
+            plan = _build_codex_orchestration_result(raw_plan)
         else:
             request = _build_agent_task_request(args)
             classification = classify_codex_task(request)
@@ -504,11 +533,20 @@ def cmd_codex_run(args: argparse.Namespace) -> int:
 
 def cmd_codex_finalize(args: argparse.Namespace) -> int:
     try:
-        execution_payload = json.loads(args.execution_json)
+        execution_payload = load_json_arg(
+            args.execution_json,
+            file_path=getattr(args, "execution_json_file", None),
+            error_flag="--execution-json",
+        )
         if not isinstance(execution_payload, dict):
             raise ValueError("--execution-json must decode to a JSON object")
-        if args.plan_json:
-            plan = _build_codex_orchestration_result(json.loads(args.plan_json))
+        raw_plan = load_optional_json_arg(
+            getattr(args, "plan_json", None),
+            file_path=getattr(args, "plan_json_file", None),
+            error_flag="--plan-json",
+        )
+        if raw_plan is not None:
+            plan = _build_codex_orchestration_result(raw_plan)
         else:
             request = _build_agent_task_request(args)
             classification = classify_codex_task(request)
@@ -804,7 +842,9 @@ def build_parser() -> argparse.ArgumentParser:
     agent_plan_parser.add_argument("--task-description", required=True)
     agent_plan_parser.add_argument("--working-directory")
     agent_plan_parser.add_argument("--known-inputs-json")
+    agent_plan_parser.add_argument("--known-inputs-json-file")
     agent_plan_parser.add_argument("--expected-outputs-json")
+    agent_plan_parser.add_argument("--expected-outputs-json-file")
     agent_plan_parser.add_argument("--risk-level", default="medium")
     agent_plan_parser.add_argument("--task-kind", default="workflow")
     agent_plan_parser.add_argument("--disable-silent-reuse", action="store_true")
@@ -813,22 +853,28 @@ def build_parser() -> argparse.ArgumentParser:
 
     agent_learning_parser = subparsers.add_parser("agent-plan-learning")
     agent_learning_parser.add_argument("--plan-json")
+    agent_learning_parser.add_argument("--plan-json-file")
     agent_learning_parser.add_argument("--task-description")
     agent_learning_parser.add_argument("--working-directory")
     agent_learning_parser.add_argument("--known-inputs-json")
+    agent_learning_parser.add_argument("--known-inputs-json-file")
     agent_learning_parser.add_argument("--expected-outputs-json")
+    agent_learning_parser.add_argument("--expected-outputs-json-file")
     agent_learning_parser.add_argument("--risk-level", default="medium")
     agent_learning_parser.add_argument("--task-kind", default="workflow")
     agent_learning_parser.add_argument("--disable-silent-reuse", action="store_true")
     agent_learning_parser.add_argument("--disable-learning", action="store_true")
-    agent_learning_parser.add_argument("--execution-json", required=True)
+    agent_learning_parser.add_argument("--execution-json")
+    agent_learning_parser.add_argument("--execution-json-file")
     agent_learning_parser.set_defaults(func=cmd_agent_plan_learning)
 
     codex_classify_parser = subparsers.add_parser("codex-classify")
     codex_classify_parser.add_argument("--task-description", required=True)
     codex_classify_parser.add_argument("--working-directory")
     codex_classify_parser.add_argument("--known-inputs-json")
+    codex_classify_parser.add_argument("--known-inputs-json-file")
     codex_classify_parser.add_argument("--expected-outputs-json")
+    codex_classify_parser.add_argument("--expected-outputs-json-file")
     codex_classify_parser.add_argument("--risk-level", default="medium")
     codex_classify_parser.add_argument("--task-kind", default="workflow")
     codex_classify_parser.add_argument("--disable-silent-reuse", action="store_true")
@@ -839,7 +885,9 @@ def build_parser() -> argparse.ArgumentParser:
     codex_run_parser.add_argument("--task-description", required=True)
     codex_run_parser.add_argument("--working-directory")
     codex_run_parser.add_argument("--known-inputs-json")
+    codex_run_parser.add_argument("--known-inputs-json-file")
     codex_run_parser.add_argument("--expected-outputs-json")
+    codex_run_parser.add_argument("--expected-outputs-json-file")
     codex_run_parser.add_argument("--risk-level", default="medium")
     codex_run_parser.add_argument("--task-kind", default="workflow")
     codex_run_parser.add_argument("--disable-silent-reuse", action="store_true")
@@ -848,15 +896,19 @@ def build_parser() -> argparse.ArgumentParser:
 
     codex_finalize_parser = subparsers.add_parser("codex-finalize")
     codex_finalize_parser.add_argument("--plan-json")
+    codex_finalize_parser.add_argument("--plan-json-file")
     codex_finalize_parser.add_argument("--task-description")
     codex_finalize_parser.add_argument("--working-directory")
     codex_finalize_parser.add_argument("--known-inputs-json")
+    codex_finalize_parser.add_argument("--known-inputs-json-file")
     codex_finalize_parser.add_argument("--expected-outputs-json")
+    codex_finalize_parser.add_argument("--expected-outputs-json-file")
     codex_finalize_parser.add_argument("--risk-level", default="medium")
     codex_finalize_parser.add_argument("--task-kind", default="workflow")
     codex_finalize_parser.add_argument("--disable-silent-reuse", action="store_true")
     codex_finalize_parser.add_argument("--disable-learning", action="store_true")
-    codex_finalize_parser.add_argument("--execution-json", required=True)
+    codex_finalize_parser.add_argument("--execution-json")
+    codex_finalize_parser.add_argument("--execution-json-file")
     codex_finalize_parser.set_defaults(func=cmd_codex_finalize)
 
     return parser

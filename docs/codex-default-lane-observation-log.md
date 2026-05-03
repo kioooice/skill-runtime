@@ -23,6 +23,17 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Codex CLI JSON file arguments
+
+- Task type: runtime lane CLI reliability improvement
+- Classified as: `default-in` / `entered` because the task had explicit project development outputs
+- What happened: added file-based JSON alternatives for Codex-facing CLI inputs so runtime gate and finalizer commands do not depend on fragile shell escaping
+- Did the behavior feel correct: yes; this directly addresses the PowerShell JSON parsing failure encountered during dogfooding
+- Did the lane help: yes, because the issue appeared while using the runtime lane itself and became a small, testable improvement
+- Verification: new file-argument tests failed first, then passed; targeted Codex CLI tests passed; `python -m py_compile skill_runtime\cli.py` passed; fast suite passed with 102 tests
+- Finalizer: file-based `codex-finalize` path returned `runtime_lane_status: used` and captured `trajectories/add_json_file_argument_support_for_codex_task_cl_20260503085918.json`
+- Follow-up: prefer JSON file flags for complex local CLI dogfood commands in PowerShell sessions
+
 ### 2026-05-03 - Runtime event payload builders
 
 - Task type: runtime lane observability maintenance

@@ -997,6 +997,43 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertEqual("merge_text_files", data["selected_skill_name"])
         self.assertTrue((self.runtime_root / "demo" / "output" / "cli_codex_run.md").exists())
 
+    def test_codex_run_cli_accepts_json_file_arguments(self) -> None:
+        input_dir = self.runtime_root / "codex-file-args"
+        input_dir.mkdir(parents=True)
+        known_inputs_path = input_dir / "known-inputs.json"
+        expected_outputs_path = input_dir / "expected-outputs.json"
+        known_inputs_path.write_text(
+            json.dumps(
+                {
+                    "input_dir": "demo/input",
+                    "output_path": "demo/output/cli_codex_run_file_args.md",
+                }
+            ),
+            encoding="utf-8",
+        )
+        expected_outputs_path.write_text(
+            json.dumps(["demo/output/cli_codex_run_file_args.md"]),
+            encoding="utf-8",
+        )
+
+        payload = self._run_cli(
+            "codex-run",
+            "--task-description",
+            "merge txt files into markdown",
+            "--known-inputs-json-file",
+            str(known_inputs_path),
+            "--expected-outputs-json-file",
+            str(expected_outputs_path),
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        data = payload["data"]
+        self.assertEqual("default-in", data["task_classification"]["bucket"])
+        self.assertEqual("merge_text_files", data["selected_skill_name"])
+        self.assertTrue((self.runtime_root / "demo" / "output" / "cli_codex_run_file_args.md").exists())
+
     def test_codex_finalize_cli_captures_default_in_undercovered_workflow(self) -> None:
         plan_payload = self._run_cli(
             "codex-run",
@@ -1016,6 +1053,52 @@ class RuntimeAgentOrchestrationTestsMixin:
             json.dumps(plan_payload["data"], ensure_ascii=False),
             "--execution-json",
             '{"result":{"status":"completed","artifacts":["HANDOFF.md","TASKS.md","DECISIONS.md"]},"operation_log":[{"tool_name":"read_text","status":"success","path":"HANDOFF.md"},{"tool_name":"read_text","status":"success","path":"TASKS.md"},{"tool_name":"read_text","status":"success","path":"DECISIONS.md"},{"tool_name":"write_text","status":"success","path":"HANDOFF.md"},{"tool_name":"write_text","status":"success","path":"TASKS.md"},{"tool_name":"write_text","status":"success","path":"DECISIONS.md"}]}',
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        data = payload["data"]
+        self.assertEqual("default-in", data["task_classification"]["bucket"])
+        self.assertEqual("new_skill_candidate", data["learning_decision"]["decision"])
+        self.assertTrue(data["learning_capture_payload"]["captured"])
+
+    def test_codex_finalize_cli_accepts_plan_and_execution_json_files(self) -> None:
+        plan_payload = self._run_cli(
+            "codex-run",
+            "--task-description",
+            "Update HANDOFF, TASKS, and DECISIONS files after a completed runtime stage.",
+            "--known-inputs-json",
+            '{"handoff_path":"HANDOFF.md","tasks_path":"TASKS.md","decisions_path":"DECISIONS.md"}',
+            "--expected-outputs-json",
+            '["HANDOFF.md","TASKS.md","DECISIONS.md"]',
+            expect_json=True,
+            root=self.runtime_root,
+        )
+        input_dir = self.runtime_root / "codex-file-args"
+        input_dir.mkdir(parents=True, exist_ok=True)
+        plan_path = input_dir / "plan.json"
+        execution_path = input_dir / "execution.json"
+        plan_path.write_text(json.dumps(plan_payload["data"], ensure_ascii=False), encoding="utf-8")
+        execution_path.write_text(
+            json.dumps(
+                {
+                    "result": {"status": "completed", "artifacts": ["HANDOFF.md", "TASKS.md", "DECISIONS.md"]},
+                    "operation_log": [
+                        {"tool_name": "read_text", "status": "success", "path": "HANDOFF.md"},
+                        {"tool_name": "write_text", "status": "success", "path": "HANDOFF.md"},
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        payload = self._run_cli(
+            "codex-finalize",
+            "--plan-json-file",
+            str(plan_path),
+            "--execution-json-file",
+            str(execution_path),
             expect_json=True,
             root=self.runtime_root,
         )

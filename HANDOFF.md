@@ -168,6 +168,14 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
   - `python -m py_compile skill_runtime\observability\events.py skill_runtime\cli.py skill_runtime\mcp\server.py` 通过
   - `python -m unittest tests.test_runtime_fast -v` 通过，100 tests OK
   - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/share_runtime_event_payload_assembly_between_cli_20260503085311.json`
+- Codex CLI JSON file 参数：
+  - `agent-plan`、`agent-plan-learning`、`codex-classify`、`codex-run`、`codex-finalize` 现在支持 `--known-inputs-json-file` 和 `--expected-outputs-json-file`
+  - `agent-plan-learning` 和 `codex-finalize` 现在支持 `--plan-json-file` 和 `--execution-json-file`
+  - 解决 PowerShell 下复杂内联 JSON 参数容易解析失败的问题
+  - targeted Codex CLI tests 通过，`python -m py_compile skill_runtime\cli.py` 通过
+  - `python -m unittest tests.test_runtime_fast -v` 通过，102 tests OK
+  - 使用 `--known-inputs-json-file`、`--expected-outputs-json-file` 和 `--execution-json-file` 跑通真实 `codex-finalize`
+  - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/add_json_file_argument_support_for_codex_task_cl_20260503085918.json`
 - 完成 `skills-manage` 吸收方案第一阶段：
   - 新增 `docs/platform-skill-inventory-design.md`
   - 新增 `skill_runtime/platforms/registry.py`

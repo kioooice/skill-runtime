@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-03 - Codex CLI JSON Inputs Can Be Passed By File
+
+**Decision**
+
+Add `--known-inputs-json-file`, `--expected-outputs-json-file`, `--plan-json-file`, and `--execution-json-file` support to the Codex-facing CLI commands. Inline JSON remains supported, but each JSON field now has a file-based alternative.
+
+**Reason**
+
+PowerShell can mangle nested JSON passed as a command-line argument, especially for `codex-run` and `codex-finalize`. File-based JSON inputs make runtime gate and finalizer dogfooding reliable without requiring fragile shell escaping.
+
+**Impact**
+
+- `agent-plan`, `agent-plan-learning`, `codex-classify`, `codex-run`, and `codex-finalize` can read structured JSON from files
+- Existing inline JSON flags remain compatible
+- `codex-finalize` can now accept `--execution-json-file` instead of requiring inline `--execution-json`
+
 ### 2026-05-03 - Runtime Event Payloads Use One Shared Builder
 
 **Decision**

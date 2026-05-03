@@ -143,6 +143,14 @@ events, `used / entered / skipped` counts, and learning follow-up fields such as
 Codex MCP hosts can read the same data with the read-only `runtime_events` tool.
 Use `global_events=true` and `scan_roots=[...]` to aggregate sibling project event logs.
 
+For complex Codex-facing CLI calls on PowerShell, prefer file-based JSON inputs over
+large inline JSON strings:
+
+```bash
+python -m skill_runtime.cli codex-run --task-description "..." --known-inputs-json-file known.json --expected-outputs-json-file outputs.json
+python -m skill_runtime.cli codex-finalize --plan-json-file plan.json --execution-json-file execution.json
+```
+
 The explicit MCP-first loop still exists, but it is now a support path:
 
 1. `search_skill`
