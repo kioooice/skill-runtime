@@ -23,6 +23,17 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Runtime profiler JSON output
+
+- Task type: verification tooling improvement
+- Classified as: `default-in` / `entered` because the task had explicit project development outputs
+- What happened: added JSON report output to the runtime test profiler so slow-test trends can be stored and compared
+- Did the behavior feel correct: yes; the feature is additive and keeps the existing text output unchanged
+- Did the lane help: yes, because profiling showed no single extreme slow test and the next useful step was better trend capture
+- Verification: JSON report unit test failed first, then passed; profiler CLI smoke wrote a JSON file; Python compile checks passed; fast suite passed with 103 tests
+- Finalizer: returned `runtime_lane_status: used` and captured `trajectories/add_json_output_support_to_the_runtime_test_prof_20260503091829.json`
+- Follow-up: use `--json-output` before and after future test-performance work
+
 ### 2026-05-03 - Governance index merge narrowing
 
 - Task type: governance write-path reliability improvement

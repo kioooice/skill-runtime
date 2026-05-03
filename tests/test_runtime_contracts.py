@@ -1,5 +1,7 @@
+import json
 import subprocess
 import sys
+import tempfile
 import tomllib
 
 from tests.runtime_test_support import ROOT
@@ -144,6 +146,30 @@ class RuntimeContractTestsMixin:
         self.assertIn("archive_fixture_skills", script_source)
         self.assertIn("archive_cold_skills", script_source)
         self.assertIn("distill_coverage_report", script_source)
+
+    def test_profile_runtime_tests_writes_json_report(self) -> None:
+        from scripts.profile_runtime_tests import write_timing_json_report
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = ROOT / temp_dir / "profile.json"
+            report = write_timing_json_report(
+                output_path,
+                timings=[(1.25, "tests.demo.TestCase.test_slow"), (0.25, "tests.demo.TestCase.test_fast")],
+                top=1,
+                tests_run=2,
+                total_elapsed=1.5,
+                successful=True,
+            )
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(report, payload)
+        self.assertTrue(payload["successful"])
+        self.assertEqual(2, payload["tests_run"])
+        self.assertEqual(1.5, payload["total_elapsed_seconds"])
+        self.assertEqual(
+            [{"test_id": "tests.demo.TestCase.test_slow", "elapsed_seconds": 1.25}],
+            payload["slowest_tests"],
+        )
 
     def test_ci_workflow_runs_mcp_architecture_check_and_runtime_suite(self) -> None:
         workflow_path = ROOT / ".github" / "workflows" / "runtime-contracts.yml"

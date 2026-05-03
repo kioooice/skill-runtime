@@ -191,6 +191,13 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
   - 该回归已抽入 `RuntimeGovernanceFastTestsMixin` 并接入 `tests.test_runtime_fast`
   - 最新 `python -m unittest tests.test_runtime_fast -v` 通过，103 tests OK
   - 快测覆盖 finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/add_the_governance_same_skill_late_update_regres_20260503091127.json`
+- runtime test profiler JSON 输出：
+  - `scripts/profile_runtime_tests.py` 新增 `--json-output <path>`
+  - JSON 包含 `successful`、`tests_run`、`total_elapsed_seconds` 和 `slowest_tests`
+  - 原有文本输出保持不变
+  - contract 单测覆盖 JSON shape，CLI smoke 已写出 `.skill_runtime\profile-runtime-tests-smoke.json`
+  - `python -m unittest tests.test_runtime_fast -v` 通过，103 tests OK
+  - Codex finalizer 返回 `runtime_lane_status: used`，并捕获 `trajectories/add_json_output_support_to_the_runtime_test_prof_20260503091829.json`
 - 完成 `skills-manage` 吸收方案第一阶段：
   - 新增 `docs/platform-skill-inventory-design.md`
   - 新增 `skill_runtime/platforms/registry.py`

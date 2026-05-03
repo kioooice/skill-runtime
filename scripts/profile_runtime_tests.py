@@ -1,4 +1,5 @@
 import argparse
+import json
 import sys
 import time
 import unittest
@@ -50,6 +51,50 @@ class TimingRunner(unittest.TextTestRunner):
         )
 
 
+def timing_payload(
+    *,
+    timings: list[tuple[float, str]],
+    top: int,
+    tests_run: int,
+    total_elapsed: float,
+    successful: bool,
+) -> dict:
+    return {
+        "successful": successful,
+        "tests_run": tests_run,
+        "total_elapsed_seconds": round(total_elapsed, 4),
+        "slowest_tests": [
+            {
+                "test_id": test_id,
+                "elapsed_seconds": round(elapsed, 4),
+            }
+            for elapsed, test_id in sorted(timings, reverse=True)[:top]
+        ],
+    }
+
+
+def write_timing_json_report(
+    output_path: str | Path,
+    *,
+    timings: list[tuple[float, str]],
+    top: int,
+    tests_run: int,
+    total_elapsed: float,
+    successful: bool,
+) -> dict:
+    payload = timing_payload(
+        timings=timings,
+        top=top,
+        tests_run=tests_run,
+        total_elapsed=total_elapsed,
+        successful=successful,
+    )
+    target = Path(output_path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return payload
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the runtime suite and print the slowest tests.")
     parser.add_argument(
@@ -58,10 +103,22 @@ def main() -> int:
         help="unittest suite name to profile, for example tests.test_runtime_fast",
     )
     parser.add_argument("--top", type=int, default=20, help="number of slow tests to print")
+    parser.add_argument("--json-output", help="optional path to write a machine-readable timing report")
     args = parser.parse_args()
 
     suite = unittest.defaultTestLoader.loadTestsFromName(args.suite)
+    started_at = time.perf_counter()
     result = TimingRunner(verbosity=2, top=args.top).run(suite)
+    total_elapsed = time.perf_counter() - started_at
+    if args.json_output:
+        write_timing_json_report(
+            args.json_output,
+            timings=result.timings,
+            top=args.top,
+            tests_run=result.testsRun,
+            total_elapsed=total_elapsed,
+            successful=result.wasSuccessful(),
+        )
     return 0 if result.wasSuccessful() else 1
 
 

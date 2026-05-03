@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-03 - Runtime Test Profiler Can Write JSON Reports
+
+**Decision**
+
+Add `--json-output` to `scripts/profile_runtime_tests.py` and expose a small `write_timing_json_report` helper for stable machine-readable timing reports.
+
+**Reason**
+
+The profiler previously printed only text. That is enough for a one-off inspection, but it makes before/after comparison and future trend tracking difficult when the fast suite is near two minutes.
+
+**Impact**
+
+- Profiling runs can now save `successful`, `tests_run`, total elapsed time, and slowest tests as JSON
+- The existing text output remains unchanged
+- Contract tests cover the JSON report shape without running a full suite
+
 ### 2026-05-03 - Governance Index Writes Merge Only Changed Metadata
 
 **Decision**
