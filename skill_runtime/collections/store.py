@@ -9,36 +9,45 @@ from skill_runtime.collections.model import CapabilityCollectionDefinition
 
 DEFAULT_COLLECTIONS = [
     CapabilityCollectionDefinition(
-        collection_id="basic-skills",
-        label="基础本地技能",
-        description="普通本地文件处理技能，默认不占用工作流技能主视图。",
+        collection_id="direction-strategy",
+        label="方向与策略",
+        description="开发方向、部署路线和仓库影响判断。",
     ),
     CapabilityCollectionDefinition(
-        collection_id="text-processing",
-        label="文本处理",
-        description="合并、清理、替换、Markdown 输出。",
+        collection_id="autonomous-execution",
+        label="自动推进",
+        description="自动模式连续执行和阶段结果汇报。",
     ),
     CapabilityCollectionDefinition(
-        collection_id="structured-conversion",
-        label="格式转换",
-        description="JSON、CSV 和结构化导入导出。",
+        collection_id="runtime-safety",
+        label="运行时与验证",
+        description="运行时接入门禁、收尾和验证命令选择。",
     ),
     CapabilityCollectionDefinition(
-        collection_id="file-organization",
-        label="文件整理",
-        description="归档、移动、复制和批量重命名。",
-    ),
-    CapabilityCollectionDefinition(
-        collection_id="project-maintenance",
-        label="项目维护",
-        description="项目状态、文档、配置和维护类工作流。",
-    ),
-    CapabilityCollectionDefinition(
-        collection_id="runtime-governance",
-        label="运行时治理",
-        description="蒸馏、审核、候选维护、规则和 provider。",
+        collection_id="session-continuity",
+        label="会话接续",
+        description="继续任务、交接文件和长期上下文维护。",
     ),
 ]
+
+DEFAULT_WORKFLOW_COLLECTION_SKILLS = {
+    "direction-strategy": [
+        "pre_implementation_workflow_review",
+        "deployment_strategy_review",
+        "repo_impact_analysis",
+    ],
+    "autonomous-execution": [
+        "auto_mode_stage_runner",
+        "nontechnical_stage_report",
+    ],
+    "runtime-safety": [
+        "runtime_gate_workflow",
+        "runtime_verification_selector",
+    ],
+    "session-continuity": [
+        "session_handoff_maintenance",
+    ],
+}
 
 
 def load_capability_collections(
@@ -129,6 +138,9 @@ def _definition_from_payload(
 
 
 def _default_skill_names(collection_id: str, skills: list[dict[str, Any]]) -> list[str]:
+    if collection_id in DEFAULT_WORKFLOW_COLLECTION_SKILLS:
+        available = {str(skill.get("skill_name")) for skill in skills}
+        return [name for name in DEFAULT_WORKFLOW_COLLECTION_SKILLS[collection_id] if name in available]
     return [
         str(skill["skill_name"])
         for skill in skills
@@ -137,6 +149,8 @@ def _default_skill_names(collection_id: str, skills: list[dict[str, Any]]) -> li
 
 
 def _matches_collection(collection_id: str, skill: dict[str, Any]) -> bool:
+    if collection_id in DEFAULT_WORKFLOW_COLLECTION_SKILLS:
+        return str(skill.get("skill_name") or "") in DEFAULT_WORKFLOW_COLLECTION_SKILLS[collection_id]
     if collection_id == "basic-skills":
         return skill.get("skill_surface") == "basic"
     raw_name = str(skill.get("skill_name") or "").lower()

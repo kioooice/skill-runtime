@@ -2,6 +2,32 @@
 
 ## Current State
 
+最新技能进化闭环：已完成 `skill evolution candidate` MVP、`review_evolution_candidate` 审核流程、确认后应用路径和确认后回滚路径。现在任务完成后的学习决策不再只有 `observed_only` 和 `new_skill_candidate`，当执行结果明确带出 `skill_gap` / `skill_improvement` / `evolution_candidate` 信号时，会生成 `improve_existing_skill_candidate`，把“改进已有技能”优先于“新建重复技能”。候选会落盘到 `.skill_runtime/evolution_candidates/*.json`，绑定目标技能、来源任务、证据、建议修改、风险等级和来源轨迹。`review_evolution_candidate` 已接入 RuntimeService、CLI 和 MCP：目标全局技能不存在时会 `rejected`，证据或建议不足时会 `needs_more_evidence`，证据足够时会写出 `.skill_runtime/evolution_reviews/*.review.json` 和 `.diff`，但不会修改全局 `SKILL.md`。`apply_evolution_candidate` 必须显式 `confirm_apply=true` / `--confirm-apply`，会校验 review 后目标 hash、写 `.skill_runtime/evolution_backups` 备份、写 `.skill_runtime/evolution_applications/*.apply.json` 应用记录，并把候选状态更新为 `applied`。`rollback_evolution_candidate` 现在也已接入 RuntimeService、CLI 和 MCP：必须显式 `confirm_rollback=true` / `--confirm-rollback`，只支持从 apply 记录里的 `restore_backup_file` 恢复；如果目标文件在 apply 后又被人工修改，会拒绝覆盖，并写 `.skill_runtime/evolution_rollbacks/*.rollback.json` 后把候选更新为 `rolled_back`。dashboard `技能进化` 页面状态标签支持待审核、已审核、需补证据、已应用和已回滚。下一步更适合进入版本收口，检查当前 diff 后提交这一批 workflow/global-skill 和 skill evolution 改造；如果继续功能开发，优先做 evolution 生命周期详情面板，而不是再扩 runtime 触发样本验证。
+
+最新全局技能新增：已新增全局 Codex skill `plan-progress-tracker`，位置是 `C:\Users\Administrator\.codex\skills\plan-progress-tracker\SKILL.md`。它用于多阶段计划执行中的进度坐标维护：计划创建后、每个阶段开始/完成后、用户说“继续”时、自动模式阶段报告前、压缩恢复或会话接力时，都应明确当前是第几阶段、已完成什么、正在做什么、下一步是什么、是否偏离原计划。它已与 `auto-mode-stage-runner`、`nontechnical-stage-report`、`session-handoff-maintenance` 和 `context-compaction-audit` 联动，避免计划列完后用户只能不断回复“继续”却不知道推进到哪里。
+
+最新全局技能新增：已新增全局 Codex skill `context-compaction-audit`，位置是 `C:\Users\Administrator\.codex\skills\context-compaction-audit\SKILL.md`。它用于每次上下文压缩或 summary-based resume 后做轻量审计：判断是否真的发生压缩、记录/推断压缩时间、在可行时估算压缩率、评估信息丢失风险，并给出 `continue_current_chat`、`checkpoint_then_continue`、`finish_stage_then_reopen` 或 `reopen_now` 建议。该技能明确不伪造精确 token 指标；没有原始 token 或 transcript baseline 时，会输出“无法可靠计算”或低置信估算。现在它已与 `session-handoff-maintenance` 联动：只要审计建议 checkpoint、完成当前阶段后新开、或立即新开，就先用会话接力技能刷新 `HANDOFF.md` / `TASKS.md` / `DECISIONS.md`，让新会话不依赖旧聊天记录。全局和当前项目 `AGENTS.md` 只保留短路由，避免把长规则塞回 AGENTS。
+
+最新中央技能库收口：用户澄清不是不要功能组别，而是不要 `中央技能库` 和 `技能集合` 两套重复页面。当前已把功能组别收敛到 `中央技能库` 主页面：左侧只保留 `中央技能库` 入口，计数为 8 个 active workflow skills；页面内按 `方向与策略`、`自动推进`、`运行时与验证`、`会话接续` 四组展示。独立 `技能集合` 导航和页面已移除，基础本地技能仍保留在运行时/检索层，但不作为默认可视化内容展示。组内技能条目现在可点击打开详情抽屉，保持“按组浏览 + 点开看信息”的面板形态。已重新生成 `.skill_runtime/dashboard.html`，并检查 `output/playwright/dashboard-central-grouped-workflow-library.png`。
+
+最新平台页压缩：按用户反馈，`平台与项目` 页面不再用大段说明卡展示平台技能。现在改成类似 `中央技能库` 的紧凑卡片：顶部是 skill 名和一行路径，中间是最多两行的摘要，下面用标签显示平台、全局权威/项目来源、外部/本地、只读来源，底部只保留一条来源根路径。`角色：...`、`来源：...` 这种展开式调试文案已从平台卡片中移除。已重新生成 `.skill_runtime/dashboard.html`，并检查 `output/playwright/dashboard-platforms-compact-cards.png`。
+
+最新触发日志筛选：按用户要求，`触发日志` 页面已新增 `已使用 / 进入观察 / 已跳过` 三个状态筛选，并默认只显示 `已使用` 记录。每条事件卡片现在带 `data-event-status`，页面 section 带 `data-active-event-filter="used"`，因此即使只是打开静态 HTML，也会先看到 runtime 实际参与并复用技能的记录；点击 `进入观察` 或 `已跳过` 时再切换到对应事件。已重新生成 `.skill_runtime/dashboard.html`，并用 Playwright 确认默认可见事件状态只有 `used`，切换 `进入观察` 后可见事件状态只有 `entered`。
+
+最新 dashboard 清理：按用户标注，`总览` 页已经去掉路径副标题和本页搜索栏，只保留全局顶部搜索；`中央技能库` 左侧计数现在只统计 active workflow skills，因此从 14 改为 8；全局 dashboard 不再单独显示 `全局日志` 导航，跨工作区事件合并到唯一的 `触发日志` 页面中。已重新生成 `.skill_runtime/dashboard.html`，并用截图确认总览页和侧栏状态。
+
+最新集合页再收口：用户明确不想在可视化界面看到基础本地技能，因为它们对当前判断工作流价值没有意义。`能力集合` 页面现在只展示 8 个 active workflow skills，并按功能分成 4 组：`方向与策略`、`自动推进`、`运行时与验证`、`会话接续`。`基础本地技能`、`文本处理`、`格式转换`、`文件整理` 不再作为默认 dashboard 集合显示；底层 basic skill 数据仍保留给运行时和显式检索，不作为用户主界面内容。
+
+最新触发日志可读性调整：`触发日志` 页面不再直接展示英文 task description 和 runtime lane reason。事件卡片现在用中文结构显示 `任务`、`时间`、`处理方式` 和 `结果`，并把常见内部原因翻译为“Codex 直接处理，运行时没有接管”“本地可复用任务，但不属于当前默认接管范围”等用户可理解表述。已重新生成 dashboard，并检查 `output/playwright/dashboard-trigger-log-localized.png`。
+
+最新只读交互面板：已开始把静态 dashboard 升级成真正可点击的面板，但仍不涉及 promote、reject、edit、archive 等写操作。新增 `docs/runtime-readonly-panel-plan.md` 明确第一阶段只做“中央技能库卡片 -> 右侧技能详情抽屉”。当前技能卡片已经可以点击，右侧抽屉展示名称、原始 skill 名、状态、复用次数、来源轨迹、分类来源、完整说明和外部导入来源信息；关闭抽屉不会改变视图或 runtime 状态。按用户反馈，界面里的“只读视图 / 只读详情 / 只读链接 / read_only”提示已经移除，说明区域改为使用 `summary + docstring` 形成完整段落。
+
+最新总览页优化：`总览` 页面已从“观察面板”口径改为“运行时总览”口径，标题说明、只读说明和指标卡文案都更偏用户可理解的产品语言。当前项目与跨工作区两组指标不再使用“标签 - 说明”结构，而是改成数字、指标名、短说明三层；“运行时参与 / 进入观察 / 普通路径”分别表达完成参与、进入但未接管、Codex 直接处理。小节说明现在跟随标题左对齐，避免说明文字漂到右侧造成阅读断裂。
+
+最新集合页调整：`能力集合` 页面已从 workflow-first 进一步收口为 workflow-only。默认集合只保留工作流功能组，不再显示基础本地技能分区；候选技能数量和候选列表项已从默认 dashboard 展示中隐藏，只保留活跃工作流技能；候选数据仍在 staging/governance 路径里，不做删除。左侧导航也修正为靠上排列，避免选中项被侧栏高度拉成大块。全局说明和“搜索当前视图”现在只在 `总览` 页显示；其他页面顶部原位置只显示当前页面标题和说明。
+
+最新 UI 改造：用户明确否定了上一版 dashboard 视觉，要求按 `https://github.com/iamzhihuix/skills-manage` 的界面重做。当前已克隆参考项目到本地 `.skill_runtime/reference/skills-manage` 供对照，并参考其截图/源码把 dashboard 静态 HTML 改成桌面管理应用壳：mac 风格顶部栏、全局搜索、左侧导航、内容标题区、当前视图搜索、两列技能卡片、Catppuccin Latte 风格配色和紫色选中态。旧的 radial-tree / tree-fan / branch-map 默认结构已从当前渲染与测试中移除。默认页仍是工作流技能主视图，基础 helpers 仍在 `基础本地技能` 集合。
+
 最新可视化收口：用户不需要在默认技能树里看到普通本地文件处理技能，只想看 workflow skills。当前 dashboard collector 已给技能增加 `skill_surface`，renderer 默认只展示 `workflow` 技能；`merge_text_files`、JSON 转 CSV、文本替换、目录清理等普通 helpers 被归入内置 `basic-skills` / `基础本地技能` 能力集合，不删除、不丢失，但不再占用工作流主视图。相关快验已覆盖 workflow skill 保持可见、basic skill 从默认树移出、基础集合仍可访问。
 
 最新语义纠正：用户澄清 `workflow-error-correction` 不应该只是记录工具，而是要让 Codex 以后少犯同类错误。当前已把全局 `workflow-error-correction` 改成已知错误防复发 guard：主要产物是“改变下一步行为”，不是更好的错误日志。它现在在 AGENTS 编辑、runtime 验证循环、方向未审先实现、重复纠错、auto-mode 漂移、AGENTS 膨胀等风险场景下，要求先应用已知 guard；只有新错误模式才新增记录。
@@ -65,6 +91,102 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 ## Last Completed
 
 本轮已完成：
+- 全局计划进度跟踪技能：
+  - 新增 `C:\Users\Administrator\.codex\skills\plan-progress-tracker\SKILL.md`
+  - 新增 `agents/openai.yaml`
+  - 全局和项目 `AGENTS.md` 增加短路由
+  - 技能输出固定包含计划名、阶段坐标、已完成、当前状态、下一步、偏离风险和是否需要用户决定
+  - 已与 `auto-mode-stage-runner`、`nontechnical-stage-report`、`session-handoff-maintenance` 和 `context-compaction-audit` 联动
+- 全局上下文压缩审计技能：
+  - 新增 `C:\Users\Administrator\.codex\skills\context-compaction-audit\SKILL.md`
+  - 新增 `agents/openai.yaml`
+  - 全局和项目 `AGENTS.md` 增加短路由
+  - 技能输出会区分精确、估算和不可用的压缩指标
+  - 技能会根据目标清晰度、缺失上下文、diff 范围、测试状态和 handoff 新鲜度建议是否新开会话
+  - 已与 `session-handoff-maintenance` 双向联动：压缩审计做继续/新开判断，会话接力负责写清新会话入口
+  - 已通过 `quick_validate.py`
+  - `python -m unittest tests.test_runtime_fast -v` 通过，110 tests OK
+- dashboard 中央技能库信息架构收口：
+  - 移除重复的 `技能集合` 导航、header 和页面 route
+  - `中央技能库` 现在直接承载工作流功能组
+  - 8 个 active workflow skills 按 `方向与策略`、`自动推进`、`运行时与验证`、`会话接续` 展示
+  - 基础本地技能不再进入默认可视化主界面
+  - 组内技能条目新增详情抽屉触发数据，点击可查看完整说明和来源信息
+  - 已重新生成 `.skill_runtime/dashboard.html`
+  - 已生成并检查 `output/playwright/dashboard-central-grouped-workflow-library.png`
+  - `python -m unittest tests.test_runtime_fast -v` 通过，110 tests OK
+  - `git diff --check` 通过
+- dashboard 平台页压缩：
+  - `平台与项目` 页面从展开式 `project-card` 改为 `platform-skill-card`
+  - 平台卡片新增 `platform-card-grid`、`platform-card-head`、`platform-summary` 和 `platform-path-chip`
+  - 长说明通过卡片样式截断为摘要，路径单行省略
+  - `authoritative_global_skill` 显示为 `全局权威`，`external` 显示为 `外部`，`read_only` 显示为 `只读来源`
+  - 移除平台卡片里的 `角色：...` 和 `来源：...` 前缀式长文本
+  - 已生成并检查 `output/playwright/dashboard-platforms-compact-cards.png`
+  - 新增平台页紧凑卡片回归测试，完整 fast suite 110 tests OK
+- dashboard 触发日志状态筛选：
+  - `触发日志` 页面新增 `已使用 / 进入观察 / 已跳过` 三个筛选按钮
+  - 默认筛选为 `已使用`，首屏只显示 runtime 实际参与并复用技能的记录
+  - 每条事件卡片新增 `data-event-status`，静态 CSS 与 JS 点击切换共用同一状态字段
+  - 无对应状态记录时会显示中文空状态提示
+  - 已重新生成 `.skill_runtime/dashboard.html`
+  - 已生成并检查 `output/playwright/dashboard-trigger-log-status-filter.png`
+  - Playwright 验证默认可见状态为 `used`，点击 `进入观察` 后可见状态为 `entered`
+  - 目标 dashboard 测试、Python 编译检查、完整 fast suite 均通过
+- dashboard 总览与导航清理：
+  - `总览` 页去掉路径副标题和本页搜索栏，避免页面上出现被标注的多余说明线和长搜索条
+  - 左侧 `中央技能库` 计数改为 active workflow skills 数量，当前为 8
+  - 全局 dashboard 只保留一个日志入口：`触发日志`；跨工作区事件在该页面中合并展示
+  - 已重新生成 `.skill_runtime/dashboard.html`
+  - 已生成并检查 `output/playwright/dashboard-overview-cleaned.png` 和 `output/playwright/dashboard-sidebar-workflow-count.png`
+  - 目标 dashboard 测试、Python 编译检查、完整 fast suite 均通过
+- dashboard 集合页 workflow-only 调整：
+  - 默认能力集合从“工作流在前、基础本地在后”改为只显示工作流集合
+  - 8 个 workflow skills 分成功能组：方向与策略 3 个、自动推进 2 个、运行时与验证 2 个、会话接续 1 个
+  - `基础本地技能`、`文本处理`、`格式转换`、`文件整理` 不再出现在默认 dashboard 集合页
+  - 中央技能库不再显示“基础本地技能集合”说明
+  - 已生成并检查 `output/playwright/dashboard-workflow-collections-only.png`
+- dashboard 触发日志中文化：
+  - 事件卡片改为 `任务 / 时间 / 处理方式 / 结果` 结构
+  - 常见英文任务描述和 runtime reason 映射为中文
+  - 不再直接向用户显示 `task bucket guarded-in skipped...` 这类内部原因文本
+  - 已生成并检查 `output/playwright/dashboard-trigger-log-localized.png`
+- 只读交互面板第一阶段：
+  - 新增 `docs/runtime-readonly-panel-plan.md`
+  - 中央技能库技能卡片现在可点击
+  - 新增右侧技能详情抽屉
+  - 抽屉展示技能基础信息、完整说明、来源轨迹数量和分类来源
+  - 外部导入技能可在详情里显示 provenance 文本
+  - 移除 dashboard 可见的“只读”提示，包括卡片底部、抽屉标题和总览标题区
+  - workflow adapter 的详情说明会合并 `docstring`，解释全局权威 skill 与项目薄适配层的关系
+  - 前端只使用静态 HTML `data-*` 字段和 `textContent`，不做任何写操作
+  - 已生成并检查 `output/playwright/dashboard-skill-detail-drawer-no-readonly.png`
+  - `python -m unittest tests.test_runtime_fast -v` 通过，109 tests OK
+  - `git diff --check` 通过
+- 总览页文案与排版优化：
+  - 页面标题改为 `全局运行时总览` / `运行时总览`
+  - 总览指标卡改成数字、指标名、短说明三层结构
+  - `runtime 参与` 改为 `运行时参与`
+  - 当前项目与跨工作区说明改为标题下左对齐
+  - 重新生成 `.skill_runtime/dashboard.html`
+  - 已生成并检查 `output/playwright/dashboard-overview-copy-layout.png`
+  - 目标 dashboard 测试、Python 编译检查通过
+- 技能集合 workflow-first 调整：
+  - 默认集合顺序先改为工作流集合在前，随后按用户反馈收口为 workflow-only
+  - `能力集合` 页面只展示工作流技能功能组
+  - `基础本地技能`、`文本处理`、`格式转换`、`文件整理` 不再出现在默认 dashboard 集合页
+  - 默认 dashboard 不再显示候选技能数量和候选列表项，只显示活跃技能
+  - 全局说明和当前视图搜索框只保留在 `总览` 页
+  - 其他页面顶部原位置改为当前页面标题
+  - 修正左侧导航被拉伸的问题
+  - 已生成 `output/playwright/dashboard-collections-no-candidate-noise.png` 并检查
+  - 目标测试、语法检查通过
+- skills-manage 风格 dashboard 重做：
+  - 静态 dashboard 改成桌面应用壳，而不是旧放射树
+  - 顶部标题栏、全局搜索、左侧导航、内容标题、当前视图搜索和两列技能卡片已落地
+  - workflow skill 名称和说明补充中文展示
+  - Playwright 已生成并检查桌面和移动截图
+  - 旧 radial tree 断言已替换为 app-shell 断言
 - dashboard 默认工作流视图收口：
   - 技能 payload 新增 `skill_surface`
   - 默认技能树只展示 workflow skills
@@ -699,7 +821,9 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-开发前方向审核已经升级为主流程门禁。下一次任何新产品方向、新工具、新功能路线或“继续开发还是换方向”的问题，都先用全局 `pre-implementation-workflow-review` 输出 verdict；只有 `build_now` 可以进入实现，其余结论都先验证、改路线或停止。不要默认继续 runtime/sample/dashboard 验证，除非它直接服务于方向审核。下一次进入 AGENTS 编辑、runtime 验证、路线纠正、自动模式延续、方向审核等已知风险场景时，先应用全局 `workflow-error-correction` 里的 known guards，直接改变下一步行为；不要等用户重复指出，也不要把它当成单纯记录工具。后续新增通用工作流时，默认创建或提升为全局 Codex skill，再让项目 `AGENTS.md`、runtime inventory 或薄 adapter 指向它，不在项目内复制完整流程。dashboard 默认技能树应继续保持 workflow-first；普通本地 helpers 只放在 `基础本地技能` 集合或类似二级入口中。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。查看当前项目用 `python -m skill_runtime.cli dashboard --open` 或 `python -m skill_runtime.cli runtime-events`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 或 `python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
+技能进化闭环当前停在确认应用层：下一步如果继续这条主线，应做回滚/撤销应用路径，允许根据 `.skill_runtime/evolution_applications/*.apply.json` 的 `rollback_hint` 恢复备份，并把候选状态从 `applied` 调整为 `rolled_back` 或类似状态；不要做无确认自动写全局技能。
+
+开发前方向审核已经升级为主流程门禁。下一次任何新产品方向、新工具、新功能路线或“继续开发还是换方向”的问题，都先用全局 `pre-implementation-workflow-review` 输出 verdict；只有 `build_now` 可以进入实现，其余结论都先验证、改路线或停止。不要默认继续 runtime/sample/dashboard 验证，除非它直接服务于方向审核。下一次进入 AGENTS 编辑、runtime 验证、路线纠正、自动模式延续、方向审核等已知风险场景时，先应用全局 `workflow-error-correction` 里的 known guards，直接改变下一步行为；不要等用户重复指出，也不要把它当成单纯记录工具。后续新增通用工作流时，默认创建或提升为全局 Codex skill，再让项目 `AGENTS.md`、runtime inventory 或薄 adapter 指向它，不在项目内复制完整流程。dashboard 默认界面应继续保持 `skills-manage` 式管理应用外壳、workflow-first 主视图和 workflow-only 集合页；基础本地 helpers 不再作为默认可视化界面内容出现，只保留底层能力和显式检索路径。`总览` 页不要恢复路径副标题或本页搜索栏；`中央技能库` 导航计数按 active workflow skills 统计；跨工作区日志合并到唯一的 `触发日志` 入口，不再单独放 `全局日志`；触发日志卡片必须用中文解释任务、处理方式和结果，不要直接展示英文 runtime 内部原因。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import。查看当前项目用 `python -m skill_runtime.cli dashboard --open` 或 `python -m skill_runtime.cli runtime-events`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 或 `python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
 
 ## Important Files
 

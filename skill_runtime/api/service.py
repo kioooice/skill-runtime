@@ -2,6 +2,8 @@ import json
 import re
 from dataclasses import asdict
 from datetime import datetime, timezone
+from difflib import unified_diff
+from hashlib import sha256
 from pathlib import Path
 from shutil import rmtree
 from typing import Any
@@ -12,6 +14,7 @@ from skill_runtime.distill.coverage_report import DistillCoverageReport
 from skill_runtime.distill.skill_generator import SkillGenerationError, SkillGenerator
 from skill_runtime.execution.runtime_tools import RuntimeTools
 from skill_runtime.execution.skill_executor import SkillExecutionError, SkillExecutor
+from skill_runtime.evolution.candidates import EvolutionCandidateStore
 from skill_runtime.governance.library_report import LibraryReport
 from skill_runtime.governance.promotion_guard import PromotionGuard, PromotionGuardError
 from skill_runtime.governance.provenance_backfill import ProvenanceBackfill
@@ -795,6 +798,349 @@ class RuntimeService:
     def governance_report(self) -> dict[str, Any]:
         return LibraryReport(self.root, SkillIndex(self.index_path)).build()
 
+    def review_evolution_candidate(
+        self,
+        candidate: str | Path,
+        global_skills_dir: str | Path | None = None,
+    ) -> dict[str, Any]:
+        store = EvolutionCandidateStore(self.root)
+        try:
+            candidate_payload, candidate_path = store.load_candidate(candidate)
+        except FileNotFoundError as exc:
+            raise RuntimeServiceError(
+                "evolution candidate not found",
+                "EVOLUTION_CANDIDATE_NOT_FOUND",
+                {"candidate": str(candidate)},
+            ) from exc
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise RuntimeServiceError(
+                "evolution candidate is invalid",
+                "INVALID_EVOLUTION_CANDIDATE",
+                {"candidate": str(candidate), "reason": str(exc)},
+            ) from exc
+
+        target_skill_name = _required_candidate_string(candidate_payload, "target_skill_name")
+        reason = _required_candidate_string(candidate_payload, "reason")
+        evidence = _candidate_string_list(candidate_payload.get("evidence"))
+        proposed_changes = _candidate_string_list(candidate_payload.get("proposed_changes"))
+        target_skill_path = self._resolve_global_skill_file(target_skill_name, global_skills_dir)
+
+        if target_skill_path is None:
+            review = store.create_review(
+                candidate_payload,
+                {
+                    "decision": "rejected",
+                    "reason": "target global skill could not be found",
+                    "target_skill_name": target_skill_name,
+                    "target_skill_path": None,
+                    "required_next_action": "check_target_skill_name",
+                    "proposed_diff": "",
+                },
+            )
+            updated = store.update_candidate(
+                candidate_path,
+                {
+                    "status": "rejected",
+                    "review_decision": "rejected",
+                    "review_reason": review["reason"],
+                    "review_path": review["review_path"],
+                },
+            )
+            return {"candidate": updated, "review": review, "mutated_global_skill": False}
+
+        if not evidence or not proposed_changes:
+            review = store.create_review(
+                candidate_payload,
+                {
+                    "decision": "needs_more_evidence",
+                    "reason": "candidate needs both evidence and proposed changes before a skill patch is useful",
+                    "target_skill_name": target_skill_name,
+                    "target_skill_path": str(target_skill_path.resolve()),
+                    "required_next_action": "collect_more_evidence",
+                    "proposed_diff": "",
+                },
+            )
+            updated = store.update_candidate(
+                candidate_path,
+                {
+                    "status": "needs_more_evidence",
+                    "review_decision": "needs_more_evidence",
+                    "review_reason": review["reason"],
+                    "review_path": review["review_path"],
+                },
+            )
+            return {"candidate": updated, "review": review, "mutated_global_skill": False}
+
+        proposed_diff = self._build_evolution_candidate_diff(
+            target_skill_path,
+            candidate_payload,
+            reason=reason,
+            evidence=evidence,
+            proposed_changes=proposed_changes,
+        )
+        proposed_apply_text = self._build_evolution_candidate_apply_text(
+            candidate_payload,
+            reason=reason,
+            evidence=evidence,
+            proposed_changes=proposed_changes,
+        )
+        review = store.create_review(
+            candidate_payload,
+            {
+                "decision": "ready_for_manual_diff",
+                "reason": "candidate has enough evidence for manual skill patch review",
+                "target_skill_name": target_skill_name,
+                "target_skill_path": str(target_skill_path.resolve()),
+                "target_content_hash": _file_sha256(target_skill_path),
+                "required_next_action": "review_diff_before_editing_global_skill",
+                "proposed_diff": proposed_diff,
+                "proposed_apply_text": proposed_apply_text,
+            },
+        )
+        updated = store.update_candidate(
+            candidate_path,
+            {
+                "status": "reviewed",
+                "review_decision": "ready_for_manual_diff",
+                "review_reason": review["reason"],
+                "review_path": review["review_path"],
+                "diff_path": review.get("diff_path"),
+            },
+        )
+        return {"candidate": updated, "review": review, "mutated_global_skill": False}
+
+    def apply_evolution_candidate(
+        self,
+        candidate: str | Path,
+        *,
+        confirm_apply: bool = False,
+        global_skills_dir: str | Path | None = None,
+    ) -> dict[str, Any]:
+        if not confirm_apply:
+            raise RuntimeServiceError(
+                "confirm_apply must be true before applying an evolution candidate",
+                "EVOLUTION_APPLY_CONFIRMATION_REQUIRED",
+            )
+
+        store = EvolutionCandidateStore(self.root)
+        try:
+            candidate_payload, candidate_path = store.load_candidate(candidate)
+        except FileNotFoundError as exc:
+            raise RuntimeServiceError(
+                "evolution candidate not found",
+                "EVOLUTION_CANDIDATE_NOT_FOUND",
+                {"candidate": str(candidate)},
+            ) from exc
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise RuntimeServiceError(
+                "evolution candidate is invalid",
+                "INVALID_EVOLUTION_CANDIDATE",
+                {"candidate": str(candidate), "reason": str(exc)},
+            ) from exc
+
+        review_path = candidate_payload.get("review_path")
+        if not isinstance(review_path, str) or not review_path.strip():
+            raise RuntimeServiceError(
+                "evolution candidate has not been reviewed",
+                "EVOLUTION_CANDIDATE_NOT_REVIEWED",
+                {"candidate": str(candidate_path)},
+            )
+        review = _load_json_object(Path(review_path), "evolution review")
+        if review.get("decision") != "ready_for_manual_diff":
+            raise RuntimeServiceError(
+                "only ready_for_manual_diff reviews can be applied",
+                "EVOLUTION_REVIEW_NOT_APPLICABLE",
+                {"decision": review.get("decision")},
+            )
+
+        target_skill_path = Path(_required_candidate_string(review, "target_skill_path")).resolve()
+        if global_skills_dir is not None:
+            allowed_root = self._resolve_global_skills_dir(global_skills_dir)
+            try:
+                target_skill_path.relative_to(allowed_root)
+            except ValueError as exc:
+                raise RuntimeServiceError(
+                    "review target escapes the requested global skills directory",
+                    "INVALID_EVOLUTION_TARGET",
+                    {"target_skill_path": str(target_skill_path), "global_skills_dir": str(allowed_root)},
+                ) from exc
+        if not target_skill_path.exists():
+            raise RuntimeServiceError(
+                "review target global skill no longer exists",
+                "EVOLUTION_TARGET_NOT_FOUND",
+                {"target_skill_path": str(target_skill_path)},
+            )
+
+        expected_hash = _required_candidate_string(review, "target_content_hash")
+        current_hash = _file_sha256(target_skill_path)
+        if current_hash != expected_hash:
+            raise RuntimeServiceError(
+                "review target changed after review; regenerate the review before applying",
+                "EVOLUTION_TARGET_CHANGED",
+                {
+                    "target_skill_path": str(target_skill_path),
+                    "expected_hash": expected_hash,
+                    "current_hash": current_hash,
+                },
+            )
+
+        apply_text = _required_candidate_string(review, "proposed_apply_text")
+        original_text = target_skill_path.read_text(encoding="utf-8-sig")
+        next_text = original_text.rstrip() + "\n\n" + apply_text.strip() + "\n"
+        backup_path = self._write_evolution_backup(candidate_payload, target_skill_path, original_text)
+        target_skill_path.write_text(next_text, encoding="utf-8")
+        application = store.create_application(
+            candidate_payload,
+            {
+                "decision": "applied",
+                "target_skill_name": review.get("target_skill_name"),
+                "target_skill_path": str(target_skill_path),
+                "backup_path": str(backup_path.resolve()),
+                "review_path": str(Path(review_path).resolve()),
+                "previous_content_hash": expected_hash,
+                "new_content_hash": _file_sha256(target_skill_path),
+                "rollback_hint": {
+                    "strategy": "restore_backup_file",
+                    "backup_path": str(backup_path.resolve()),
+                    "target_path": str(target_skill_path),
+                },
+            },
+        )
+        updated = store.update_candidate(
+            candidate_path,
+            {
+                "status": "applied",
+                "application_path": application["application_path"],
+                "applied_at": application["created_at"],
+                "backup_path": application["backup_path"],
+            },
+        )
+        return {"candidate": updated, "application": application, "mutated_global_skill": True}
+
+    def rollback_evolution_candidate(
+        self,
+        candidate: str | Path,
+        *,
+        confirm_rollback: bool = False,
+        global_skills_dir: str | Path | None = None,
+    ) -> dict[str, Any]:
+        if not confirm_rollback:
+            raise RuntimeServiceError(
+                "confirm_rollback must be true before rolling back an applied evolution candidate",
+                "EVOLUTION_ROLLBACK_CONFIRMATION_REQUIRED",
+            )
+
+        store = EvolutionCandidateStore(self.root)
+        try:
+            candidate_payload, candidate_path = store.load_candidate(candidate)
+        except FileNotFoundError as exc:
+            raise RuntimeServiceError(
+                "evolution candidate not found",
+                "EVOLUTION_CANDIDATE_NOT_FOUND",
+                {"candidate": str(candidate)},
+            ) from exc
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise RuntimeServiceError(
+                "evolution candidate is invalid",
+                "INVALID_EVOLUTION_CANDIDATE",
+                {"candidate": str(candidate), "reason": str(exc)},
+            ) from exc
+
+        if candidate_payload.get("status") != "applied":
+            raise RuntimeServiceError(
+                "only applied evolution candidates can be rolled back",
+                "EVOLUTION_CANDIDATE_NOT_APPLIED",
+                {"candidate": str(candidate_path), "status": candidate_payload.get("status")},
+            )
+        application_path = candidate_payload.get("application_path")
+        if not isinstance(application_path, str) or not application_path.strip():
+            raise RuntimeServiceError(
+                "applied evolution candidate is missing its application record",
+                "EVOLUTION_APPLICATION_NOT_FOUND",
+                {"candidate": str(candidate_path)},
+            )
+        application = _load_json_object(Path(application_path), "evolution application")
+        rollback_hint = application.get("rollback_hint")
+        if not isinstance(rollback_hint, dict):
+            raise RuntimeServiceError(
+                "applied evolution candidate is missing a rollback hint",
+                "INVALID_EVOLUTION_ROLLBACK_HINT",
+                {"application_path": str(application_path)},
+            )
+        if rollback_hint.get("strategy") != "restore_backup_file":
+            raise RuntimeServiceError(
+                "evolution candidate rollback strategy is unsupported",
+                "UNSUPPORTED_EVOLUTION_ROLLBACK_STRATEGY",
+                {"strategy": rollback_hint.get("strategy")},
+            )
+
+        target_skill_path = Path(_required_record_string(rollback_hint, "target_path", "rollback hint")).resolve()
+        backup_path = Path(_required_record_string(rollback_hint, "backup_path", "rollback hint")).resolve()
+        if global_skills_dir is not None:
+            allowed_root = self._resolve_global_skills_dir(global_skills_dir)
+            try:
+                target_skill_path.relative_to(allowed_root)
+            except ValueError as exc:
+                raise RuntimeServiceError(
+                    "rollback target escapes the requested global skills directory",
+                    "INVALID_EVOLUTION_TARGET",
+                    {"target_skill_path": str(target_skill_path), "global_skills_dir": str(allowed_root)},
+                ) from exc
+        if not target_skill_path.exists():
+            raise RuntimeServiceError(
+                "rollback target global skill no longer exists",
+                "EVOLUTION_TARGET_NOT_FOUND",
+                {"target_skill_path": str(target_skill_path)},
+            )
+        if not backup_path.exists():
+            raise RuntimeServiceError(
+                "evolution rollback backup file not found",
+                "EVOLUTION_BACKUP_NOT_FOUND",
+                {"backup_path": str(backup_path)},
+            )
+
+        expected_current_hash = _required_record_string(application, "new_content_hash", "evolution application")
+        current_hash = _file_sha256(target_skill_path)
+        if current_hash != expected_current_hash:
+            raise RuntimeServiceError(
+                "target changed after evolution apply; refusing to overwrite it with rollback backup",
+                "EVOLUTION_TARGET_CHANGED_AFTER_APPLY",
+                {
+                    "target_skill_path": str(target_skill_path),
+                    "expected_hash": expected_current_hash,
+                    "current_hash": current_hash,
+                },
+            )
+
+        restored_text = backup_path.read_text(encoding="utf-8-sig")
+        target_skill_path.write_text(restored_text, encoding="utf-8")
+        rollback = store.create_rollback(
+            candidate_payload,
+            {
+                "decision": "rolled_back",
+                "target_skill_name": application.get("target_skill_name"),
+                "target_skill_path": str(target_skill_path),
+                "backup_path": str(backup_path),
+                "application_path": str(Path(application_path).resolve()),
+                "previous_content_hash": current_hash,
+                "restored_content_hash": _file_sha256(target_skill_path),
+                "rollback_hint": {
+                    "strategy": "restore_backup_file",
+                    "backup_path": str(backup_path),
+                    "target_path": str(target_skill_path),
+                },
+            },
+        )
+        updated = store.update_candidate(
+            candidate_path,
+            {
+                "status": "rolled_back",
+                "rollback_path": rollback["rollback_path"],
+                "rolled_back_at": rollback["created_at"],
+            },
+        )
+        return {"candidate": updated, "rollback": rollback, "mutated_global_skill": True}
+
     def distill_coverage_report(
         self,
         observed_task_scope: str = "all",
@@ -929,6 +1275,94 @@ class RuntimeService:
             return Path(global_skills_dir).expanduser().resolve()
         home = Path.home()
         return (home / ".codex" / "skills").resolve()
+
+    def _resolve_global_skill_file(
+        self,
+        target_skill_name: str,
+        global_skills_dir: str | Path | None,
+    ) -> Path | None:
+        skills_dir = self._resolve_global_skills_dir(global_skills_dir)
+        candidates = [
+            skills_dir / target_skill_name / "SKILL.md",
+            skills_dir / target_skill_name.replace("_", "-") / "SKILL.md",
+            skills_dir / target_skill_name.replace("-", "_") / "SKILL.md",
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        if not skills_dir.exists():
+            return None
+        for skill_file in sorted(skills_dir.glob("*/SKILL.md")):
+            try:
+                header = skill_file.read_text(encoding="utf-8-sig")[:500]
+            except OSError:
+                continue
+            if f"name: {target_skill_name}" in header or f"name: {target_skill_name.replace('_', '-')}" in header:
+                return skill_file
+        return None
+
+    def _build_evolution_candidate_diff(
+        self,
+        target_skill_path: Path,
+        candidate: dict[str, Any],
+        *,
+        reason: str,
+        evidence: list[str],
+        proposed_changes: list[str],
+    ) -> str:
+        original_text = target_skill_path.read_text(encoding="utf-8-sig")
+        original_lines = original_text.splitlines(keepends=True)
+        block_lines = [
+            "\n",
+            "## Evolution Candidate Proposal\n",
+            "\n",
+            "This block is a generated proposal for manual review. Integrate the useful parts into the correct workflow section before applying.\n",
+            "\n",
+            f"- Source task: {candidate.get('source_task_description') or 'unknown'}\n",
+            f"- Reason: {reason}\n",
+            "- Evidence:\n",
+            *[f"  - {item}\n" for item in evidence],
+            "- Proposed changes:\n",
+            *[f"  - {item}\n" for item in proposed_changes],
+        ]
+        proposed_lines = original_lines + block_lines
+        return "".join(
+            unified_diff(
+                original_lines,
+                proposed_lines,
+                fromfile=str(target_skill_path),
+                tofile=f"{target_skill_path} (proposal)",
+            )
+        )
+
+    def _build_evolution_candidate_apply_text(
+        self,
+        candidate: dict[str, Any],
+        *,
+        reason: str,
+        evidence: list[str],
+        proposed_changes: list[str],
+    ) -> str:
+        lines = [
+            "## Evolution Update",
+            "",
+            f"- Source task: {candidate.get('source_task_description') or 'unknown'}",
+            f"- Reason: {reason}",
+            "- Evidence:",
+            *[f"  - {item}" for item in evidence],
+            "- Applied workflow changes:",
+            *[f"  - {item}" for item in proposed_changes],
+        ]
+        return "\n".join(lines)
+
+    def _write_evolution_backup(self, candidate: dict[str, Any], target_skill_path: Path, content: str) -> Path:
+        candidate_id = str(candidate.get("candidate_id") or "evolution_candidate")
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
+        backup_dir = self.root / ".skill_runtime" / "evolution_backups" / candidate_id
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        backup_path = backup_dir / f"{target_skill_path.name}.{stamp}.bak"
+        backup_path.write_text(content, encoding="utf-8")
+        return backup_path
 
     def _global_skill_description(
         self,
@@ -1112,6 +1546,62 @@ def _prefers_global_codex_skill(metadata: dict[str, Any]) -> bool:
 
 def _single_line(value: str) -> str:
     return " ".join(value.strip().split())
+
+
+def _required_candidate_string(candidate: dict[str, Any], key: str) -> str:
+    value = candidate.get(key)
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    raise RuntimeServiceError(
+        "evolution candidate is missing a required field",
+        "INVALID_EVOLUTION_CANDIDATE",
+        {"field": key},
+    )
+
+
+def _candidate_string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
+def _required_record_string(record: dict[str, Any], key: str, label: str) -> str:
+    value = record.get(key)
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    raise RuntimeServiceError(
+        f"{label} is missing a required field",
+        "INVALID_EVOLUTION_RECORD",
+        {"field": key},
+    )
+
+
+def _file_sha256(path: Path) -> str:
+    return sha256(path.read_bytes()).hexdigest()
+
+
+def _load_json_object(path: Path, label: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except FileNotFoundError as exc:
+        raise RuntimeServiceError(
+            f"{label} file not found",
+            "EVOLUTION_REVIEW_NOT_FOUND",
+            {"path": str(path)},
+        ) from exc
+    except json.JSONDecodeError as exc:
+        raise RuntimeServiceError(
+            f"{label} file is invalid",
+            "INVALID_EVOLUTION_REVIEW",
+            {"path": str(path), "reason": str(exc)},
+        ) from exc
+    if not isinstance(payload, dict):
+        raise RuntimeServiceError(
+            f"{label} must be a JSON object",
+            "INVALID_EVOLUTION_REVIEW",
+            {"path": str(path)},
+        )
+    return payload
 
 
 def _yaml_double_quoted(value: str) -> str:

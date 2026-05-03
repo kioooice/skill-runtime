@@ -10,6 +10,7 @@ from skill_runtime.api.models import (
     ReuseDecision,
 )
 from skill_runtime.api.service import RuntimeService
+from skill_runtime.evolution.candidates import EvolutionCandidateStore
 from skill_runtime.retrieval.skill_index import SkillIndex
 
 
@@ -48,6 +49,12 @@ class AgentOrchestrationService:
             plan.request,
             execution_payload,
             learning_decision,
+        )
+        learning_capture_payload = self._attach_evolution_candidate(
+            plan.request,
+            execution_payload,
+            learning_decision,
+            learning_capture_payload,
         )
         return AgentOrchestrationResult(
             request=plan.request,
@@ -133,6 +140,15 @@ class AgentOrchestrationService:
         if status not in self.SUCCESS_STATUSES:
             return LearningDecision("skip", "task did not complete successfully")
 
+        improvement_signal = self._skill_improvement_signal(request, execution_payload)
+        if execution_payload.get("skill_name") and improvement_signal is not None:
+            return LearningDecision(
+                "improve_existing_skill_candidate",
+                improvement_signal["reason"],
+                related_skill_name=improvement_signal["target_skill_name"],
+                should_capture_trajectory=True,
+                should_distill_now=False,
+            )
         if execution_payload.get("skill_name"):
             return LearningDecision("skip", "existing skill reuse already solved the task cleanly")
 
@@ -148,6 +164,14 @@ class AgentOrchestrationService:
             return LearningDecision(
                 "observed_only",
                 "task succeeded, but the risk level is too high for immediate automatic distillation",
+                should_capture_trajectory=True,
+                should_distill_now=False,
+            )
+        if improvement_signal is not None:
+            return LearningDecision(
+                "improve_existing_skill_candidate",
+                improvement_signal["reason"],
+                related_skill_name=improvement_signal["target_skill_name"],
                 should_capture_trajectory=True,
                 should_distill_now=False,
             )
@@ -178,6 +202,49 @@ class AgentOrchestrationService:
         if observed_task is None:
             return None
         return self.runtime.capture_trajectory(observed_task=observed_task)
+
+    def _attach_evolution_candidate(
+        self,
+        request: AgentTaskRequest,
+        execution_payload: dict[str, Any],
+        learning_decision: LearningDecision,
+        learning_capture_payload: dict[str, Any] | None,
+    ) -> dict[str, Any] | None:
+        if learning_decision.decision != "improve_existing_skill_candidate":
+            return learning_capture_payload
+        signal = self._skill_improvement_signal(request, execution_payload)
+        if signal is None:
+            return learning_capture_payload
+        trajectory_path = None
+        if isinstance(learning_capture_payload, dict):
+            raw_path = learning_capture_payload.get("trajectory_path")
+            if isinstance(raw_path, str):
+                trajectory_path = raw_path
+        candidate = EvolutionCandidateStore(self.root).create_candidate(
+            target_skill_name=signal["target_skill_name"],
+            source_task_description=request.task_description,
+            reason=signal["reason"],
+            evidence=signal["evidence"],
+            proposed_changes=signal["proposed_changes"],
+            source_trajectory_path=trajectory_path,
+            risk_level=request.risk_level,
+            change_type=signal["change_type"],
+        )
+        payload = dict(learning_capture_payload or {})
+        payload["evolution_candidate"] = candidate
+        payload["evolution_candidate_path"] = candidate["candidate_path"]
+        payload["recommended_next_action"] = "review_evolution_candidate"
+        payload["available_host_operations"] = [
+            {
+                "type": "manual_review",
+                "tool_name": "review_evolution_candidate",
+                "display_label": "Review skill evolution candidate",
+                "effect_summary": "Review the proposed existing-skill improvement before editing any global skill.",
+                "risk_level": "low",
+                "requires_confirmation": True,
+            }
+        ]
+        return payload
 
     def _build_observed_task_payload(
         self,
@@ -274,6 +341,78 @@ class AgentOrchestrationService:
         if value == "partial":
             return "partial"
         return "success"
+
+    def _skill_improvement_signal(
+        self,
+        request: AgentTaskRequest,
+        execution_payload: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        raw_signal = self._raw_skill_improvement_signal(execution_payload)
+        if raw_signal is None:
+            return None
+
+        target_skill_name = self._signal_string(raw_signal, "target_skill_name", "related_skill_name", "skill_name")
+        if not target_skill_name:
+            target_skill_name = self._matched_related_skill_name(request)
+        if not target_skill_name:
+            return None
+
+        reason = self._signal_string(raw_signal, "reason", "gap", "summary")
+        if not reason:
+            reason = f"successful task revealed an improvement opportunity for {target_skill_name}"
+        evidence = self._signal_list(raw_signal, "evidence", "observed_gaps", "examples")
+        proposed_changes = self._signal_list(raw_signal, "proposed_changes", "changes", "recommendations")
+        change_type = self._signal_string(raw_signal, "change_type", "gap_type", "improvement_type")
+        return {
+            "target_skill_name": target_skill_name,
+            "reason": reason,
+            "evidence": evidence,
+            "proposed_changes": proposed_changes,
+            "change_type": change_type or "workflow_rule",
+        }
+
+    def _raw_skill_improvement_signal(self, execution_payload: dict[str, Any]) -> dict[str, Any] | None:
+        for key in ("skill_gap", "skill_improvement", "evolution_candidate"):
+            value = execution_payload.get(key)
+            if isinstance(value, dict):
+                return value
+        result = execution_payload.get("result")
+        if isinstance(result, dict):
+            for key in ("skill_gap", "skill_improvement", "evolution_candidate"):
+                value = result.get(key)
+                if isinstance(value, dict):
+                    return value
+        return None
+
+    def _matched_related_skill_name(self, request: AgentTaskRequest) -> str | None:
+        try:
+            results = self.runtime.search(request.task_description, top_k=1).get("results") or []
+        except Exception:
+            return None
+        if not results:
+            return None
+        top_result = results[0]
+        score = float(top_result.get("score", 0.0))
+        skill_name = top_result.get("skill_name")
+        if score < 0.55 or not isinstance(skill_name, str):
+            return None
+        return skill_name
+
+    def _signal_string(self, signal: dict[str, Any], *keys: str) -> str:
+        for key in keys:
+            value = signal.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        return ""
+
+    def _signal_list(self, signal: dict[str, Any], *keys: str) -> list[str]:
+        for key in keys:
+            value = signal.get(key)
+            if isinstance(value, list):
+                return [str(item).strip() for item in value if str(item).strip()]
+            if isinstance(value, str) and value.strip():
+                return [value.strip()]
+        return []
 
     def _missing_required_inputs(self, input_schema: dict[str, Any], known_inputs: dict[str, Any]) -> list[str]:
         required = input_schema.get("required", [])

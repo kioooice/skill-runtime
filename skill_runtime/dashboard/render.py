@@ -12,12 +12,20 @@ SKILL_NAME_LABELS = {
     "merge_text_files": "合并文本文件",
     "text_replace_dogfood": "文本替换",
     "archive_log_files_dogfood": "归档日志文件",
+    "auto_mode_stage_runner": "自动模式阶段执行",
     "bridge_config_test": "桥接配置测试",
+    "deployment_strategy_review": "部署策略审核",
     "explainable_rule_test": "可解释规则测试",
     "fallback_rule_test": "兜底规则测试",
     "generalized_merge_rule_test": "通用合并规则测试",
     "manual_fallback_demo": "手动兜底演示",
     "merge_text_files_generated_v2": "合并文本文件生成版 v2",
+    "nontechnical_stage_report": "非技术阶段报告",
+    "pre_implementation_workflow_review": "开发前方向审核",
+    "repo_impact_analysis": "仓库影响分析",
+    "runtime_gate_workflow": "运行时接入门禁",
+    "runtime_verification_selector": "验证命令选择",
+    "session_handoff_maintenance": "会话交接维护",
     "registry_refactor_test": "注册表重构测试",
     "semantic_provider_fallback_test": "语义提供器兜底测试",
     "service_audit_followup_test": "服务审核跟进测试",
@@ -31,10 +39,71 @@ SKILL_SUMMARY_LABELS = {
     "Merge all .txt files in an input directory into one markdown output file.": "将输入目录中的所有 .txt 文件合并为一个 Markdown 输出文件。",
     "Replace or update a word or text in one file and write the updated file.": "替换或更新单个文件中的词语或文本，并写出更新后的文件。",
     "Move all log files from inbox to archive.": "将收件箱中的所有日志文件移动到归档目录。",
+    "Thin runtime adapter that points to the global auto-mode stage runner Codex skill.": "承接自动模式的连续执行、阶段汇报和停止条件。",
+    "Thin runtime adapter that points to the global deployment strategy review Codex skill.": "根据真实项目结构判断部署方式和 Docker 策略。",
+    "Thin runtime adapter that points to the global nontechnical stage report Codex skill.": "把阶段结果翻译成用户能判断价值和风险的说明。",
+    "Thin runtime adapter that points to the global pre-implementation workflow review Codex skill.": "实现前审核开发方向是否值得做、是否需要先验证。",
+    "Thin runtime adapter that points to the global repo impact analysis Codex skill.": "在改动前定位相关模块、调用链和影响范围。",
+    "Thin runtime adapter that points to the global runtime gate workflow Codex skill.": "让具体开发任务先经过 Skill Runtime 接入门禁和收尾记录。",
+    "Thin runtime adapter that points to the global runtime verification selector Codex skill.": "按风险选择最小但有用的测试、语法和静态检查命令。",
+    "Thin runtime adapter that points to the global session handoff maintenance Codex skill.": "维护 HANDOFF、TASKS、DECISIONS，让新会话能继续接力。",
     "Merge all txt files in a directory into one markdown file.": "将目录中的所有 txt 文件合并为一个 Markdown 文件。",
     "Generate a report from mixed observations without a known deterministic file rule.": "从混合观察结果生成报告，适用于没有固定文件规则的场景。",
     "Generate a report from mixed observations without a deterministic rule.": "从混合观察结果生成报告，适用于没有固定规则的场景。",
     "Rename all txt files in a directory by prefixing them with a value.": "通过添加前缀批量重命名目录中的 txt 文件。",
+}
+
+TASK_DESCRIPTION_LABELS = {
+    "capture a reusable workflow": "记录可复用工作流",
+    "capture a reusable workflow through mcp": "通过 MCP 记录可复用工作流",
+    "capture alpha workflow": "记录 alpha 工作流",
+    "capture alpha workflow through mcp": "通过 MCP 记录 alpha 工作流",
+    "capture shared global payload workflow": "记录全局共享工作流",
+    "capture shared payload workflow": "记录共享工作流",
+    "Clean dashboard overview chrome, workflow skill count, and duplicate log navigation": "清理总览页：修正工作流计数并合并日志入口",
+    "Clean dashboard overview chrome, workflow count, and duplicate log navigation": "清理总览页：修正计数并合并日志入口",
+    "Hide basic local dashboard collections and regroup workflow skills by function": "整理技能集合：隐藏基础技能，并按功能分组",
+    "Localize dashboard trigger log wording": "优化触发日志中文表述",
+    "merge alpha notes": "合并 alpha 笔记",
+    "merge txt files into markdown": "合并 txt 文件为 Markdown",
+    "Remove read-only dashboard labels and show full skill descriptions": "移除只读提示，并补全技能说明",
+    "review beta roadmap": "评审 beta 路线",
+}
+
+TASK_WORD_LABELS = {
+    "alpha": "alpha",
+    "and": "并",
+    "basic": "基础",
+    "chrome": "界面",
+    "clean": "清理",
+    "collections": "集合",
+    "count": "计数",
+    "dashboard": "面板",
+    "duplicate": "重复",
+    "function": "功能",
+    "global": "全局",
+    "hide": "隐藏",
+    "local": "本地",
+    "log": "日志",
+    "navigation": "导航",
+    "notes": "笔记",
+    "overview": "总览",
+    "regroup": "重新分组",
+    "review": "评审",
+    "roadmap": "路线",
+    "skill": "技能",
+    "skills": "技能",
+    "trigger": "触发",
+    "wording": "表述",
+    "workflow": "工作流",
+}
+
+RUNTIME_REASON_LABELS = {
+    "auto-executed reusable skill": "已自动复用匹配的技能。",
+    "captured learning payload": "已记录可复用经验，等待后续整理。",
+    "default lane observation": "已进入运行时观察，但没有自动接管。",
+    "kept on normal Codex path": "按普通 Codex 路径处理。",
+    "outside default lane": "不属于当前默认运行时接管范围。",
 }
 
 SKILL_NAME_TOKEN_LABELS = {
@@ -106,19 +175,22 @@ SKILL_GROUP_ORDER = [
     "other-workflows",
 ]
 
+LOCAL_COLLECTION_IDS = {
+    "basic-skills",
+    "text-processing",
+    "structured-conversion",
+    "file-organization",
+}
+
 
 def render_dashboard_html(data: dict[str, Any]) -> str:
     global_data = data.get("global") if isinstance(data.get("global"), dict) else None
-    title = "全局运行时观察面板" if global_data else "运行时可观察面板"
-    subtitle = (
-        f"{text(data.get('root'))} · 已合并跨工作区调用记录"
-        if global_data
-        else text(data.get("root"))
-    )
+    title = "全局运行时总览" if global_data else "运行时总览"
+    subtitle = ""
     read_only_text = (
-        "同一页面内查看当前项目技能树、触发日志、治理快照，以及跨工作区调用记录。"
+        "查看项目技能、触发记录、治理状态与跨工作区调用。"
         if global_data
-        else "不编辑技能、不提升、不归档，也不做跨工作区聚合。"
+        else "查看技能、触发记录和治理状态，不修改运行时数据。"
     )
     return f"""<!doctype html>
 <html lang="zh-CN">
@@ -129,62 +201,138 @@ def render_dashboard_html(data: dict[str, Any]) -> str:
   <style>{STYLE}</style>
 </head>
 <body data-active-view="skill-tree">
-  <main>
-    <section class="hero">
-      <div>
-        <div class="eyebrow">技能运行时</div>
-        <h1>{title}</h1>
-        <div class="muted">{subtitle}</div>
-      </div>
-      <div class="panel">
-        <strong>只读视图</strong>
-        <div class="muted">{read_only_text}</div>
-      </div>
-    </section>
-    {_overview(data.get("overview", {}))}
-    {_global_overview(global_data.get("overview", {})) if global_data else ""}
-    {_view_nav(global_enabled=bool(global_data))}
-    {_skill_tree(data.get("skills", []))}
-    {_capability_collections(data.get("capability_collections", []))}
-    {_trigger_log(data.get("events", []))}
-    {_governance(data.get("governance", {}), data.get("diagnostics", []))}
-    {_platform_inventory(data.get("platform_inventory", {}))}
-    {_global_projects_view(global_data) if global_data else ""}
-    {_global_log_view(global_data) if global_data else ""}
-  </main>
+  <div class="desktop-shell">
+    <header class="topbar">
+      <button class="topbar-icon" type="button" aria-label="应用入口">{_icon("blocks")}</button>
+      <div class="global-search">{_icon("search")}<span>搜索技能...</span><kbd>Ctrl K</kbd></div>
+    </header>
+    <div class="app-body">
+      <aside class="sidebar">
+        <div class="sidebar-head"><strong>skills-runtime</strong><span aria-hidden="true">‹</span></div>
+        {_view_nav(data.get("overview", {}), global_enabled=bool(global_data))}
+        <button class="sidebar-settings" type="button">{_icon("settings")}<span>设置</span></button>
+      </aside>
+      <main class="content-pane">
+        {_view_headers(title, subtitle, read_only_text, global_enabled=bool(global_data))}
+        {_overview_page(data.get("overview", {}), global_data.get("overview", {}) if global_data else None)}
+        {_skill_tree(data.get("skills", []), data.get("capability_collections", []))}
+        {_evolution_candidates(data.get("evolution_candidates", []))}
+        {_trigger_log(global_data.get("events", []) if global_data else data.get("events", []), include_project=bool(global_data))}
+        {_governance(data.get("governance", {}), data.get("diagnostics", []))}
+        {_platform_inventory(data.get("platform_inventory", {}))}
+        {_global_projects_view(global_data) if global_data else ""}
+        {_skill_detail_drawer()}
+      </main>
+    </div>
+  </div>
   {SCRIPT}
 </body>
 </html>
 """
 
 
+def _view_headers(title: str, subtitle: str, read_only_text: str, *, global_enabled: bool) -> str:
+    headers = [
+        _view_header(
+            "overview",
+            title,
+            subtitle,
+        ),
+        _view_header("skill-tree", "中央技能库", "按功能分组查看工作流技能。"),
+        _view_header(
+            "skill-evolution",
+            "技能进化",
+            "查看真实任务暴露出的已有技能缺口，先形成候选提案，再决定是否改进全局技能。",
+        ),
+        _view_header(
+            "trigger-log",
+            "触发日志",
+            "查看运行时是否参与任务：已使用、进入观察，或由 Codex 直接处理；全局模式下会合并跨工作区记录。",
+        ),
+        _view_header("governance", "治理快照", "查看重复候选、诊断信息和技能库健康状态。"),
+        _view_header("platforms", "平台与项目", "查看已发现的平台技能目录和来源。"),
+    ]
+    if global_enabled:
+        headers.extend(
+            [
+                _view_header("global-projects", "全局项目", "跨工作区查看 Skill Runtime 调用记录。"),
+            ]
+        )
+    return "\n".join(headers)
+
+
+def _view_header(view: str, title: str, subtitle: str, *, actions: str = "") -> str:
+    subtitle_html = f"<p>{text(subtitle)}</p>" if subtitle else ""
+    return f"""<section class="content-header view-header" data-view-header="{text(view)}" hidden>
+          <div>
+            <h1>{text(title)}</h1>
+            {subtitle_html}
+          </div>
+          {actions}
+        </section>"""
+
+
+def _icon(name: str) -> str:
+    icons = {
+        "blocks": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg>',
+        "radar": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0-9-9"/><path d="M12 17a5 5 0 1 0-5-5"/><path d="m12 12 6-6"/><path d="M12 8v4h4"/></svg>',
+        "store": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16l-2-5H6z"/><path d="M6 10v9h12v-9"/><path d="M9 19v-5h6v5"/></svg>',
+        "layers": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg>',
+        "activity": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-7 4 14 2-7h4"/></svg>',
+        "shield": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6z"/></svg>',
+        "platform": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v10H4z"/><path d="M8 19h8"/><path d="M12 15v4"/></svg>',
+        "spark": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="m18 15 .8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg>',
+        "globe": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg>',
+        "search": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg>',
+        "settings": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.3 3a7 7 0 0 0-1.7 1l-2.4-1-2 3.5L5.1 11a7 7 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 1.7 1l.3 3h5l.3-3a7 7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5a7 7 0 0 0 .1-1z"/></svg>',
+        "package": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4v10l-8 4-8-4V7z"/><path d="m4 7 8 4 8-4"/><path d="M12 11v10"/></svg>',
+        "link": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg>',
+    }
+    return f'<span class="icon">{icons.get(name, icons["blocks"])}</span>'
+
+
+def _overview_page(overview: dict[str, Any], global_overview: dict[str, Any] | None = None) -> str:
+    global_html = _global_overview(global_overview) if global_overview else ""
+    return f"""<section id="dashboard-page-overview" class="view-panel dashboard-view-page overview-page" data-view-page="overview" hidden>
+  <section class="panel overview-panel">
+    {_overview(overview)}
+    {global_html}
+  </section>
+</section>"""
+
+
 def _overview(overview: dict[str, Any]) -> str:
     counts = overview.get("recent_event_counts", {})
-    return f"""<section class="panel">
-  <h2>当前项目总览</h2>
-  <div class="grid">
-    {_metric("活跃", overview.get("active_count", 0), "可用技能")}
-    {_metric("候选", overview.get("staging_count", 0), "候选技能")}
-    {_metric("已使用", counts.get("used", 0), "runtime 完成参与")}
-    {_metric("已进入", counts.get("entered", 0), "进入 runtime 观察")}
-    {_metric("已跳过", counts.get("skipped", 0), "普通 Codex 路径")}
+    return f"""<section class="overview-section">
+  <div class="overview-section-head">
+    <h2>当前项目</h2>
+    <p class="muted">当前工作区的可用技能与运行时参与情况。</p>
   </div>
-  <p class="muted">最近事件：{text(overview.get("latest_event_time") or "暂无运行通道事件")}</p>
+  <div class="grid metric-grid">
+    {_metric("可用技能", overview.get("active_count", 0), "当前活跃")}
+    {_metric("运行时参与", counts.get("used", 0), "已完成参与")}
+    {_metric("进入观察", counts.get("entered", 0), "进入但未接管")}
+    {_metric("普通路径", counts.get("skipped", 0), "Codex 直接处理")}
+  </div>
+  <p class="overview-meta">最近事件：{text(overview.get("latest_event_time") or "暂无运行通道事件")}</p>
 </section>"""
 
 
 def _global_overview(overview: dict[str, Any]) -> str:
     counts = overview.get("recent_event_counts", {})
-    return f"""<section class="panel">
-  <h2>全局总览</h2>
-  <div class="grid">
-    {_metric("项目数", overview.get("project_count", 0), "发现调用记录的工作区")}
-    {_metric("事件数", overview.get("event_count", 0), "最近全局事件")}
-    {_metric("已使用", counts.get("used", 0), "runtime 完成参与")}
-    {_metric("已进入", counts.get("entered", 0), "进入 runtime 观察")}
-    {_metric("已跳过", counts.get("skipped", 0), "普通 Codex 路径")}
+    return f"""<section class="overview-section">
+  <div class="overview-section-head">
+    <h2>跨工作区</h2>
+    <p class="muted">已发现调用记录的工作区和最近全局事件。</p>
   </div>
-  <p class="muted">最近事件：{text(overview.get("latest_event_time") or "暂无全局运行通道事件")}</p>
+  <div class="grid metric-grid">
+    {_metric("工作区", overview.get("project_count", 0), "发现调用记录")}
+    {_metric("最近事件", overview.get("event_count", 0), "全局事件数")}
+    {_metric("运行时参与", counts.get("used", 0), "已完成参与")}
+    {_metric("进入观察", counts.get("entered", 0), "进入但未接管")}
+    {_metric("普通路径", counts.get("skipped", 0), "Codex 直接处理")}
+  </div>
+  <p class="overview-meta">最近事件：{text(overview.get("latest_event_time") or "暂无全局运行通道事件")}</p>
 </section>"""
 
 
@@ -203,37 +351,11 @@ def _project_card(project: dict[str, Any]) -> str:
 </article>"""
 
 
-def _global_event_row(event: dict[str, Any]) -> str:
-    selected_skill_name = event.get("selected_skill_name")
-    skill = _skill_display_name(selected_skill_name) if selected_skill_name else "普通 Codex 路径"
-    return f"""<article class="event">
-  <div><span class="event-project">{text(event.get("project_name"))}</span> {badge(event.get("runtime_lane_status"))} <strong>{text(event.get("task_description"))}</strong></div>
-  <div class="muted">{text(event.get("timestamp"))} - {text(skill)}</div>
-  <div class="reason">{text(event.get("runtime_lane_reason"))}</div>
-  {_event_follow_up(event)}
-</article>"""
-
-
 def _global_projects_view(global_data: dict[str, Any]) -> str:
-    return f"""<section id="global-projects-view" class="panel view-panel dashboard-view-page" data-view-page="global-projects" hidden>
-  <div class="view-kicker">视图 06</div>
-  <h2>全局项目概览</h2>
+    return f"""<section id="dashboard-page-global-projects" class="panel view-panel dashboard-view-page" data-view-page="global-projects" hidden>
   {_project_overview_body(global_data.get("projects", []))}
   <h3>扫描范围</h3>
   {_scan_root_lists(global_data.get("scan_roots", []), global_data.get("diagnostics", []))}
-</section>"""
-
-
-def _global_log_view(global_data: dict[str, Any]) -> str:
-    events = global_data.get("events", [])
-    if not events:
-        body = '<p class="muted">暂无全局运行通道事件。</p>'
-    else:
-        body = "\n".join(_global_event_row(event) for event in events[:100])
-    return f"""<section id="global-log-view" class="panel view-panel dashboard-view-page" data-view-page="global-log" hidden>
-  <div class="view-kicker">视图 07</div>
-  <h2>全局触发日志</h2>
-  {body}
 </section>"""
 
 
@@ -251,24 +373,35 @@ def _scan_root_lists(scan_roots: list[Any], diagnostics: list[str]) -> str:
   <ul class="scan-list">{diagnostics_body}</ul>"""
 
 
-def _view_nav(*, global_enabled: bool = False) -> str:
+def _nav_count(value: Any) -> str:
+    count = _safe_int(value)
+    return f'<span class="nav-count">{text(count)}</span>' if count > 0 else ""
+
+
+def _view_nav(overview: dict[str, Any] | None = None, *, global_enabled: bool = False) -> str:
+    overview = overview or {}
+    counts = overview.get("recent_event_counts", {}) if isinstance(overview.get("recent_event_counts"), dict) else {}
     global_links = ""
     if global_enabled:
-        global_links = """
-  <button class="view-link" type="button" data-view-target="global-projects" aria-controls="global-projects-view" aria-current="false"><strong>全局项目</strong><span>跨工作区概览</span></button>
-  <button class="view-link" type="button" data-view-target="global-log" aria-controls="global-log-view" aria-current="false"><strong>全局日志</strong><span>跨项目事件</span></button>"""
+        global_links = f"""
+        <button class="view-link" type="button" data-view-target="global-projects" aria-controls="dashboard-page-global-projects" aria-current="false">{_icon("globe")}<span>全局项目</span></button>"""
     return f"""<nav class="view-nav" aria-label="面板视图">
-  <button class="view-link is-active" type="button" data-view-target="skill-tree" aria-controls="skill-tree-view" aria-current="page"><strong>技能树</strong><span>生命周期分支</span></button>
-  <button class="view-link" type="button" data-view-target="collections" aria-controls="collections-view" aria-current="false"><strong>能力集合</strong><span>组织层</span></button>
-  <button class="view-link" type="button" data-view-target="trigger-log" aria-controls="trigger-log-view" aria-current="false"><strong>触发日志</strong><span>运行通道事件</span></button>
-  <button class="view-link" type="button" data-view-target="governance" aria-controls="governance-view" aria-current="false"><strong>治理快照</strong><span>技能库健康</span></button>
-  <button class="view-link" type="button" data-view-target="platforms" aria-controls="platforms-view" aria-current="false"><strong>平台与项目</strong><span>只读来源</span></button>
-  {global_links}
-</nav>"""
+        <button class="view-link" type="button" data-view-target="overview" aria-controls="dashboard-page-overview" aria-current="false">{_icon("radar")}<span>总览</span></button>
+        <button class="view-link is-active" type="button" data-view-target="skill-tree" aria-controls="dashboard-page-skill-tree" aria-current="page">{_icon("blocks")}<span>中央技能库</span>{_nav_count(overview.get("active_count", 0))}</button>
+        <button class="view-link" type="button" data-view-target="skill-evolution" aria-controls="dashboard-page-skill-evolution" aria-current="false">{_icon("spark")}<span>技能进化</span>{_nav_count(overview.get("evolution_candidate_count", 0))}</button>
+        <button class="view-link" type="button" data-view-target="trigger-log" aria-controls="dashboard-page-trigger-log" aria-current="false">{_icon("activity")}<span>触发日志</span>{_nav_count(counts.get("used", 0) + counts.get("entered", 0))}</button>
+        <button class="view-link" type="button" data-view-target="governance" aria-controls="dashboard-page-governance" aria-current="false">{_icon("shield")}<span>治理快照</span></button>
+        <button class="view-link" type="button" data-view-target="platforms" aria-controls="dashboard-page-platforms" aria-current="false">{_icon("platform")}<span>平台与项目</span></button>
+        {global_links}
+      </nav>"""
 
 
 def _metric(label: str, value: Any, caption: str) -> str:
-    return f'<div class="metric"><strong>{text(value)}</strong><span>{text(label)} - {text(caption)}</span></div>'
+    return f"""<div class="metric">
+  <strong>{text(value)}</strong>
+  <span>{text(label)}</span>
+  <small>{text(caption)}</small>
+</div>"""
 
 
 def _skill_display_name(raw_name: Any) -> str:
@@ -287,6 +420,20 @@ def _skill_display_summary(raw_summary: Any) -> str:
     if not raw:
         return "该技能没有说明。"
     return SKILL_SUMMARY_LABELS.get(raw, "该技能还没有中文说明，原始说明保留在技能元数据中。")
+
+
+def _skill_detail_description(skill: dict[str, Any]) -> str:
+    summary = _skill_display_summary(skill.get("summary"))
+    docstring = str(skill.get("docstring") or "").strip()
+    if docstring.startswith("Runtime adapter only. The authoritative workflow lives in the global Codex skill"):
+        return (
+            f"{summary} 权威工作流位于全局 Codex skill；当前项目内的 active skill 只是薄适配层，"
+            "用于搜索路由、触发记录和执行留痕。执行时会写出 global_skill_name、global_skill_path、"
+            "source_role 和 next_action，方便确认实际调用的是哪个全局工作流。"
+        )
+    if docstring and docstring != str(skill.get("summary") or "").strip():
+        return f"{summary} 原始补充说明：{docstring}"
+    return summary
 
 
 def _source_display_text(sources: list[Any]) -> str:
@@ -348,21 +495,167 @@ def _group_skills_by_type(skills: list[dict[str, Any]]) -> list[tuple[str, list[
     return [(group_id, grouped[group_id]) for group_id in SKILL_GROUP_ORDER if grouped.get(group_id)]
 
 
-def _skill_tree(skills: list[dict[str, Any]]) -> str:
+def _skill_tree(skills: list[dict[str, Any]], collections: list[dict[str, Any]] | None = None) -> str:
     workflow_skills = [skill for skill in skills if skill.get("skill_surface") == "workflow"]
-    hidden_basic_count = len([skill for skill in skills if skill.get("skill_surface") == "basic"])
-    if not workflow_skills:
+    workflow_collections = collections or []
+    if not workflow_skills and not workflow_collections:
         body = '<p class="muted">当前运行根目录没有找到工作流技能。</p>'
     else:
-        body = _skill_tree_branches(workflow_skills[:80])
-    basic_note = ""
-    if hidden_basic_count:
-        basic_note = f'<p class="muted">已将 {text(hidden_basic_count)} 个普通本地技能移入“基础本地技能”集合，默认技能树只展示工作流技能。</p>'
-    return f"""<section id="skill-tree-view" class="panel view-panel dashboard-view-page" data-view-page="skill-tree">
-  <div class="view-kicker">视图 01</div>
-  <h2>技能树视图</h2>
-  {basic_note}
+        body = _workflow_skill_group_cards(workflow_skills, workflow_collections)
+    return f"""<section id="dashboard-page-skill-tree" class="panel view-panel dashboard-view-page" data-view-page="skill-tree">
   {body}
+</section>"""
+
+
+def _evolution_candidates(candidates: list[dict[str, Any]]) -> str:
+    visible_candidates = [candidate for candidate in candidates if isinstance(candidate, dict)][:50]
+    if not visible_candidates:
+        body = '<p class="muted">暂无技能进化候选。只有真实任务暴露出已有技能缺口时，这里才会出现提案。</p>'
+    else:
+        body = '<div class="evolution-grid">' + "\n".join(
+            _evolution_candidate_card(candidate) for candidate in visible_candidates
+        ) + "</div>"
+    return f"""<section id="dashboard-page-skill-evolution" class="panel view-panel dashboard-view-page" data-view-page="skill-evolution" hidden>
+  {body}
+</section>"""
+
+
+def _evolution_candidate_card(candidate: dict[str, Any]) -> str:
+    evidence = candidate.get("evidence") if isinstance(candidate.get("evidence"), list) else []
+    proposed_changes = candidate.get("proposed_changes") if isinstance(candidate.get("proposed_changes"), list) else []
+    evidence_text = "；".join(str(item) for item in evidence[:2]) if evidence else "来源任务已记录，待人工审核具体差异。"
+    change_text = "；".join(str(item) for item in proposed_changes[:2]) if proposed_changes else "先审核是否需要补触发条件、步骤或停止条件。"
+    return f"""<article class="evolution-card">
+  <div class="skill-card-head">
+    <div>
+      <h3>{text(_skill_display_name(candidate.get("target_skill_name")))}</h3>
+      <p>{text(candidate.get("reason") or "该任务暴露了已有技能的改进机会。")}</p>
+    </div>
+    {badge(candidate.get("status") or "staging")}
+  </div>
+  <div class="detail-grid evolution-detail-grid">
+    <div><dt>来源任务</dt><dd>{text(_event_task_label(candidate.get("source_task_description")))}</dd></div>
+    <div><dt>风险</dt><dd>{text(_risk_label(candidate.get("risk_level")))}</dd></div>
+    <div><dt>证据</dt><dd>{text(evidence_text)}</dd></div>
+    <div><dt>建议</dt><dd>{text(change_text)}</dd></div>
+  </div>
+  <div class="platform-row">
+    <span>{_icon("link")} {text(candidate.get("candidate_path"))}</span>
+  </div>
+</article>"""
+
+
+def _risk_label(value: Any) -> str:
+    labels = {
+        "low": "低风险",
+        "medium": "中风险",
+        "high": "高风险",
+        "destructive": "破坏性风险",
+    }
+    raw = str(value or "medium")
+    return labels.get(raw, raw)
+
+
+def _workflow_skill_group_cards(skills: list[dict[str, Any]], collections: list[dict[str, Any]]) -> str:
+    workflow_collections = [
+        collection for collection in collections if collection.get("collection_id") not in LOCAL_COLLECTION_IDS
+    ]
+    if not workflow_collections:
+        workflow_collections = _workflow_collections_from_skills(skills)
+    body = _collection_section(
+        "工作流功能组",
+        "按开发方向、自动推进、运行时验证和会话接续组织当前工作流技能。",
+        workflow_collections,
+        show_candidates=False,
+    )
+    return body or '<p class="muted">当前运行根目录没有找到工作流技能。</p>'
+
+
+def _workflow_collections_from_skills(skills: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for skill in skills:
+        group_id = _skill_group_key(skill)
+        grouped.setdefault(group_id, []).append(skill)
+    collections = []
+    for group_id in SKILL_GROUP_ORDER:
+        group_skills = grouped.get(group_id, [])
+        if not group_skills:
+            continue
+        label, description = SKILL_GROUP_LABELS.get(group_id, SKILL_GROUP_LABELS["other-workflows"])
+        collections.append(
+            {
+                "collection_id": group_id,
+                "label": label,
+                "description": description,
+                "skills": group_skills,
+                "status_counts": _status_counts_for_display(group_skills),
+            }
+        )
+    return collections
+
+
+def _skill_card(skill: dict[str, Any]) -> str:
+    raw_name = str(skill.get("skill_name") or "")
+    status = str(skill.get("status") or "skipped")
+    sources = skill.get("source_trajectory_ids") if isinstance(skill.get("source_trajectory_ids"), list) else []
+    usage_count = _safe_int(skill.get("usage_count", 0))
+    group_id = _skill_group_key(skill)
+    group_label, _ = SKILL_GROUP_LABELS.get(group_id, SKILL_GROUP_LABELS["other-workflows"])
+    source_label = "全局 Codex Skill" if "global codex skill" in str(skill.get("summary") or "").lower() else group_label
+    import_detail = _import_provenance_detail(skill)
+    display_name = _skill_display_name(raw_name)
+    display_summary = _skill_display_summary(skill.get("summary"))
+    detail_summary = _skill_detail_description(skill)
+    provenance = _import_provenance_text(skill)
+    return f"""<article class="skill-card {text(status)}" role="button" tabindex="0" data-skill-detail-open data-skill-name="{text(raw_name)}" data-detail-name="{text(display_name)}" data-detail-raw-name="{text(raw_name)}" data-detail-status="{text(status)}" data-detail-summary="{text(detail_summary)}" data-detail-usage-count="{text(usage_count)}" data-detail-source-count="{text(len(sources))}" data-detail-source-label="{text(source_label)}" data-detail-provenance="{text(provenance)}">
+  <div class="skill-card-head">
+    <div>
+      <h3>{text(display_name)}</h3>
+      <p>{text(display_summary)}</p>
+    </div>
+    <span class="card-action" title="查看详情">{_icon("package")}</span>
+  </div>
+  <div class="skill-card-meta">
+    <span>{badge(status)}</span>
+    <span>复用 {text(usage_count)} 次</span>
+    <span>来源 {text(len(sources))} 条</span>
+  </div>
+  <div class="platform-row">
+    <span>{_icon("link")} {text(source_label)}</span>
+  </div>
+  {import_detail}
+</article>"""
+
+
+def _skill_detail_drawer() -> str:
+    return f"""<section class="skill-detail-layer" data-skill-detail-drawer hidden>
+  <button class="skill-detail-backdrop" type="button" data-skill-detail-close aria-label="关闭技能详情"></button>
+  <aside class="skill-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="skill-detail-title">
+    <div class="skill-detail-head">
+      <div>
+        <div class="view-kicker">技能详情</div>
+        <h2 id="skill-detail-title" data-detail-field="name">选择技能</h2>
+        <p data-detail-field="rawName">点击中央技能库卡片查看详情。</p>
+      </div>
+      <button class="detail-close" type="button" data-skill-detail-close aria-label="关闭技能详情">关闭</button>
+    </div>
+    <div class="skill-detail-body">
+      <dl class="detail-grid">
+        <div><dt>状态</dt><dd data-detail-field="status">-</dd></div>
+        <div><dt>复用次数</dt><dd data-detail-field="usageCount">-</dd></div>
+        <div><dt>来源轨迹</dt><dd data-detail-field="sourceCount">-</dd></div>
+        <div><dt>分类来源</dt><dd data-detail-field="sourceLabel">-</dd></div>
+      </dl>
+      <section class="detail-section">
+        <h3>说明</h3>
+        <p data-detail-field="summary">暂无说明。</p>
+      </section>
+      <section class="detail-section" data-detail-provenance-section hidden>
+        <h3>来源信息</h3>
+        <p data-detail-field="provenance"></p>
+      </section>
+    </div>
+  </aside>
 </section>"""
 
 
@@ -490,49 +783,102 @@ def _skill_group_member(skill: dict[str, Any]) -> str:
 
 def _capability_collections(collections: list[dict[str, Any]]) -> str:
     if collections:
-        body = '<div class="collection-grid">' + "\n".join(_collection_card(collection) for collection in collections[:40]) + "</div>"
+        workflow_collections = [
+            collection for collection in collections if collection.get("collection_id") not in LOCAL_COLLECTION_IDS
+        ]
+        body = _collection_section(
+            "工作流技能",
+            "只展示会影响开发路线、项目维护、运行时接入和阶段推进的工作流技能。",
+            workflow_collections,
+            show_candidates=False,
+        )
+        if not body:
+            body = '<p class="muted">暂无工作流技能集合。</p>'
     else:
         body = '<p class="muted">暂无能力集合。</p>'
-    return f"""<section id="collections-view" class="panel view-panel dashboard-view-page" data-view-page="collections" hidden>
-  <div class="view-kicker">视图 02</div>
-  <h2>能力集合</h2>
-  <p class="muted">集合是只读组织层，不改变执行、审核、提升或归档语义。</p>
+    return f"""<section id="dashboard-page-collections" class="panel view-panel dashboard-view-page" data-view-page="collections" hidden>
   {body}
 </section>"""
 
 
-def _collection_card(collection: dict[str, Any]) -> str:
+def _collection_section(
+    title: str,
+    description: str,
+    collections: list[dict[str, Any]],
+    *,
+    show_candidates: bool,
+) -> str:
+    if not collections:
+        return ""
+    cards = "\n".join(_collection_card(collection, show_candidates=show_candidates) for collection in collections[:40])
+    return f"""<section class="collection-section">
+  <div class="collection-section-head">
+    <h3>{text(title)}</h3>
+    <p class="muted">{text(description)}</p>
+  </div>
+  <div class="collection-grid">{cards}</div>
+</section>"""
+
+
+def _collection_card(collection: dict[str, Any], *, show_candidates: bool = True) -> str:
     skills = collection.get("skills") if isinstance(collection.get("skills"), list) else []
     status_counts = collection.get("status_counts") if isinstance(collection.get("status_counts"), dict) else {}
     missing = collection.get("missing_skill_names") if isinstance(collection.get("missing_skill_names"), list) else []
-    skill_items = "\n".join(_collection_skill_item(skill) for skill in skills[:8])
+    visible_skills = skills if show_candidates else [skill for skill in skills if skill.get("status") == "active"]
+    visible_status_counts = status_counts if show_candidates else _status_counts_for_display(visible_skills)
+    skill_items = "\n".join(_collection_skill_item(skill) for skill in visible_skills[:8])
     if not skill_items:
         skill_items = '<p class="muted">该集合暂未匹配到当前技能。</p>'
     missing_text = ""
     if missing:
         missing_text = f'<div class="collection-missing">缺失引用：{text("、".join(str(item) for item in missing[:8]))}</div>'
+    status_badges = _collection_status_badges(visible_status_counts, show_candidates=show_candidates)
     return f"""<article class="collection-card" data-collection-id="{text(collection.get("collection_id"))}">
   <div class="collection-head">
     <div>
       <div class="project-name">{text(collection.get("label"))}</div>
       <p class="muted">{text(collection.get("description"))}</p>
     </div>
-    <strong>{text(len(skills))}</strong>
+    <strong>{text(len(visible_skills))}</strong>
   </div>
-  <div class="project-stats">
-    <span>活跃 {text(status_counts.get("active", 0))}</span>
-    <span>候选 {text(status_counts.get("staging", 0))}</span>
-    <span>归档 {text(status_counts.get("archived", 0))}</span>
-  </div>
+  {status_badges}
   <div class="collection-skill-list">{skill_items}</div>
   {missing_text}
 </article>"""
 
 
+def _collection_status_badges(status_counts: dict[str, Any], *, show_candidates: bool) -> str:
+    badges = [f"<span>活跃 {text(status_counts.get('active', 0))}</span>"]
+    if show_candidates:
+        badges.append(f"<span>候选 {text(status_counts.get('staging', 0))}</span>")
+    archived_count = _safe_int(status_counts.get("archived", 0))
+    if show_candidates or archived_count:
+        badges.append(f"<span>归档 {text(archived_count)}</span>")
+    return f'<div class="project-stats">{"".join(badges)}</div>'
+
+
+def _status_counts_for_display(skills: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {"active": 0, "staging": 0, "archived": 0, "rejected": 0}
+    for skill in skills:
+        status = skill.get("status")
+        if status in counts:
+            counts[status] += 1
+    return counts
+
+
 def _collection_skill_item(skill: dict[str, Any]) -> str:
+    raw_name = str(skill.get("skill_name") or "")
     status = str(skill.get("status") or "skipped")
-    return f"""<div class="collection-skill">
-  {badge(status)} <span>{text(_skill_display_name(skill.get("skill_name")))}</span>
+    sources = skill.get("source_trajectory_ids") if isinstance(skill.get("source_trajectory_ids"), list) else []
+    usage_count = _safe_int(skill.get("usage_count", 0))
+    group_id = _skill_group_key(skill)
+    group_label, _ = SKILL_GROUP_LABELS.get(group_id, SKILL_GROUP_LABELS["other-workflows"])
+    source_label = "全局 Codex Skill" if "global codex skill" in str(skill.get("summary") or "").lower() else group_label
+    display_name = _skill_display_name(raw_name)
+    detail_summary = _skill_detail_description(skill)
+    provenance = _import_provenance_text(skill)
+    return f"""<div class="collection-skill collection-skill-action" role="button" tabindex="0" data-skill-detail-open data-skill-name="{text(raw_name)}" data-detail-name="{text(display_name)}" data-detail-raw-name="{text(raw_name)}" data-detail-status="{text(status)}" data-detail-summary="{text(detail_summary)}" data-detail-usage-count="{text(usage_count)}" data-detail-source-count="{text(len(sources))}" data-detail-source-label="{text(source_label)}" data-detail-provenance="{text(provenance)}">
+  {badge(status)} <span>{text(display_name)}</span>
 </div>"""
 
 
@@ -552,6 +898,17 @@ def _import_provenance_detail(skill: dict[str, Any]) -> str:
   </div>"""
 
 
+def _import_provenance_text(skill: dict[str, Any]) -> str:
+    if not skill.get("is_imported"):
+        return ""
+    audit_label = _audit_status_label(skill.get("audit_status"))
+    source = skill.get("import_source") or "未知来源"
+    content_hash = str(skill.get("content_hash") or "")
+    hash_text = content_hash[:12] if content_hash else "未记录"
+    imported_at = skill.get("imported_at") or "未记录"
+    return f"外部导入；{audit_label}；来源：{source}；内容哈希：{hash_text}；导入时间：{imported_at}"
+
+
 def _audit_status_label(value: Any) -> str:
     labels = {
         "requires_review": "需要审核",
@@ -561,27 +918,138 @@ def _audit_status_label(value: Any) -> str:
     return labels.get(str(value or ""), str(value or "未记录审核状态"))
 
 
-def _trigger_log(events: list[dict[str, Any]]) -> str:
+def _trigger_log(events: list[dict[str, Any]], *, include_project: bool = False) -> str:
     if not events:
         body = '<p class="muted">暂无运行通道事件。</p>'
     else:
-        body = "\n".join(_event_row(event) for event in events[:50])
-    return f"""<section id="trigger-log-view" class="panel view-panel dashboard-view-page" data-view-page="trigger-log" hidden>
-  <div class="view-kicker">视图 03</div>
-  <h2>触发日志视图</h2>
+        visible_events = events[:100] if include_project else events[:50]
+        counts = _event_status_counts(visible_events)
+        if include_project:
+            event_rows = "\n".join(_global_event_row(event) for event in visible_events)
+        else:
+            event_rows = "\n".join(_event_row(event) for event in visible_events)
+        body = f"""{_event_filter_bar(counts)}
+  <div class="event-list">
+    {event_rows}
+    {_event_empty_states(counts)}
+  </div>"""
+    return f"""<section id="dashboard-page-trigger-log" class="panel view-panel dashboard-view-page" data-view-page="trigger-log" data-active-event-filter="used" hidden>
   {body}
 </section>"""
 
 
 def _event_row(event: dict[str, Any]) -> str:
-    selected_skill_name = event.get("selected_skill_name")
-    skill = _skill_display_name(selected_skill_name) if selected_skill_name else "普通 Codex 路径"
-    return f"""<article class="event">
-  <div>{badge(event.get("runtime_lane_status"))} <strong>{text(event.get("task_description"))}</strong></div>
-  <div class="muted">{text(event.get("timestamp"))} - {text(skill)}</div>
-  <div class="reason">{text(event.get("runtime_lane_reason"))}</div>
+    return f"""<article class="event" data-event-status="{text(_event_status(event))}">
+  {_event_body(event)}
   {_event_follow_up(event)}
 </article>"""
+
+
+def _global_event_row(event: dict[str, Any]) -> str:
+    project = f'<span class="event-project">{text(event.get("project_name"))}</span> '
+    return f"""<article class="event" data-event-status="{text(_event_status(event))}">
+  {_event_body(event, project_prefix=project)}
+  {_event_follow_up(event)}
+</article>"""
+
+
+def _event_filter_bar(counts: dict[str, int]) -> str:
+    items = [
+        ("used", "已使用", "运行时真正参与并复用了技能"),
+        ("entered", "进入观察", "进入运行时观察但未接管"),
+        ("skipped", "已跳过", "由普通 Codex 路径直接处理"),
+    ]
+    buttons = []
+    for status, label, title in items:
+        active = status == "used"
+        buttons.append(
+            f"""<button class="event-filter-button{' is-active' if active else ''}" type="button" data-event-filter="{status}" aria-pressed="{'true' if active else 'false'}" title="{text(title)}">{text(label)} <span>{text(counts.get(status, 0))}</span></button>"""
+        )
+    return f"""<div class="event-filter" role="group" aria-label="触发日志状态筛选">
+    {"".join(buttons)}
+  </div>"""
+
+
+def _event_empty_states(counts: dict[str, int]) -> str:
+    messages = {
+        "used": "暂无已使用记录。",
+        "entered": "暂无进入观察记录。",
+        "skipped": "暂无已跳过记录。",
+    }
+    return "\n".join(
+        f'<p class="muted event-empty" data-event-empty="{status}">{text(message)}</p>'
+        for status, message in messages.items()
+        if counts.get(status, 0) == 0
+    )
+
+
+def _event_status_counts(events: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {"used": 0, "entered": 0, "skipped": 0}
+    for event in events:
+        counts[_event_status(event)] += 1
+    return counts
+
+
+def _event_status(event: dict[str, Any]) -> str:
+    raw = str(event.get("runtime_lane_status") or "skipped")
+    return raw if raw in {"used", "entered", "skipped"} else "skipped"
+
+
+def _event_body(event: dict[str, Any], *, project_prefix: str = "") -> str:
+    selected_skill_name = event.get("selected_skill_name")
+    handler = _skill_display_name(selected_skill_name) if selected_skill_name else "普通 Codex 处理"
+    return f"""<div>{project_prefix}{badge(event.get("runtime_lane_status"))} <strong>任务：{text(_event_task_label(event.get("task_description")))}</strong></div>
+  <div class="muted">时间：{text(event.get("timestamp"))} · 处理方式：{text(handler)}</div>
+  <div class="reason">结果：{text(_event_reason_label(event))}</div>"""
+
+
+def _event_task_label(value: Any) -> str:
+    raw = str(value or "未记录任务").strip()
+    if raw in TASK_DESCRIPTION_LABELS:
+        return TASK_DESCRIPTION_LABELS[raw]
+    words = raw.replace("-", " ").replace("_", " ").split()
+    if not words:
+        return "未记录任务"
+    translated = [TASK_WORD_LABELS.get(word.lower(), word) for word in words]
+    if translated == words:
+        return raw
+    return " ".join(translated)
+
+
+def _event_reason_label(event: dict[str, Any]) -> str:
+    status = str(event.get("runtime_lane_status") or "")
+    reason = str(event.get("runtime_lane_reason") or "").strip()
+    reason_detail = _runtime_reason_detail(reason)
+    if status == "used":
+        prefix = "运行时已参与处理，并复用了匹配技能。"
+    elif status == "entered":
+        prefix = "任务已进入运行时观察，但没有自动接管。"
+    elif status == "skipped":
+        prefix = "Codex 直接处理，运行时没有接管。"
+    else:
+        prefix = "已记录运行时事件。"
+    if reason_detail and reason_detail != prefix:
+        return f"{prefix}原因：{reason_detail}"
+    return prefix
+
+
+def _runtime_reason_detail(reason: str) -> str:
+    if not reason:
+        return ""
+    if reason in RUNTIME_REASON_LABELS:
+        return RUNTIME_REASON_LABELS[reason]
+    lowered = reason.lower()
+    if "does not match a phase-one default-in family yet" in lowered:
+        return "这是本地可复用任务，但不属于当前默认接管范围。"
+    if "guarded-in" in lowered and "skipped" in lowered:
+        return "任务被判定为需要 Codex 正常处理的本地工作，运行时只记录结果。"
+    if "default-out" in lowered:
+        return "任务不适合进入当前运行时接管范围。"
+    if "auto-executed" in lowered:
+        return RUNTIME_REASON_LABELS["auto-executed reusable skill"]
+    if "captured learning payload" in lowered:
+        return RUNTIME_REASON_LABELS["captured learning payload"]
+    return reason
 
 
 def _event_follow_up(event: dict[str, Any]) -> str:
@@ -603,9 +1071,7 @@ def _governance(governance: dict[str, Any], diagnostics: list[str]) -> str:
     else:
         duplicate_body = '<p class="muted">没有发现重复候选。</p>'
     diagnostics_body = "".join(f"<li>{text(item)}</li>" for item in diagnostics) or "<li>没有诊断信息。</li>"
-    return f"""<section id="governance-view" class="panel view-panel dashboard-view-page" data-view-page="governance" hidden>
-  <div class="view-kicker">视图 04</div>
-  <h2>治理快照</h2>
+    return f"""<section id="dashboard-page-governance" class="panel view-panel dashboard-view-page" data-view-page="governance" hidden>
   {duplicate_body}
   <h3>诊断信息</h3>
   <ul>{diagnostics_body}</ul>
@@ -620,14 +1086,11 @@ def _platform_inventory(inventory: dict[str, Any]) -> str:
     if not isinstance(diagnostics, list):
         diagnostics = []
     if items:
-        body = '<div class="project-grid">' + "\n".join(_platform_item_card(item) for item in items[:80]) + "</div>"
+        body = '<div class="platform-card-grid">' + "\n".join(_platform_item_card(item) for item in items[:80]) + "</div>"
     else:
         body = '<p class="muted">尚未在已知平台目录中发现 SKILL.md 技能。</p>'
     diagnostics_body = "".join(f"<li>{text(item)}</li>" for item in diagnostics[:20]) or "<li>没有平台目录诊断信息。</li>"
-    return f"""<section id="platforms-view" class="panel view-panel dashboard-view-page" data-view-page="platforms" hidden>
-  <div class="view-kicker">视图 05</div>
-  <h2>平台与项目</h2>
-  <p class="muted">只读查看 Codex、Claude Code、Cursor、Gemini CLI 和共享 Agents 技能目录，不复制、不链接、不安装。</p>
+    return f"""<section id="dashboard-page-platforms" class="panel view-panel dashboard-view-page" data-view-page="platforms" hidden>
   {body}
   <h3>平台诊断</h3>
   <ul class="scan-list">{diagnostics_body}</ul>
@@ -636,15 +1099,52 @@ def _platform_inventory(inventory: dict[str, Any]) -> str:
 
 def _platform_item_card(item: dict[str, Any]) -> str:
     description = item.get("description")
-    description_html = f"""  <div class="muted">{text(description)}</div>\n""" if description else ""
-    return f"""<article class="project-card">
-  <div class="project-name">{text(item.get("skill_name"))}</div>
-  <div class="project-path">{text(item.get("skill_path"))}</div>
-{description_html}  <div class="muted">角色：{text(item.get("source_role"))}</div>
-  <div class="project-stats">
-    <span>{text(item.get("display_name"))}</span>
-    <span>{text(item.get("ownership"))}</span>
-    <span>{text(item.get("link_type"))}</span>
+    description_html = f"""  <p class="platform-summary">{text(description)}</p>\n""" if description else ""
+    return f"""<article class="platform-skill-card">
+  <div class="platform-card-head">
+    <div>
+      <h3>{text(item.get("skill_name"))}</h3>
+      <div class="platform-path-chip" title="{text(item.get("skill_path"))}">{text(item.get("skill_path"))}</div>
+    </div>
+    <span class="card-action" title="平台技能">{_icon("package")}</span>
   </div>
-  <div class="muted">来源：{text(item.get("source_root"))}</div>
+{description_html}  <div class="skill-card-meta">
+    <span>{text(item.get("display_name"))}</span>
+    <span>{text(_platform_source_role_label(item.get("source_role")))}</span>
+    <span>{text(_platform_ownership_label(item.get("ownership")))}</span>
+    <span>{text(_platform_link_type_label(item.get("link_type")))}</span>
+  </div>
+  <div class="platform-row">
+    <span>{_icon("link")} {text(item.get("source_root"))}</span>
+  </div>
 </article>"""
+
+
+def _platform_source_role_label(value: Any) -> str:
+    labels = {
+        "authoritative_global_skill": "全局权威",
+        "project_runtime_skill": "项目运行时",
+        "platform_skill": "平台技能",
+    }
+    raw = str(value or "")
+    return labels.get(raw, raw or "未标记")
+
+
+def _platform_ownership_label(value: Any) -> str:
+    labels = {
+        "external": "外部",
+        "local": "本地",
+        "project": "项目",
+    }
+    raw = str(value or "")
+    return labels.get(raw, raw or "未知归属")
+
+
+def _platform_link_type_label(value: Any) -> str:
+    labels = {
+        "read_only": "只读来源",
+        "copy": "复制",
+        "symlink": "链接",
+    }
+    raw = str(value or "")
+    return labels.get(raw, raw or "未知来源")

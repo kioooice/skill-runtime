@@ -2,6 +2,243 @@
 
 ## Decision Log
 
+### 2026-05-03 - Skill Evolution Rollback Requires Confirmation And Stale Checks
+
+**Decision**
+
+Add a rollback path for applied skill evolution candidates. `rollback_evolution_candidate` restores the backup recorded by `apply_evolution_candidate`, but only when the caller explicitly confirms rollback.
+
+**Reason**
+
+Skill evolution can modify global Codex skills, so undo must be available before this loop is trustworthy. At the same time, rollback must not overwrite later manual edits. The rollback path therefore checks that the current target hash still matches the apply record's `new_content_hash` before restoring the backup.
+
+**Impact**
+
+- RuntimeService, CLI, and MCP now expose `rollback_evolution_candidate`
+- CLI requires `--confirm-rollback`
+- The only supported rollback strategy is `restore_backup_file`
+- Rollback records are written to `.skill_runtime/evolution_rollbacks/*.rollback.json`
+- Candidates move from `applied` to `rolled_back` after a successful rollback
+- If the target skill changed after apply, rollback fails with `EVOLUTION_TARGET_CHANGED_AFTER_APPLY`
+- Dashboard status labels now include `已回滚`
+
+### 2026-05-03 - Add Plan Progress Tracker Skill
+
+**Decision**
+
+Create `plan-progress-tracker` as a global Codex skill for multi-stage plan execution. It records and reports the active plan coordinate: stage number, stage name, status, completed stages, next action, and drift risk.
+
+**Reason**
+
+The user loses orientation after a plan is listed and development proceeds step by step. A generic "continue" loop hides which stage is active and whether the work is still following the plan. The assistant should maintain this progress coordinate instead of relying on the user to remember it.
+
+**Impact**
+
+- The authoritative skill lives at `C:\Users\Administrator\.codex\skills\plan-progress-tracker`
+- Global and project `AGENTS.md` only contain a short routing line
+- Auto-mode and stage reports should include the plan coordinate when planned work is active
+- Session handoff files should store the plan coordinate for resume and compaction recovery
+- Context compaction audit should recover the active plan coordinate before continuing substantial planned work
+
+### 2026-05-03 - Add Context Compaction Audit Skill
+
+**Decision**
+
+Create `context-compaction-audit` as a global Codex skill. It runs after context compaction or summary-based resume and decides whether the current thread should continue, checkpoint first, finish a narrow stage then reopen, or reopen immediately.
+
+**Reason**
+
+Long development threads lose precision after compaction. The useful decision is not just "summarize what happened"; it is whether the next stage is still safe in the current compressed context. Exact token compression metrics are usually unavailable, so the skill must report exact values only when measurable and otherwise use estimates or mark the metric unavailable.
+
+**Impact**
+
+- The authoritative skill lives at `C:\Users\Administrator\.codex\skills\context-compaction-audit`
+- Global and project `AGENTS.md` only contain a short routing line
+- The skill checks durable state files before relying on compressed chat memory
+- The skill coordinates with `session-handoff-maintenance` whenever checkpointing or reopening is recommended
+- Output includes compaction evidence, timing, ratio availability, loss risk, missing context, and a reopen recommendation
+- Reopen recommendations include a compact handoff prompt for the next chat
+
+### 2026-05-03 - Central Skill Library Owns Workflow Grouping
+
+**Decision**
+
+Use `中央技能库` as the single workflow-skill browsing surface. It now renders the functional groups directly and the separate `技能集合` view is removed.
+
+**Reason**
+
+The user clarified that the functional grouping is valuable, but showing the same workflow skills through both `中央技能库` and `技能集合` creates duplicate navigation. The central library should not be a scattered one-by-one skill list; it should show grouped workflow capability.
+
+**Impact**
+
+- Sidebar no longer renders `技能集合`
+- `中央技能库` count remains the active workflow-skill count, currently 8
+- The main central-library page renders `方向与策略`、`自动推进`、`运行时与验证`、`会话接续`
+- Basic local helper skills remain available to runtime/search, but stay out of the default visual surface
+- Skills inside each group can still open the detail drawer
+- Tests protect the removed collections route and grouped central-library rendering
+
+### 2026-05-03 - Platform Inventory Uses Compact Skill Cards
+
+**Decision**
+
+Render `平台与项目` inventory entries as compact skill-library-style cards instead of expanded project cards. Each card now shows the skill name, one-line path, short clamped summary, normalized source tags, and a single source-root row.
+
+**Reason**
+
+The previous platform view repeated raw paths, long descriptions, `角色：...`, and `来源：...` lines. That made the page feel like an internal dump instead of a management panel. The user asked to condense the information or make it like the skill library.
+
+**Impact**
+
+- Platform cards use `platform-skill-card` and `platform-card-grid`
+- Long descriptions are shown as `platform-summary` and visually clamped
+- Role/source fields are mapped into Chinese labels such as `全局权威`、`外部`、`只读来源`
+- Expanded debug-style prefixes `角色：` and `来源：` are removed from platform cards
+- A regression test protects this compact platform-card structure
+
+### 2026-05-03 - Trigger Log Defaults To Used Events
+
+**Decision**
+
+Add status filters to the dashboard `触发日志` page and default the visible list to `已使用`. The page now separates `已使用`、`进入观察`、`已跳过` so users can first see where Skill Runtime actually participated, then switch to observation-only or skipped records when needed.
+
+**Reason**
+
+The combined trigger log mixed three different meanings: runtime actually reused a skill, runtime only observed, and Codex handled the task directly. The user asked for that distinction and specifically wanted the default view to show the useful participation records.
+
+**Impact**
+
+- Trigger-log sections start with `data-active-event-filter="used"`
+- Event cards carry `data-event-status` for static CSS filtering and JS switching
+- The status labels use Chinese product wording: `已使用`、`进入观察`、`已跳过`
+- The generated dashboard opens trigger logs on used records by default, with empty states for statuses that have no records
+- Tests and Playwright checks protect the default used-only display and click switching behavior
+
+### 2026-05-03 - Trigger Log Uses User-Readable Chinese
+
+**Decision**
+
+Render dashboard trigger-log events as Chinese user-facing records instead of raw runtime internals. Each event card now shows task, time, handling method, and result. Common English task descriptions and runtime reasons are mapped to Chinese explanations.
+
+**Reason**
+
+The raw event view exposed internal strings such as `task bucket guarded-in skipped...`, which are useful for debugging but unclear to the user. The dashboard should explain what happened: whether runtime participated, only observed, or Codex handled the task directly.
+
+**Impact**
+
+- `runtime lane` wording in the page subtitle is replaced with Chinese `运行时`
+- Event cards use `任务 / 时间 / 处理方式 / 结果`
+- Common skipped/used/entered reasons are translated into plain Chinese
+- Tests protect that global trigger logs no longer render raw English reason strings for common cases
+
+### 2026-05-03 - Dashboard Collections Hide Basic Local Skills
+
+**Decision**
+
+The dashboard `能力集合` page now shows only active workflow skills. Default collections are grouped by workflow function: `方向与策略`, `自动推进`, `运行时与验证`, and `会话接续`. Basic local helper collections such as `基础本地技能`, `文本处理`, `格式转换`, and `文件整理` are no longer rendered in the default dashboard.
+
+**Reason**
+
+The user clarified that basic local file helpers have little value in the visual management surface. Showing them keeps attention on low-level utilities instead of the workflow skills that matter for judging project direction and Codex behavior.
+
+**Impact**
+
+- The 8 workflow skills are split into four readable functional groups
+- Basic local skills remain available to the runtime and explicit search, but not as default dashboard content
+- The central skill tree no longer explains where basic helpers were moved
+- Tests protect workflow-only default collections and the absence of basic helper rows in rendered dashboard HTML
+
+### 2026-05-03 - Dashboard Overview Chrome Stays Minimal
+
+**Decision**
+
+Keep the dashboard overview as a clean summary surface: no path subtitle under the title, no local "current view" search row, and no separate `全局日志` navigation item. In global mode, cross-workspace events are merged into the single `触发日志` page. The `中央技能库` navigation count represents active workflow skills only, not all active basic helper skills.
+
+**Reason**
+
+The user marked the subtitle/search chrome as visual noise and clarified that the central skill library currently means workflow skills. Keeping both `触发日志` and `全局日志` also duplicates the same kind of runtime event surface.
+
+**Impact**
+
+- Overview pages focus on section metrics instead of repeating workspace path and page-level search
+- `中央技能库` count now matches the visible workflow-skill surface and currently displays 8
+- Global runtime events remain visible through `触发日志`, while the sidebar has one log entry
+- Tests protect the workflow-only count, removed overview chrome, and absence of the duplicate global-log route
+
+### 2026-05-03 - Read-Only Panel Starts With Detail Inspection
+
+**Decision**
+
+Upgrade the dashboard from a static read-only page into a read-only interactive panel, starting with skill card detail inspection. This stage allows clicking visible workflow skill cards and opening a side drawer, but does not add promote, reject, edit, archive, install, or cross-project write actions.
+
+**Reason**
+
+The user clarified that "real panel" currently means clicking to see information, not operating on runtime state. Starting with a read-only drawer gives the panel a real interaction loop while preserving the safety boundary and avoiding a premature operations console.
+
+**Impact**
+
+- `docs/runtime-readonly-panel-plan.md` defines the first-stage boundary
+- Central skill cards now expose escaped detail data through static `data-*` attributes
+- Visible read-only labels are removed from the dashboard chrome; the no-write boundary remains a behavior rule, not repeated UI text
+- Skill detail descriptions combine the short summary with `docstring` context when available, so workflow adapters explain the global authoritative skill relationship
+- The front-end drawer fills content with `textContent`
+- The dashboard remains static HTML and does not require a backend server
+- Future read-only details for events, collections, and projects can reuse the same drawer pattern
+
+### 2026-05-03 - Dashboard Overview Is The Summary Surface
+
+**Decision**
+
+Treat `总览` as the only summary surface for global/project runtime status. It should use product-readable wording, compact metric cards, and short explanatory text. Other dashboard pages should keep their top area focused on that page's title and purpose.
+
+**Reason**
+
+The user flagged the overview copy and layout as still rough. Keeping every page wrapped in the same global explanation made the interface feel noisy, while metric labels such as `runtime 参与` and `标签 - 说明` made the page read like internal debug output.
+
+**Impact**
+
+- The overview title is now `全局运行时总览` or `运行时总览`
+- Metric cards use number, label, and short caption instead of hyphenated label text
+- `运行时参与` replaces mixed Chinese/English metric wording
+- Current-project and cross-workspace section descriptions sit under their section headings
+- Tests protect the new overview labels and page structure
+
+### 2026-05-03 - Capability Collections Are Workflow-First
+
+**Decision**
+
+Show workflow-oriented capability collections before basic local file utility collections. The dashboard now renders `能力集合` as two sections: `工作流技能` first, then `基础本地技能` containing the local helper groups such as basic skills, text processing, format conversion, and file organization.
+
+**Reason**
+
+The user wants to evaluate workflow skills first. Showing basic local helpers at the top makes the project look centered on low-level file utilities, which repeats the earlier route problem.
+
+**Impact**
+
+- Default collection definitions now order workflow collections before basic local collections
+- The dashboard visually separates workflow skills from basic local skills
+- Candidate counts and candidate list rows are hidden from default dashboard views; staging/governance data still exists for explicit review paths
+- Basic local helpers remain visible, but they no longer occupy the first screen of the collections page
+- Global dashboard explanation and local view search belong only on the `总览` page; other pages use the same top area for their own page title
+- Tests protect the default collection order
+
+### 2026-05-03 - Dashboard UI Follows Skills-Manage App Shell
+
+**Decision**
+
+Redesign the static runtime dashboard around the `iamzhihuix/skills-manage` interface pattern: desktop app shell, top global search, left navigation, content header, local search row, and two-column skill cards. The old radial skill tree is no longer the primary layout.
+
+**Reason**
+
+The user rejected the previous visual direction as too ugly. The reference project already solves the same product category with a clearer management-app structure, so matching that visual language is a higher-value path than continuing to polish the custom radial tree.
+
+**Impact**
+
+- The dashboard keeps the existing read-only data model and static HTML output
+- The visible UI now uses a Catppuccin Latte-style palette, mono UI typography, purple selected nav state, compact sidebar, and card grid layout
+- Workflow skills remain the default central skill library surface; basic local skills stay in the secondary collection
+- Tests now protect the app-shell layout and prevent the old radial-tree classes from returning as the default view
+
 ### 2026-05-03 - Basic Local Skills Are Secondary To Workflow Skills
 
 **Decision**
@@ -2198,3 +2435,45 @@ README / README.zh-CN 中的 clone 后验证流程优先展示 `python -m skill_
 **Impact**
 
 后续每个重要阶段、决策和阻塞都需要同步更新这些文件；新会话可以直接用简短启动语恢复上下文，但前提是状态文件保持最新。
+
+### 2026-05-03 - 技能进化先做候选提案，不自动改全局技能
+
+**Decision**
+
+Skill Runtime 的技能进化第一版只生成 `improve_existing_skill_candidate` 候选。候选记录到 `.skill_runtime/evolution_candidates/*.json`，dashboard 只读展示；不会因为一次任务直接修改 `C:\Users\Administrator\.codex\skills` 下的全局技能。
+
+**Reason**
+
+用户明确要的是“以后少犯错、技能能吸收经验”，但之前已经出现过不断加技能、不断验证样本的低价值循环。把进化先做成候选提案，可以让系统优先改进已有技能、避免重复蒸馏，同时保留人工审核和审计边界。
+
+**Impact**
+
+后续学习决策分成 `skip`、`observed_only`、`new_skill_candidate` 和 `improve_existing_skill_candidate`。下一阶段应实现 `review_evolution_candidate`：把候选转成可审查 diff、拒绝原因或需要更多证据，而不是直接自动写全局技能。
+
+### 2026-05-03 - review_evolution_candidate 只生成审核结果，不应用修改
+
+**Decision**
+
+`review_evolution_candidate` 第一版只做审核分流和提案产物：目标全局技能不存在则拒绝，候选缺少证据或建议修改则要求补充证据，候选完整时生成 `.review.json` 和 `.diff`。它不会自动写入全局 `SKILL.md`。
+
+**Reason**
+
+技能进化需要让系统少犯旧错误，但全局技能是跨项目权威来源，不能被一次任务或一次候选无确认改写。先生成可审查 diff 能让用户或后续安全流程判断是否真的要吸收，避免把噪音沉淀成全局规则。
+
+**Impact**
+
+后续如果要进入应用阶段，需要单独实现带确认的 apply 流程：再次读取目标文件、校验 diff 或候选仍适用、写入备份/回滚信息，并把候选状态更新为 `applied` 或 `rejected`。在该流程完成前，所有进化候选都停留在审核提案层。
+
+### 2026-05-03 - apply_evolution_candidate 必须显式确认并可回滚
+
+**Decision**
+
+确认应用阶段新增 `apply_evolution_candidate`，但默认拒绝执行；只有调用方显式传 `confirm_apply=true` 或 CLI `--confirm-apply` 时才允许修改目标全局技能。应用前必须校验 review 时记录的目标文件 hash，应用时必须写备份、应用记录和 rollback hint。
+
+**Reason**
+
+全局技能是跨项目权威来源，不能因为候选存在就自动写入。显式确认、hash 校验和备份让“技能进化”从记录走到真实生效，同时保留撤销路径，降低把噪音或过期 diff 写入全局规则的风险。
+
+**Impact**
+
+候选状态现在可以推进到 `applied`。下一阶段如果继续，应实现 rollback/undo 路径：根据 `.skill_runtime/evolution_applications/*.apply.json` 里的备份记录恢复目标文件，并把候选状态更新为 `rolled_back`，而不是继续扩大自动应用范围。

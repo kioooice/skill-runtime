@@ -87,7 +87,10 @@ class RuntimeDashboardTestsMixin:
 
         data = collect_dashboard_data(self.runtime_root)
 
-        self.assertGreaterEqual(data["overview"]["active_count"], 1)
+        workflow_active_count = sum(
+            1 for skill in data["skills"] if skill["status"] == "active" and skill["skill_surface"] == "workflow"
+        )
+        self.assertEqual(workflow_active_count, data["overview"]["active_count"])
         self.assertEqual({"used": 1, "entered": 0, "skipped": 0}, data["overview"]["recent_event_counts"])
         self.assertTrue(any(skill["skill_name"] == "merge_text_files" for skill in data["skills"]))
         self.assertEqual("used", data["events"][0]["runtime_lane_status"])
@@ -181,6 +184,14 @@ class RuntimeDashboardTestsMixin:
             runtime_lane_status="skipped",
             runtime_lane_reason="kept on normal Codex path",
         )
+        project_gamma = workspace_parent / "gamma"
+        self._write_dashboard_event(
+            project_gamma,
+            timestamp="2026-05-01T14:00:00+00:00",
+            task_description="capture shared payload workflow",
+            runtime_lane_status="entered",
+            runtime_lane_reason="default lane observation",
+        )
 
         data = collect_dashboard_data(self.runtime_root)
         data["global"] = collect_global_dashboard_data(self.runtime_root, scan_roots=[workspace_parent])
@@ -188,21 +199,41 @@ class RuntimeDashboardTestsMixin:
 
         self.assertIn("<!doctype html>", html.lower())
         self.assertIn('<html lang="zh-CN">', html)
-        self.assertIn("全局运行时观察面板", html)
-        self.assertIn("当前项目总览", html)
-        self.assertIn("全局总览", html)
-        self.assertIn("技能树视图", html)
-        self.assertIn("触发日志视图", html)
+        self.assertIn("全局运行时总览", html)
+        self.assertIn("当前项目", html)
+        self.assertIn("跨工作区", html)
+        self.assertIn('data-view-target="overview"', html)
+        self.assertIn('data-view-page="overview"', html)
+        self.assertIn("中央技能库", html)
+        self.assertIn("触发日志", html)
         self.assertIn("治理快照", html)
-        self.assertIn("全局项目概览", html)
-        self.assertIn("全局触发日志", html)
+        self.assertIn("全局项目", html)
         self.assertIn('data-view-target="global-projects"', html)
-        self.assertIn('data-view-target="global-log"', html)
+        self.assertNotIn("全局日志", html)
+        self.assertNotIn('data-view-target="global-log"', html)
+        self.assertNotIn('data-view-page="global-log"', html)
+        self.assertNotIn("跨工作区调用记录已合并", html)
         self.assertIn("alpha", html)
         self.assertIn("beta", html)
-        self.assertIn("merge alpha notes", html)
-        self.assertIn("review beta roadmap", html)
-        self.assertIn("普通 Codex 路径", html)
+        self.assertIn("gamma", html)
+        self.assertIn("任务：合并 alpha 笔记", html)
+        self.assertIn("任务：评审 beta 路线", html)
+        self.assertIn("任务：记录共享工作流", html)
+        self.assertIn("处理方式：普通 Codex 处理", html)
+        self.assertIn("结果：运行时已参与处理，并复用了匹配技能。", html)
+        self.assertIn("结果：任务已进入运行时观察，但没有自动接管。", html)
+        self.assertIn("结果：Codex 直接处理，运行时没有接管。", html)
+        self.assertNotIn("kept on normal Codex path", html)
+        self.assertNotIn("auto-executed reusable skill", html)
+        self.assertIn('data-active-event-filter="used"', html)
+        self.assertIn('data-event-filter="used"', html)
+        self.assertIn('data-event-filter="entered"', html)
+        self.assertIn('data-event-filter="skipped"', html)
+        self.assertIn('data-event-status="used"', html)
+        self.assertIn('data-event-status="entered"', html)
+        self.assertIn('data-event-status="skipped"', html)
+        self.assertIn("进入观察", html)
+        self.assertIn("setEventFilter", html)
 
     def test_dashboard_renderer_includes_core_sections(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
@@ -213,62 +244,174 @@ class RuntimeDashboardTestsMixin:
 
         self.assertIn("<!doctype html>", html.lower())
         self.assertIn('<html lang="zh-CN">', html)
-        self.assertIn("运行时可观察面板", html)
-        self.assertIn("当前项目总览", html)
-        self.assertIn("技能树视图", html)
-        self.assertIn("默认技能树只展示工作流技能", html)
-        self.assertIn("基础本地技能", html)
-        self.assertIn("tree-fan", html)
-        self.assertIn("radial-tree", html)
-        self.assertIn("radial-center", html)
-        self.assertIn("radial-quadrants", html)
-        self.assertNotIn("radial-spokes", html)
-        self.assertIn("branch-map", html)
-        self.assertIn("branch-canopy", html)
-        self.assertIn("quadrant-nw", html)
-        self.assertIn("quadrant-ne", html)
-        self.assertIn("quadrant-sw", html)
-        self.assertIn("quadrant-se", html)
-        self.assertIn("skill-group", html)
-        self.assertIn("group-skill-list", html)
-        self.assertIn("group-detail-modal", html)
-        self.assertIn("group-detail-surface", html)
-        self.assertIn("data-skill-group-modal", html)
-        self.assertIn("data-skill-group-target", html)
-        self.assertIn("data-skill-group-panel", html)
-        self.assertIn("data-skill-group-close", html)
-        self.assertIn("setActiveSkillGroup", html)
-        self.assertIn("has-skill-group-open", html)
-        self.assertIn('event.key === "Escape"', html)
+        self.assertIn("运行时总览", html)
+        self.assertIn("当前项目", html)
+        self.assertNotIn("候选 - 候选技能", html)
+        self.assertIn('data-view-header="overview"', html)
+        self.assertIn('data-view-header="skill-tree"', html)
+        self.assertIn('data-view-header="skill-evolution"', html)
+        self.assertNotIn('data-view-header="collections"', html)
+        self.assertEqual(0, html.count('class="search-row"'))
+        self.assertNotIn("搜索当前视图", html)
+        self.assertIn('data-view-target="overview"', html)
+        self.assertIn('data-view-page="overview"', html)
+        self.assertIn("overview-section", html)
+        self.assertIn("skills-runtime", html)
+        self.assertIn("desktop-shell", html)
+        self.assertIn("topbar", html)
+        self.assertNotIn("traffic-lights", html)
+        self.assertNotIn("topbar-title", html)
+        self.assertIn("global-search", html)
+        self.assertIn("sidebar", html)
+        self.assertIn("sidebar-settings", html)
+        self.assertIn("中央技能库", html)
+        self.assertIn("按功能分组查看工作流技能", html)
+        self.assertNotIn('data-view-target="collections"', html)
+        self.assertNotIn('data-view-page="collections"', html)
+        self.assertNotIn("技能集合", html)
+        self.assertIn("collection-grid", html)
+        self.assertIn("collection-card", html)
+        self.assertIn("方向与策略", html)
+        self.assertIn("自动推进", html)
+        self.assertIn("运行时与验证", html)
+        self.assertIn("会话接续", html)
+        self.assertIn("platform-row", html)
+        self.assertIn("JetBrains Mono", html)
+        self.assertIn("#eff1f5", html)
+        self.assertIn("#7e3ee6", html)
+        self.assertNotIn("默认技能树只展示工作流技能", html)
+        self.assertNotIn("基础本地技能", html)
+        self.assertNotIn("tree-fan", html)
+        self.assertNotIn("radial-tree", html)
+        self.assertNotIn("radial-center", html)
+        self.assertNotIn("radial-quadrants", html)
+        self.assertNotIn("branch-map", html)
+        self.assertNotIn("branch-canopy", html)
+        self.assertNotIn("data-skill-group-modal", html)
+        self.assertNotIn("data-skill-group-target", html)
+        self.assertNotIn("setActiveSkillGroup", html)
         self.assertNotIn("scrollIntoView", html)
-        self.assertIn('data-skill-group="runtime-governance"', html)
         self.assertNotIn('data-skill-group="structured-conversion"', html)
         self.assertNotIn('data-skill-group="text-processing"', html)
-        self.assertIn("格式转换", html)
-        self.assertIn("文本处理", html)
         self.assertNotIn('<details class="skill-group', html)
         self.assertNotIn('class="skill-leaf"', html)
         self.assertNotIn('class="skill-node"', html)
-        self.assertIn("运行时根节点", html)
-        self.assertIn("活跃 - 可用技能", html)
-        self.assertIn("触发日志视图", html)
+        self.assertNotIn("运行时根节点", html)
+        self.assertIn("可用技能", html)
+        self.assertIn("触发日志", html)
         self.assertIn('data-active-view="skill-tree"', html)
         self.assertIn('data-view-target="trigger-log"', html)
         self.assertIn('data-view-page="trigger-log"', html)
+        self.assertIn('data-view-target="skill-evolution"', html)
+        self.assertIn('data-view-page="skill-evolution"', html)
+        self.assertIn("技能进化", html)
         self.assertIn('data-view-target="governance"', html)
         self.assertIn('data-view-page="governance"', html)
         self.assertIn("setDashboardView", html)
+        self.assertIn("data-view-header", html)
         self.assertNotIn('href="#trigger-log-view"', html)
         self.assertIn("治理快照", html)
         self.assertIn("平台与项目", html)
         self.assertIn('data-view-target="platforms"', html)
         self.assertIn('data-view-page="platforms"', html)
-        self.assertIn("基础本地技能", html)
-        self.assertIn("目录 JSON 批量转 CSV", html)
+        self.assertNotIn("基础本地技能", html)
+        self.assertNotIn("目录 JSON 批量转 CSV", html)
         self.assertNotIn('data-skill-name="directory_json_to_csv_dogfood"', html)
-        self.assertIn("合并文本文件", html)
-        self.assertIn("进入 runtime 观察", html)
+        self.assertNotIn("合并文本文件", html)
+        self.assertIn("进入观察", html)
         self.assertNotIn("Batch export all JSON records in a folder into CSV files.", html)
+
+    def test_dashboard_collector_and_renderer_show_skill_evolution_candidates(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+        from skill_runtime.dashboard.render import render_dashboard_html
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve the direction review workflow after a user correction.",
+            reason="User correction showed the workflow should challenge low-value routes earlier.",
+            evidence=["The old route allowed low-value skill work to continue too long."],
+            proposed_changes=["Add a guard for repeated low-value validation loops."],
+            risk_level="medium",
+            change_type="guardrail",
+        )
+
+        data = collect_dashboard_data(self.runtime_root)
+        html = render_dashboard_html(data)
+
+        self.assertEqual(1, data["overview"]["evolution_candidate_count"])
+        self.assertEqual(1, len(data["evolution_candidates"]))
+        self.assertIn("技能进化", html)
+        self.assertIn("待审核", html)
+        self.assertIn("开发前方向审核", html)
+        self.assertIn("low-value", html)
+        self.assertIn("中风险", html)
+
+    def test_dashboard_skill_cards_open_read_only_detail_drawer(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+        from skill_runtime.dashboard.render import render_dashboard_html
+
+        data = collect_dashboard_data(self.runtime_root)
+        html = render_dashboard_html(data)
+
+        self.assertIn('data-skill-detail-drawer', html)
+        self.assertIn('data-skill-detail-open', html)
+        self.assertIn('data-detail-name="开发前方向审核"', html)
+        self.assertIn('data-detail-raw-name="pre_implementation_workflow_review"', html)
+        self.assertIn('data-detail-status="active"', html)
+        self.assertIn('data-detail-usage-count=', html)
+        self.assertIn('data-detail-source-count=', html)
+        self.assertIn("权威工作流位于全局 Codex skill", html)
+        self.assertNotIn("只读详情", html)
+        self.assertNotIn("只读链接", html)
+        self.assertNotIn("只读视图", html)
+        self.assertNotIn("read_only", html)
+        self.assertIn("setActiveSkillDetail", html)
+        self.assertIn("clearActiveSkillDetail", html)
+
+    def test_dashboard_platform_inventory_uses_compact_skill_style_cards(self) -> None:
+        from skill_runtime.dashboard.render import render_dashboard_html
+
+        data = {
+            "root": str(self.runtime_root),
+            "overview": {},
+            "skills": [],
+            "events": [],
+            "governance": {},
+            "diagnostics": [],
+            "capability_collections": [],
+            "platform_inventory": {
+                "items": [
+                    {
+                        "skill_name": "code",
+                        "skill_path": r"C:\Users\Administrator\.codex\skills\code-1.0.4",
+                        "description": (
+                            "Coding workflow with planning, implementation, verification, and testing "
+                            "for clean software development."
+                        ),
+                        "source_role": "authoritative_global_skill",
+                        "display_name": "Codex",
+                        "ownership": "external",
+                        "link_type": "read_only",
+                        "source_root": r"C:\Users\Administrator\.codex\skills",
+                    }
+                ],
+                "diagnostics": [],
+            },
+        }
+
+        html = render_dashboard_html(data)
+
+        self.assertIn("platform-card-grid", html)
+        self.assertIn("platform-skill-card", html)
+        self.assertIn("platform-card-head", html)
+        self.assertIn("platform-summary", html)
+        self.assertIn("platform-path-chip", html)
+        self.assertIn("全局权威", html)
+        self.assertIn("外部", html)
+        self.assertIn("只读来源", html)
+        self.assertNotIn("角色：authoritative_global_skill", html)
+        self.assertNotIn(r"来源：C:\Users\Administrator\.codex\skills", html)
 
     def test_dashboard_renderer_shows_runtime_follow_up_actions(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
@@ -314,26 +457,54 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual("local_skill_import", imported["provenance"]["type"])
         self.assertTrue(imported["is_imported"])
 
-    def test_dashboard_renderer_shows_imported_candidate_provenance(self) -> None:
-        from skill_runtime.dashboard.collector import collect_dashboard_data
+    def test_dashboard_renderer_shows_imported_workflow_provenance(self) -> None:
         from skill_runtime.dashboard.render import render_dashboard_html
-        from skill_runtime.importers.local_skill_importer import import_local_skill_to_staging
 
         source_dir = self.runtime_root / "external-skills" / "dashboard-import"
         source_dir.mkdir(parents=True)
-        (source_dir / "SKILL.md").write_text(
-            "---\nname: dashboard-import\ndescription: Imported dashboard skill.\n---\n\n# Dashboard Import\n",
-            encoding="utf-8",
-        )
-        result = import_local_skill_to_staging(self.runtime_root, source_dir)
+        content_hash = "1234567890abcdef"
+        imported_skill = {
+            "skill_name": "dashboard-import",
+            "status": "active",
+            "summary": "Imported dashboard skill.",
+            "source_trajectory_ids": [],
+            "usage_count": 0,
+            "tags": ["imported"],
+            "is_imported": True,
+            "audit_status": "requires_review",
+            "import_source": str(source_dir.resolve()),
+            "imported_at": "2026-05-03T12:00:00+00:00",
+            "content_hash": content_hash,
+            "provenance": {"type": "local_skill_import"},
+            "skill_surface": "workflow",
+        }
+        data = {
+            "root": str(self.runtime_root),
+            "overview": {},
+            "skills": [imported_skill],
+            "events": [],
+            "governance": {},
+            "diagnostics": [],
+            "platform_inventory": {},
+            "capability_collections": [
+                {
+                    "collection_id": "imported-workflows",
+                    "label": "外部导入",
+                    "description": "外部导入的工作流技能。",
+                    "skills": [imported_skill],
+                    "status_counts": {"active": 1, "staging": 0, "archived": 0, "rejected": 0},
+                    "missing_skill_names": [],
+                    "read_only": True,
+                }
+            ],
+        }
 
-        html = render_dashboard_html(collect_dashboard_data(self.runtime_root))
+        html = render_dashboard_html(data)
 
         self.assertIn('data-skill-name="dashboard-import"', html)
-        self.assertIn("外部导入", html)
         self.assertIn("需要审核", html)
         self.assertIn(str(source_dir.resolve()), html)
-        self.assertIn(result["content_hash"][:12], html)
+        self.assertIn(content_hash[:12], html)
 
     def test_dashboard_cli_writes_static_html_file(self) -> None:
         output_path = self.runtime_root / ".skill_runtime" / "dashboard.html"
@@ -350,9 +521,11 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual(str(output_path.resolve()), payload["data"]["output_path"])
         self.assertTrue(output_path.exists())
         html = output_path.read_text(encoding="utf-8")
-        self.assertIn("运行时可观察面板", html)
-        self.assertIn("触发日志视图", html)
-        self.assertIn("合并文本文件", html)
+        self.assertIn("运行时总览", html)
+        self.assertIn("触发日志", html)
+        self.assertIn("方向与策略", html)
+        self.assertIn("开发前方向审核", html)
+        self.assertNotIn("合并文本文件", html)
 
     def test_global_dashboard_cli_writes_static_html_file(self) -> None:
         workspace_parent = self.runtime_root / "global-cli-workspaces"
@@ -385,15 +558,19 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual(str(output_path.resolve()), payload["data"]["output_path"])
         self.assertTrue(output_path.exists())
         html = output_path.read_text(encoding="utf-8")
-        self.assertIn("全局运行时观察面板", html)
-        self.assertIn("当前项目总览", html)
-        self.assertIn("全局总览", html)
-        self.assertIn("技能树视图", html)
-        self.assertIn("触发日志视图", html)
+        self.assertIn("全局运行时总览", html)
+        self.assertIn("当前项目", html)
+        self.assertIn("跨工作区", html)
+        self.assertIn('data-view-target="overview"', html)
+        self.assertIn("中央技能库", html)
+        self.assertIn("触发日志", html)
         self.assertIn("治理快照", html)
-        self.assertIn("全局项目概览", html)
-        self.assertIn("全局触发日志", html)
-        self.assertIn("merge alpha notes", html)
+        self.assertIn("全局项目", html)
+        self.assertNotIn("全局日志", html)
+        self.assertNotIn('data-view-target="global-log"', html)
+        self.assertNotIn("跨工作区调用记录已合并", html)
+        self.assertIn("任务：合并 alpha 笔记", html)
+        self.assertNotIn("auto-executed reusable skill", html)
 
     def test_runtime_events_cli_returns_recent_follow_up_actions(self) -> None:
         self._write_dashboard_event(

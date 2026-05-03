@@ -1,7 +1,10 @@
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 from skill_runtime.api.models import AgentTaskRequest
+from tests.runtime_test_support import CLI, ROOT
 
 
 class RuntimeAgentOrchestrationTestsMixin:
@@ -841,6 +844,38 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertTrue(decision.should_distill_now)
         self.assertIsNone(decision.related_skill_name)
 
+    def test_plan_learning_prefers_existing_skill_improvement_when_gap_is_explicit(self) -> None:
+        from skill_runtime.api.orchestration import AgentOrchestrationService
+
+        planner = AgentOrchestrationService(self.runtime_root)
+        request = AgentTaskRequest(
+            task_description="Improve the direction review workflow after a user correction.",
+            expected_outputs=["C:/Users/Administrator/.codex/skills/pre-implementation-workflow-review/SKILL.md"],
+            risk_level="medium",
+            task_kind="workflow",
+        )
+        execution_payload = {
+            "result": {"status": "completed", "artifacts": []},
+            "operation_log": [
+                {"tool_name": "read_text", "status": "success", "path": "AGENTS.md"},
+                {"tool_name": "write_text", "status": "success", "path": "docs/decision-note.md"},
+            ],
+            "skill_gap": {
+                "target_skill_name": "pre_implementation_workflow_review",
+                "reason": "User correction showed the workflow should challenge low-value routes earlier.",
+                "evidence": ["The old route allowed low-value skill work to continue too long."],
+                "proposed_changes": ["Add a guard for repeated low-value validation loops."],
+                "change_type": "guardrail",
+            },
+        }
+
+        decision = planner.plan_learning(request, execution_payload)
+
+        self.assertEqual("improve_existing_skill_candidate", decision.decision)
+        self.assertEqual("pre_implementation_workflow_review", decision.related_skill_name)
+        self.assertTrue(decision.should_capture_trajectory)
+        self.assertFalse(decision.should_distill_now)
+
     def test_finalize_task_attaches_learning_decision_to_existing_plan(self) -> None:
         from skill_runtime.api.orchestration import AgentOrchestrationService
 
@@ -873,6 +908,490 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertTrue(finalized.learning_capture_payload["captured"])
         trajectory_path = Path(finalized.learning_capture_payload["trajectory_path"])
         self.assertTrue(trajectory_path.exists())
+
+    def test_finalize_task_persists_existing_skill_improvement_candidate(self) -> None:
+        from skill_runtime.api.orchestration import AgentOrchestrationService
+
+        planner = AgentOrchestrationService(self.runtime_root)
+        request = AgentTaskRequest(
+            task_description="Improve the direction review workflow after a user correction.",
+            expected_outputs=["C:/Users/Administrator/.codex/skills/pre-implementation-workflow-review/SKILL.md"],
+            risk_level="medium",
+            task_kind="workflow",
+        )
+        plan = planner.start_task(request)
+        execution_payload = {
+            "result": {"status": "completed", "artifacts": []},
+            "operation_log": [
+                {"tool_name": "read_text", "status": "success", "path": "AGENTS.md"},
+                {"tool_name": "write_text", "status": "success", "path": "docs/decision-note.md"},
+            ],
+            "skill_gap": {
+                "target_skill_name": "pre_implementation_workflow_review",
+                "reason": "User correction showed the workflow should challenge low-value routes earlier.",
+                "evidence": ["The old route allowed low-value skill work to continue too long."],
+                "proposed_changes": ["Add a guard for repeated low-value validation loops."],
+            },
+        }
+
+        finalized = planner.finalize_task(plan, execution_payload)
+
+        self.assertEqual("improve_existing_skill_candidate", finalized.learning_decision.decision)
+        self.assertIsNotNone(finalized.learning_capture_payload)
+        candidate = finalized.learning_capture_payload["evolution_candidate"]
+        candidate_path = Path(candidate["candidate_path"])
+        self.assertTrue(candidate_path.exists())
+        self.assertEqual("pre_implementation_workflow_review", candidate["target_skill_name"])
+        self.assertEqual("review_evolution_candidate", finalized.learning_capture_payload["recommended_next_action"])
+
+    def test_review_evolution_candidate_creates_manual_diff_without_editing_global_skill(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        skill_path = skill_dir / "SKILL.md"
+        original_text = (
+            "---\n"
+            "name: pre-implementation-workflow-review\n"
+            "description: Review direction before implementation.\n"
+            "---\n\n"
+            "# Pre Implementation Workflow Review\n\n"
+            "Review value before building.\n"
+        )
+        skill_path.write_text(original_text, encoding="utf-8")
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review after a user correction.",
+            reason="The workflow should catch repeated low-value validation loops earlier.",
+            evidence=["The old route kept validating runtime samples instead of reviewing product value."],
+            proposed_changes=["Add a guard that redirects repeated runtime validation to the value gate."],
+            risk_level="medium",
+            change_type="guardrail",
+        )
+
+        result = self.service.review_evolution_candidate(
+            candidate["candidate_path"],
+            global_skills_dir=global_skills_dir,
+        )
+
+        self.assertFalse(result["mutated_global_skill"])
+        self.assertEqual(original_text, skill_path.read_text(encoding="utf-8"))
+        self.assertEqual("reviewed", result["candidate"]["status"])
+        self.assertEqual("ready_for_manual_diff", result["review"]["decision"])
+        self.assertTrue(Path(result["review"]["review_path"]).exists())
+        diff_path = Path(result["review"]["diff_path"])
+        self.assertTrue(diff_path.exists())
+        diff_text = diff_path.read_text(encoding="utf-8")
+        self.assertIn("Evolution Candidate Proposal", diff_text)
+        self.assertIn("low-value validation loops", diff_text)
+
+    def test_review_evolution_candidate_requests_more_evidence_before_diff(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n",
+            encoding="utf-8",
+        )
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="The candidate is too vague.",
+            evidence=[],
+            proposed_changes=[],
+        )
+
+        result = self.service.review_evolution_candidate(
+            candidate["candidate_path"],
+            global_skills_dir=global_skills_dir,
+        )
+
+        self.assertEqual("needs_more_evidence", result["candidate"]["status"])
+        self.assertEqual("needs_more_evidence", result["review"]["decision"])
+        self.assertNotIn("diff_path", result["review"])
+
+    def test_review_evolution_candidate_cli_returns_review_payload(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n",
+            encoding="utf-8",
+        )
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="Add a clearer build gate.",
+            evidence=["A repeated route slipped past the current gate."],
+            proposed_changes=["Require a verdict before implementation."],
+        )
+
+        payload = self._run_cli(
+            "review-evolution-candidate",
+            "--candidate",
+            candidate["candidate_path"],
+            "--global-skills-dir",
+            str(global_skills_dir),
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        self.assertEqual("ready_for_manual_diff", payload["data"]["review"]["decision"])
+
+    def test_apply_evolution_candidate_requires_explicit_confirmation(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n",
+            encoding="utf-8",
+        )
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="Add a clearer build gate.",
+            evidence=["A repeated route slipped past the current gate."],
+            proposed_changes=["Require a verdict before implementation."],
+        )
+        self.service.review_evolution_candidate(candidate["candidate_path"], global_skills_dir=global_skills_dir)
+
+        with self.assertRaises(Exception) as context:
+            self.service.apply_evolution_candidate(
+                candidate["candidate_path"],
+                global_skills_dir=global_skills_dir,
+            )
+
+        self.assertIn("confirm_apply", str(context.exception))
+
+    def test_apply_evolution_candidate_writes_backup_and_updates_status(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        skill_path = skill_dir / "SKILL.md"
+        original_text = "---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n"
+        skill_path.write_text(original_text, encoding="utf-8")
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="Add a clearer build gate.",
+            evidence=["A repeated route slipped past the current gate."],
+            proposed_changes=["Require a verdict before implementation."],
+        )
+        self.service.review_evolution_candidate(candidate["candidate_path"], global_skills_dir=global_skills_dir)
+
+        result = self.service.apply_evolution_candidate(
+            candidate["candidate_path"],
+            confirm_apply=True,
+            global_skills_dir=global_skills_dir,
+        )
+
+        self.assertTrue(result["mutated_global_skill"])
+        self.assertEqual("applied", result["candidate"]["status"])
+        self.assertTrue(Path(result["application"]["application_path"]).exists())
+        backup_path = Path(result["application"]["backup_path"])
+        self.assertTrue(backup_path.exists())
+        self.assertEqual(original_text, backup_path.read_text(encoding="utf-8"))
+        updated_text = skill_path.read_text(encoding="utf-8")
+        self.assertIn("## Evolution Update", updated_text)
+        self.assertIn("Require a verdict before implementation.", updated_text)
+        self.assertIn("restore_backup_file", result["application"]["rollback_hint"]["strategy"])
+
+    def test_apply_evolution_candidate_rejects_stale_target(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        skill_path = skill_dir / "SKILL.md"
+        skill_path.write_text("---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n", encoding="utf-8")
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="Add a clearer build gate.",
+            evidence=["A repeated route slipped past the current gate."],
+            proposed_changes=["Require a verdict before implementation."],
+        )
+        self.service.review_evolution_candidate(candidate["candidate_path"], global_skills_dir=global_skills_dir)
+        skill_path.write_text(
+            "---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n\nChanged after review.\n",
+            encoding="utf-8",
+        )
+
+        with self.assertRaises(Exception) as context:
+            self.service.apply_evolution_candidate(
+                candidate["candidate_path"],
+                confirm_apply=True,
+                global_skills_dir=global_skills_dir,
+            )
+
+        self.assertIn("changed after review", str(context.exception))
+
+    def test_apply_evolution_candidate_cli_requires_confirm_flag(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n",
+            encoding="utf-8",
+        )
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="Add a clearer build gate.",
+            evidence=["A repeated route slipped past the current gate."],
+            proposed_changes=["Require a verdict before implementation."],
+        )
+        self.service.review_evolution_candidate(candidate["candidate_path"], global_skills_dir=global_skills_dir)
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(CLI),
+                "--root",
+                str(self.runtime_root),
+                "apply-evolution-candidate",
+                "--candidate",
+                candidate["candidate_path"],
+                "--global-skills-dir",
+                str(global_skills_dir),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=str(ROOT),
+        )
+        payload = json.loads(result.stdout)
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertEqual("error", payload["status"])
+        self.assertEqual("EVOLUTION_APPLY_CONFIRMATION_REQUIRED", payload["code"])
+
+    def test_apply_evolution_candidate_cli_applies_with_confirm_flag(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        skill_path = skill_dir / "SKILL.md"
+        skill_path.write_text("---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n", encoding="utf-8")
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="Add a clearer build gate.",
+            evidence=["A repeated route slipped past the current gate."],
+            proposed_changes=["Require a verdict before implementation."],
+        )
+        self.service.review_evolution_candidate(candidate["candidate_path"], global_skills_dir=global_skills_dir)
+
+        payload = self._run_cli(
+            "apply-evolution-candidate",
+            "--candidate",
+            candidate["candidate_path"],
+            "--global-skills-dir",
+            str(global_skills_dir),
+            "--confirm-apply",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        self.assertEqual("applied", payload["data"]["candidate"]["status"])
+        self.assertIn("## Evolution Update", skill_path.read_text(encoding="utf-8"))
+
+    def test_rollback_evolution_candidate_requires_explicit_confirmation(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n",
+            encoding="utf-8",
+        )
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="Add a clearer build gate.",
+            evidence=["A repeated route slipped past the current gate."],
+            proposed_changes=["Require a verdict before implementation."],
+        )
+        self.service.review_evolution_candidate(candidate["candidate_path"], global_skills_dir=global_skills_dir)
+        self.service.apply_evolution_candidate(
+            candidate["candidate_path"],
+            confirm_apply=True,
+            global_skills_dir=global_skills_dir,
+        )
+
+        with self.assertRaises(Exception) as context:
+            self.service.rollback_evolution_candidate(
+                candidate["candidate_path"],
+                global_skills_dir=global_skills_dir,
+            )
+
+        self.assertIn("confirm_rollback", str(context.exception))
+
+    def test_rollback_evolution_candidate_restores_backup_and_updates_status(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        skill_path = skill_dir / "SKILL.md"
+        original_text = "---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n"
+        skill_path.write_text(original_text, encoding="utf-8")
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="Add a clearer build gate.",
+            evidence=["A repeated route slipped past the current gate."],
+            proposed_changes=["Require a verdict before implementation."],
+        )
+        self.service.review_evolution_candidate(candidate["candidate_path"], global_skills_dir=global_skills_dir)
+        self.service.apply_evolution_candidate(
+            candidate["candidate_path"],
+            confirm_apply=True,
+            global_skills_dir=global_skills_dir,
+        )
+        self.assertIn("## Evolution Update", skill_path.read_text(encoding="utf-8"))
+
+        result = self.service.rollback_evolution_candidate(
+            candidate["candidate_path"],
+            confirm_rollback=True,
+            global_skills_dir=global_skills_dir,
+        )
+
+        self.assertTrue(result["mutated_global_skill"])
+        self.assertEqual("rolled_back", result["candidate"]["status"])
+        self.assertTrue(Path(result["rollback"]["rollback_path"]).exists())
+        self.assertEqual(original_text, skill_path.read_text(encoding="utf-8"))
+        self.assertEqual("restore_backup_file", result["rollback"]["rollback_hint"]["strategy"])
+
+    def test_rollback_evolution_candidate_rejects_target_changed_after_apply(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        skill_path = skill_dir / "SKILL.md"
+        skill_path.write_text("---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n", encoding="utf-8")
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="Add a clearer build gate.",
+            evidence=["A repeated route slipped past the current gate."],
+            proposed_changes=["Require a verdict before implementation."],
+        )
+        self.service.review_evolution_candidate(candidate["candidate_path"], global_skills_dir=global_skills_dir)
+        self.service.apply_evolution_candidate(
+            candidate["candidate_path"],
+            confirm_apply=True,
+            global_skills_dir=global_skills_dir,
+        )
+        skill_path.write_text(skill_path.read_text(encoding="utf-8") + "\nManual edit after apply.\n", encoding="utf-8")
+
+        with self.assertRaises(Exception) as context:
+            self.service.rollback_evolution_candidate(
+                candidate["candidate_path"],
+                confirm_rollback=True,
+                global_skills_dir=global_skills_dir,
+            )
+
+        self.assertIn("changed after evolution apply", str(context.exception))
+
+    def test_rollback_evolution_candidate_cli_requires_confirm_flag(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n",
+            encoding="utf-8",
+        )
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="Add a clearer build gate.",
+            evidence=["A repeated route slipped past the current gate."],
+            proposed_changes=["Require a verdict before implementation."],
+        )
+        self.service.review_evolution_candidate(candidate["candidate_path"], global_skills_dir=global_skills_dir)
+        self.service.apply_evolution_candidate(
+            candidate["candidate_path"],
+            confirm_apply=True,
+            global_skills_dir=global_skills_dir,
+        )
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(CLI),
+                "--root",
+                str(self.runtime_root),
+                "rollback-evolution-candidate",
+                "--candidate",
+                candidate["candidate_path"],
+                "--global-skills-dir",
+                str(global_skills_dir),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=str(ROOT),
+        )
+        payload = json.loads(result.stdout)
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertEqual("error", payload["status"])
+        self.assertEqual("EVOLUTION_ROLLBACK_CONFIRMATION_REQUIRED", payload["code"])
+
+    def test_rollback_evolution_candidate_cli_restores_with_confirm_flag(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        skill_path = skill_dir / "SKILL.md"
+        original_text = "---\nname: pre-implementation-workflow-review\n---\n\n# Skill\n"
+        skill_path.write_text(original_text, encoding="utf-8")
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve direction review.",
+            reason="Add a clearer build gate.",
+            evidence=["A repeated route slipped past the current gate."],
+            proposed_changes=["Require a verdict before implementation."],
+        )
+        self.service.review_evolution_candidate(candidate["candidate_path"], global_skills_dir=global_skills_dir)
+        self.service.apply_evolution_candidate(
+            candidate["candidate_path"],
+            confirm_apply=True,
+            global_skills_dir=global_skills_dir,
+        )
+
+        payload = self._run_cli(
+            "rollback-evolution-candidate",
+            "--candidate",
+            candidate["candidate_path"],
+            "--global-skills-dir",
+            str(global_skills_dir),
+            "--confirm-rollback",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        self.assertEqual("rolled_back", payload["data"]["candidate"]["status"])
+        self.assertEqual(original_text, skill_path.read_text(encoding="utf-8"))
 
     def test_agent_plan_cli_returns_reuse_decision_for_workflow_request(self) -> None:
         payload = self._run_cli(

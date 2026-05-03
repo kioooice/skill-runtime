@@ -23,6 +23,94 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Rollback evolution candidate
+
+- Task type: Skill Runtime learning-loop safety workflow
+- Classified as: `guarded-in` / `skipped` by the runtime gate because this was broader service, CLI, MCP, dashboard, and test work
+- What happened: added `rollback_evolution_candidate`, requiring explicit confirmation before restoring the backup recorded by `apply_evolution_candidate`; rollback now writes `.skill_runtime/evolution_rollbacks` records and refuses to overwrite targets changed after apply
+- Did the behavior feel correct: yes; the runtime lane should observe this work but not silently execute a global-skill rollback path
+- Did the lane help: yes, because it kept the implementation on normal Codex execution while still recording that this was a guarded reusable workflow change
+- Follow-up: use this as the safety close for the current skill evolution loop, then prefer version closeout or a read-only lifecycle detail panel
+
+### 2026-05-03 - Skill evolution candidates
+
+- Task type: Skill Runtime learning-loop enhancement
+- Classified as: `guarded-in` / `skipped` by the runtime gate because this was broader local feature work
+- What happened: added `improve_existing_skill_candidate`, persisted `.skill_runtime/evolution_candidates` records, and exposed a read-only `技能进化` dashboard page
+- Did the behavior feel correct: yes; this should not be silently auto-executed or auto-applied to global skills, but it should be visible as a learning-loop event
+- Did the lane help: yes, because the skipped gate kept the change on normal Codex execution while preserving the distinction between new-skill distillation and existing-skill improvement
+- Follow-up: implement `review_evolution_candidate` so candidates can become reviewed diffs or explicit rejects before any global skill changes
+
+### 2026-05-03 - Review evolution candidate
+
+- Task type: Skill Runtime learning-loop review workflow
+- Classified as: `default-out` / `skipped` because implementation touched broader service, CLI and MCP surfaces
+- What happened: added `review_evolution_candidate` to turn an evolution candidate into `ready_for_manual_diff`, `needs_more_evidence`, or `rejected`; enough evidence writes `.review.json` and `.diff` without editing global skills
+- Did the behavior feel correct: yes; this is the intended next step after candidate capture and keeps global skill edits behind a separate confirmation boundary
+- Did the lane help: yes, because the skipped gate preserved the boundary between ordinary Codex implementation and runtime auto-execution
+- Follow-up: implement an explicit apply step only after adding confirmation, stale-file checks, backup/rollback information, and applied/rejected status tracking
+
+### 2026-05-03 - Apply evolution candidate
+
+- Task type: Skill Runtime learning-loop confirmed apply workflow
+- Classified as: `default-out` / `skipped` because this changes the global-skill mutation boundary and should not be auto-executed
+- What happened: added `apply_evolution_candidate` with explicit confirmation, target hash checks, backup creation, application records, rollback hints, CLI/MCP entry points, and dashboard labels for reviewed/applied candidate states
+- Did the behavior feel correct: yes; applying global skill changes now requires an intentional flag and refuses stale reviews
+- Did the lane help: yes, because the runtime gate kept this as normal Codex implementation while preserving an observable skipped event
+- Follow-up: add rollback/undo support that restores from the recorded backup and marks candidates as rolled back
+
+### 2026-05-03 - Trigger log localized for users
+
+- Task type: dashboard trigger-log copy refinement
+- Classified as: `guarded-in` / `skipped` because this was local dashboard presentation work
+- What happened: changed trigger-log event cards from raw English runtime internals into Chinese records with task, time, handling method, and result
+- Did the behavior feel correct: yes; the page now explains whether runtime participated, observed, or Codex handled the task directly
+- Did the lane help: only as traceability; the useful result is clearer user-facing observability
+- Verification: targeted dashboard tests passed, py_compile passed, dashboard regenerated, and Playwright screenshot `output/playwright/dashboard-trigger-log-localized.png` was inspected
+- Follow-up: keep trigger-log explanations user-facing; do not show raw classifier/runtime reason strings unless a dedicated debug view is added
+
+### 2026-05-03 - Dashboard collections hide basic local skills
+
+- Task type: dashboard collection organization
+- Classified as: `guarded-in` / `skipped` because this was local dashboard grouping work and not a silent runtime execution task
+- What happened: removed basic local helper collections from the default dashboard and regrouped the 8 active workflow skills into four functional groups: `方向与策略`, `自动推进`, `运行时与验证`, and `会话接续`
+- Did the behavior feel correct: yes; it matches the user's point that basic file helpers are not useful in the main visual management surface
+- Did the lane help: only as traceability; the useful result is keeping the UI centered on workflow value
+- Verification: targeted collection/dashboard tests passed, py_compile passed, the global dashboard regenerated with active_count 8, and Playwright screenshot `output/playwright/dashboard-workflow-collections-only.png` was inspected
+- Follow-up: do not reintroduce basic local helper groups into default dashboard pages unless the user explicitly asks for a low-level utility view
+
+### 2026-05-03 - Dashboard overview chrome and log navigation cleanup
+
+- Task type: dashboard UI refinement
+- Classified as: `guarded-in` / `skipped` because the runtime gate recognized local dashboard work but did not silently execute it
+- What happened: removed the overview path subtitle and local view search row, changed the central skill library count to active workflow skills only, and merged cross-workspace event display into the single `触发日志` navigation item
+- Did the behavior feel correct: yes; the work directly followed marked visual issues and kept the dashboard focused on workflow skills
+- Did the lane help: only as traceability; the useful result is a clearer dashboard surface
+- Verification: targeted dashboard tests passed, Python compile checks passed, global dashboard generation reported `active_count: 8`, Playwright screenshots were inspected, and `python -m unittest tests.test_runtime_fast -v` passed with 109 tests
+- Follow-up: do not reintroduce duplicate log navigation or count basic local helper skills in the central workflow library badge
+
+### 2026-05-03 - Capability collections reordered workflow-first
+
+- Task type: dashboard collection organization
+- Classified as: `guarded-in` / `skipped` because the runtime gate saw a local reusable UI/data organization task but not a phase-one default-in family
+- What happened: collection defaults now put workflow collections first, and the dashboard splits the collections page into `工作流技能` and `基础本地技能` sections
+- Follow-up adjustment: candidate counts and candidate rows were hidden from the default dashboard display, so the 59 staging candidates no longer dominate the visible product surface
+- Layout adjustment: global overview copy and the local view search row now appear only on `总览`; other pages use the original top area for the active page title
+- Did the behavior feel correct: yes; this is a product clarity change, not a runtime skill execution
+- Did the lane help: only as traceability; the useful outcome is preventing basic helper collections from dominating the first screen
+- Verification: targeted runtime fast tests passed; syntax checks passed; Playwright screenshot `output/playwright/dashboard-collections-workflow-first.png` was generated and inspected
+- Follow-up: keep basic local helper collections behind workflow collections unless the user explicitly asks to inspect low-level utilities first
+
+### 2026-05-03 - Dashboard rebuilt from skills-manage UI reference
+
+- Task type: dashboard visual redesign
+- Classified as: `default-out` / `skipped` by the runtime gate because this was ordinary UI development, not a reusable workflow execution
+- What happened: rebuilt the static dashboard around the `skills-manage` app-shell pattern: top title/search bar, left navigation, content header, local search, two-column skill cards, Catppuccin Latte colors, and purple active navigation
+- Did the behavior feel correct: yes; the user had a concrete visual complaint and a concrete reference, so implementing the redesign was higher value than continuing to polish the previous radial tree
+- Did the lane help: only as traceability; the useful result is a clearer management UI
+- Verification: targeted dashboard renderer/CLI tests passed; Playwright desktop and mobile screenshots were generated and inspected against the reference screenshots
+- Follow-up: if the UI still feels off, compare against the reference screenshots first instead of inventing a new visual direction
+
 ### 2026-05-03 - Workflow skills become the primary visible surface
 
 - Task type: dashboard skill-surface cleanup
@@ -305,6 +393,69 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the behavior feel correct: yes; this is write-capable project feature work and should stay outside silent runtime reuse, while still producing observable gate/finalizer events
 - Did the lane help: yes, because the default lane stayed conservative around external skill ingestion and kept audit/promotion boundaries explicit
 - Follow-up: add dashboard provenance display for imported candidates before any GitHub or marketplace import path
+
+### 2026-05-03 - Read-only skill detail panel
+
+- Task type: existing dashboard UI interaction
+- Classified as: guarded-in
+- What happened: added the first real panel interaction: central skill cards now open a side drawer with skill metadata, source counts, category/source label, complete description, and import provenance when present; visible "read-only" labels were removed from the UI
+- Did the behavior feel correct: yes; this is concrete UI feature work and should stay on the normal Codex path, while the runtime gate records that it was observed
+- Did the lane help: yes, because the change advances user-facing inspection instead of collecting more internal runtime samples
+- Follow-up: use the same read-only drawer pattern for trigger-log event details or collection details before considering any write operation
+
+### 2026-05-03 - Dashboard overview copy/layout polish
+
+- Task type: existing dashboard UI refinement
+- Classified as: guarded-in
+- What happened: optimized the `总览` page wording and metric card structure so current-project and cross-workspace runtime status read as a concise product summary instead of internal debug labels
+- Did the behavior feel correct: yes; this was concrete project UI work, so the runtime gate observed it while implementation stayed on the normal Codex path
+- Did the lane help: yes, because the task produced a visible dashboard event without turning UI polish into another runtime validation loop
+- Follow-up: continue using the static dashboard for real observation; only add richer UI controls if repeated real usage shows a clear need
+
+### 2026-05-03 - Platform page compact cards
+
+- Task type: dashboard platform inventory usability refinement
+- Classified as: guarded-in for broad dashboard UI work
+- What happened: changed `平台与项目` from expanded source/debug cards into compact skill-library-style cards with clamped summaries and Chinese source tags
+- Did the behavior feel correct: yes; this is UI refinement on the normal Codex path, while the runtime gate remains useful for recording dashboard development work
+- Did the lane help: yes, because the dashboard now better separates useful user-facing inventory from internal source fields
+- Follow-up: if the platform page needs deeper inspection later, add click-to-detail instead of expanding every card by default
+
+### 2026-05-03 - Trigger log status filtering
+
+- Task type: dashboard trigger-log usability refinement
+- Classified as: guarded-in for broad UI/runtime dashboard work
+- What happened: added `已使用 / 进入观察 / 已跳过` filters to the trigger log, defaulting to `已使用` so the first view shows runtime participation rather than mixed internal event types
+- Did the behavior feel correct: yes; this is still normal Codex implementation work, while the runtime gate records that the task touched a default-lane risk area
+- Did the lane help: yes, because the visible dashboard now makes the difference between used, entered, and skipped more useful for real observation instead of mixing them into one feed
+- Follow-up: if log entries remain too dense, add read-only event detail inspection next rather than adding write operations
+
+### 2026-05-03 - Plan progress tracker skill
+
+- Task type: global workflow skill creation
+- Classified as: guarded-in
+- What happened: added a global `plan-progress-tracker` skill so multi-stage plans keep a visible stage coordinate across continue, auto-mode, handoff, and compaction flows
+- Did the behavior feel correct: yes; this is reusable workflow setup and should be observable, not silently executed by the current default lane
+- Did the lane help: yes, it recorded the workflow addition without turning it into another runtime validation task
+- Follow-up: use this skill whenever a staged plan exists, especially before replying to a vague `继续`
+
+### 2026-05-03 - Context compaction audit skill
+
+- Task type: global workflow skill creation
+- Classified as: guarded-in
+- What happened: added a global `context-compaction-audit` skill for post-compaction analysis and reopen-chat decisions, linked it with `session-handoff-maintenance`, and kept only a short route line in global/project AGENTS
+- Did the behavior feel correct: yes; creating a cross-project workflow skill is reusable but should not be silently executed by the current default lane
+- Did the lane help: yes, it recorded the work without expanding runtime validation or turning AGENTS into a long manual
+- Follow-up: after the next real context compaction, use this skill before continuing substantial work; if it recommends checkpointing or reopening, immediately refresh handoff files through `session-handoff-maintenance`
+
+### 2026-05-03 - Central skill library grouping consolidation
+
+- Task type: dashboard information architecture cleanup
+- Classified as: guarded-in
+- What happened: moved functional workflow grouping into the `中央技能库` main view, removed the duplicated `技能集合` route, and kept grouped skill rows clickable for detail inspection
+- Did the behavior feel correct: yes; this is broader UI/product work, so the runtime gate should observe rather than silently execute it
+- Did the lane help: yes, because it left a visible event for a real dashboard task without turning the work back into another local-skill validation loop
+- Follow-up: only add richer read-only details when they make the current panel clearer; do not reintroduce duplicate skill surfaces
 
 ### 2026-05-03 - Platform export plan preview
 

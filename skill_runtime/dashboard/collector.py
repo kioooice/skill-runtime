@@ -7,6 +7,7 @@ from typing import Any
 from skill_runtime.api.models import SkillMetadata
 from skill_runtime.api.service import RuntimeService
 from skill_runtime.collections.store import load_capability_collections
+from skill_runtime.evolution.candidates import EvolutionCandidateStore
 from skill_runtime.observability.events import RUNTIME_LANE_EVENTS_FILE, read_runtime_lane_events
 from skill_runtime.platforms.discovery import collect_platform_inventory
 from skill_runtime.retrieval.skill_index import SkillIndex, SkillIndexError
@@ -20,13 +21,15 @@ def collect_dashboard_data(root: str | Path, *, event_limit: int = 50) -> dict[s
     governance = _collect_governance(runtime_root, diagnostics)
     platform_inventory = collect_platform_inventory(runtime_root)
     capability_collections = load_capability_collections(runtime_root, skills, diagnostics)
-    overview = _build_overview(skills, events, governance)
+    evolution_candidates = EvolutionCandidateStore(runtime_root).list_candidates(limit=50)
+    overview = _build_overview(skills, events, governance, evolution_candidates)
     return {
         "root": str(runtime_root),
         "overview": overview,
         "skills": skills,
         "events": events,
         "governance": governance,
+        "evolution_candidates": evolution_candidates,
         "capability_collections": capability_collections,
         "platform_inventory": platform_inventory,
         "diagnostics": diagnostics,
@@ -204,6 +207,7 @@ def _skill_payload(
         "skill_name": skill_name,
         "status": status,
         "summary": str(payload.get("summary") or ""),
+        "docstring": str(payload.get("docstring") or ""),
         "file_path": file_path,
         "relative_file_path": _relative_path(file_path, root),
         "source_trajectory_ids": [str(item) for item in source_trajectory_ids],
@@ -250,12 +254,16 @@ def _build_overview(
     skills: list[dict[str, Any]],
     events: list[dict[str, Any]],
     governance: dict[str, Any],
+    evolution_candidates: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     status_counts = {"active": 0, "staging": 0, "archived": 0, "rejected": 0}
+    workflow_active_count = 0
     for skill in skills:
         status = skill["status"]
         if status in status_counts:
             status_counts[status] += 1
+        if status == "active" and skill.get("skill_surface") == "workflow":
+            workflow_active_count += 1
     event_counts = {"used": 0, "entered": 0, "skipped": 0}
     for event in events:
         status = event.get("runtime_lane_status")
@@ -263,14 +271,18 @@ def _build_overview(
             event_counts[status] += 1
     duplicate_candidates = governance.get("duplicate_candidates")
     governance_warning_count = len(duplicate_candidates) if isinstance(duplicate_candidates, list) else 0
+    proposed_evolution_count = sum(
+        1 for candidate in evolution_candidates or [] if candidate.get("status") == "proposed"
+    )
     return {
-        "active_count": status_counts["active"],
+        "active_count": workflow_active_count,
         "staging_count": status_counts["staging"],
         "archive_count": status_counts["archived"],
         "rejected_count": status_counts["rejected"],
         "latest_event_time": events[0].get("timestamp") if events else None,
         "recent_event_counts": event_counts,
         "governance_warning_count": governance_warning_count,
+        "evolution_candidate_count": proposed_evolution_count,
     }
 
 

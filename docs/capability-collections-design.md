@@ -29,10 +29,14 @@ Schema:
 {
   "collections": [
     {
-      "collection_id": "text-processing",
-      "label": "文本处理",
-      "description": "合并、清理、替换和 Markdown 输出。",
-      "skill_names": ["merge_text_files", "text_replace_dogfood"]
+      "collection_id": "direction-strategy",
+      "label": "方向与策略",
+      "description": "开发方向、部署路线和仓库影响判断。",
+      "skill_names": [
+        "pre_implementation_workflow_review",
+        "deployment_strategy_review",
+        "repo_impact_analysis"
+      ]
     }
   ]
 }
@@ -51,13 +55,12 @@ Unknown skill references are preserved as `missing_skill_names` in dashboard dat
 
 When `skill_store/collections.json` is missing or invalid, the runtime uses read-only default collections:
 
-- `text-processing`: 文本处理
-- `structured-conversion`: 格式转换
-- `file-organization`: 文件整理
-- `project-maintenance`: 项目维护
-- `runtime-governance`: 运行时治理
+- `direction-strategy`: 方向与策略
+- `autonomous-execution`: 自动推进
+- `runtime-safety`: 运行时与验证
+- `session-continuity`: 会话接续
 
-Default membership is inferred from skill names, summaries, and tags. This fallback is display-only and does not write a collections file.
+Default membership is explicit and limited to active workflow skills. Basic local file helpers are still available to the runtime and explicit search, but they are not part of the default dashboard collection surface. This fallback is display-only and does not write a collections file.
 
 ## Dashboard Behavior
 
@@ -75,6 +78,8 @@ Each collection payload contains:
 - `read_only`
 
 Dashboard rendering shows a dedicated `能力集合` page. The page is only a navigation and explanation surface. It must not expose promote, archive, import, export, edit, install, or execute controls.
+
+The default dashboard renders workflow collections only. Basic local file-processing helpers are intentionally hidden from the default visual surface because they do not help users judge workflow value. A future explicit low-level utility view can be added separately if there is a real need.
 
 ## Safety Rules
 

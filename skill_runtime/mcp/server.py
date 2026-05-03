@@ -286,6 +286,67 @@ def build_mcp_server(root: str | Path) -> FastMCP:
         )
 
     @server.tool(
+        name="review_evolution_candidate",
+        description=(
+            "Review a skill evolution candidate and produce a manual diff proposal, "
+            "a rejection, or a request for more evidence without editing global skills."
+        ),
+        structured_output=True,
+    )
+    def review_evolution_candidate(
+        candidate: str,
+        global_skills_dir: str | None = None,
+    ) -> dict[str, Any]:
+        return _wrap_tool(
+            service,
+            "review_evolution_candidate",
+            candidate=candidate,
+            global_skills_dir=global_skills_dir,
+        )
+
+    @server.tool(
+        name="apply_evolution_candidate",
+        description=(
+            "Apply a reviewed skill evolution candidate only when confirm_apply=true, "
+            "with stale target checks, backup creation, and candidate status tracking."
+        ),
+        structured_output=True,
+    )
+    def apply_evolution_candidate(
+        candidate: str,
+        confirm_apply: bool = False,
+        global_skills_dir: str | None = None,
+    ) -> dict[str, Any]:
+        return _wrap_tool(
+            service,
+            "apply_evolution_candidate",
+            candidate=candidate,
+            confirm_apply=confirm_apply,
+            global_skills_dir=global_skills_dir,
+        )
+
+    @server.tool(
+        name="rollback_evolution_candidate",
+        description=(
+            "Rollback an applied skill evolution candidate only when confirm_rollback=true, "
+            "restoring the recorded backup after checking the target was not changed after apply."
+        ),
+        structured_output=True,
+    )
+    def rollback_evolution_candidate(
+        candidate: str,
+        confirm_rollback: bool = False,
+        global_skills_dir: str | None = None,
+    ) -> dict[str, Any]:
+        return _wrap_tool(
+            service,
+            "rollback_evolution_candidate",
+            candidate=candidate,
+            confirm_rollback=confirm_rollback,
+            global_skills_dir=global_skills_dir,
+        )
+
+    @server.tool(
         name="archive_duplicate_candidates",
         description="Archive duplicate-candidate skills suggested by the governance report while keeping canonical skills active.",
         structured_output=True,

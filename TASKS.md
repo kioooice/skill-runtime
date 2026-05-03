@@ -2,7 +2,19 @@
 
 ## Current Focus
 
-- 最新收口：dashboard 默认技能树现在只展示 workflow skills。普通本地文件处理技能没有删除，但已标记为 `basic`，并集中放到 `基础本地技能` 能力集合里；默认视图不再把合并文本、JSON 转 CSV、批量清理等基础 helpers 当成主线工作流能力展示。
+- 最新全局技能新增：已创建 `plan-progress-tracker`，用于多阶段计划执行时持续显示“第几阶段 / 已完成 / 当前正在做 / 下一步 / 偏离风险”。以后计划列出来后，继续开发、自动模式、阶段汇报、会话接力或压缩恢复都应先恢复这个进度坐标。
+- 最新全局技能新增：已创建 `context-compaction-audit`，用于上下文压缩或 summary 恢复后先判断当前会话是否还能安全继续，还是应该 checkpoint 后继续、完成当前阶段后新开会话，或立即新开会话。它会报告压缩时间、压缩率可计算性、信息丢失风险和下一次压缩前的建议。现在它已与 `session-handoff-maintenance` 联动：需要 checkpoint 或新开会话时，先刷新 handoff 状态文件。
+- 最新中央技能库收口：保留用户需要的功能组别，但不再保留 `中央技能库` 和 `技能集合` 两套重复视图。现在 `中央技能库` 就是按功能分组的工作流主视图，显示 8 个 active workflow skills，分为 `方向与策略`、`自动推进`、`运行时与验证`、`会话接续` 四组；组内技能可点击看详情。
+- 最新平台页压缩：`平台与项目` 页面已从大段说明卡改为技能库式紧凑卡。路径、角色和来源不再整段展开，改为单行路径、短摘要和标签，减少信息噪音。
+- 最新触发日志筛选：`触发日志` 页面已新增 `已使用 / 进入观察 / 已跳过` 状态筛选，并默认只显示 `已使用` 记录；这让页面先回答“runtime 真正用上了哪些技能”，再让用户按需查看进入观察或被普通 Codex 路径跳过的任务。
+- 最新 dashboard 清理：`总览` 页已去掉路径副标题和本页搜索栏；左侧 `中央技能库` 数字改为只统计 active workflow skills，当前为 8；全局日志入口已合并到 `触发日志`，不再同时显示 `触发日志` 和 `全局日志`。
+- 最新集合页收口：`能力集合` 页面不再展示基础本地技能，默认只显示 8 个工作流技能，并按功能分成 `方向与策略`、`自动推进`、`运行时与验证`、`会话接续` 四组。
+- 最新触发日志调整：事件卡片已改成中文可读结构，显示任务、时间、处理方式和结果；常见英文 runtime reason 会转换为用户能理解的中文说明。
+- 最新只读交互面板：面板升级范围已收窄为“点击看信息”，不做写操作。第一阶段已经完成中央技能库卡片点击打开右侧技能详情抽屉；界面里的“只读”提示已移除，详情说明改为完整段落。后续可以按同一模式扩展触发日志事件详情、集合详情、全局项目详情。
+- 最新总览页优化：`总览` 页面已改为更清楚的运行时汇总页，标题、说明和指标卡不再堆技术词。指标卡现在用数字、指标名和短说明分层展示，当前项目与跨工作区说明跟随小节标题左对齐。
+- 最新界面改造：用户明确要求 dashboard 按 `iamzhihuix/skills-manage` 的界面重做。当前已放弃旧的中心放射树视觉，改成桌面应用壳：顶部标题/全局搜索、左侧导航、主内容标题、当前视图搜索、两列技能卡片和 Catppuccin Latte 风格配色。默认页仍是工作流技能主视图。
+- 最新收口：dashboard 默认技能树和能力集合现在只展示 workflow skills。普通本地文件处理技能没有删除，但已标记为 `basic`，保留给底层运行时和显式检索，不再作为默认可视化界面内容展示。
+- 最新集合页调整：`能力集合` 页面已从“工作流优先、基础后置”改成 workflow-only。默认 dashboard 已隐藏候选技能数量、候选列表项和基础 helper 集合，只展示活跃工作流技能；候选数据仍保留给 staging/governance 路径。全局说明和当前视图搜索框只保留在 `总览` 页，其他页面顶部只显示当前页标题。
 - 当前目标：把 Skill Runtime 真正接到 Codex 默认工作方式上，但先采用受控低风险任务通道，而不是一次性全量切换
 - 当前状态：agent-first runtime 的实验路径已经完成阶段性收口，当前层已证明“先做事，再回收经验”真实可用；当前主线已从“继续证明底层存在”切换到“如何让 Codex 默认使用这层”。现在除了分类文档、host API、MCP 实验入口和 Codex CLI 默认通道以外，phase-one `default-in` 还进一步收窄成四类白名单家族：
   - `project-state-maintenance`
@@ -21,6 +33,28 @@
 - [x] 将 `workflow-error-correction` 改成先复用已有错误记录防复发，只有新错误模式才新增记录
 - [x] 将 `workflow-error-correction` 重新定位为已知错误防复发守卫，优先改变下一步行为而不是产生日志
 - [x] 将普通本地文件处理技能移入 `基础本地技能` 集合，dashboard 默认技能树只展示 workflow skills
+- [x] 按 `skills-manage` 参考界面重做 dashboard 静态 HTML 外壳和默认技能卡片视图
+- [x] 将技能集合页改为 workflow-first：工作流集合前置，基础本地/文本/格式/文件整理集合后置成组
+- [x] 从默认 dashboard 展示中隐藏候选技能数量和候选列表项，避免 59 个候选噪音继续占据注意力
+- [x] 将全局说明和当前视图搜索框限制到 `总览` 页，其他页面原位置显示当前页标题
+- [x] 优化 `总览` 页文案和指标卡排版，让当前项目与跨工作区数据更容易读
+- [x] 写出只读交互面板第一阶段计划，明确不涉及 promote/reject/edit/archive
+- [x] 实现中央技能库卡片点击打开右侧只读详情抽屉
+- [x] 移除 dashboard 可见“只读”提示，并把技能详情说明改成完整段落
+- [x] 清理总览页多余路径副标题和本页搜索栏
+- [x] 将 `中央技能库` 导航计数改为 active workflow skills 数量，当前显示 8
+- [x] 合并 `触发日志` 和 `全局日志`，全局模式下只保留一个日志入口
+- [x] 将 `能力集合` 页面改成 workflow-only，不再显示基础本地技能
+- [x] 将 8 个 workflow skills 按功能重分组为 4 个集合
+- [x] 将 `触发日志` 页面从英文内部调试信息改成中文用户可读记录
+- [x] 在 `触发日志` 页面增加 `已使用 / 进入观察 / 已跳过` 筛选，并默认显示 `已使用`
+- [x] 将 `平台与项目` 页面压缩成技能库式紧凑卡片，隐藏展开式角色/来源调试文案
+- [x] 将功能组别并入 `中央技能库`，移除重复的 `技能集合` 入口和页面
+- [x] 新增全局 `context-compaction-audit` 技能，用于压缩后判断是否继续当前会话或新开会话
+- [x] 将 `context-compaction-audit` 与 `session-handoff-maintenance` 联动，压缩审计需要 checkpoint/reopen 时自动转入会话接力维护
+- [x] 新增全局 `plan-progress-tracker` 技能，用于多阶段计划执行时持续显示当前阶段和下一步
+- [ ] 下一阶段可扩展触发日志事件点击详情，仍保持只读
+- [ ] 下一阶段可扩展中央技能库组别详情，仍保持只读
 - [ ] 下一次启动新功能或新路线前，使用 `pre-implementation-workflow-review` 输出四类 verdict，确认它能先审开发方向价值、替代方案、成功指标和停止条件
 - [ ] 如果后续建议继续验证 runtime / 本地技能 / `entered` / `used` 样本，先检查是否又滑回低价值验证循环；除非它直接服务于方向审核，否则停止
 - [ ] 在下一次自动模式或部署任务中 dogfood 对应 workflow skill，确认从 `AGENTS.md` 下沉后的流程仍好用
@@ -267,6 +301,19 @@
 - [x] platform inventory 标记全局 Codex skills 为 `authoritative_global_skill`，dashboard 可显示来源角色和描述
 - [x] 将项目内 8 个 workflow active skills 改成 thin global skill adapters，保留搜索/执行可见性但不再保存完整流程逻辑
 - [x] 新增全局 Codex skill promotion 生命周期路径：审核通过且标记为 workflow 的 staging skill 会优先推荐 `promote_global_codex_skill`
+- [x] 新增技能进化候选 MVP：学习决策支持 `improve_existing_skill_candidate`
+- [x] 新增 `.skill_runtime/evolution_candidates` 候选存储，记录目标技能、来源任务、证据、建议修改、风险和来源轨迹
+- [x] dashboard 新增 `技能进化` 页面，只读展示候选提案，避免把已有技能缺口误蒸馏成重复新技能
+- [x] 新增 `review_evolution_candidate` 审核流程：目标技能缺失会拒绝，证据不足会要求补充，证据足够会生成 `.review.json` 和 `.diff`
+- [x] 新增 CLI `review-evolution-candidate` 和 MCP tool `review_evolution_candidate`
+- [x] 验证审核流程不会自动修改全局 `SKILL.md`
+- [x] 新增 `apply_evolution_candidate` 确认应用流程：必须显式确认，校验目标 hash，写备份和 apply 记录，再更新候选为 `applied`
+- [x] 新增 CLI `apply-evolution-candidate --confirm-apply` 和 MCP tool `apply_evolution_candidate`
+- [x] 验证未确认不能应用、目标文件变更会拒绝、确认后会写备份和回滚提示
+- [x] 新增 `rollback_evolution_candidate` 确认回滚流程：必须显式确认，根据 apply 记录恢复备份并记录 `rolled_back` 状态
+- [x] 新增 CLI `rollback-evolution-candidate --confirm-rollback` 和 MCP tool `rollback_evolution_candidate`
+- [x] 验证未确认不能回滚、目标文件在 apply 后变更会拒绝覆盖、确认后会恢复备份
+- [ ] 下一阶段：进入版本收口，检查当前 diff 并提交这批 workflow/global-skill 与 skill evolution 改造；如继续功能开发，优先做 evolution 生命周期详情面板
 
 ## Blocked
 

@@ -687,6 +687,56 @@ def cmd_import_skill_to_staging(args: argparse.Namespace) -> int:
         return error(exc.message, exc.code, exc.details, exit_code=EXIT_VALIDATION_ERROR)
 
 
+def cmd_review_evolution_candidate(args: argparse.Namespace) -> int:
+    try:
+        return ok(
+            service_for_args(args).review_evolution_candidate(
+                args.candidate,
+                global_skills_dir=args.global_skills_dir,
+            )
+        )
+    except RuntimeServiceError as exc:
+        exit_code = EXIT_NOT_FOUND if exc.code == "EVOLUTION_CANDIDATE_NOT_FOUND" else EXIT_VALIDATION_ERROR
+        return error(exc.message, exc.code, exc.details, exit_code=exit_code)
+
+
+def cmd_apply_evolution_candidate(args: argparse.Namespace) -> int:
+    try:
+        return ok(
+            service_for_args(args).apply_evolution_candidate(
+                args.candidate,
+                confirm_apply=args.confirm_apply,
+                global_skills_dir=args.global_skills_dir,
+            )
+        )
+    except RuntimeServiceError as exc:
+        exit_code = EXIT_NOT_FOUND if exc.code in {
+            "EVOLUTION_CANDIDATE_NOT_FOUND",
+            "EVOLUTION_REVIEW_NOT_FOUND",
+            "EVOLUTION_TARGET_NOT_FOUND",
+        } else EXIT_VALIDATION_ERROR
+        return error(exc.message, exc.code, exc.details, exit_code=exit_code)
+
+
+def cmd_rollback_evolution_candidate(args: argparse.Namespace) -> int:
+    try:
+        return ok(
+            service_for_args(args).rollback_evolution_candidate(
+                args.candidate,
+                confirm_rollback=args.confirm_rollback,
+                global_skills_dir=args.global_skills_dir,
+            )
+        )
+    except RuntimeServiceError as exc:
+        exit_code = EXIT_NOT_FOUND if exc.code in {
+            "EVOLUTION_CANDIDATE_NOT_FOUND",
+            "EVOLUTION_APPLICATION_NOT_FOUND",
+            "EVOLUTION_TARGET_NOT_FOUND",
+            "EVOLUTION_BACKUP_NOT_FOUND",
+        } else EXIT_VALIDATION_ERROR
+        return error(exc.message, exc.code, exc.details, exit_code=exit_code)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="skill-runtime")
     parser.add_argument("--root", default=str(ROOT))
@@ -808,6 +858,31 @@ def build_parser() -> argparse.ArgumentParser:
     import_skill_parser = subparsers.add_parser("import-skill-to-staging")
     import_skill_parser.add_argument("--source", required=True)
     import_skill_parser.set_defaults(func=cmd_import_skill_to_staging)
+
+    review_evolution_parser = subparsers.add_parser("review-evolution-candidate")
+    review_evolution_parser.add_argument("--candidate", required=True)
+    review_evolution_parser.add_argument("--global-skills-dir")
+    review_evolution_parser.set_defaults(func=cmd_review_evolution_candidate)
+
+    apply_evolution_parser = subparsers.add_parser("apply-evolution-candidate")
+    apply_evolution_parser.add_argument("--candidate", required=True)
+    apply_evolution_parser.add_argument("--global-skills-dir")
+    apply_evolution_parser.add_argument(
+        "--confirm-apply",
+        action="store_true",
+        help="Required. Confirms that the reviewed evolution diff should be applied to the target global skill.",
+    )
+    apply_evolution_parser.set_defaults(func=cmd_apply_evolution_candidate)
+
+    rollback_evolution_parser = subparsers.add_parser("rollback-evolution-candidate")
+    rollback_evolution_parser.add_argument("--candidate", required=True)
+    rollback_evolution_parser.add_argument("--global-skills-dir")
+    rollback_evolution_parser.add_argument(
+        "--confirm-rollback",
+        action="store_true",
+        help="Required. Confirms that the applied evolution candidate should be restored from its backup.",
+    )
+    rollback_evolution_parser.set_defaults(func=cmd_rollback_evolution_candidate)
 
     distill_coverage_parser = subparsers.add_parser("distill-coverage-report")
     distill_coverage_parser.add_argument(

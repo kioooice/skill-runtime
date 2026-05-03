@@ -24,8 +24,10 @@ This workspace is `vibe`.
 - Use `workflow-error-correction` when a repeated process mistake or route drift should be recorded without bloating `AGENTS.md`.
 - Use `runtime-gate-workflow` for Skill Runtime gate/finalizer setup, fallback, and event visibility.
 - Use `auto-mode-stage-runner` for `自动模式开始`, autonomous stage execution, stage reports, and auto-mode stopping rules.
+- Use `plan-progress-tracker` for multi-stage plans so progress always shows the current stage, completed stages, next action, and drift risk.
 - Use `nontechnical-stage-report` when a stage report must be understandable to a non-technical user.
 - Use `session-handoff-maintenance` for resume flow and updates to `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md`.
+- Use `context-compaction-audit` after context compaction or summary-based resume; when it recommends checkpointing or reopening, pair it with `session-handoff-maintenance`.
 - Use `deployment-strategy-review` for deployment planning, Docker selection, and static/Next.js/Node service decisions.
 - Use `runtime-verification-selector` for choosing fast, full, profiling, syntax, or static validation commands.
 - Use `repo-impact-analysis` for repository structure lookup, symbol search, call-chain tracing, and GitNexus fallback decisions.
