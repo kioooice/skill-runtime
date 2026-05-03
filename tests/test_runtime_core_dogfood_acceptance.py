@@ -449,6 +449,10 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         self.assertTrue(skill_path.exists())
         content = skill_path.read_text(encoding="utf-8")
         for phrase in [
+            "The primary outcome is fewer repeated mistakes, not a better error log.",
+            "Before taking an action in a known risk area, apply the matching guard without waiting for the user to complain.",
+            "Known Mistake Guards",
+            "If an existing guard applies, change the next action immediately.",
             "Record the mistake outside AGENTS.md",
             "Check existing correction records before creating a new one",
             "Do not require the user to repeat an already recorded mistake",

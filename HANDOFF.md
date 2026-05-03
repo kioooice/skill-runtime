@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新语义纠正：用户澄清 `workflow-error-correction` 不应该只是记录工具，而是要让 Codex 以后少犯同类错误。当前已把全局 `workflow-error-correction` 改成已知错误防复发 guard：主要产物是“改变下一步行为”，不是更好的错误日志。它现在在 AGENTS 编辑、runtime 验证循环、方向未审先实现、重复纠错、auto-mode 漂移、AGENTS 膨胀等风险场景下，要求先应用已知 guard；只有新错误模式才新增记录。
+
 最新错误修正规则：用户进一步澄清，已有错误记录后不应该继续等用户指出同一个错误；只有新问题才需要新记录。当前已升级全局 `workflow-error-correction` 为 prevention-first：执行时先查 `HANDOFF.md`、`TASKS.md`、`DECISIONS.md`、相关专门文档和全局 workflow skills 中的既有纠错；如果匹配，就直接应用预防规则并说明复用了旧纠错；只有新模式、范围明显扩大或缺少可用预防规则时才新增记录。
 
 最新流程纠错：用户指出刚才不应该把具体路线纠正继续加进 `AGENTS.md`。这个判断成立。当前已新增全局权威技能 `C:\Users\Administrator\.codex\skills\workflow-error-correction\SKILL.md`，用于记录重复流程错误、路线漂移、AGENTS 膨胀、validation theater 等问题；项目和全局 `AGENTS.md` 已删除两条具体 runtime-validation-loop 事故规则，只保留“保持 AGENTS 轻量、错误记录走 workflow-error-correction”的短规则和路由。后续用户指出类似错误时，不要再把完整事故写进 AGENTS，而是用该技能记录到 `DECISIONS.md`、`TASKS.md`、`HANDOFF.md` 或合适的专门文档。
@@ -61,6 +63,11 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 ## Last Completed
 
 本轮已完成：
+- 已知错误防复发 guard：
+  - `workflow-error-correction` 不再以记录为主要目标
+  - 明确主要产物是减少重复错误
+  - 增加 AGENTS 编辑、runtime 验证循环、方向未审先实现、重复纠错、auto-mode 漂移和 AGENTS 膨胀的 known guards
+  - 新增快验保护“改变下一步行为优先于记录”的语义
 - 错误记录防复发语义：
   - `workflow-error-correction` 现在先查旧纠错并复用
   - 明确不要求用户重复指出已记录错误
@@ -683,7 +690,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-开发前方向审核已经升级为主流程门禁。下一次任何新产品方向、新工具、新功能路线或“继续开发还是换方向”的问题，都先用全局 `pre-implementation-workflow-review` 输出 verdict；只有 `build_now` 可以进入实现，其余结论都先验证、改路线或停止。不要默认继续 runtime/sample/dashboard 验证，除非它直接服务于方向审核。下一次出现流程错误、路线漂移或 AGENTS 膨胀风险时，先用全局 `workflow-error-correction` 查既有纠错；若已记录，直接应用预防规则，不要等用户重复指出，也不要新增重复记录。后续新增通用工作流时，默认创建或提升为全局 Codex skill，再让项目 `AGENTS.md`、runtime inventory 或薄 adapter 指向它，不在项目内复制完整流程。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。查看当前项目用 `python -m skill_runtime.cli dashboard --open` 或 `python -m skill_runtime.cli runtime-events`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 或 `python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
+开发前方向审核已经升级为主流程门禁。下一次任何新产品方向、新工具、新功能路线或“继续开发还是换方向”的问题，都先用全局 `pre-implementation-workflow-review` 输出 verdict；只有 `build_now` 可以进入实现，其余结论都先验证、改路线或停止。不要默认继续 runtime/sample/dashboard 验证，除非它直接服务于方向审核。下一次进入 AGENTS 编辑、runtime 验证、路线纠正、自动模式延续、方向审核等已知风险场景时，先应用全局 `workflow-error-correction` 里的 known guards，直接改变下一步行为；不要等用户重复指出，也不要把它当成单纯记录工具。后续新增通用工作流时，默认创建或提升为全局 Codex skill，再让项目 `AGENTS.md`、runtime inventory 或薄 adapter 指向它，不在项目内复制完整流程。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import 或 rich UI。查看当前项目用 `python -m skill_runtime.cli dashboard --open` 或 `python -m skill_runtime.cli runtime-events`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 或 `python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
 
 ## Important Files
 

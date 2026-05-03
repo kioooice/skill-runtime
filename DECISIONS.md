@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-03 - Workflow Error Correction Is A Prevention Guard
+
+**Decision**
+
+Refocus `workflow-error-correction` from a recording tool into a known-error prevention guard. Its primary outcome is fewer repeated mistakes. Recording is only a fallback when a genuinely new error pattern appears.
+
+**Reason**
+
+The user clarified that the desired effect is not "Codex has a place to record mistakes." The desired effect is that Codex uses known mistakes to change behavior before repeating them.
+
+**Impact**
+
+- The global skill now says the primary outcome is fewer repeated mistakes, not a better error log
+- It defines known mistake guards for AGENTS edits, runtime validation loops, direction-before-implementation, repeated correction requests, auto-mode drift, and AGENTS bloat
+- It requires changing the next action immediately when a known guard applies
+- The fast regression now protects this prevention-first guard language
+
 ### 2026-05-03 - Recorded Workflow Mistakes Must Be Reused Before New Records
 
 **Decision**

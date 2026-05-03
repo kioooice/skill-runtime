@@ -23,6 +23,16 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-03 - Workflow error correction is a prevention guard
+
+- Task type: workflow correction semantics
+- Classified as: `default-in` / `entered` because the task had explicit global skill, state-file, and test outputs
+- What happened: refocused `workflow-error-correction` from a recording workflow into a known-error prevention guard that changes the next action before repeating a mistake
+- Did the behavior feel correct: yes; the goal is fewer repeated mistakes, not a better error log
+- Did the lane help: only as traceability; the real improvement is proactive guard behavior
+- Finalizer: returned `runtime_lane_status: entered` with `observed_only`; no trajectory was distilled
+- Follow-up: before AGENTS edits, runtime validation, route correction, auto-mode continuation, or new development direction work, apply the matching known mistake guard first
+
 ### 2026-05-03 - Recorded workflow mistakes must be reused
 
 - Task type: workflow correction semantics
