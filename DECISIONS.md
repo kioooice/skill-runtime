@@ -2,6 +2,79 @@
 
 ## Decision Log
 
+### 2026-05-05 - Choose Docs-First Open Source Readiness Route
+
+**Decision**
+
+Use the docs-first open-source readiness release as Stage 4. Do not move into CLI hardening or Codex plugin implementation yet.
+
+**Reason**
+
+The repository already has runtime, CLI, MCP, dashboard, and maintainer demos. The highest current application risk is public trust and onboarding, not missing plugin code. Community files, release-readiness docs, and an application draft directly improve reviewability without overbuilding.
+
+**Impact**
+
+- Added `CONTRIBUTING.md`, `SECURITY.md`, and `CODE_OF_CONDUCT.md`
+- Added `.env` ignore rules
+- Added `docs/open-source-release-readiness-checklist.md`
+- Added `docs/codex-open-source-application-draft.md`
+- Updated README docs links and readiness documents
+- Plugin path remains a later option only if a concrete maintainer workflow requires it
+
+### 2026-05-05 - Adopt MIT License
+
+**Decision**
+
+License the project under the MIT License and record it in package and README metadata.
+
+**Reason**
+
+The project is an early open-source developer tool and Codex workflow/runtime layer. MIT keeps adoption friction low for individual maintainers, tool authors, and organizations evaluating the project. This fits the current goal of improving open-source readiness before any Codex for Open Source or open source fund application.
+
+**Impact**
+
+- Added `LICENSE` with MIT License text
+- Added license, author, URLs, keywords, and classifiers to `pyproject.toml`
+- Added license notes to `README.md`, `README.zh-CN.md`, and `README.en.md`
+- Editable install now accepts the updated package metadata
+
+### 2026-05-05 - Aim Project Toward Codex For Open Source Readiness
+
+**Decision**
+
+Set a new strategic target: prepare this project to become a credible open-source Codex workflow/plugin layer that could later apply for OpenAI Codex for Open Source or the Codex open source fund.
+
+**Reason**
+
+The user wants to orient the project toward Codex open-source support, including the possibility of 6 months of ChatGPT Pro through Codex for Open Source. The official application asks for a public GitHub profile, public repository, maintainer role, why the repository qualifies, and how API credits would be used. That means the real work is proving public maintainer value, not simply packaging code as a plugin.
+
+**Impact**
+
+- Verdict: `manual_validation_first`
+- Do not promise eligibility or free membership
+- Do not build plugin features only for application optics
+- Next step is an open-source readiness audit
+- Required evidence includes public repo readiness, license, README, install/demo path, real maintainer workflows, and concise application copy
+- Treat plugin packaging as one possible route only after the value and distribution gaps are clear
+
+### 2026-05-04 - Add Parallel Subagent Orchestration Skill
+
+**Decision**
+
+Create `parallel-subagent-orchestration` as a global Codex skill for complex parallelizable work. In this workflow, the current Codex thread acts as the main agent: it frames the goal, keeps the critical path, delegates bounded parallel subtasks, reviews subagent results, integrates accepted work, verifies, and reports the final outcome.
+
+**Reason**
+
+Complex tasks often contain independent exploration, implementation, verification, or research slices. A default main-agent/subagent workflow can reduce latency without losing accountability, as long as the main agent remains responsible for scope control, review quality, conflict resolution, and final verification.
+
+**Impact**
+
+- The authoritative skill lives at `C:\Users\Administrator\.codex\skills\parallel-subagent-orchestration`
+- Project and global `AGENTS.md` route to the skill with one short line instead of duplicating the full workflow
+- The workflow applies only when subagent use is authorized by user request, project rules, or active tool policy
+- Subagents must receive clear ownership boundaries and produce reviewable outputs
+- The main agent remains responsible for final integration and verification
+
 ### 2026-05-03 - Skill Evolution Rollback Requires Confirmation And Stale Checks
 
 **Decision**

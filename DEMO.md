@@ -1,5 +1,11 @@
 # Demo
 
+Open-source maintainer workflow demos:
+
+- [Maintainer Review Cleanup Demo](./docs/maintainer-review-cleanup-demo.md)
+- [Maintainer Release Readiness Demo](./docs/maintainer-release-readiness-demo.md)
+- [Maintainer Handoff Continuation Demo](./docs/maintainer-handoff-continuation-demo.md)
+
 This demo validates the minimum self-evolving skill runtime loop:
 
 1. Record a trajectory

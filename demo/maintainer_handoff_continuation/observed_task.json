@@ -1,0 +1,55 @@
+{
+  "task": "Convert durable project state files into a concise next-session continuation brief.",
+  "task_id": "maintainer_handoff_continuation_demo",
+  "session_id": "demo_handoff_continuation",
+  "skill_args": {
+    "input_path": "demo/maintainer_handoff_continuation/handoff_inputs.json",
+    "output_path": "demo/maintainer_handoff_continuation/expected_continuation_brief.md"
+  },
+  "actions": [
+    {
+      "tool_name": "read_json",
+      "tool_input": {
+        "path": "demo/maintainer_handoff_continuation/handoff_inputs.json"
+      },
+      "observation": "Read summarized HANDOFF, TASKS, and DECISIONS state for the open-source readiness plan.",
+      "status": "success"
+    },
+    {
+      "tool_name": "summarize_project_state",
+      "tool_input": {
+        "include": [
+          "current_goal",
+          "plan_position",
+          "completed_work",
+          "next_action",
+          "open_gaps",
+          "decision_needed"
+        ]
+      },
+      "observation": "Created a continuation brief with current goal, Stage 3 position, completed stages, next action, public-readiness gaps, and no current decision blocker.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "demo/maintainer_handoff_continuation/expected_continuation_brief.md"
+      },
+      "observation": "Wrote a next-session continuation brief that does not depend on chat memory.",
+      "status": "success",
+      "artifacts": [
+        "demo/maintainer_handoff_continuation/expected_continuation_brief.md"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo/maintainer_handoff_continuation/expected_continuation_brief.md"
+    ]
+  },
+  "final_status": "success",
+  "artifacts": [
+    "demo/maintainer_handoff_continuation/expected_continuation_brief.md"
+  ]
+}

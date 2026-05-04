@@ -23,6 +23,78 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Docs-first readiness release
+
+- Task type: open-source readiness documentation release
+- Classified as: `default-out` / `skipped` by `run_codex_task_experimental`
+- What happened: the maintainer accepted the docs-first route, so the repository added community files, environment ignore rules, an open-source release checklist, and a Codex Open Source application draft.
+- Did the behavior feel correct: yes; this is repository documentation and application preparation work, not a reusable local workflow that should be silently executed by runtime.
+- Did the lane help: yes, because the visible `skipped` result confirmed that the runtime gate was checked without taking over the documentation task.
+- Follow-up: use the application draft to collect maintainer-specific submission fields before any final application.
+
+### 2026-05-05 - Packaging route decision point
+
+- Task type: open-source readiness route decision
+- Classified as: normal Codex documentation path after Stage 3 completion
+- What happened: added `docs/codex-open-source-packaging-decision.md` comparing docs-first release, CLI package hardening, and Codex plugin path, with a recommendation to choose docs-first first.
+- Did the behavior feel correct: yes; this is a real route decision and should stop for the maintainer.
+- Did the lane help: yes, because earlier gate results kept implementation from jumping directly to plugin work.
+- Follow-up: wait for the maintainer to choose the Stage 4 route.
+
+### 2026-05-05 - Maintainer demo set completed
+
+- Task type: open-source maintainer workflow demos
+- Classified as: `default-out` / `skipped` by the runtime gate
+- What happened: added release readiness and handoff continuation demos, linked the maintainer demo set from README and DEMO, and verified both new demos with JSON validation plus `capture-trajectory` in temporary runtime roots.
+- Did the behavior feel correct: yes; these are local documentation demos and should not auto-promote skills.
+- Did the lane help: yes, because it kept the workflow-capture evidence separate from promotion or plugin implementation.
+- Follow-up: move to Stage 4 packaging decision and stop for user choice if the route is ambiguous.
+
+### 2026-05-05 - Maintainer review cleanup demo
+
+- Task type: open-source maintainer workflow demo
+- Classified as: `default-out` / `skipped` by the runtime gate
+- What happened: added the first Stage 3 demo for review cleanup, including local review comment input, expected cleanup plan output, an observed task record, documentation, and a verified `capture-trajectory` path using a temporary runtime root.
+- Did the behavior feel correct: yes; this is a documentation/demo task and should not auto-promote skills.
+- Did the lane help: yes, because it reinforced the boundary between capturing a workflow and promoting it.
+- Follow-up: continue Stage 3 with the release readiness demo.
+
+### 2026-05-05 - Public positioning and README narrative
+
+- Task type: open-source readiness documentation update
+- Classified as: `default-out` / `skipped` by the runtime gate
+- What happened: rewrote README top sections around open-source maintainer value and added `docs/codex-open-source-positioning.md` with positioning, differentiation, community file checklist, demo candidates, and application copy drafts.
+- Did the behavior feel correct: yes; this is project narrative work and should stay on the normal Codex path.
+- Did the lane help: yes, because it preserved the route boundary: improve public readiness first, do not jump into plugin implementation.
+- Follow-up: build the maintainer workflow demos and verification path next.
+
+### 2026-05-05 - Open-source readiness audit
+
+- Task type: documentation audit and application-readiness planning
+- Classified as: `default-out` / `skipped` by the runtime gate
+- What happened: created `docs/codex-open-source-readiness-audit.md`, recording current strengths, application blockers, sensitive-information scan result, positioning draft, and the recommended Stage 2 narrative work.
+- Did the behavior feel correct: yes; the task required repository judgment and documentation, not runtime skill execution.
+- Did the lane help: yes, because it kept the task on the normal Codex path while preserving a visible runtime decision.
+- Follow-up: proceed to Stage 2 project positioning and README/application narrative before building new plugin features.
+
+### 2026-05-05 - Codex for Open Source readiness goal
+
+- Task type: strategic project goal and state maintenance
+- Classified as: `default-out` / `skipped` by the runtime gate
+- What happened: recorded the user's new target of preparing the project for Codex for Open Source or open source fund eligibility, with a `manual_validation_first` route focused on public project value and application evidence.
+- Did the behavior feel correct: yes; this is a strategic direction and state update, not a deterministic runtime execution.
+- Did the lane help: yes, because it made clear that runtime should not take over this direction-setting task.
+- Follow-up: run an open-source readiness audit before building more plugin or dashboard features.
+
+### 2026-05-04 - Parallel subagent orchestration workflow
+
+- Task type: reusable Codex workflow definition
+- Classified as: `default-out` / `skipped` by the runtime gate
+- What happened: created a global Codex skill that defines Codex as the main agent for authorized complex parallel work, with subagents limited to bounded, reviewable tasks.
+- Did the behavior feel correct: yes; this is a global process-definition task, not a deterministic local runtime skill execution.
+- Did the lane help: yes, because it made the skip explicit before editing workflow files.
+- Follow-up: use the new workflow during a real complex task that explicitly authorizes subagents, then refine only if review or integration gaps appear.
+
 ### 2026-05-03 - Rollback evolution candidate
 
 - Task type: Skill Runtime learning-loop safety workflow

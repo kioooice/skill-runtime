@@ -8,9 +8,27 @@ version = "0.1.0"
 description = "Local governed skill runtime for host AI systems."
 readme = "README.md"
 requires-python = ">=3.11"
+license = "MIT"
+authors = [
+  { name = "kioooice" },
+]
+keywords = ["ai", "codex", "skills", "runtime", "agents", "mcp"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
   "mcp>=1.16.0,<2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/kioooice/skill-runtime"
+Repository = "https://github.com/kioooice/skill-runtime"
+Issues = "https://github.com/kioooice/skill-runtime/issues"
+Documentation = "https://github.com/kioooice/skill-runtime#readme"
 
 [project.scripts]
 skill-runtime = "skill_runtime.cli:main"

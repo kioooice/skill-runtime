@@ -2,6 +2,24 @@
 
 ## Current State
 
+最新战略目标：用户已明确希望把本项目朝“可申请 OpenAI Codex for Open Source / 开源支持”的方向推进。价值门判断：`manual_validation_first`，目标可以成立，但不能为了“免费会员”直接堆插件功能；更合理路线是把项目打磨成公开、可安装、可演示、对开源维护者有真实价值的 Codex workflow/plugin layer。官方页面当前强调 Codex for Open Source 面向关键开源软件维护者，申请需要公开 GitHub 用户和公开仓库，说明 primary/core maintainer 角色、仓库为什么重要，以及如何使用 API credits；入选维护者可获得 6 个月 ChatGPT Pro（含 Codex）、Codex Security 条件访问和 API credits。Codex open source fund 另一个入口偏 API credits，最高 $25,000。后续不要承诺一定能拿到免费会员，应先补齐公开仓库、README、license、安装/demo、真实 maintainer workflow 用例和 500 字申请材料。
+
+最新阶段完成：Stage 2 项目定位和 README/application narrative 已完成。README / README.zh-CN / README.en 顶部已改成公开维护者价值叙事，不再先从内部 MCP/runtime 形态讲起。新增 `docs/codex-open-source-positioning.md`：一句话定位是 “Skill Runtime helps Codex-style agents capture, audit, reuse, and improve repeatable maintainer workflows.” 文档还记录了公开叙事、差异化、社区文件清单、review cleanup / release readiness / handoff continuation 三个 maintainer workflow demo 候选及成功标准、Codex for Open Source 申请文案草稿。下一阶段进入 Stage 3：做 demo maintainer workflows 和验证路径。
+
+最新阶段完成：Stage 3 maintainer workflow demo set 已完成。当前有三个公开维护者 demo：`docs/maintainer-review-cleanup-demo.md`、`docs/maintainer-release-readiness-demo.md`、`docs/maintainer-handoff-continuation-demo.md`。它们分别覆盖 PR review cleanup、release readiness、handoff continuation。每个 demo 都有 `demo/maintainer_*` 下的本地 input fixture、expected output、observed_task record，并已用临时 runtime root 跑通 `capture-trajectory`；临时目录均已清理。README 和 DEMO.md 已链接这三个 demo。下一步进入 Stage 4：决定 packaging route，是 docs-first release、CLI package hardening，还是 Codex plugin path。
+
+最新阶段完成：Stage 4 docs-first open-source readiness release 已完成。用户已接受 docs-first 路线；当前已新增 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`、`.env` ignore 规则、`docs/open-source-release-readiness-checklist.md` 和 `docs/codex-open-source-application-draft.md`，并更新 README、readiness audit、packaging decision、TASKS/DECISIONS/观察日志。下一步进入 Stage 5：用 application draft 收集最终提交所需用户信息；不要为了申请效果直接转入 Codex plugin path。
+
+最新验证结果：Stage 4 文档收口后已运行 `git diff --check` 和 `python -m unittest tests.test_runtime_fast -v`；结果分别通过，快验 126 tests OK。Codex runtime gate 对本轮 docs-first 文档任务返回 `runtime_lane_status: skipped`，原因是文档申请准备不属于默认 runtime 接管的 workflow-like 任务；该样本已写入观察日志。
+
+最新申请字段：用户确认 GitHub profile 是 `https://github.com/kioooice`，GitHub username 是 `kioooice`，repo URL 是 `https://github.com/kioooice/skill-runtime`，申请范围选择 Codex Security 和 API credits 两项都勾选，当前没有可声明的外部 traction。OpenAI organization ID 用户已在 OpenAI Platform organization settings 找到，但不要写入仓库文件或公开文档；只在申请表私下填写。
+
+最新开源准备进展：用户确认采用 MIT。当前已新增 `LICENSE`，`pyproject.toml` 已补 license、author、project URLs、keywords 和 classifiers，README / README.zh-CN / README.en 已增加许可证说明。readiness audit 文档也已记录这项进展。剩余开源阻塞主要是 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`、README 顶部公开叙事和 maintainer workflow demo。
+
+最新阶段完成：Open Source readiness audit 已完成并写入 `docs/codex-open-source-readiness-audit.md`。结论：当前不适合直接申请。优势是仓库已公开、已有安装包元数据、CI、README、测试文档、隐私/provenance 文档和本地 demo；`LICENSE` 和基础 package metadata 已在审计后补齐；剩余主要阻塞是缺 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`，README 顶部还不是面向新维护者的 60 秒价值叙事，缺 2-3 个真实 maintainer workflow demo，公开 GitHub traction 当前很弱。下一阶段应做项目定位和 README/application narrative，不要先堆新插件功能。
+
+最新全局技能新增：已新增全局 Codex skill `parallel-subagent-orchestration`，位置是 `C:\Users\Administrator\.codex\skills\parallel-subagent-orchestration\SKILL.md`。它用于复杂且可并行的任务：Codex 当前主线程默认作为主代理，负责目标、拆分、关键路径、审核、集成、验证和最终汇报；子代理只接收边界清晰、可并行、可审核的子任务。该技能明确不用于小任务、紧耦合阻塞调试、无法审核的外部副作用或未被用户/项目规则授权的子代理使用。项目和全局 `AGENTS.md` 只新增一行短路由，避免把完整流程复制进 AGENTS。
+
 最新技能进化闭环：已完成 `skill evolution candidate` MVP、`review_evolution_candidate` 审核流程、确认后应用路径和确认后回滚路径。现在任务完成后的学习决策不再只有 `observed_only` 和 `new_skill_candidate`，当执行结果明确带出 `skill_gap` / `skill_improvement` / `evolution_candidate` 信号时，会生成 `improve_existing_skill_candidate`，把“改进已有技能”优先于“新建重复技能”。候选会落盘到 `.skill_runtime/evolution_candidates/*.json`，绑定目标技能、来源任务、证据、建议修改、风险等级和来源轨迹。`review_evolution_candidate` 已接入 RuntimeService、CLI 和 MCP：目标全局技能不存在时会 `rejected`，证据或建议不足时会 `needs_more_evidence`，证据足够时会写出 `.skill_runtime/evolution_reviews/*.review.json` 和 `.diff`，但不会修改全局 `SKILL.md`。`apply_evolution_candidate` 必须显式 `confirm_apply=true` / `--confirm-apply`，会校验 review 后目标 hash、写 `.skill_runtime/evolution_backups` 备份、写 `.skill_runtime/evolution_applications/*.apply.json` 应用记录，并把候选状态更新为 `applied`。`rollback_evolution_candidate` 现在也已接入 RuntimeService、CLI 和 MCP：必须显式 `confirm_rollback=true` / `--confirm-rollback`，只支持从 apply 记录里的 `restore_backup_file` 恢复；如果目标文件在 apply 后又被人工修改，会拒绝覆盖，并写 `.skill_runtime/evolution_rollbacks/*.rollback.json` 后把候选更新为 `rolled_back`。dashboard `技能进化` 页面状态标签支持待审核、已审核、需补证据、已应用和已回滚。下一步更适合进入版本收口，检查当前 diff 后提交这一批 workflow/global-skill 和 skill evolution 改造；如果继续功能开发，优先做 evolution 生命周期详情面板，而不是再扩 runtime 触发样本验证。
 
 最新全局技能新增：已新增全局 Codex skill `plan-progress-tracker`，位置是 `C:\Users\Administrator\.codex\skills\plan-progress-tracker\SKILL.md`。它用于多阶段计划执行中的进度坐标维护：计划创建后、每个阶段开始/完成后、用户说“继续”时、自动模式阶段报告前、压缩恢复或会话接力时，都应明确当前是第几阶段、已完成什么、正在做什么、下一步是什么、是否偏离原计划。它已与 `auto-mode-stage-runner`、`nontechnical-stage-report`、`session-handoff-maintenance` 和 `context-compaction-audit` 联动，避免计划列完后用户只能不断回复“继续”却不知道推进到哪里。
@@ -821,6 +839,8 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
+当前新战略目标是“开源项目申请准备”。Stage 1 readiness audit、Stage 2 公开定位/README/application narrative、Stage 3 maintainer workflow demos、Stage 4 docs-first readiness release 都已完成。下一步是 Stage 5：把 `docs/codex-open-source-application-draft.md` 变成可提交材料。需要用户提供或确认的字段包括公开 GitHub profile、OpenAI organization ID、是否申请 Codex Security / API credits / both，以及任何真实用户、stars、forks、issues、文章、演示或外部验证。不要在这些信息缺失时承诺已可最终提交。
+
 技能进化闭环当前停在确认应用层：下一步如果继续这条主线，应做回滚/撤销应用路径，允许根据 `.skill_runtime/evolution_applications/*.apply.json` 的 `rollback_hint` 恢复备份，并把候选状态从 `applied` 调整为 `rolled_back` 或类似状态；不要做无确认自动写全局技能。
 
 开发前方向审核已经升级为主流程门禁。下一次任何新产品方向、新工具、新功能路线或“继续开发还是换方向”的问题，都先用全局 `pre-implementation-workflow-review` 输出 verdict；只有 `build_now` 可以进入实现，其余结论都先验证、改路线或停止。不要默认继续 runtime/sample/dashboard 验证，除非它直接服务于方向审核。下一次进入 AGENTS 编辑、runtime 验证、路线纠正、自动模式延续、方向审核等已知风险场景时，先应用全局 `workflow-error-correction` 里的 known guards，直接改变下一步行为；不要等用户重复指出，也不要把它当成单纯记录工具。后续新增通用工作流时，默认创建或提升为全局 Codex skill，再让项目 `AGENTS.md`、runtime inventory 或薄 adapter 指向它，不在项目内复制完整流程。dashboard 默认界面应继续保持 `skills-manage` 式管理应用外壳、workflow-first 主视图和 workflow-only 集合页；基础本地 helpers 不再作为默认可视化界面内容出现，只保留底层能力和显式检索路径。`总览` 页不要恢复路径副标题或本页搜索栏；`中央技能库` 导航计数按 active workflow skills 统计；跨工作区日志合并到唯一的 `触发日志` 入口，不再单独放 `全局日志`；触发日志卡片必须用中文解释任务、处理方式和结果，不要直接展示英文 runtime 内部原因。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import。查看当前项目用 `python -m skill_runtime.cli dashboard --open` 或 `python -m skill_runtime.cli runtime-events`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 或 `python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
@@ -833,6 +853,18 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 - `HANDOFF.md`
 - `docs/gitnexus-local-runbook.md`
 - `docs/global-skill-source-of-truth-policy.md`
+- `docs/codex-open-source-readiness-audit.md`
+- `docs/codex-open-source-positioning.md`
+- `docs/open-source-release-readiness-checklist.md`
+- `docs/codex-open-source-application-draft.md`
+- `CONTRIBUTING.md`
+- `SECURITY.md`
+- `CODE_OF_CONDUCT.md`
+- `docs/maintainer-review-cleanup-demo.md`
+- `docs/maintainer-release-readiness-demo.md`
+- `docs/maintainer-handoff-continuation-demo.md`
+- `docs/codex-open-source-packaging-decision.md`
+- `C:\Users\Administrator\.codex\skills\parallel-subagent-orchestration\SKILL.md`
 - `docs/core-readiness-audit.md`
 - `docs/agent-first-runtime-architecture.md`
 - `docs/agent-side-reuse-policy.md`

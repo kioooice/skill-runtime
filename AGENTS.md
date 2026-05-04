@@ -31,6 +31,7 @@ This workspace is `vibe`.
 - Use `deployment-strategy-review` for deployment planning, Docker selection, and static/Next.js/Node service decisions.
 - Use `runtime-verification-selector` for choosing fast, full, profiling, syntax, or static validation commands.
 - Use `repo-impact-analysis` for repository structure lookup, symbol search, call-chain tracing, and GitNexus fallback decisions.
+- Use `parallel-subagent-orchestration` when complex work can be split across authorized subagents while Codex remains the main reviewer and integrator.
 - When calling Skill Runtime active skills directly, use the underscore runtime skill names from `skill_store/active`.
 - New reusable workflow skills belong in the global Codex skills directory, not in this project as a second full copy. See `docs/global-skill-source-of-truth-policy.md`.
 

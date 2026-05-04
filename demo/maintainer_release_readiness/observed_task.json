@@ -1,0 +1,57 @@
+{
+  "task": "Convert repository release readiness inputs into a maintainer release checklist.",
+  "task_id": "maintainer_release_readiness_demo",
+  "session_id": "demo_release_readiness",
+  "skill_args": {
+    "input_path": "demo/maintainer_release_readiness/release_inputs.json",
+    "output_path": "demo/maintainer_release_readiness/expected_release_checklist.md"
+  },
+  "actions": [
+    {
+      "tool_name": "read_json",
+      "tool_input": {
+        "path": "demo/maintainer_release_readiness/release_inputs.json"
+      },
+      "observation": "Read release metadata and 9 repository readiness checks for version 0.2.0.",
+      "status": "success"
+    },
+    {
+      "tool_name": "classify_release_checks",
+      "tool_input": {
+        "ready_statuses": [
+          true,
+          "passing",
+          "basic_scan_passed"
+        ],
+        "required_missing_files": [
+          "CONTRIBUTING.md",
+          "SECURITY.md",
+          "CODE_OF_CONDUCT.md"
+        ]
+      },
+      "observation": "Classified 5 ready items, 4 must-fix items, and 2 should-fix-soon items.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "demo/maintainer_release_readiness/expected_release_checklist.md"
+      },
+      "observation": "Wrote a maintainer release readiness checklist with decision guidance and verification commands.",
+      "status": "success",
+      "artifacts": [
+        "demo/maintainer_release_readiness/expected_release_checklist.md"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo/maintainer_release_readiness/expected_release_checklist.md"
+    ]
+  },
+  "final_status": "success",
+  "artifacts": [
+    "demo/maintainer_release_readiness/expected_release_checklist.md"
+  ]
+}

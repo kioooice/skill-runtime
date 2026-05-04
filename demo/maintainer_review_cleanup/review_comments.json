@@ -1,0 +1,34 @@
+{
+  "pull_request": {
+    "number": 42,
+    "title": "Add runtime dashboard export",
+    "branch": "feature/dashboard-export"
+  },
+  "review_comments": [
+    {
+      "id": "RC-101",
+      "file": "skill_runtime/dashboard/render.py",
+      "line": 214,
+      "author": "reviewer-a",
+      "severity": "must_fix",
+      "comment": "The dashboard export writes a file without checking that the target path stays inside the workspace."
+    },
+    {
+      "id": "RC-102",
+      "file": "tests/test_runtime_dashboard.py",
+      "line": 87,
+      "author": "reviewer-b",
+      "severity": "must_fix",
+      "comment": "Please add a regression test for path traversal in the export output path."
+    },
+    {
+      "id": "RC-103",
+      "file": "README.md",
+      "line": 560,
+      "author": "reviewer-c",
+      "severity": "follow_up",
+      "comment": "The dashboard command should mention that generated HTML is local-only and should not be committed."
+    }
+  ],
+  "maintainer_goal": "Convert review comments into a grouped cleanup plan that separates required fixes from follow-up documentation work."
+}

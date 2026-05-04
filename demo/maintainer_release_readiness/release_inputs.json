@@ -1,0 +1,24 @@
+{
+  "release": {
+    "version": "0.2.0",
+    "target_date": "2026-05-12",
+    "branch": "main"
+  },
+  "repository_checks": {
+    "license_file": true,
+    "readme_updated": true,
+    "contributing_file": false,
+    "security_file": false,
+    "code_of_conduct_file": false,
+    "fast_tests": "passing",
+    "full_tests": "not_run",
+    "secret_scan": "basic_scan_passed",
+    "package_metadata": "partial"
+  },
+  "release_notes": [
+    "Added MIT license metadata.",
+    "Reworked README positioning around maintainer workflows.",
+    "Added review cleanup demo."
+  ],
+  "maintainer_goal": "Decide whether this repository is ready for a public open-source readiness release."
+}

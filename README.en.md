@@ -2,17 +2,37 @@
 
 [中文说明](./README.md)
 
-`Skill Runtime` is a local, host-AI-compatible runtime for turning successful task executions into governed reusable skills.
+`Skill Runtime` is a local workflow governance layer for Codex-style coding agents. It helps open-source maintainers turn repeated review, triage, release, handoff, and maintenance automation workflows into auditable, reusable, improvable skills.
 
 It is designed as a capability layer under tools like Codex, not as a second chat agent.
 
-The important product shift is this:
+## Who It Is For
 
-- it is no longer best described as “an MCP tool collection”
-- it is better described as “a background capability layer under Codex”
-- MCP, CLI, and scripts still matter, but they now act mainly as interface and transport layers
+This project is for:
+
+- open-source maintainers who want repeated maintenance work to outlive chat history
+- agents that completed a workflow once and should not re-plan it from scratch next time
+- teams that need audit, provenance, and promotion records before reusing automation
+- Codex / MCP / CLI hosts that need a local-first governed skill lifecycle layer
+
+One-line positioning:
+
+```text
+Skill Runtime helps Codex-style agents capture, audit, reuse, and improve repeatable maintainer workflows.
+```
 
 ## What It Does
+
+Most AI systems can complete tasks, but they often fail to build a governed layer of reusable workflows.
+
+Typical failure modes are:
+
+- repetitive tasks get solved from scratch every time
+- successful workflows remain trapped in chat history
+- agent-generated scripts or skills are stored without audit or lifecycle rules
+- skill search and reuse become black boxes with weak explainability
+
+Skill Runtime focuses on governing skills, then gradually hiding that lifecycle under normal Codex task execution.
 
 The runtime supports a full local loop:
 
@@ -32,23 +52,6 @@ That means a host AI can:
 - promote only passed skills into the active library
 - reuse previously learned skills on future tasks
 
-## Why This Project Exists
-
-Most AI systems can complete tasks, but they often fail to build a governed layer of reusable workflows.
-
-Typical failure modes are:
-
-- repetitive tasks get solved from scratch every time
-- successful workflows remain trapped in chat history
-- generated skills are stored without audit or lifecycle rules
-- the “skill system” becomes a black box with weak explainability
-
-This project focuses on a different goal:
-
-- not just accumulating skills
-- but governing skills
-- and gradually hiding that lifecycle under normal Codex task execution
-
 ## Core Properties
 
 - `Host-first`: the host AI keeps planning, task understanding, and user interaction
@@ -57,6 +60,20 @@ This project focuses on a different goal:
 - `Extensible`: the same runtime is exposed through CLI and MCP, but neither is the final product shape
 - `Local-first`: storage is file-based and easy to inspect
 - `Provenance-visible`: imported, distilled, exported, and legacy skills should keep explicit source history
+
+## Maintainer Workflow Demos
+
+- [Review cleanup](./docs/maintainer-review-cleanup-demo.md)
+- [Release readiness](./docs/maintainer-release-readiness-demo.md)
+- [Handoff continuation](./docs/maintainer-handoff-continuation-demo.md)
+
+## Open Source Participation
+
+- [Contributing Guide](./CONTRIBUTING.md)
+- [Security Policy](./SECURITY.md)
+- [Code Of Conduct](./CODE_OF_CONDUCT.md)
+- [Open Source Release Readiness Checklist](./docs/open-source-release-readiness-checklist.md)
+- [Codex Open Source Application Draft](./docs/codex-open-source-application-draft.md)
 
 ## Product Shape
 
@@ -635,6 +652,8 @@ python scripts/skill_cli.py execute --skill merge_text_files_generated --args-fi
 
 ## Documentation
 
+- [Open Source Release Readiness Checklist](./docs/open-source-release-readiness-checklist.md)
+- [Codex Open Source Application Draft](./docs/codex-open-source-application-draft.md)
 - [Project Report](./docs/skill-runtime-project-report.md)
 - [MCP Integration](./docs/mcp-integration.md)
 - [Codex Integration](./docs/codex-integration.md)
@@ -649,6 +668,10 @@ python scripts/skill_cli.py execute --skill merge_text_files_generated --args-fi
 - fallback distillation still uses a mock provider by default
 - retrieval is still lightweight and not yet embedding-based
 - the current runtime is strongest on local file workflows
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
 
 ## Status
 

@@ -1,0 +1,22 @@
+{
+  "state_files": {
+    "HANDOFF.md": {
+      "current_stage": "Stage 3 - Demo maintainer workflows",
+      "latest_completed": "Review cleanup demo",
+      "next_recommended": "Release readiness demo"
+    },
+    "TASKS.md": {
+      "open_items": [
+        "Release readiness demo",
+        "Handoff continuation demo",
+        "CONTRIBUTING.md",
+        "SECURITY.md",
+        "CODE_OF_CONDUCT.md"
+      ]
+    },
+    "DECISIONS.md": {
+      "latest_decision": "Adopt MIT License"
+    }
+  },
+  "maintainer_goal": "Create a concise continuation brief for the next Codex session without relying on chat memory."
+}

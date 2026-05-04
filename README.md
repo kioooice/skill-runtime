@@ -2,17 +2,37 @@
 
 [English](./README.en.md)
 
-`Skill Runtime` 是一套面向宿主 AI 的本地技能运行时，目标是把成功完成过的任务流程，沉淀成可治理、可审计、可复用的技能。
+`Skill Runtime` 是面向 Codex 风格编程代理的本地工作流治理层，帮助开源维护者把重复的 review、triage、release、handoff 和维护自动化流程沉淀成可审计、可复用、可改进的技能。
 
 它不是第二个聊天 AI，而是挂在 Codex 这类宿主 AI 下方的一层能力内核。
 
-这次最重要的形态变化是：
+## 面向谁
 
-- 它不再最适合被描述成“一组 MCP 工具”
-- 现在更适合被描述成“Codex 下方的一层背景能力层”
-- MCP、CLI 和脚本仍然存在，但更像接口层和传输层，而不是主产品形态本身
+这个项目优先服务这些场景：
+
+- 开源维护者希望把重复的维护任务从聊天记录里沉淀出来
+- agent 完成过一次复杂流程后，下一次不想从头规划
+- 团队需要在复用自动化前先看到审计、来源和提升记录
+- Codex / MCP / CLI 等宿主需要一个本地优先、可治理的 skill 生命周期层
+
+一句话定位：
+
+```text
+Skill Runtime helps Codex-style agents capture, audit, reuse, and improve repeatable maintainer workflows.
+```
 
 ## 它解决什么问题
+
+很多 AI 系统能完成任务，但并不能真正建立一套“被治理的技能层”。
+
+常见问题包括：
+
+- 重复任务每次都从头规划
+- 成功工作流只留在上下文里，无法沉淀
+- agent 生成的脚本或 skill 没有审计和生命周期管理
+- skill 检索和复用缺乏解释，容易变成黑箱
+
+Skill Runtime 的重点不是“积累技能”，而是“治理技能”，再把这套治理能力逐步藏到正常的 Codex 执行流程下面。
 
 系统围绕一条完整闭环展开：
 
@@ -31,19 +51,6 @@
 - 只有通过审计的 skill 才能 promote 到 active 库
 - 在后续类似任务中直接复用
 
-## 为什么要做这个项目
-
-很多 AI 系统能完成任务，但并不能真正建立一套“被治理的技能层”。
-
-常见问题包括：
-
-- 重复任务每次都从头规划
-- 成功工作流只留在上下文里，无法沉淀
-- skill 只是存下来，没有审计和生命周期管理
-- skill 检索和复用缺乏解释，容易变成黑箱
-
-这个项目的重点不是“积累技能”，而是“治理技能”，以及把这套治理能力慢慢藏到正常的 Codex 执行流程下面。
-
 ## 核心特性
 
 - `宿主优先`：宿主 AI 负责理解任务、规划和交互
@@ -52,6 +59,20 @@
 - `可扩展`：同一套 runtime 同时暴露 CLI 和 MCP，但它们都不是最终产品形态本身
 - `本地优先`：文件型存储，容易检查和调试
 - `来源可见`：导入、蒸馏、导出和 legacy skill 的 provenance 边界需要显式记录
+
+## Maintainer workflow demos
+
+- [Review cleanup](./docs/maintainer-review-cleanup-demo.md)
+- [Release readiness](./docs/maintainer-release-readiness-demo.md)
+- [Handoff continuation](./docs/maintainer-handoff-continuation-demo.md)
+
+## 开源参与
+
+- [贡献指南](./CONTRIBUTING.md)
+- [安全政策](./SECURITY.md)
+- [行为准则](./CODE_OF_CONDUCT.md)
+- [开源发布就绪清单](./docs/open-source-release-readiness-checklist.md)
+- [Codex Open Source 申请草稿](./docs/codex-open-source-application-draft.md)
 
 ## 产品形态
 
@@ -668,6 +689,8 @@ python scripts/skill_cli.py execute --skill merge_text_files_generated --args-fi
 
 ## 文档入口
 
+- [开源发布就绪清单](./docs/open-source-release-readiness-checklist.md)
+- [Codex Open Source 申请草稿](./docs/codex-open-source-application-draft.md)
 - [项目详细报告](./docs/skill-runtime-project-report.md)
 - [MCP 接入说明](./docs/mcp-integration.md)
 - [Codex 接入说明](./docs/codex-integration.md)
@@ -685,6 +708,10 @@ python scripts/skill_cli.py execute --skill merge_text_files_generated --args-fi
 - 检索目前是轻量混合版本，但还不是 embedding / 向量检索
 - `archive-cold` 已经可用，但还没有更复杂的重复检测和自动治理
 - 当前最强的是本地文件工作流
+
+## 许可证
+
+本项目采用 [MIT License](./LICENSE)。
 
 ## 当前阶段结论
 

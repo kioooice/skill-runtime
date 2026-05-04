@@ -6,6 +6,11 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+
 # Local exports and generated presentation artifacts
 output/
 
