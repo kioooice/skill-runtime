@@ -18,12 +18,13 @@ def collect_dashboard_data(root: str | Path, *, event_limit: int = 50) -> dict[s
     runtime_root = Path(root).resolve()
     diagnostics: list[str] = []
     skills = _collect_skills(runtime_root, diagnostics)
-    events = list(reversed(read_runtime_lane_events(runtime_root, limit=event_limit)))
+    all_events = list(reversed(read_runtime_lane_events(runtime_root)))
+    events = _balanced_recent_events(all_events, per_status_limit=event_limit)
     governance = _collect_governance(runtime_root, diagnostics)
     platform_inventory = collect_platform_inventory(runtime_root)
     capability_collections = load_capability_collections(runtime_root, skills, diagnostics)
     evolution_candidates = EvolutionCandidateStore(runtime_root).list_candidates(limit=50)
-    overview = _build_overview(skills, events, governance, evolution_candidates)
+    overview = _build_overview(skills, all_events, governance, evolution_candidates)
     return {
         "root": str(runtime_root),
         "overview": overview,
@@ -51,7 +52,7 @@ def collect_global_dashboard_data(
     events: list[dict[str, Any]] = []
 
     for project_root in project_roots:
-        project_events = list(reversed(read_runtime_lane_events(project_root, limit=event_limit)))
+        project_events = list(reversed(read_runtime_lane_events(project_root)))
         if not project_events:
             continue
         annotated_events = [_global_event_payload(event, project_root) for event in project_events]
@@ -67,7 +68,10 @@ def collect_global_dashboard_data(
             }
         )
 
-    events = sorted(events, key=lambda item: str(item.get("timestamp") or ""), reverse=True)[:event_limit]
+    events = _balanced_recent_events(
+        sorted(events, key=lambda item: str(item.get("timestamp") or ""), reverse=True),
+        per_status_limit=event_limit,
+    )
     projects = sorted(projects, key=lambda item: str(item.get("latest_event_time") or ""), reverse=True)
     return {
         "root": str(runtime_root),
@@ -179,6 +183,21 @@ def _event_counts(events: list[dict[str, Any]]) -> dict[str, int]:
         if status in counts:
             counts[status] += 1
     return counts
+
+
+def _balanced_recent_events(events: list[dict[str, Any]], *, per_status_limit: int) -> list[dict[str, Any]]:
+    limit = max(1, int(per_status_limit))
+    seen_counts = {"used": 0, "entered": 0, "skipped": 0}
+    selected: list[dict[str, Any]] = []
+    for event in events:
+        status = event.get("runtime_lane_status")
+        if status not in seen_counts:
+            status = "skipped"
+        if seen_counts[status] >= limit:
+            continue
+        seen_counts[status] += 1
+        selected.append(event)
+    return sorted(selected, key=lambda item: str(item.get("timestamp") or ""), reverse=True)
 
 
 def _skill_payload(

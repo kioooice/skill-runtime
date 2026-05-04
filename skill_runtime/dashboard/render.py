@@ -217,7 +217,15 @@ def render_dashboard_html(data: dict[str, Any]) -> str:
         {_overview_page(data.get("overview", {}), global_data.get("overview", {}) if global_data else None)}
         {_skill_tree(data.get("skills", []), data.get("capability_collections", []))}
         {_evolution_candidates(data.get("evolution_candidates", []))}
-        {_trigger_log(global_data.get("events", []) if global_data else data.get("events", []), include_project=bool(global_data))}
+        {_trigger_log(
+            global_data.get("events", []) if global_data else data.get("events", []),
+            include_project=bool(global_data),
+            counts=(
+                global_data.get("overview", {}).get("recent_event_counts", {})
+                if global_data
+                else data.get("overview", {}).get("recent_event_counts", {})
+            ),
+        )}
         {_governance(data.get("governance", {}), data.get("diagnostics", []))}
         {_platform_inventory(data.get("platform_inventory", {}))}
         {_global_projects_view(global_data) if global_data else ""}
@@ -1025,20 +1033,25 @@ def _audit_status_label(value: Any) -> str:
     return labels.get(str(value or ""), str(value or "未记录审核状态"))
 
 
-def _trigger_log(events: list[dict[str, Any]], *, include_project: bool = False) -> str:
+def _trigger_log(
+    events: list[dict[str, Any]],
+    *,
+    include_project: bool = False,
+    counts: dict[str, int] | None = None,
+) -> str:
     if not events:
         body = '<p class="muted">暂无运行通道事件。</p>'
     else:
-        visible_events = events[:100] if include_project else events[:50]
-        counts = _event_status_counts(visible_events)
+        visible_events = events
+        visible_counts = counts if isinstance(counts, dict) else _event_status_counts(visible_events)
         if include_project:
             event_rows = "\n".join(_global_event_row(event) for event in visible_events)
         else:
             event_rows = "\n".join(_event_row(event) for event in visible_events)
-        body = f"""{_event_filter_bar(counts)}
+        body = f"""{_event_filter_bar(visible_counts)}
   <div class="event-list">
     {event_rows}
-    {_event_empty_states(counts)}
+    {_event_empty_states(_event_status_counts(visible_events))}
   </div>"""
     return f"""<section id="dashboard-page-trigger-log" class="panel view-panel dashboard-view-page" data-view-page="trigger-log" data-active-event-filter="used" hidden>
   {body}

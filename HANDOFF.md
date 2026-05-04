@@ -18,6 +18,8 @@
 
 最新申请和产品状态：用户已提交 OpenAI Codex for Open Source / Open Source Fund 表单，申请准备阶段收口。随后主线回到 dashboard 产品能力，已完成 `技能进化生命周期详情面板`：技能进化候选卡片现在可点击打开右侧详情抽屉，显示候选提案、审核结果、应用记录、回滚记录、来源任务、风险、原因、证据、建议修改和关联文件路径。该面板仍是静态 HTML 只读交互，不增加 promote/apply/rollback 等写操作。验证已通过：新增 TDD 回归测试先失败后通过，`python -m unittest tests.test_runtime_fast -v` 通过 127 tests OK，`git diff --check` 通过，`python -m skill_runtime.cli dashboard --output .skill_runtime\dashboard.html` 可生成本地页面。
 
+最新触发日志修复：用户发现触发日志里 `已使用` 和 `进入观察` 变成 0。根因不是日志丢失，而是 dashboard 先按最近 N 条总记录截断，再统计状态；最近 skipped 记录过多时会把较早的 used / entered 挤出页面。当前已改为完整日志计数，并为 used / entered / skipped 各自保留最近样本。真实 dashboard 生成后显示 `已使用 17 / 进入观察 39 / 已跳过 105`，并且 HTML 中包含 used / entered 事件行。新增回归测试覆盖该场景，`python -m unittest tests.test_runtime_fast -v` 通过 129 tests OK。
+
 最新开源准备进展：用户确认采用 MIT。当前已新增 `LICENSE`，`pyproject.toml` 已补 license、author、project URLs、keywords 和 classifiers，README / README.zh-CN / README.en 已增加许可证说明。readiness audit 文档也已记录这项进展。剩余开源阻塞主要是 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`、README 顶部公开叙事和 maintainer workflow demo。
 
 最新阶段完成：Open Source readiness audit 已完成并写入 `docs/codex-open-source-readiness-audit.md`。结论：当前不适合直接申请。优势是仓库已公开、已有安装包元数据、CI、README、测试文档、隐私/provenance 文档和本地 demo；`LICENSE` 和基础 package metadata 已在审计后补齐；剩余主要阻塞是缺 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`，README 顶部还不是面向新维护者的 60 秒价值叙事，缺 2-3 个真实 maintainer workflow demo，公开 GitHub traction 当前很弱。下一阶段应做项目定位和 README/application narrative，不要先堆新插件功能。

@@ -101,6 +101,69 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual("basic", merge_skill["skill_surface"])
         self.assertEqual("workflow", workflow_skill["skill_surface"])
 
+    def test_dashboard_trigger_log_keeps_used_and_entered_when_recent_events_are_skipped(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+        from skill_runtime.dashboard.render import render_dashboard_html
+
+        event_dir = self.runtime_root / ".skill_runtime"
+        event_dir.mkdir(parents=True, exist_ok=True)
+        event_path = event_dir / "runtime_lane_events.jsonl"
+        rows = [
+            {
+                "timestamp": "2026-05-01T12:00:00+00:00",
+                "working_directory": str(self.runtime_root),
+                "task_description": "merge txt files into markdown",
+                "runtime_lane_status": "used",
+                "runtime_lane_reason": "auto-executed reusable skill",
+                "classification_bucket": "default-in",
+                "reuse_decision": "auto_execute",
+                "learning_decision": "skip",
+                "selected_skill_name": "merge_text_files",
+                "observed_task_record": None,
+            },
+            {
+                "timestamp": "2026-05-01T12:01:00+00:00",
+                "working_directory": str(self.runtime_root),
+                "task_description": "capture shared payload workflow",
+                "runtime_lane_status": "entered",
+                "runtime_lane_reason": "default lane observation",
+                "classification_bucket": "default-in",
+                "reuse_decision": "skip",
+                "learning_decision": None,
+                "selected_skill_name": None,
+                "observed_task_record": None,
+            },
+        ]
+        for index in range(5):
+            rows.append(
+                {
+                    "timestamp": f"2026-05-01T12:1{index}:00+00:00",
+                    "working_directory": str(self.runtime_root),
+                    "task_description": f"skipped task {index}",
+                    "runtime_lane_status": "skipped",
+                    "runtime_lane_reason": "kept on normal Codex path",
+                    "classification_bucket": "default-out",
+                    "reuse_decision": "skip",
+                    "learning_decision": None,
+                    "selected_skill_name": None,
+                    "observed_task_record": None,
+                }
+            )
+        event_path.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n", encoding="utf-8")
+
+        data = collect_dashboard_data(self.runtime_root, event_limit=3)
+        html = render_dashboard_html(data)
+
+        self.assertEqual({"used": 1, "entered": 1, "skipped": 5}, data["overview"]["recent_event_counts"])
+        self.assertIn('data-event-status="used"', html)
+        self.assertIn('data-event-status="entered"', html)
+        self.assertIn('data-event-status="skipped"', html)
+        self.assertIn("已使用 <span>1</span>", html)
+        self.assertIn("进入观察 <span>1</span>", html)
+        self.assertIn("已跳过 <span>5</span>", html)
+        self.assertNotIn("暂无已使用记录。", html)
+        self.assertNotIn("暂无进入观察记录。", html)
+
     def test_dashboard_collector_prefers_active_metadata_when_staging_duplicate_exists(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
 

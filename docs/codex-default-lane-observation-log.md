@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Trigger log status balance fix
+
+- Task type: dashboard observability bug fix
+- Classified as: default-out / skipped by CLI `codex-run`
+- What happened: the trigger log appeared to lose `used` and `entered` records because the dashboard truncated recent events before grouping by status; it now counts the full log and keeps recent samples per status
+- Did the behavior feel correct: yes; used and entered records were still present in the raw event log, so the fix belongs in dashboard data selection rather than event generation
+- Did the lane help: yes; it made the skipped-heavy recent activity visible as a UI/data balancing issue instead of a runtime data-loss issue
+- Follow-up: when adding trigger-log event details, keep the same status-balanced selection so detail views do not regress to skipped-only lists
+
 ### 2026-05-05 - Skill evolution lifecycle detail panel
 
 - Task type: read-only dashboard product improvement
