@@ -347,6 +347,24 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("low-value", html)
         self.assertIn("中风险", html)
 
+    def test_dashboard_skill_evolution_empty_state_explains_mechanism(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+        from skill_runtime.dashboard.render import render_dashboard_html
+
+        data = collect_dashboard_data(self.runtime_root)
+        html = render_dashboard_html(data)
+
+        self.assertEqual([], data["evolution_candidates"])
+        self.assertIn("data-evolution-empty-state", html)
+        self.assertIn("真实任务", html)
+        self.assertIn("暴露缺口", html)
+        self.assertIn("候选提案", html)
+        self.assertIn("人工审核", html)
+        self.assertIn("确认应用", html)
+        self.assertIn("可回滚", html)
+        self.assertIn("例如：开发前方向审核", html)
+        self.assertIn("候选不会自动改写全局技能", html)
+
     def test_dashboard_evolution_cards_open_lifecycle_detail_drawer(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
         from skill_runtime.dashboard.render import render_dashboard_html

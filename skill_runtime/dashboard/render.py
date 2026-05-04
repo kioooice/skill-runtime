@@ -510,7 +510,7 @@ def _skill_tree(skills: list[dict[str, Any]], collections: list[dict[str, Any]] 
 def _evolution_candidates(candidates: list[dict[str, Any]]) -> str:
     visible_candidates = [candidate for candidate in candidates if isinstance(candidate, dict)][:50]
     if not visible_candidates:
-        body = '<p class="muted">暂无技能进化候选。只有真实任务暴露出已有技能缺口时，这里才会出现提案。</p>'
+        body = _evolution_empty_state()
     else:
         body = '<div class="evolution-grid">' + "\n".join(
             _evolution_candidate_card(candidate) for candidate in visible_candidates
@@ -518,6 +518,35 @@ def _evolution_candidates(candidates: list[dict[str, Any]]) -> str:
     return f"""<section id="dashboard-page-skill-evolution" class="panel view-panel dashboard-view-page" data-view-page="skill-evolution" hidden>
   {body}
 </section>"""
+
+
+def _evolution_empty_state() -> str:
+    steps = [
+        ("真实任务", "Codex 完成一次实际维护、审核、收口或纠错任务。"),
+        ("暴露缺口", "任务结果显示某个已有工作流技能缺少规则、边界或停止条件。"),
+        ("候选提案", "系统只生成改进建议，记录证据和目标技能。"),
+        ("人工审核", "审核提案和 diff，判断证据是否足够。"),
+        ("确认应用", "只有显式确认后才写入全局技能。"),
+        ("可回滚", "应用记录保留备份，必要时可以恢复。"),
+    ]
+    flow = "\n".join(
+        f"""<div class="evolution-empty-step">
+      <strong>{text(label)}</strong>
+      <span>{text(description)}</span>
+    </div>"""
+        for label, description in steps
+    )
+    return f"""<div class="evolution-empty-state" data-evolution-empty-state>
+  <div class="evolution-empty-head">
+    <h3>暂无技能进化候选</h3>
+    <p>只有真实任务暴露出已有技能缺口时，这里才会出现提案。</p>
+  </div>
+  <div class="evolution-flow">{flow}</div>
+  <div class="evolution-example">
+    <strong>例如：开发前方向审核</strong>
+    <p>如果一次任务说明它没有及时阻止低价值路线，就会形成候选：目标技能、问题证据、建议修改和风险等级。候选不会自动改写全局技能。</p>
+  </div>
+</div>"""
 
 
 def _evolution_candidate_card(candidate: dict[str, Any]) -> str:

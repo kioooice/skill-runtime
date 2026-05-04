@@ -280,6 +280,40 @@ body[data-active-view="global-projects"] [data-view-page="global-projects"] { di
 .evolution-card:hover, .evolution-card:focus-visible { border-color: rgba(114, 135, 253, .72); box-shadow: 0 10px 24px rgba(76, 79, 105, .16); outline: none; }
 .evolution-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .evolution-detail-grid dd { overflow-wrap: anywhere; }
+.evolution-empty-state {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+}
+.evolution-empty-head p, .evolution-example p {
+  color: var(--muted-foreground);
+  line-height: 1.55;
+  margin-top: 8px;
+}
+.evolution-flow {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.evolution-empty-step {
+  background: rgba(204, 208, 218, .42);
+  border: 1px solid rgba(188, 192, 204, .72);
+  border-radius: 12px;
+  display: grid;
+  gap: 7px;
+  min-height: 106px;
+  padding: 13px;
+}
+.evolution-empty-step strong, .evolution-example strong { color: var(--foreground); font-weight: 900; }
+.evolution-empty-step span { color: var(--muted-foreground); font-size: 13px; line-height: 1.45; }
+.evolution-example {
+  border-left: 3px solid var(--ring);
+  padding-left: 14px;
+}
 .platform-card-head h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .platform-path-chip {
   color: var(--muted-foreground);
@@ -547,6 +581,7 @@ pre {
   .header-actions { align-items: flex-start; text-align: left; }
   .search-row, .panel { padding: 16px 20px; }
   .grid, .metric-grid, .skill-card-grid, .project-grid, .collection-grid, .platform-card-grid, .evolution-grid { grid-template-columns: 1fr; }
+  .evolution-flow { grid-template-columns: 1fr; }
   .overview-section-head { align-items: flex-start; flex-direction: column; gap: 5px; }
   .overview-section-head p { text-align: left; }
   .skill-detail-drawer { max-width: none; width: min(100vw, 420px); }
