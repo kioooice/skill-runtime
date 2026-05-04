@@ -276,7 +276,8 @@ body[data-active-view="global-projects"] [data-view-page="global-projects"] { di
   -webkit-line-clamp: 2;
 }
 .platform-skill-card { display: flex; flex-direction: column; gap: 13px; min-height: 150px; }
-.evolution-card { display: flex; flex-direction: column; gap: 14px; min-height: 210px; }
+.evolution-card { cursor: pointer; display: flex; flex-direction: column; gap: 14px; min-height: 210px; text-align: left; }
+.evolution-card:hover, .evolution-card:focus-visible { border-color: rgba(114, 135, 253, .72); box-shadow: 0 10px 24px rgba(76, 79, 105, .16); outline: none; }
 .evolution-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .evolution-detail-grid dd { overflow-wrap: anywhere; }
 .platform-card-head h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -519,6 +520,14 @@ pre {
 }
 .detail-section h3 { font-size: 15px; margin-bottom: 8px; }
 .detail-section p { color: var(--muted-foreground); line-height: 1.55; overflow-wrap: anywhere; }
+.lifecycle-list {
+  color: var(--foreground);
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+.lifecycle-list li { font-weight: 800; }
 ::-webkit-scrollbar { height: 8px; width: 8px; }
 ::-webkit-scrollbar-thumb { background: rgba(108, 111, 133, .35); border-radius: 999px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -537,7 +546,7 @@ pre {
   .content-header { align-items: flex-start; flex-direction: column; gap: 14px; padding: 20px; }
   .header-actions { align-items: flex-start; text-align: left; }
   .search-row, .panel { padding: 16px 20px; }
-  .grid, .metric-grid, .skill-card-grid, .project-grid, .collection-grid, .platform-card-grid { grid-template-columns: 1fr; }
+  .grid, .metric-grid, .skill-card-grid, .project-grid, .collection-grid, .platform-card-grid, .evolution-grid { grid-template-columns: 1fr; }
   .overview-section-head { align-items: flex-start; flex-direction: column; gap: 5px; }
   .overview-section-head p { text-align: left; }
   .skill-detail-drawer { max-width: none; width: min(100vw, 420px); }
@@ -565,6 +574,9 @@ SCRIPT = """
   var skillDetailDrawer = document.querySelector("[data-skill-detail-drawer]");
   var skillDetailButtons = Array.prototype.slice.call(document.querySelectorAll("[data-skill-detail-open]"));
   var skillDetailCloseButtons = Array.prototype.slice.call(document.querySelectorAll("[data-skill-detail-close]"));
+  var evolutionDetailDrawer = document.querySelector("[data-evolution-detail-drawer]");
+  var evolutionDetailButtons = Array.prototype.slice.call(document.querySelectorAll("[data-evolution-detail-open]"));
+  var evolutionDetailCloseButtons = Array.prototype.slice.call(document.querySelectorAll("[data-evolution-detail-close]"));
   var eventFilterButtons = Array.prototype.slice.call(document.querySelectorAll("[data-event-filter]"));
 
   function viewFromHash() {
@@ -600,6 +612,7 @@ SCRIPT = """
       window.history.pushState({ dashboardView: nextView }, "", viewHashes[nextView]);
     }
     clearActiveSkillDetail();
+    clearActiveEvolutionDetail();
   }
 
   function setDetailText(field, value) {
@@ -616,6 +629,7 @@ SCRIPT = """
     if (!skillDetailDrawer || !source) {
       return;
     }
+    clearActiveEvolutionDetail();
     setDetailText("name", source.getAttribute("data-detail-name"));
     setDetailText("rawName", source.getAttribute("data-detail-raw-name"));
     setDetailText("status", source.getAttribute("data-detail-status"));
@@ -639,6 +653,47 @@ SCRIPT = """
     }
     skillDetailDrawer.hidden = true;
     body.classList.remove("has-skill-detail-open");
+  }
+
+  function setEvolutionText(field, value) {
+    if (!evolutionDetailDrawer) {
+      return;
+    }
+    var target = evolutionDetailDrawer.querySelector('[data-evolution-field="' + field + '"]');
+    if (target) {
+      target.textContent = value || "-";
+    }
+  }
+
+  function setActiveEvolutionDetail(source) {
+    if (!evolutionDetailDrawer || !source) {
+      return;
+    }
+    clearActiveSkillDetail();
+    setEvolutionText("target", source.getAttribute("data-evolution-target"));
+    setEvolutionText("rawTarget", source.getAttribute("data-evolution-raw-target"));
+    setEvolutionText("status", source.getAttribute("data-evolution-status"));
+    setEvolutionText("risk", source.getAttribute("data-evolution-risk"));
+    setEvolutionText("sourceTask", source.getAttribute("data-evolution-source-task"));
+    setEvolutionText("updatedAt", source.getAttribute("data-evolution-updated-at"));
+    setEvolutionText("lifecycle", source.getAttribute("data-evolution-lifecycle"));
+    setEvolutionText("reason", source.getAttribute("data-evolution-reason"));
+    setEvolutionText("evidence", source.getAttribute("data-evolution-evidence"));
+    setEvolutionText("changes", source.getAttribute("data-evolution-changes"));
+    setEvolutionText("candidatePath", source.getAttribute("data-evolution-candidate-path"));
+    setEvolutionText("reviewPath", source.getAttribute("data-evolution-review-path"));
+    setEvolutionText("applicationPath", source.getAttribute("data-evolution-application-path"));
+    setEvolutionText("rollbackPath", source.getAttribute("data-evolution-rollback-path"));
+    evolutionDetailDrawer.hidden = false;
+    body.classList.add("has-evolution-detail-open");
+  }
+
+  function clearActiveEvolutionDetail() {
+    if (!evolutionDetailDrawer) {
+      return;
+    }
+    evolutionDetailDrawer.hidden = true;
+    body.classList.remove("has-evolution-detail-open");
   }
 
   function setEventFilter(button) {
@@ -680,6 +735,22 @@ SCRIPT = """
     button.addEventListener("click", clearActiveSkillDetail);
   });
 
+  evolutionDetailButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      setActiveEvolutionDetail(button);
+    });
+    button.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        setActiveEvolutionDetail(button);
+      }
+    });
+  });
+
+  evolutionDetailCloseButtons.forEach(function (button) {
+    button.addEventListener("click", clearActiveEvolutionDetail);
+  });
+
   eventFilterButtons.forEach(function (button) {
     button.addEventListener("click", function () {
       setEventFilter(button);
@@ -695,11 +766,14 @@ SCRIPT = """
   window.addEventListener("keydown", function (event) {
     if (event.key === "Escape") {
       clearActiveSkillDetail();
+      clearActiveEvolutionDetail();
     }
   });
   window.setDashboardView = setDashboardView;
   window.setActiveSkillDetail = setActiveSkillDetail;
   window.clearActiveSkillDetail = clearActiveSkillDetail;
+  window.setActiveEvolutionDetail = setActiveEvolutionDetail;
+  window.clearActiveEvolutionDetail = clearActiveEvolutionDetail;
   window.setEventFilter = setEventFilter;
   setDashboardView(viewFromHash(), false);
 })();

@@ -9,6 +9,9 @@
 - 最新验证结果：Stage 4 文档收口后 `git diff --check` 通过，`python -m unittest tests.test_runtime_fast -v` 通过，当前快验 126 tests OK。
 - 最新开源准备进展：已采用 MIT License，新增 `LICENSE`，并在 `pyproject.toml` 补充 license、author、URLs、keywords 和 classifiers，同时在 README / README.zh-CN / README.en 增加许可证说明。
 - 最新阶段完成：Codex Open Source readiness audit 已写入 `docs/codex-open-source-readiness-audit.md`。结论已经从“公开包装不足”推进到“接近申请草稿可用”。`LICENSE`、基础 package metadata、社区文件、README 价值叙事和三个 maintainer workflow demo 已补齐；用户已确认 GitHub profile 是 `https://github.com/kioooice`，申请范围是 Codex Security 和 API credits 都勾选，当前没有可声明的外部 traction。OpenAI organization ID 已由用户在平台页面找到，但不要写入仓库文件。
+- 最新仓库状态：开源申请准备材料、个人简历产物删除、dashboard 技能详情文案润色已提交并推送到 `origin/main`；当前 `main...origin/main` 同步。公开树已删除个人简历相关文件，但旧提交历史仍可能包含这些文件，彻底清历史需要单独评估 history rewrite / force push。
+- 最新申请状态：用户已提交 OpenAI Codex for Open Source / Open Source Fund 表单，申请准备阶段收口。主线已回到产品开发，当前完成 `技能进化生命周期详情面板`：技能进化卡片可点击打开右侧详情抽屉，展示候选、审核、应用、回滚阶段，以及证据、建议、关联文件路径和状态信息；仍保持只读，不添加 apply/rollback 写操作。
+- 最新验证结果：技能进化生命周期详情面板按 TDD 增加回归测试，`python -m unittest tests.test_runtime_fast -v` 通过 127 tests OK；`git diff --check` 通过；`python -m skill_runtime.cli dashboard --output .skill_runtime\dashboard.html` 成功生成静态 dashboard。
 - 最新全局技能新增：已创建 `parallel-subagent-orchestration`，用于复杂可并行任务中的主代理/子代理协作。Codex 主线程负责拆分、关键路径、审核、集成、验证和最终汇报；子代理只处理边界清楚、可并行、可审核的任务。项目和全局 `AGENTS.md` 只增加短路由，完整流程保留在全局 skill。
 - 最新全局技能新增：已创建 `plan-progress-tracker`，用于多阶段计划执行时持续显示“第几阶段 / 已完成 / 当前正在做 / 下一步 / 偏离风险”。以后计划列出来后，继续开发、自动模式、阶段汇报、会话接力或压缩恢复都应先恢复这个进度坐标。
 - 最新全局技能新增：已创建 `context-compaction-audit`，用于上下文压缩或 summary 恢复后先判断当前会话是否还能安全继续，还是应该 checkpoint 后继续、完成当前阶段后新开会话，或立即新开会话。它会报告压缩时间、压缩率可计算性、信息丢失风险和下一次压缩前的建议。现在它已与 `session-handoff-maintenance` 联动：需要 checkpoint 或新开会话时，先刷新 handoff 状态文件。
@@ -46,7 +49,9 @@
 - [x] 决定 Stage 4 packaging route：docs-first / CLI package hardening / Codex plugin path
 - [x] 起草不超过 500 字的申请说明：为什么仓库对生态重要，以及 API credits 将如何用于项目
 - [x] 收集最终提交所需用户信息：公开 GitHub profile、OpenAI organization ID、请求范围、真实外部验证或 traction
-- [ ] 将申请草稿压缩成表单逐项可粘贴版本，并提醒 OpenAI organization ID 只填表单不入库
+- [x] 将申请草稿压缩成表单逐项可粘贴版本，并提醒 OpenAI organization ID 只填表单不入库
+- [x] 确认 Codex for Open Source / Open Source Fund 表单是否已经提交；未提交则做提交前最后核对，已提交则记录结果并转回产品主线
+- [x] 如果申请阶段已收口，下一阶段优先做 `技能进化生命周期详情面板` 或 `触发日志事件详情`，保持只读和低风险，不回到继续堆 runtime 样本
 - [x] 将全局 `pre-implementation-workflow-review` 升级为真正的开发前主流程门禁，只有 `build_now` 允许进入实现
 - [x] 新增全局 `workflow-error-correction`，把重复流程错误和路线漂移记录从 `AGENTS.md` 移出
 - [x] 将 `workflow-error-correction` 改成先复用已有错误记录防复发，只有新错误模式才新增记录
@@ -73,6 +78,7 @@
 - [x] 将 `context-compaction-audit` 与 `session-handoff-maintenance` 联动，压缩审计需要 checkpoint/reopen 时自动转入会话接力维护
 - [x] 新增全局 `plan-progress-tracker` 技能，用于多阶段计划执行时持续显示当前阶段和下一步
 - [x] 新增全局 `parallel-subagent-orchestration` 技能，用于复杂可并行任务中的主代理委派、审核和集成
+- [x] 下一阶段优先完成 `技能进化生命周期详情面板`，候选卡片可点击查看生命周期、证据、建议和关联记录，仍保持只读
 - [ ] 下一阶段可扩展触发日志事件点击详情，仍保持只读
 - [ ] 下一阶段可扩展中央技能库组别详情，仍保持只读
 - [ ] 下一次启动新功能或新路线前，使用 `pre-implementation-workflow-review` 输出四类 verdict，确认它能先审开发方向价值、替代方案、成功指标和停止条件

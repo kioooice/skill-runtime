@@ -347,6 +347,51 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("low-value", html)
         self.assertIn("中风险", html)
 
+    def test_dashboard_evolution_cards_open_lifecycle_detail_drawer(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+        from skill_runtime.dashboard.render import render_dashboard_html
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        store = EvolutionCandidateStore(self.runtime_root)
+        candidate = store.create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Improve the direction review workflow after a user correction.",
+            reason="User correction showed the workflow should challenge low-value routes earlier.",
+            evidence=["The old route allowed low-value skill work to continue too long."],
+            proposed_changes=["Add a guard for repeated low-value validation loops."],
+            risk_level="medium",
+            change_type="guardrail",
+        )
+        store.update_candidate(
+            candidate["candidate_path"],
+            {
+                "status": "applied",
+                "review_path": str(self.runtime_root / ".skill_runtime" / "evolution_reviews" / "demo.review.json"),
+                "review_decision": "ready_for_manual_diff",
+                "application_path": str(
+                    self.runtime_root / ".skill_runtime" / "evolution_applications" / "demo.apply.json"
+                ),
+                "applied_at": "2026-05-05T10:00:00+00:00",
+            },
+        )
+
+        data = collect_dashboard_data(self.runtime_root)
+        html = render_dashboard_html(data)
+
+        self.assertIn("data-evolution-detail-drawer", html)
+        self.assertIn("data-evolution-detail-open", html)
+        self.assertIn('data-evolution-target="开发前方向审核"', html)
+        self.assertIn('data-evolution-status="已应用"', html)
+        self.assertIn('data-evolution-risk="中风险"', html)
+        self.assertIn('data-evolution-review-path=', html)
+        self.assertIn('data-evolution-application-path=', html)
+        self.assertIn("生命周期", html)
+        self.assertIn("候选提案", html)
+        self.assertIn("审核结果", html)
+        self.assertIn("应用记录", html)
+        self.assertIn("setActiveEvolutionDetail", html)
+        self.assertIn("clearActiveEvolutionDetail", html)
+
     def test_dashboard_skill_cards_open_read_only_detail_drawer(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
         from skill_runtime.dashboard.render import render_dashboard_html

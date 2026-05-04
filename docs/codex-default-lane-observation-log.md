@@ -23,6 +23,24 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Skill evolution lifecycle detail panel
+
+- Task type: read-only dashboard product improvement
+- Classified as: default-out / skipped by CLI `codex-run`
+- What happened: after the application was submitted, the mainline returned to product work and added a clickable Skill Evolution lifecycle detail drawer for candidate, review, apply, and rollback context
+- Did the behavior feel correct: yes; this is ordinary feature work that should be implemented by Codex with tests, not silently executed by a reusable runtime workflow
+- Did the lane help: yes; it kept the feature on the normal development path while still recording that the runtime gate was checked
+- Follow-up: use the same read-only drawer pattern for trigger-log event details next
+
+### 2026-05-05 - Post-push mainline resume
+
+- Task type: project-maintenance resume after open-source readiness push
+- Classified as: default-out
+- What happened: `run_codex_task_experimental` returned `runtime_lane_status: skipped` for the resume/planning task; the repository state was checked from `HANDOFF.md`, `TASKS.md`, git status, recent commits, and application draft files
+- Did the behavior feel correct: yes; this was an orientation and planning task, not a reusable local workflow that should be silently executed
+- Did the lane help: partly; it confirmed that the runtime gate remains visible even when the normal Codex path should handle the work
+- Follow-up: if the application is already submitted, shift the next real development stage toward a focused read-only product improvement such as evolution lifecycle details or trigger-log event details
+
 ### 2026-05-05 - Docs-first readiness release
 
 - Task type: open-source readiness documentation release

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from skill_runtime.dashboard.templates import SCRIPT, STYLE, badge, text
+from skill_runtime.dashboard.templates import SCRIPT, STYLE, badge, status_label, text
 
 
 SKILL_NAME_LABELS = {
@@ -222,6 +222,7 @@ def render_dashboard_html(data: dict[str, Any]) -> str:
         {_platform_inventory(data.get("platform_inventory", {}))}
         {_global_projects_view(global_data) if global_data else ""}
         {_skill_detail_drawer()}
+        {_evolution_detail_drawer()}
       </main>
     </div>
   </div>
@@ -524,13 +525,16 @@ def _evolution_candidate_card(candidate: dict[str, Any]) -> str:
     proposed_changes = candidate.get("proposed_changes") if isinstance(candidate.get("proposed_changes"), list) else []
     evidence_text = "；".join(str(item) for item in evidence[:2]) if evidence else "来源任务已记录，待人工审核具体差异。"
     change_text = "；".join(str(item) for item in proposed_changes[:2]) if proposed_changes else "先审核是否需要补触发条件、步骤或停止条件。"
-    return f"""<article class="evolution-card">
+    target_name = _skill_display_name(candidate.get("target_skill_name"))
+    raw_status = str(candidate.get("status") or "proposed")
+    lifecycle = _evolution_lifecycle_summary(candidate)
+    return f"""<article class="evolution-card" role="button" tabindex="0" data-evolution-detail-open data-evolution-target="{text(target_name)}" data-evolution-raw-target="{text(candidate.get("target_skill_name"))}" data-evolution-status="{text(status_label(raw_status))}" data-evolution-risk="{text(_risk_label(candidate.get("risk_level")))}" data-evolution-source-task="{text(_event_task_label(candidate.get("source_task_description")))}" data-evolution-reason="{text(candidate.get("reason") or "该任务暴露了已有技能的改进机会。")}" data-evolution-evidence="{text(evidence_text)}" data-evolution-changes="{text(change_text)}" data-evolution-candidate-path="{text(candidate.get("candidate_path"))}" data-evolution-review-path="{text(candidate.get("review_path"))}" data-evolution-review-decision="{text(candidate.get("review_decision"))}" data-evolution-application-path="{text(candidate.get("application_path"))}" data-evolution-rollback-path="{text(candidate.get("rollback_path"))}" data-evolution-created-at="{text(candidate.get("created_at"))}" data-evolution-updated-at="{text(candidate.get("updated_at"))}" data-evolution-applied-at="{text(candidate.get("applied_at"))}" data-evolution-rolled-back-at="{text(candidate.get("rolled_back_at"))}" data-evolution-lifecycle="{text(lifecycle)}">
   <div class="skill-card-head">
     <div>
-      <h3>{text(_skill_display_name(candidate.get("target_skill_name")))}</h3>
+      <h3>{text(target_name)}</h3>
       <p>{text(candidate.get("reason") or "该任务暴露了已有技能的改进机会。")}</p>
     </div>
-    {badge(candidate.get("status") or "staging")}
+    {badge(raw_status)}
   </div>
   <div class="detail-grid evolution-detail-grid">
     <div><dt>来源任务</dt><dd>{text(_event_task_label(candidate.get("source_task_description")))}</dd></div>
@@ -542,6 +546,28 @@ def _evolution_candidate_card(candidate: dict[str, Any]) -> str:
     <span>{_icon("link")} {text(candidate.get("candidate_path"))}</span>
   </div>
 </article>"""
+
+
+def _evolution_lifecycle_summary(candidate: dict[str, Any]) -> str:
+    steps = ["候选提案：已生成"]
+    status = str(candidate.get("status") or "proposed")
+    review_path = str(candidate.get("review_path") or "")
+    application_path = str(candidate.get("application_path") or "")
+    rollback_path = str(candidate.get("rollback_path") or "")
+    if review_path or status in {"reviewed", "needs_more_evidence", "applied", "rolled_back"}:
+        review_decision = str(candidate.get("review_decision") or "已记录")
+        steps.append(f"审核结果：{review_decision}")
+    else:
+        steps.append("审核结果：等待审核")
+    if application_path or status in {"applied", "rolled_back"}:
+        steps.append("应用记录：已应用")
+    else:
+        steps.append("应用记录：未应用")
+    if rollback_path or status == "rolled_back":
+        steps.append("回滚记录：已回滚")
+    else:
+        steps.append("回滚记录：未回滚")
+    return "；".join(steps)
 
 
 def _risk_label(value: Any) -> str:
@@ -652,6 +678,59 @@ def _skill_detail_drawer() -> str:
       <section class="detail-section" data-detail-provenance-section hidden>
         <h3>来源信息</h3>
         <p data-detail-field="provenance"></p>
+      </section>
+    </div>
+  </aside>
+</section>"""
+
+
+def _evolution_detail_drawer() -> str:
+    return f"""<section class="skill-detail-layer evolution-detail-layer" data-evolution-detail-drawer hidden>
+  <button class="skill-detail-backdrop" type="button" data-evolution-detail-close aria-label="关闭技能进化详情"></button>
+  <aside class="skill-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="evolution-detail-title">
+    <div class="skill-detail-head">
+      <div>
+        <div class="view-kicker">技能进化详情</div>
+        <h2 id="evolution-detail-title" data-evolution-field="target">选择候选</h2>
+        <p data-evolution-field="rawTarget">点击技能进化卡片查看生命周期。</p>
+      </div>
+      <button class="detail-close" type="button" data-evolution-detail-close aria-label="关闭技能进化详情">关闭</button>
+    </div>
+    <div class="skill-detail-body">
+      <dl class="detail-grid">
+        <div><dt>状态</dt><dd data-evolution-field="status">-</dd></div>
+        <div><dt>风险</dt><dd data-evolution-field="risk">-</dd></div>
+        <div><dt>来源任务</dt><dd data-evolution-field="sourceTask">-</dd></div>
+        <div><dt>更新时间</dt><dd data-evolution-field="updatedAt">-</dd></div>
+      </dl>
+      <section class="detail-section">
+        <h3>生命周期</h3>
+        <ol class="lifecycle-list">
+          <li>候选提案</li>
+          <li>审核结果</li>
+          <li>应用记录</li>
+          <li>回滚记录</li>
+        </ol>
+        <p data-evolution-field="lifecycle">暂无生命周期记录。</p>
+      </section>
+      <section class="detail-section">
+        <h3>为什么要改</h3>
+        <p data-evolution-field="reason">暂无说明。</p>
+      </section>
+      <section class="detail-section">
+        <h3>证据</h3>
+        <p data-evolution-field="evidence">暂无证据。</p>
+      </section>
+      <section class="detail-section">
+        <h3>建议修改</h3>
+        <p data-evolution-field="changes">暂无建议。</p>
+      </section>
+      <section class="detail-section">
+        <h3>关联文件</h3>
+        <p>候选：<span data-evolution-field="candidatePath">-</span></p>
+        <p>审核：<span data-evolution-field="reviewPath">-</span></p>
+        <p>应用：<span data-evolution-field="applicationPath">-</span></p>
+        <p>回滚：<span data-evolution-field="rollbackPath">-</span></p>
       </section>
     </div>
   </aside>

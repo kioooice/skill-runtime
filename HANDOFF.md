@@ -14,6 +14,10 @@
 
 最新申请字段：用户确认 GitHub profile 是 `https://github.com/kioooice`，GitHub username 是 `kioooice`，repo URL 是 `https://github.com/kioooice/skill-runtime`，申请范围选择 Codex Security 和 API credits 两项都勾选，当前没有可声明的外部 traction。OpenAI organization ID 用户已在 OpenAI Platform organization settings 找到，但不要写入仓库文件或公开文档；只在申请表私下填写。
 
+最新仓库发布状态：开源申请准备材料、个人简历产物删除、dashboard 技能详情文案润色均已提交并推送到 `origin/main`。当前 `main...origin/main` 同步，最新提交为 `9e9f0c7 Polish dashboard skill detail descriptions`，之前两次提交为 `10a5c2e Remove personal resume artifacts` 和 `b5cbb81 Prepare open source readiness materials`。当前公开树里已删除 `scripts/generate_resume_pdf.py`、`scripts/replace_project_section_in_resume.py`、`docs/skill-runtime-tiktok.pdf` 以及相关本地产物；注意这些文件曾经存在于旧提交历史中，如果用户要求彻底从历史移除，需要单独做 history rewrite / force push 风险评估。
+
+最新申请和产品状态：用户已提交 OpenAI Codex for Open Source / Open Source Fund 表单，申请准备阶段收口。随后主线回到 dashboard 产品能力，已完成 `技能进化生命周期详情面板`：技能进化候选卡片现在可点击打开右侧详情抽屉，显示候选提案、审核结果、应用记录、回滚记录、来源任务、风险、原因、证据、建议修改和关联文件路径。该面板仍是静态 HTML 只读交互，不增加 promote/apply/rollback 等写操作。验证已通过：新增 TDD 回归测试先失败后通过，`python -m unittest tests.test_runtime_fast -v` 通过 127 tests OK，`git diff --check` 通过，`python -m skill_runtime.cli dashboard --output .skill_runtime\dashboard.html` 可生成本地页面。
+
 最新开源准备进展：用户确认采用 MIT。当前已新增 `LICENSE`，`pyproject.toml` 已补 license、author、project URLs、keywords 和 classifiers，README / README.zh-CN / README.en 已增加许可证说明。readiness audit 文档也已记录这项进展。剩余开源阻塞主要是 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`、README 顶部公开叙事和 maintainer workflow demo。
 
 最新阶段完成：Open Source readiness audit 已完成并写入 `docs/codex-open-source-readiness-audit.md`。结论：当前不适合直接申请。优势是仓库已公开、已有安装包元数据、CI、README、测试文档、隐私/provenance 文档和本地 demo；`LICENSE` 和基础 package metadata 已在审计后补齐；剩余主要阻塞是缺 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`，README 顶部还不是面向新维护者的 60 秒价值叙事，缺 2-3 个真实 maintainer workflow demo，公开 GitHub traction 当前很弱。下一阶段应做项目定位和 README/application narrative，不要先堆新插件功能。
@@ -839,7 +843,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-当前新战略目标是“开源项目申请准备”。Stage 1 readiness audit、Stage 2 公开定位/README/application narrative、Stage 3 maintainer workflow demos、Stage 4 docs-first readiness release 都已完成。下一步是 Stage 5：把 `docs/codex-open-source-application-draft.md` 变成可提交材料。需要用户提供或确认的字段包括公开 GitHub profile、OpenAI organization ID、是否申请 Codex Security / API credits / both，以及任何真实用户、stars、forks、issues、文章、演示或外部验证。不要在这些信息缺失时承诺已可最终提交。
+当前新战略目标是“开源申请后继续产品化主线”。申请表已提交，`技能进化生命周期详情面板` 已完成。下一步建议做 `触发日志事件详情`：沿用右侧详情抽屉模式，让触发日志事件可点击查看任务、分类、runtime lane 状态、选中技能、后续建议和 host operations；继续保持只读、静态 HTML、无写操作。不要回到继续堆 runtime 样本；只有当用户要求操作控制台时，才另开方向审核。
 
 技能进化闭环当前停在确认应用层：下一步如果继续这条主线，应做回滚/撤销应用路径，允许根据 `.skill_runtime/evolution_applications/*.apply.json` 的 `rollback_hint` 恢复备份，并把候选状态从 `applied` 调整为 `rolled_back` 或类似状态；不要做无确认自动写全局技能。
 
