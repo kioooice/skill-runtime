@@ -423,14 +423,13 @@ def _skill_display_summary(raw_summary: Any) -> str:
 
 
 def _skill_detail_description(skill: dict[str, Any]) -> str:
+    authoritative_description = str(skill.get("authoritative_description") or "").strip()
+    if authoritative_description:
+        return authoritative_description
     summary = _skill_display_summary(skill.get("summary"))
     docstring = str(skill.get("docstring") or "").strip()
     if docstring.startswith("Runtime adapter only. The authoritative workflow lives in the global Codex skill"):
-        return (
-            f"{summary} 权威工作流位于全局 Codex skill；当前项目内的 active skill 只是薄适配层，"
-            "用于搜索路由、触发记录和执行留痕。执行时会写出 global_skill_name、global_skill_path、"
-            "source_role 和 next_action，方便确认实际调用的是哪个全局工作流。"
-        )
+        return summary
     if docstring and docstring != str(skill.get("summary") or "").strip():
         return f"{summary} 原始补充说明：{docstring}"
     return summary

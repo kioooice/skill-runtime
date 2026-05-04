@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -203,11 +204,13 @@ def _skill_payload(
     imported_at = payload.get("imported_at")
     content_hash = payload.get("content_hash")
     provenance_type = provenance.get("type")
+    authoritative_description = _authoritative_global_skill_description(payload)
     return {
         "skill_name": skill_name,
         "status": status,
         "summary": str(payload.get("summary") or ""),
         "docstring": str(payload.get("docstring") or ""),
+        "authoritative_description": authoritative_description,
         "file_path": file_path,
         "relative_file_path": _relative_path(file_path, root),
         "source_trajectory_ids": [str(item) for item in source_trajectory_ids],
@@ -235,6 +238,50 @@ def _skill_surface(payload: dict[str, Any]) -> str:
     if "workflow" in tags or "global codex skill" in summary or "global codex skill" in docstring:
         return "workflow"
     return "basic"
+
+
+def _authoritative_global_skill_description(payload: dict[str, Any]) -> str:
+    global_skill_name = _adapter_global_skill_name(payload)
+    if not global_skill_name:
+        return ""
+    skill_file = Path.home() / ".codex" / "skills" / global_skill_name / "SKILL.md"
+    try:
+        content = skill_file.read_text(encoding="utf-8-sig")
+    except OSError:
+        return ""
+    return _skill_md_description(content)
+
+
+def _adapter_global_skill_name(payload: dict[str, Any]) -> str:
+    file_path = payload.get("file_path")
+    if isinstance(file_path, str) and file_path.strip():
+        try:
+            content = Path(file_path).read_text(encoding="utf-8-sig")
+        except OSError:
+            content = ""
+        match = re.search(r'global_skill_name\s*=\s*["\']([^"\']+)["\']', content)
+        if match:
+            return match.group(1).strip()
+
+    docstring = str(payload.get("docstring") or "")
+    match = re.search(r"global Codex skill ([A-Za-z0-9_-]+)", docstring)
+    return match.group(1).strip() if match else ""
+
+
+def _skill_md_description(content: str) -> str:
+    if content.startswith("---"):
+        end = content.find("\n---", 3)
+        if end != -1:
+            frontmatter = content[3:end]
+            for line in frontmatter.splitlines():
+                if line.startswith("description:"):
+                    return line.split(":", 1)[1].strip().strip('"')
+    body = content.split("---", 2)[-1] if content.startswith("---") else content
+    paragraphs = [paragraph.strip() for paragraph in body.split("\n\n") if paragraph.strip()]
+    for paragraph in paragraphs:
+        if not paragraph.startswith("#"):
+            return " ".join(paragraph.split())
+    return ""
 
 
 def _collect_governance(root: Path, diagnostics: list[str]) -> dict[str, Any]:
