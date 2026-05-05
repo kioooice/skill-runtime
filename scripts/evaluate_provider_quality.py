@@ -42,6 +42,7 @@ def main() -> int:
         _run_fake_deepseek_semantic_block_fixture(),
         _run_fake_deepseek_generation_failure_fixture(),
         _run_review_cleanup_provider_quality_fixture(),
+        _run_runtime_service_distill_demo_provider_fixture(),
     ]
     passed = sum(1 for item in fixtures if item["execution_smoke_status"] == "passed")
     failed = sum(1 for item in fixtures if item["failure_reason"])
@@ -66,6 +67,7 @@ def main() -> int:
 def _run_demo_local_success_fixture() -> dict[str, Any]:
     return _evaluate_fixture(
         fixture_name="demo_local_success",
+        lifecycle_mode="manual_provider_loop",
         configured_providers={
             "fallback": "local_copy_metadata_fallback_provider",
             "semantic": "local_pass_semantic_review_provider",
@@ -84,6 +86,7 @@ def _run_demo_local_success_fixture() -> dict[str, Any]:
 def _run_mock_template_execute_failure_fixture() -> dict[str, Any]:
     return _evaluate_fixture(
         fixture_name="mock_template_execute_failure",
+        lifecycle_mode="manual_provider_loop",
         configured_providers={
             "fallback": "mock_fallback_provider",
             "semantic": "mock_semantic_review_provider",
@@ -106,6 +109,7 @@ def _run_fake_deepseek_repair_success_fixture() -> dict[str, Any]:
     with _fake_deepseek_server([invalid_candidate, repaired_candidate, semantic_pass]) as server:
         return _evaluate_fixture(
             fixture_name="fake_deepseek_repair_success",
+            lifecycle_mode="manual_provider_loop",
             configured_providers={
                 "fallback": "deepseek_fallback_provider",
                 "semantic": "deepseek_semantic_review_provider",
@@ -140,6 +144,7 @@ def _run_fake_deepseek_semantic_block_fixture() -> dict[str, Any]:
     with _fake_deepseek_server([_deepseek_valid_copy_metadata_candidate(), semantic_block]) as server:
         return _evaluate_fixture(
             fixture_name="fake_deepseek_semantic_block",
+            lifecycle_mode="manual_provider_loop",
             configured_providers={
                 "fallback": "deepseek_fallback_provider",
                 "semantic": "deepseek_semantic_review_provider",
@@ -163,6 +168,7 @@ def _run_fake_deepseek_generation_failure_fixture() -> dict[str, Any]:
     with _fake_deepseek_server(_deepseek_low_quality_candidate()) as server:
         return _evaluate_fixture(
             fixture_name="fake_deepseek_generation_failure",
+            lifecycle_mode="manual_provider_loop",
             configured_providers={
                 "fallback": "deepseek_fallback_provider",
                 "semantic": "deepseek_semantic_review_provider",
@@ -188,6 +194,7 @@ def _run_review_cleanup_provider_quality_fixture() -> dict[str, Any]:
     )
     return _evaluate_fixture(
         fixture_name="review_cleanup_provider_quality",
+        lifecycle_mode="manual_provider_loop",
         configured_providers={
             "fallback": "mock_fallback_provider",
             "semantic": "mock_semantic_review_provider",
@@ -206,17 +213,40 @@ def _run_review_cleanup_provider_quality_fixture() -> dict[str, Any]:
     )
 
 
+def _run_runtime_service_distill_demo_provider_fixture() -> dict[str, Any]:
+    return _evaluate_fixture(
+        fixture_name="runtime_service_distill_demo_provider",
+        lifecycle_mode="runtime_service_distill",
+        configured_providers={
+            "fallback": "local_copy_metadata_fallback_provider",
+            "semantic": "local_pass_semantic_review_provider",
+        },
+        env_updates={
+            "SKILL_RUNTIME_FALLBACK_PROVIDER_CMD": json.dumps(
+                [sys.executable, str(ROOT / "examples" / "providers" / "copy_metadata_fallback_provider.py")]
+            ),
+            "SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD": json.dumps(
+                [sys.executable, str(ROOT / "examples" / "providers" / "pass_semantic_review_provider.py")]
+            ),
+        },
+        use_runtime_service_distill=True,
+    )
+
+
 def _evaluate_fixture(
     *,
     fixture_name: str,
+    lifecycle_mode: str,
     configured_providers: dict[str, str | None],
     env_updates: dict[str, str | None],
     observed_task: dict[str, Any] | None = None,
     execution_args: dict[str, str] | None = None,
     seed_callback=None,
+    use_runtime_service_distill: bool = False,
 ) -> dict[str, Any]:
     result = {
         "fixture_name": fixture_name,
+        "lifecycle_mode": lifecycle_mode,
         "provider_used": {
             "fallback": configured_providers.get("fallback"),
             "semantic": configured_providers.get("semantic"),
@@ -249,12 +279,18 @@ def _evaluate_fixture(
                     task_id=f"{fixture_name}_task",
                     session_id="provider_quality_eval",
                 )
-                distill_result = _generate_candidate(
-                    service=service,
-                    sandbox_root=sandbox_root,
-                    trajectory_path=Path(capture_result["trajectory_path"]),
-                    skill_name=f"{fixture_name}_candidate",
-                )
+                if use_runtime_service_distill:
+                    distill_result = service.distill(
+                        capture_result["trajectory_path"],
+                        skill_name=f"{fixture_name}_candidate",
+                    )
+                else:
+                    distill_result = _generate_candidate(
+                        service=service,
+                        sandbox_root=sandbox_root,
+                        trajectory_path=Path(capture_result["trajectory_path"]),
+                        skill_name=f"{fixture_name}_candidate",
+                    )
             except Exception as exc:  # noqa: BLE001
                 result["failure_reason"] = str(exc)
                 result["loop_stage"] = "generation_failed"

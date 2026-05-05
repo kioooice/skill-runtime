@@ -25,14 +25,18 @@ class RuntimeProviderQualityEvalTestsMixin:
         fixtures = {item["fixture_name"]: item for item in payload["fixtures"]}
 
         self.assertIn("demo_local_success", fixtures)
+        self.assertIn("lifecycle_mode", fixtures["demo_local_success"])
         self.assertIn("loop_stage", fixtures["demo_local_success"])
+        self.assertEqual("manual_provider_loop", fixtures["demo_local_success"]["lifecycle_mode"])
         self.assertEqual("passed", fixtures["demo_local_success"]["generated_candidate_status"])
         self.assertEqual("passed", fixtures["demo_local_success"]["audit_status"])
         self.assertEqual("passed", fixtures["demo_local_success"]["execution_smoke_status"])
         self.assertEqual("execution_passed", fixtures["demo_local_success"]["loop_stage"])
 
         self.assertIn("mock_template_execute_failure", fixtures)
+        self.assertIn("lifecycle_mode", fixtures["mock_template_execute_failure"])
         self.assertIn("loop_stage", fixtures["mock_template_execute_failure"])
+        self.assertEqual("manual_provider_loop", fixtures["mock_template_execute_failure"]["lifecycle_mode"])
         self.assertEqual("passed", fixtures["mock_template_execute_failure"]["generated_candidate_status"])
         self.assertEqual("needs_fix", fixtures["mock_template_execute_failure"]["audit_status"])
         self.assertEqual("skipped", fixtures["mock_template_execute_failure"]["execution_smoke_status"])
@@ -40,18 +44,21 @@ class RuntimeProviderQualityEvalTestsMixin:
         self.assertTrue(fixtures["mock_template_execute_failure"]["failure_reason"])
 
         self.assertIn("fake_deepseek_repair_success", fixtures)
+        self.assertEqual("manual_provider_loop", fixtures["fake_deepseek_repair_success"]["lifecycle_mode"])
         self.assertEqual("passed", fixtures["fake_deepseek_repair_success"]["generated_candidate_status"])
         self.assertTrue(fixtures["fake_deepseek_repair_success"]["repair_attempted"])
         self.assertEqual("attempted", fixtures["fake_deepseek_repair_success"]["repair_status"])
         self.assertEqual("execution_passed", fixtures["fake_deepseek_repair_success"]["loop_stage"])
 
         self.assertIn("fake_deepseek_semantic_block", fixtures)
+        self.assertEqual("manual_provider_loop", fixtures["fake_deepseek_semantic_block"]["lifecycle_mode"])
         self.assertEqual("needs_fix", fixtures["fake_deepseek_semantic_block"]["audit_status"])
         self.assertEqual("skipped", fixtures["fake_deepseek_semantic_block"]["execution_smoke_status"])
         self.assertEqual("audit_failed", fixtures["fake_deepseek_semantic_block"]["loop_stage"])
         self.assertTrue(fixtures["fake_deepseek_semantic_block"]["failure_reason"])
 
         self.assertIn("fake_deepseek_generation_failure", fixtures)
+        self.assertEqual("manual_provider_loop", fixtures["fake_deepseek_generation_failure"]["lifecycle_mode"])
         self.assertEqual("failed", fixtures["fake_deepseek_generation_failure"]["generated_candidate_status"])
         self.assertEqual("skipped", fixtures["fake_deepseek_generation_failure"]["audit_status"])
         self.assertEqual("skipped", fixtures["fake_deepseek_generation_failure"]["execution_smoke_status"])
@@ -59,11 +66,27 @@ class RuntimeProviderQualityEvalTestsMixin:
         self.assertTrue(fixtures["fake_deepseek_generation_failure"]["failure_reason"])
 
         self.assertIn("review_cleanup_provider_quality", fixtures)
+        self.assertEqual("manual_provider_loop", fixtures["review_cleanup_provider_quality"]["lifecycle_mode"])
         self.assertIn("loop_stage", fixtures["review_cleanup_provider_quality"])
         self.assertTrue(
             isinstance(fixtures["review_cleanup_provider_quality"]["repair_attempted"], bool)
         )
         self.assertTrue(fixtures["review_cleanup_provider_quality"]["failure_reason"])
+
+        self.assertIn("runtime_service_distill_demo_provider", fixtures)
+        self.assertEqual(
+            "runtime_service_distill",
+            fixtures["runtime_service_distill_demo_provider"]["lifecycle_mode"],
+        )
+        self.assertIn("loop_stage", fixtures["runtime_service_distill_demo_provider"])
+        runtime_service_fixture = fixtures["runtime_service_distill_demo_provider"]
+        if runtime_service_fixture["failure_reason"]:
+            self.assertTrue(runtime_service_fixture["failure_reason"])
+        else:
+            self.assertEqual("passed", runtime_service_fixture["generated_candidate_status"])
+            self.assertEqual("passed", runtime_service_fixture["audit_status"])
+            self.assertEqual("passed", runtime_service_fixture["execution_smoke_status"])
+            self.assertEqual("execution_passed", runtime_service_fixture["loop_stage"])
 
     def test_provider_quality_evaluation_script_writes_output_file(self) -> None:
         with tempfile.TemporaryDirectory(prefix="provider-quality-eval-") as temp_dir:
