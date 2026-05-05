@@ -68,8 +68,9 @@ If the output is not useful to a maintainer, the workflow is not useful.
 Run the Codex-facing gate in a temporary runtime root:
 
 ```powershell
+$repoRoot = (Get-Location).Path
 New-Item -ItemType Directory -Force .tmp_review_cleanup_mainline | Out-Null
-python -m skill_runtime.cli --root .tmp_review_cleanup_mainline codex-run --task-description "Group pull request review comments into a maintainer cleanup plan." --working-directory "D:\02-Projects\vibe" --risk-level low --task-kind workflow --disable-silent-reuse
+python -m skill_runtime.cli --root .tmp_review_cleanup_mainline codex-run --task-description "Group pull request review comments into a maintainer cleanup plan." --working-directory "$repoRoot" --risk-level low --task-kind workflow --disable-silent-reuse
 ```
 
 Expected current result:

@@ -41,6 +41,7 @@ python -m unittest tests.test_runtime -v
 
 Keep these demos runnable and easy to inspect:
 
+- `docs/main-demo-walkthrough.md`
 - `docs/maintainer-review-cleanup-demo.md`
 - `docs/maintainer-release-readiness-demo.md`
 - `docs/maintainer-handoff-continuation-demo.md`
