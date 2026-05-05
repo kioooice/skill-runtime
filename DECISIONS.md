@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-06 - Commit And Push Should Not Be The Default After Every Small Task
+
+**Decision**
+
+Stop defaulting to `commit + push` after every localized low-risk change. Publish changes at meaningful stage completions, sensible batching points, or when the user explicitly wants the current work published.
+
+**Reason**
+
+After removing the default repo-wide fast suite and state-file churn from small tasks, the next remaining workflow tax was immediate publish churn. For tiny tasks, forcing a fresh commit and push every time adds interruption, branch noise, and extra latency without improving product safety. The right default is intentional publishing, not automatic publication of every small slice.
+
+**Impact**
+
+- global and project `AGENTS.md` no longer treat commit/push as the default end step for every small task
+- `workflow-error-correction` now includes a durable `Publish churn` guard
+- commit/push remains appropriate for meaningful completed slices, batching points, or explicit user requests
+- this reduces routine workflow overhead without blocking deliberate publication when it actually helps
+
 ### 2026-05-06 - State Files Should Not Be Updated After Every Localized Low-Risk Change
 
 **Decision**

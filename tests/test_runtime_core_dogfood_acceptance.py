@@ -488,6 +488,7 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         self.assertIn("workflow-error-correction", agents_content)
         self.assertIn("Do not default to `python -m unittest tests.test_runtime_fast -v` for every small change", agents_content)
         self.assertIn("Do not update `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md` after every small change", agents_content)
+        self.assertIn("Do not default to commit and push after every small change", agents_content)
         self.assertNotIn("Prefer the fast runtime suite for routine validation", agents_content)
         self.assertNotIn("Do not treat Skill Runtime, local skills", agents_content)
         self.assertNotIn("Do not continue adding or validating skills just because auto mode can keep going", agents_content)
@@ -495,6 +496,7 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         self.assertIn("workflow-error-correction", global_agents_content)
         self.assertIn("Do not default to repository-wide test suites for every small change", global_agents_content)
         self.assertIn("Do not update repository state files after every small change", global_agents_content)
+        self.assertIn("Do not default to commit and push after every small change", global_agents_content)
         self.assertNotIn("Do not treat Skill Runtime, local skills", global_agents_content)
         self.assertNotIn(
             "Do not continue adding or validating skills just because auto mode can keep going",
@@ -514,6 +516,7 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
             "Known Mistake Guards",
             "Validation escalation: do not run repository-wide fast or full suites for every localized change",
             "State-file churn: do not update `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md` after every localized low-risk task",
+            "Publish churn: do not commit and push after every localized low-risk task",
             "If an existing guard applies, change the next action immediately.",
             "Record the mistake outside AGENTS.md",
             "Check existing correction records before creating a new one",

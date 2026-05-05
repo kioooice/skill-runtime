@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新发布策略纠偏：第三个已收掉的效率问题是 publish churn。当前全局与项目 `AGENTS.md` 都不再要求“小改动做完就默认 commit + push”。新的默认规则是：只有当一个 meaningful stage 真正完成、适合 batching、或者用户明确要求发布当前改动时，才执行 publish。全局 `workflow-error-correction` 也已新增 `Publish churn` guard，后续遇到局部低风险小任务时，不要再把立即发一笔 commit/push 当作默认流程动作。
+
 最新状态文件策略纠偏：在“不要每次小改动都跑仓库级快验”之后，第二个已收掉的效率问题是状态文件 churn。当前全局 `C:\Users\Administrator\.codex\skills\session-handoff-maintenance\SKILL.md` 已明确：不要对每个 localized low-risk change 都更新 `HANDOFF.md`、`TASKS.md`、`DECISIONS.md`。只有当 next-session entry point、durable decision、blocker、plan coordinate 或 long-context risk 真正变化时，才需要刷新这些文件。全局与项目 `AGENTS.md` 也都已同步这条规则。
 
 最新 durable guard：全局 `workflow-error-correction` 已新增 `State-file churn` guard。以后如果任务只是局部低风险修改，不要为了“流程完整”顺手刷一轮状态文件；这已经被视为需要直接避免的流程错误，而不是可反复讨论的做法。

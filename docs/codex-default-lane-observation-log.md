@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Publish churn was removed from the default small-task workflow
+
+- Task type: workflow publication overhead reduction
+- Classified as: default-out / skipped
+- What happened: after fixing overuse of repo-wide verification and state-file churn, the next repeated efficiency problem was defaulting to commit+push after every small task; global/project AGENTS and the workflow-error guard were updated so publishing now happens at meaningful stage completions, batching points, or explicit user request
+- Did the behavior feel correct: yes; it preserved deliberate publication while removing a low-value interruption from routine local work
+- Did the lane help: yes, because the skip result kept the fix in workflow policy instead of dragging runtime/product behavior into it
+- Follow-up: on future localized tasks, do not publish automatically unless the slice is actually worth publishing now
+
 ### 2026-05-06 - State-file churn was removed from the default small-task workflow
 
 - Task type: workflow maintenance overhead reduction

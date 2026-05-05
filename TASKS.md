@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新发布策略纠偏：不要再把 commit + push 当成每次小改动后的默认收尾。当前规则已经改成：只有 meaningful stage completion、合适 batching 点、或用户明确要求发布当前改动时，才执行 publish。全局与项目 `AGENTS.md` 已同步，全局 `workflow-error-correction` 也已新增 `Publish churn` guard。
+
 - 最新状态文件策略纠偏：不要再把 `HANDOFF.md`、`TASKS.md`、`DECISIONS.md` 当成每次小改动都要刷新的默认动作。当前已把规则收成“只有 next-session entry point、durable decision、blocker、plan coordinate 或 long-context risk 真正变化时才更新”。全局 `session-handoff-maintenance`、全局 `workflow-error-correction`、全局 `AGENTS.md` 和项目 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 都已同步这条规则。
 
 - 最新验证策略纠偏：不要再把 `python -m unittest tests.test_runtime_fast -v` 当成每次小改动的默认第一验证。当前已把默认策略收成“按 blast radius 选最小有用验证”：localized changes 优先 `git diff --check`、`python -m py_compile <changed files>` 和定向测试；只有共享行为、多模块改动、或没有可信窄验证时，才上仓库级 fast suite。全局 `runtime-verification-selector`、全局 `workflow-error-correction`、全局 `AGENTS.md` 和项目 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 都已同步这条规则。
