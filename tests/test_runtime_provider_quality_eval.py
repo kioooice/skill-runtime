@@ -90,6 +90,10 @@ class RuntimeProviderQualityEvalTestsMixin:
             self.assertIn("staging_file", fixture)
             self.assertIn("generated_candidate_provider", fixture)
             self.assertIn("inferred_or_used_input_schema", fixture)
+            self.assertIn("declared_input_schema_keys", fixture)
+            self.assertIn("execution_arg_keys", fixture)
+            self.assertIn("candidate_kwargs_keys", fixture)
+            self.assertIn("schema_execution_arg_mismatch", fixture)
             self.assertIn("expected_artifacts", fixture)
             self.assertIn("produced_artifacts", fixture)
             self.assertIn("missing_artifacts", fixture)
@@ -157,6 +161,21 @@ class RuntimeProviderQualityEvalTestsMixin:
         self.assertEqual(
             "local_copy_metadata_fallback_provider",
             runtime_service_fixture["generated_candidate_provider"],
+        )
+        self.assertIn("payload", runtime_service_fixture["declared_input_schema_keys"])
+        self.assertIn("metadata_path", runtime_service_fixture["execution_arg_keys"])
+        self.assertIn("metadata_path", runtime_service_fixture["candidate_kwargs_keys"])
+        self.assertIn(
+            "payload",
+            runtime_service_fixture["schema_execution_arg_mismatch"]["schema_not_in_execution_args"],
+        )
+        self.assertIn(
+            "metadata_path",
+            runtime_service_fixture["schema_execution_arg_mismatch"]["execution_args_not_in_schema"],
+        )
+        self.assertIn(
+            "metadata_path",
+            runtime_service_fixture["schema_execution_arg_mismatch"]["candidate_kwargs_not_in_schema"],
         )
         if runtime_service_fixture["failure_reason"]:
             self.assertTrue(runtime_service_fixture["failure_reason"])

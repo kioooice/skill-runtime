@@ -4,6 +4,7 @@ import argparse
 import importlib.util
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -262,6 +263,14 @@ def _evaluate_fixture(
         "staging_file": None,
         "generated_candidate_provider": None,
         "inferred_or_used_input_schema": None,
+        "declared_input_schema_keys": [],
+        "execution_arg_keys": [],
+        "candidate_kwargs_keys": [],
+        "schema_execution_arg_mismatch": {
+            "schema_not_in_execution_args": [],
+            "execution_args_not_in_schema": [],
+            "candidate_kwargs_not_in_schema": [],
+        },
         "expected_artifacts": [],
         "produced_artifacts": [],
         "missing_artifacts": [],
@@ -278,6 +287,7 @@ def _evaluate_fixture(
         selected_observed_task = observed_task or _observed_task()
         selected_execution_args = execution_args or _execution_args()
         result["expected_artifacts"] = _expected_artifacts(selected_execution_args)
+        result["execution_arg_keys"] = sorted(selected_execution_args.keys())
 
         with _patched_env(env_updates):
             try:
@@ -310,6 +320,13 @@ def _evaluate_fixture(
             fallback_artifact = distill_result.get("fallback_artifact")
             result["generated_candidate_provider"] = _generated_candidate_provider(distill_result)
             result["inferred_or_used_input_schema"] = _inferred_or_used_input_schema(distill_result, fallback_artifact)
+            result["declared_input_schema_keys"] = _schema_keys(result["inferred_or_used_input_schema"])
+            result["candidate_kwargs_keys"] = _candidate_kwargs_keys(result["staging_file"])
+            result["schema_execution_arg_mismatch"] = _schema_execution_arg_mismatch(
+                declared_input_schema_keys=result["declared_input_schema_keys"],
+                execution_arg_keys=result["execution_arg_keys"],
+                candidate_kwargs_keys=result["candidate_kwargs_keys"],
+            )
             if fallback_artifact:
                 fallback_response = _read_fallback_artifact(Path(fallback_artifact))
                 result["provider_used"]["fallback"] = (
@@ -572,6 +589,39 @@ def _generated_candidate_provider(distill_result: dict[str, Any]) -> str | None:
     if isinstance(rule_name, str) and rule_name:
         return f"deterministic_rule:{rule_name}"
     return None
+
+
+def _schema_keys(input_schema: dict[str, Any] | None) -> list[str]:
+    if not isinstance(input_schema, dict):
+        return []
+    return sorted(str(key) for key in input_schema.keys())
+
+
+def _candidate_kwargs_keys(staging_file: str | None) -> list[str]:
+    if not isinstance(staging_file, str) or not staging_file:
+        return []
+    try:
+        source = Path(staging_file).read_text(encoding="utf-8")
+    except OSError:
+        return []
+    matches = re.findall(r"kwargs\.get\(\s*['\"]([^'\"]+)['\"]\s*\)", source)
+    return sorted(set(matches))
+
+
+def _schema_execution_arg_mismatch(
+    *,
+    declared_input_schema_keys: list[str],
+    execution_arg_keys: list[str],
+    candidate_kwargs_keys: list[str],
+) -> dict[str, list[str]]:
+    schema_set = set(declared_input_schema_keys)
+    execution_set = set(execution_arg_keys)
+    candidate_set = set(candidate_kwargs_keys)
+    return {
+        "schema_not_in_execution_args": sorted(schema_set - execution_set),
+        "execution_args_not_in_schema": sorted(execution_set - schema_set),
+        "candidate_kwargs_not_in_schema": sorted(candidate_set - schema_set),
+    }
 
 
 def _inferred_or_used_input_schema(
