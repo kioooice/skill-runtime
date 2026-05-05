@@ -610,6 +610,15 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the lane help: yes, it exposed the real gap between "MCP configured" and "Codex actually calls the runtime during development"
 - Follow-up: use the next real code-development task to verify that `run_codex_task_experimental` plus optional `finalize_codex_task_experimental` produces stable dashboard events
 
+### 2026-05-05 - Governance snapshot wording cleanup
+
+- Task type: dashboard explanation refinement
+- Classified as: default-out / skipped by the Codex runtime gate
+- What happened: the governance snapshot now explains empty duplicate-candidate state and translates `Missing skill directory: skill_store\rejected` into a user-facing note that this is not an error and does not need action yet
+- Did the behavior feel correct: yes; this is product-surface clarification work, not a reusable runtime workflow
+- Did the lane help: partly; the skip event is useful because it keeps this UI clarification visible in trigger logs without pretending the runtime should take over
+- Follow-up: continue the same pattern on trigger-log event detail so product pages explain runtime state without exposing raw internals
+
 ### 2026-05-01 - Runtime observability dashboard implementation
 
 - Task type: Codex runtime lane observability

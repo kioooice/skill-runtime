@@ -20,6 +20,8 @@
 
 最新触发日志修复：用户发现触发日志里 `已使用` 和 `进入观察` 变成 0。根因不是日志丢失，而是 dashboard 先按最近 N 条总记录截断，再统计状态；最近 skipped 记录过多时会把较早的 used / entered 挤出页面。当前已改为完整日志计数，并为 used / entered / skipped 各自保留最近样本。真实 dashboard 生成后显示 `已使用 17 / 进入观察 39 / 已跳过 105`，并且 HTML 中包含 used / entered 事件行。新增回归测试覆盖该场景，`python -m unittest tests.test_runtime_fast -v` 通过 129 tests OK。
 
+最新治理快照解释优化：用户继续指出 `治理快照` 页面也看不懂，尤其是 `Missing skill directory: skill_store\rejected` 这种内部诊断。当前已把治理快照空状态和诊断文案改成人话：没有重复候选时会解释“当前没有需要合并处理的重复候选”，缺少 `skill_store\rejected` 时会明确说明“当前还没有已拒绝候选目录，这不是错误，暂时不需要处理”。新增回归测试覆盖这个场景，快验已更新为 130 tests OK。
+
 最新开源准备进展：用户确认采用 MIT。当前已新增 `LICENSE`，`pyproject.toml` 已补 license、author、project URLs、keywords 和 classifiers，README / README.zh-CN / README.en 已增加许可证说明。readiness audit 文档也已记录这项进展。剩余开源阻塞主要是 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`、README 顶部公开叙事和 maintainer workflow demo。
 
 最新阶段完成：Open Source readiness audit 已完成并写入 `docs/codex-open-source-readiness-audit.md`。结论：当前不适合直接申请。优势是仓库已公开、已有安装包元数据、CI、README、测试文档、隐私/provenance 文档和本地 demo；`LICENSE` 和基础 package metadata 已在审计后补齐；剩余主要阻塞是缺 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`，README 顶部还不是面向新维护者的 60 秒价值叙事，缺 2-3 个真实 maintainer workflow demo，公开 GitHub traction 当前很弱。下一阶段应做项目定位和 README/application narrative，不要先堆新插件功能。
@@ -845,7 +847,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-当前新战略目标是“开源申请后继续产品化主线”。申请表已提交，`技能进化生命周期详情面板` 已完成。下一步建议做 `触发日志事件详情`：沿用右侧详情抽屉模式，让触发日志事件可点击查看任务、分类、runtime lane 状态、选中技能、后续建议和 host operations；继续保持只读、静态 HTML、无写操作。不要回到继续堆 runtime 样本；只有当用户要求操作控制台时，才另开方向审核。
+当前新战略目标是“开源申请后继续产品化主线”。申请表已提交，`技能进化生命周期详情面板` 已完成，`触发日志` 计数错位也已修复，`治理快照` 空状态和缺目录提示已翻译成人话。下一步建议做 `触发日志事件详情`：沿用右侧详情抽屉模式，让触发日志事件可点击查看任务、分类、runtime lane 状态、选中技能、后续建议和 host operations；继续保持只读、静态 HTML、无写操作。不要回到继续堆 runtime 样本；只有当用户要求操作控制台时，才另开方向审核。
 
 技能进化闭环当前停在确认应用层：下一步如果继续这条主线，应做回滚/撤销应用路径，允许根据 `.skill_runtime/evolution_applications/*.apply.json` 的 `rollback_hint` 恢复备份，并把候选状态从 `applied` 调整为 `rolled_back` 或类似状态；不要做无确认自动写全局技能。
 

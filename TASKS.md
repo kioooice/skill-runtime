@@ -13,6 +13,7 @@
 - 最新申请状态：用户已提交 OpenAI Codex for Open Source / Open Source Fund 表单，申请准备阶段收口。主线已回到产品开发，当前完成 `技能进化生命周期详情面板`：技能进化卡片可点击打开右侧详情抽屉，展示候选、审核、应用、回滚阶段，以及证据、建议、关联文件路径和状态信息；仍保持只读，不添加 apply/rollback 写操作。
 - 最新验证结果：技能进化生命周期详情面板按 TDD 增加回归测试，`python -m unittest tests.test_runtime_fast -v` 通过 127 tests OK；`git diff --check` 通过；`python -m skill_runtime.cli dashboard --output .skill_runtime\dashboard.html` 成功生成静态 dashboard。
 - 最新 dashboard 修复：触发日志不再按“最近 N 条总记录”截断后再统计状态，避免大量 skipped 把较早的 used / entered 记录挤掉。现在按钮计数基于完整日志，列表保留每个状态各自的最近样本；当前真实日志恢复为 `已使用 17 / 进入观察 39 / 已跳过 105`。
+- 最新 dashboard 解释优化：`治理快照` 页面不再直接暴露 `Missing skill directory: skill_store\rejected` 这类内部诊断。现在没有重复候选时会解释这意味着当前没有相似候选需要合并；缺少 `skill_store\rejected` 时会明确说明这不是错误，只表示尚未出现被明确拒绝的候选。
 - 最新全局技能新增：已创建 `parallel-subagent-orchestration`，用于复杂可并行任务中的主代理/子代理协作。Codex 主线程负责拆分、关键路径、审核、集成、验证和最终汇报；子代理只处理边界清楚、可并行、可审核的任务。项目和全局 `AGENTS.md` 只增加短路由，完整流程保留在全局 skill。
 - 最新全局技能新增：已创建 `plan-progress-tracker`，用于多阶段计划执行时持续显示“第几阶段 / 已完成 / 当前正在做 / 下一步 / 偏离风险”。以后计划列出来后，继续开发、自动模式、阶段汇报、会话接力或压缩恢复都应先恢复这个进度坐标。
 - 最新全局技能新增：已创建 `context-compaction-audit`，用于上下文压缩或 summary 恢复后先判断当前会话是否还能安全继续，还是应该 checkpoint 后继续、完成当前阶段后新开会话，或立即新开会话。它会报告压缩时间、压缩率可计算性、信息丢失风险和下一次压缩前的建议。现在它已与 `session-handoff-maintenance` 联动：需要 checkpoint 或新开会话时，先刷新 handoff 状态文件。
@@ -81,6 +82,7 @@
 - [x] 新增全局 `parallel-subagent-orchestration` 技能，用于复杂可并行任务中的主代理委派、审核和集成
 - [x] 下一阶段优先完成 `技能进化生命周期详情面板`，候选卡片可点击查看生命周期、证据、建议和关联记录，仍保持只读
 - [x] 修复触发日志状态筛选被 skipped 记录挤占的问题，保留 used / entered / skipped 各自的最近样本
+- [x] 把 `治理快照` 的空状态和缺少 `skill_store/rejected` 诊断改成用户能理解的说明
 - [ ] 下一阶段可扩展触发日志事件点击详情，仍保持只读
 - [ ] 下一阶段可扩展中央技能库组别详情，仍保持只读
 - [ ] 下一次启动新功能或新路线前，使用 `pre-implementation-workflow-review` 输出四类 verdict，确认它能先审开发方向价值、替代方案、成功指标和停止条件

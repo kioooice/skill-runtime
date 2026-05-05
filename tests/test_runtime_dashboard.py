@@ -562,6 +562,29 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("下一步：distill_trajectory", html)
         self.assertIn("Promote captured workflow globally", html)
 
+    def test_dashboard_governance_snapshot_explains_empty_state_and_missing_rejected_directory(self) -> None:
+        from skill_runtime.dashboard.render import render_dashboard_html
+
+        data = {
+            "root": str(self.runtime_root),
+            "overview": {},
+            "skills": [],
+            "events": [],
+            "governance": {"duplicate_candidates": []},
+            "diagnostics": ["Missing skill directory: skill_store\\rejected"],
+            "platform_inventory": {},
+            "capability_collections": [],
+        }
+
+        html = render_dashboard_html(data)
+
+        self.assertIn("当前没有发现需要合并处理的重复候选。", html)
+        self.assertIn("这表示目前没有两条过于相似、可能其实是同一项技能的候选。", html)
+        self.assertIn("当前还没有“已拒绝候选”目录。", html)
+        self.assertIn("这不是错误，只表示你还没有把候选明确标记为拒绝。", html)
+        self.assertIn("暂时不需要处理。只有你开始使用“拒绝候选”流程时，这个目录才会出现。", html)
+        self.assertNotIn("Missing skill directory: skill_store\\rejected", html)
+
     def test_dashboard_collector_includes_imported_staging_provenance(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
         from skill_runtime.importers.local_skill_importer import import_local_skill_to_staging

@@ -1189,13 +1189,49 @@ def _governance(governance: dict[str, Any], diagnostics: list[str]) -> str:
     if duplicate_candidates:
         duplicate_body = f"<pre>{text(duplicate_candidates)}</pre>"
     else:
-        duplicate_body = '<p class="muted">没有发现重复候选。</p>'
-    diagnostics_body = "".join(f"<li>{text(item)}</li>" for item in diagnostics) or "<li>没有诊断信息。</li>"
+        duplicate_body = """<div class="muted">
+  <p>当前没有发现需要合并处理的重复候选。</p>
+  <p>这表示目前没有两条过于相似、可能其实是同一项技能的候选。</p>
+</div>"""
+    diagnostics_body = "".join(_governance_diagnostic_item(item) for item in diagnostics) or "<li>没有诊断信息。</li>"
     return f"""<section id="dashboard-page-governance" class="panel view-panel dashboard-view-page" data-view-page="governance" hidden>
   {duplicate_body}
   <h3>诊断信息</h3>
   <ul>{diagnostics_body}</ul>
 </section>"""
+
+
+def _governance_diagnostic_item(item: Any) -> str:
+    raw = str(item or "").strip()
+    if not raw:
+        return "<li>没有诊断信息。</li>"
+    lowered = raw.lower()
+    normalized = raw.replace("/", "\\")
+    if lowered.startswith("missing skill directory:") and normalized.endswith("skill_store\\rejected"):
+        return """<li>
+  <strong>当前还没有“已拒绝候选”目录。</strong>
+  <div class="muted">这不是错误，只表示你还没有把候选明确标记为拒绝。</div>
+  <div class="muted">暂时不需要处理。只有你开始使用“拒绝候选”流程时，这个目录才会出现。</div>
+</li>"""
+    if lowered.startswith("missing skill directory:"):
+        missing_target = raw.split(":", 1)[1].strip() if ":" in raw else raw
+        return f"""<li>
+  <strong>缺少技能目录：{text(missing_target)}</strong>
+  <div class="muted">运行时原本希望在这里找到对应状态的技能文件。</div>
+</li>"""
+    if lowered.startswith("could not build governance report:"):
+        detail = raw.split(":", 1)[1].strip() if ":" in raw else raw
+        return f"""<li>
+  <strong>治理报告暂时无法生成。</strong>
+  <div class="muted">原因：{text(detail)}</div>
+</li>"""
+    if lowered.startswith("could not read skill index:"):
+        detail = raw.split(":", 1)[1].strip() if ":" in raw else raw
+        return f"""<li>
+  <strong>技能索引暂时读不到。</strong>
+  <div class="muted">原因：{text(detail)}</div>
+</li>"""
+    return f"<li>{text(raw)}</li>"
 
 
 def _platform_inventory(inventory: dict[str, Any]) -> str:
