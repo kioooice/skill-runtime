@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-- 最新 dashboard 信息架构重构：现有 read-only dashboard 第一屏已经改成人话和默认阅读路径。当前导航与页头统一收口到 `运行状态总览` / `现在先看什么` / `可直接复用的流程` / `待你决定的事项` / `最近发生了什么` / `系统检查` / `来源与范围`；overview 先回答“现在能直接用什么、最近系统怎么处理、有没有明显异常”。`operator-summary` 也已改成 `可直接复用的流程`、`待审核流程`、`已记录任务样本`、`待你确认的建议`，三条 quality gates 下沉到 `系统检查` 语义下。当前仍然只消费稳定字段，不绑定 full item lists，不执行 host operation，不 promote/apply，也没有任何证据支持扩大 `default-in`。
+- 最新 dashboard 文案收口：现有 read-only dashboard 第一屏已经从“内部术语”收口到更专业、克制的产品语言。当前导航与页头统一为 `运行状态总览` / `总览` / `可复用流程` / `待审核项` / `近期记录` / `系统状态` / `数据来源`；overview 指标为 `现有流程` / `自动处理` / `观察中` / `常规处理`。`operator-summary` 也已收口为 `系统摘要`、`现有流程`、`待审核候选`、`任务轨迹`、`建议操作`，并显示 `提供器状态`、`基础检索状态`、`工作流检索状态`。当前仍然只消费稳定字段，不绑定 full item lists，不执行 host operation，不 promote/apply，也没有任何证据支持扩大 `default-in`。
 
 - 下一步主线：判断 `dashboard` / `global-dashboard` 的 `operator-summary` export 刷新入口是否要更顺手；重点是 operator 闭环，不是继续扩页面字段，也不是让 dashboard 执行 evaluator 或 lifecycle operation。当前仍然没有任何证据支持扩大 `default-in`。
 

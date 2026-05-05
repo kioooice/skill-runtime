@@ -2,7 +2,7 @@
 
 ## Current State
 
-最新 dashboard 信息架构切片：现有 read-only dashboard 不再把第一屏做成内部实现名词堆叠，而是改成更直接的用户阅读路径。当前页面标题与导航已经切到 `运行状态总览` / `现在先看什么` / `可直接复用的流程` / `待你决定的事项` / `最近发生了什么` / `系统检查` / `来源与范围`；overview 也改成先回答“现在能直接用什么、最近系统怎么处理、有没有明显异常”。operator-summary 区块现在也统一用人话：`可直接复用的流程`、`待审核流程`、`已记录任务样本`、`待你确认的建议`，三条 quality gate 改为 `提供器质量`、`基础技能检索质量`、`工作流检索质量`，并下沉到 `系统检查` 语义下。全局项目卡片会显示 `系统摘要` freshness 和更紧凑的 gate 状态摘要。当前仍然没有绑定 full item lists，没有新增页面写操作，也没有把 dashboard 变成 operator control plane。
+最新 dashboard 文案收口：上一轮“人话化”已经解决内部术语问题，但口语解释仍然过重；当前已进一步收回到更专业、克制的产品语言。页面标题与导航现在统一为 `运行状态总览` / `总览` / `可复用流程` / `待审核项` / `近期记录` / `系统状态` / `数据来源`；overview 指标改成 `现有流程` / `自动处理` / `观察中` / `常规处理`。operator-summary 也已收口为 `系统摘要`，内部卡片与 gate 标签改成 `现有流程`、`待审核候选`、`任务轨迹`、`建议操作`、`提供器状态`、`基础检索状态`、`工作流检索状态`。全局项目卡片会显示 `系统摘要` freshness 和对应 gate 状态摘要。当前仍然没有绑定 full item lists，没有新增页面写操作，也没有把 dashboard 变成 operator control plane。
 
 最新本轮验证与边界：已先补定向失败测试，再落最小渲染实现，然后补齐残留旧术语测试和脚本默认视图不一致。当前 `python -m py_compile skill_runtime/dashboard/render.py skill_runtime/dashboard/templates.py tests/test_runtime_dashboard.py tests/test_runtime_collections.py`、`git diff --check`、`python -m unittest tests.test_runtime_fast -v` 均已通过；当前 fast suite 为 208 tests OK。dashboard 脚本默认页现在也与页面初始状态一致，默认落在 `overview` 而不是旧的 `skill-tree`。当前这轮 runtime gate 结果仍是 `default-out / skipped`，原因是这是一个具体但非 workflow-like enough 的 dashboard/product slice；应继续保留在默认 lane 观察日志中。下一步更值得判断的是 `operator-summary` 的刷新入口是否要更顺手，而不是继续扩页面字段或恢复内部术语。
 

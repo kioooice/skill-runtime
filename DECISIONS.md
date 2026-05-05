@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Dashboard Copy Must Be Professional And Neutral, Not Internal Or Conversational
+
+**Decision**
+
+After removing internal implementation labels from the dashboard, tighten the new copy again so it uses short, neutral product language rather than explanatory conversational phrasing.
+
+**Reason**
+
+The first rewrite fixed the comprehension failure caused by internal names such as `provider_quality`, but it overcorrected into guidance-heavy phrases like `先看这里` and `这块只回答...`. That still reads like narration instead of product UI. The correct target is concise operational language: clear enough to understand, restrained enough to scan.
+
+**Impact**
+
+- navigation now prefers `总览`, `可复用流程`, `待审核项`, `近期记录`, `系统状态`, and `数据来源`
+- overview metrics now use shorter operational labels such as `现有流程`, `自动处理`, `观察中`, and `常规处理`
+- operator-summary copy is tightened to `系统摘要`, `现有流程`, `待审核候选`, `任务轨迹`, `建议操作`, `提供器状态`, `基础检索状态`, and `工作流检索状态`
+- grouped workflow copy remains visible but no longer reads like guided onboarding text
+- this is still a wording-only slice: no data-shape expansion, no write actions, no evaluator execution, and no justification for widening `default-in`
+
 ### 2026-05-06 - Dashboard First Screen Must Use User-Facing Language And Separate System Checks From Primary Status
 
 **Decision**

@@ -897,3 +897,12 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the behavior feel correct: yes; once the stable summary data existed, the next real gap was comprehension, and fixing the reading path was more valuable than adding more fields
 - Did the lane help: yes, because it kept the slice visible as governed product work without incorrectly treating dashboard copy/layout cleanup as a reusable workflow family
 - Follow-up: the next dashboard-adjacent slice should evaluate whether `operator-summary` refresh entry points are ergonomic enough, not continue expanding surface area or reintroducing internal terminology
+
+### 2026-05-06 - Dashboard wording tightened from conversational guidance to neutral product copy
+
+- Task type: dashboard wording refinement
+- Classified as: default-out / skipped
+- What happened: kept the same information architecture but replaced guidance-heavy labels with shorter operational copy such as `总览`, `可复用流程`, `待审核项`, `近期记录`, `系统状态`, `数据来源`, plus `系统摘要` / `现有流程` / `待审核候选` / `任务轨迹` / `建议操作`
+- Did the behavior feel correct: yes; the dashboard now avoids both internal implementation names and over-explaining narration, which makes the surface easier to scan without feeling like onboarding copy
+- Did the lane help: yes, because it let the wording adjustment stay visible as product work while keeping it out of the reusable-workflow lane
+- Follow-up: keep future dashboard iterations focused on operational clarity and entry-point ergonomics, not more explanatory text

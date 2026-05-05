@@ -127,7 +127,7 @@ class RuntimeCollectionsTestsMixin:
 
         html = render_dashboard_html(collect_dashboard_data(self.runtime_root))
 
-        self.assertIn("可直接复用的流程", html)
+        self.assertIn("可复用流程", html)
         self.assertIn("流程分组", html)
         self.assertIn('data-view-target="skill-tree"', html)
         self.assertIn('data-view-page="skill-tree"', html)
@@ -140,7 +140,7 @@ class RuntimeCollectionsTestsMixin:
         self.assertNotIn("合并文本文件", html)
         self.assertIn('data-collection-id="direction-strategy"', html)
         self.assertIn("开发前方向审核", html)
-        self.assertIn("按功能分组查看当前可直接复用的流程。", html)
+        self.assertIn("按功能分组查看当前可复用的流程。", html)
 
     def test_dashboard_renderer_hides_collection_candidate_noise(self) -> None:
         from skill_runtime.dashboard.render import render_dashboard_html
