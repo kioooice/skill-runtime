@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-05 - Treat Provider Guidance As Part Of The Formal Fallback Request Contract
+
+**Decision**
+
+Record `provider_guidance` as an explicit field in the fallback provider request contract and document it in the provider integration guide.
+
+**Reason**
+
+Once the minimal review-cleanup guidance was wired into request construction, leaving it as an undocumented implementation detail would make external providers and future provider examples guess whether the field was stable, optional, or merely temporary prompt text. The contract should say clearly that `provider_guidance` is a first-class request field, while also preserving prompt-based compatibility for simpler providers.
+
+**Impact**
+
+- `docs/provider-integration.md` now lists the fallback request fields explicitly
+- providers may consume `provider_guidance` directly or ignore it and rely on `prompt`
+- bundled provider examples remain compatible without widening their authority
+- `provider_guidance` is explicitly not permission to relax audit, auto-promote, or bypass maintainer judgment
+- baseline expectations remain unchanged; this is contract clarification, not default-lane evidence
+
 ### 2026-05-05 - Carry Minimal Provider Guidance In The Fallback Request
 
 **Decision**

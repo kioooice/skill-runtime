@@ -110,10 +110,34 @@ The command receives a JSON object on stdin:
   "summary": "Task summary.",
   "docstring": "Skill docstring.",
   "input_schema": {"input_path": "str"},
+  "provider_guidance": "- Generate executable workflow code, not a template summary.",
   "trajectory": {},
   "prompt": "Prompt text for the provider."
 }
 ```
+
+Request fields:
+
+- `skill_name`: requested candidate skill name
+- `summary`: short task summary for the workflow being distilled
+- `docstring`: target docstring shape the generated `run(...)` function should satisfy
+- `input_schema`: inferred input names and type strings for the candidate skill
+- `provider_guidance`: structured fallback-generation guidance derived from the current trajectory family
+- `trajectory`: captured successful task trajectory used as provider context
+- `prompt`: the assembled fallback prompt string sent to prompt-driven providers
+
+`provider_guidance` is part of the formal fallback request contract.
+
+- It is structured guidance intended for provider-side logic or prompt assembly.
+- The same guidance is also embedded into `prompt`.
+- A provider may read `provider_guidance` directly, or it may ignore that field and work only from `prompt`.
+- Providers must not treat `provider_guidance` as permission to relax audit requirements, auto-promote a generated candidate, or bypass maintainer judgment.
+
+Compatibility note for the bundled example fallback providers:
+
+- `copy_metadata_fallback_provider.py` reads the request JSON and uses `summary`; extra fields such as `provider_guidance` are ignored safely.
+- `review_cleanup_fallback_provider.py` only validates that the stdin payload is JSON; extra request fields are ignored safely.
+- `deepseek_fallback_provider.py` forwards the full request object to the model and remains compatible with added request fields because its local validation is applied to the generated candidate, not to a fixed request schema.
 
 It must return:
 

@@ -59,6 +59,7 @@ class RuntimeProviderQualityEvalTestsMixin:
         )
         artifact = self._read_json_file(Path(artifact_path))
         guidance = artifact["request"]["provider_guidance"]
+        prompt = artifact["request"]["prompt"]
 
         self.assertIn("Generate executable workflow code", guidance)
         self.assertIn("not a template summary", guidance)
@@ -72,6 +73,8 @@ class RuntimeProviderQualityEvalTestsMixin:
         self.assertIn("Do not auto-resolve review comments", guidance)
         self.assertIn("Do not infer merge approval", guidance)
         self.assertIn("Do not bypass maintainer judgment", guidance)
+        self.assertIn("Provider guidance:", prompt)
+        self.assertIn(guidance, prompt)
 
     def test_single_file_copy_rule_still_matches_pure_copy_workflow(self) -> None:
         capture = self.service.capture_trajectory(

@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Fallback provider contract documentation
+
+- Task type: provider-contract closure
+- Classified as: default-out / skipped
+- What happened: documented `provider_guidance` as part of the formal fallback provider request contract in `docs/provider-integration.md`, clarified that the same guidance is embedded into `prompt`, and confirmed bundled example providers remain compatible without changing their authority
+- Did the behavior feel correct: yes; this tightened contract clarity without changing audit, fixture roles, or runtime entry policy
+- Did the lane help: yes, because the skipped result reinforced that this is documentation and contract hardening, not evidence for broader automatic runtime entry
+- Follow-up: keep provider-loop improvements inside the existing fixture family and baseline gate rather than using contract clarity as a reason to widen `default-in`
+
 ### 2026-05-05 - Review cleanup provider guidance wiring
 
 - Task type: provider-fidelity request hardening
