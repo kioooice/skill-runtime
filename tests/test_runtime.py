@@ -11,6 +11,7 @@ from tests.test_runtime_collections import RuntimeCollectionsTestsMixin
 from tests.test_runtime_contracts import RuntimeContractTestsMixin
 from tests.test_runtime_core_dogfood_acceptance import RuntimeCoreDogfoodAcceptanceTestsMixin
 from tests.test_runtime_dashboard import RuntimeDashboardTestsMixin
+from tests.test_runtime_dashboard_operator_summary_export import RuntimeDashboardOperatorSummaryExportTestsMixin
 from tests.test_runtime_deepseek_provider_examples import RuntimeDeepSeekProviderExampleTestsMixin
 from tests.test_runtime_distill_coverage import RuntimeDistillCoverageTestsMixin
 from tests.test_runtime_execution_flow import RuntimeExecutionFlowTestsMixin
@@ -35,6 +36,7 @@ class RuntimeTests(
     RuntimeContractTestsMixin,
     RuntimeCoreDogfoodAcceptanceTestsMixin,
     RuntimeDashboardTestsMixin,
+    RuntimeDashboardOperatorSummaryExportTestsMixin,
     RuntimeDeepSeekProviderExampleTestsMixin,
     RuntimeDistillCoverageTestsMixin,
     RuntimeTrajectorySearchTestsMixin,

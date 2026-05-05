@@ -2,6 +2,27 @@
 
 ## Decision Log
 
+### 2026-05-06 - Advance Dashboard Integration Through A Read-Only Operator Summary Export, Not A Page Rewrite
+
+**Decision**
+
+Use a read-only export layer as the next integration step between `operator-summary` and the existing dashboard/global-dashboard surfaces.
+
+**Reason**
+
+The repository already has working read-only dashboard pages. The next product problem is not missing UI; it is the lack of a stable, scriptable bridge from `operator-summary` into future collector work. A narrow export file lets dashboard/operator workbench consumers depend on stable fields without binding pages directly to low-level runtime files or to the full `operator-summary` item lists too early.
+
+**Impact**
+
+- chose scheme A instead of changing dashboard page rendering
+- added `docs/dashboard-operator-summary-integration-plan.md`
+- added `collect_dashboard_operator_summary_data(...)` and `export_dashboard_operator_summary_data(...)`
+- added `scripts/export_operator_summary_for_dashboard.py`
+- writes a stable subset to `.skill_runtime/dashboard/operator-summary.json`
+- existing dashboard/global-dashboard HTML pages remain unchanged
+- export does not run evaluator scripts, execute host operations, promote skills, or apply evolution candidates
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Stabilize operator-summary v1 before any dashboard workbench integration
 
 **Decision**

@@ -5,6 +5,7 @@ from tests.test_runtime_agent_orchestration import RuntimeAgentOrchestrationTest
 from tests.test_runtime_collections import RuntimeCollectionsTestsMixin
 from tests.test_runtime_core_dogfood_acceptance import RuntimeCoreDogfoodAcceptanceTestsMixin
 from tests.test_runtime_dashboard import RuntimeDashboardTestsMixin
+from tests.test_runtime_dashboard_operator_summary_export import RuntimeDashboardOperatorSummaryExportTestsMixin
 from tests.test_runtime_deepseek_provider_examples import RuntimeDeepSeekProviderExampleTestsMixin
 from tests.test_runtime_governance import RuntimeGovernanceFastTestsMixin
 from tests.test_runtime_isolation import RuntimeIsolationTestsMixin
@@ -24,6 +25,7 @@ class RuntimeFastTests(
     RuntimeCollectionsTestsMixin,
     RuntimeCoreDogfoodAcceptanceTestsMixin,
     RuntimeDashboardTestsMixin,
+    RuntimeDashboardOperatorSummaryExportTestsMixin,
     RuntimeDeepSeekProviderExampleTestsMixin,
     RuntimeGovernanceFastTestsMixin,
     RuntimeIsolationTestsMixin,

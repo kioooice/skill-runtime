@@ -38,6 +38,55 @@ def collect_dashboard_data(root: str | Path, *, event_limit: int = 50) -> dict[s
     }
 
 
+def collect_dashboard_operator_summary_data(root: str | Path) -> dict[str, Any]:
+    runtime_root = Path(root).resolve()
+    summary = RuntimeService(runtime_root).operator_summary()
+    quality_gates = summary.get("quality_gates") if isinstance(summary.get("quality_gates"), dict) else {}
+    return {
+        "generated_at": summary.get("generated_at") if isinstance(summary.get("generated_at"), str) else None,
+        "active_skills": {"count": _summary_count(summary.get("active_skills"))},
+        "staging_candidates": {"count": _summary_count(summary.get("staging_candidates"))},
+        "trajectories": {"count": _summary_count(summary.get("trajectories"))},
+        "recommended_host_operations": {"count": _summary_count(summary.get("recommended_host_operations"))},
+        "quality_gates": {
+            "provider_quality": _operator_gate_export(
+                quality_gates.get("provider_quality"),
+                fallback_label="provider_quality",
+            ),
+            "utility_search_quality": _operator_gate_export(
+                quality_gates.get("utility_search_quality"),
+                fallback_label="utility_search_quality",
+            ),
+            "workflow_search_quality": _operator_gate_export(
+                quality_gates.get("workflow_search_quality"),
+                fallback_label="workflow_search_quality",
+            ),
+        },
+        "safe_next_steps": _summary_list(summary.get("safe_next_steps")),
+        "intentionally_not_automatic": _string_list(summary.get("intentionally_not_automatic")),
+        "missing_or_unavailable": _string_list(summary.get("missing_or_unavailable")),
+        "non_automatic_explanation": summary.get("non_automatic_explanation")
+        if isinstance(summary.get("non_automatic_explanation"), str)
+        else None,
+    }
+
+
+def export_dashboard_operator_summary_data(
+    root: str | Path,
+    *,
+    output_path: str | Path | None = None,
+) -> tuple[dict[str, Any], Path]:
+    runtime_root = Path(root).resolve()
+    resolved_output = Path(output_path) if output_path is not None else runtime_root / ".skill_runtime" / "dashboard" / "operator-summary.json"
+    if not resolved_output.is_absolute():
+        resolved_output = runtime_root / resolved_output
+    resolved_output = resolved_output.resolve()
+    resolved_output.parent.mkdir(parents=True, exist_ok=True)
+    payload = collect_dashboard_operator_summary_data(runtime_root)
+    resolved_output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return payload, resolved_output
+
+
 def collect_global_dashboard_data(
     root: str | Path,
     *,
@@ -313,6 +362,49 @@ def _collect_governance(root: Path, diagnostics: list[str]) -> dict[str, Any]:
         "status_counts": report.get("status_counts", {}),
         "duplicate_candidates": report.get("duplicate_candidates", []),
         "recommended_actions": report.get("recommended_actions", []),
+    }
+
+
+def _summary_count(payload: Any) -> int:
+    if not isinstance(payload, dict):
+        return 0
+    value = payload.get("count")
+    return value if isinstance(value, int) else 0
+
+
+def _summary_list(payload: Any) -> list[dict[str, Any]]:
+    if not isinstance(payload, list):
+        return []
+    return [item for item in payload if isinstance(item, dict)]
+
+
+def _string_list(payload: Any) -> list[str]:
+    if not isinstance(payload, list):
+        return []
+    return [str(item) for item in payload if str(item).strip()]
+
+
+def _operator_gate_export(payload: Any, *, fallback_label: str) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        return {
+            "label": fallback_label,
+            "status": "unavailable",
+            "report_status": None,
+            "generated_at": None,
+            "summary": None,
+            "baseline_comparison": None,
+            "reason": "Operator summary gate payload is unavailable.",
+        }
+    return {
+        "label": payload.get("label") if isinstance(payload.get("label"), str) else fallback_label,
+        "status": payload.get("status") if isinstance(payload.get("status"), str) else "unavailable",
+        "report_status": payload.get("report_status") if isinstance(payload.get("report_status"), str) else None,
+        "generated_at": payload.get("generated_at") if isinstance(payload.get("generated_at"), str) else None,
+        "summary": payload.get("summary") if isinstance(payload.get("summary"), dict) else None,
+        "baseline_comparison": payload.get("baseline_comparison")
+        if isinstance(payload.get("baseline_comparison"), dict)
+        else None,
+        "reason": payload.get("reason") if isinstance(payload.get("reason"), str) else None,
     }
 
 

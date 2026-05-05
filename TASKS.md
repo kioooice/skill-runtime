@@ -2,6 +2,10 @@
 
 ## Current Focus
 
+- 最新 v0.3 collector 接入：已选 **方案 A**，把 `operator-summary` 通过只读导出链接到未来 dashboard/operator workbench collector，而不是去改现有 dashboard 页面。当前新增 `scripts/export_operator_summary_for_dashboard.py` 和 collector 层 `collect_dashboard_operator_summary_data(...)` / `export_dashboard_operator_summary_data(...)`，可把稳定字段子集写到 `.skill_runtime/dashboard/operator-summary.json`。当前没有改页面 UI，没有执行 evaluator，没有执行 host operation，也没有 promote/apply。当前仍然没有任何证据支持扩大 `default-in`。
+
+- 最新 dashboard/operator-summary integration plan：已新增 `docs/dashboard-operator-summary-integration-plan.md`，明确现有 dashboard 当前如何直接读本地 runtime 文件、`operator-summary v1` 提供哪些稳定字段、dashboard 现在适合消费哪些字段、哪些 full item lists 暂时不该直接消费，以及为什么这轮停在 collector/data 层。下一步更应该判断是否要让现有 `collect_dashboard_data(...)` 可选合并已导出的稳定 summary，而不是改页面渲染。当前仍然没有任何证据支持扩大 `default-in`。
+
 - 最新 v0.3 product completeness 切片：已新增 `docs/operator-summary-contract.md`，把 `operator-summary` 收成 v1 稳定 contract。当前明确稳定的是顶层 summary 字段和 gate-status availability shape；明确允许 `unavailable` 的是本地尚未持久化的 gate 状态。当前 `operator-summary` 定位仍是只读 Operator Workbench 数据源，而不是 dashboard 页面本身；不会执行 host operation、不会跑 evaluator、不会 promote/apply，也不会改 dashboard。当前仍然没有任何证据支持扩大 `default-in`。
 
 - 最新本地 gate-status 持久化：provider / utility search / workflow search 三个 evaluator 脚本都已支持可选 `--write-operator-status`，会把稳定摘要写到 `.skill_runtime/operator_status/*.json`；默认行为保持不变，不带 flag 时不写文件。`operator-summary` 现在优先读取这些本地持久化状态；如果没有，就继续诚实显示 `unavailable`。下一步更应该判断哪些 `operator-summary` 字段已足够稳定，可以被现有 dashboard collector 消费，而不是去改 dashboard UI。当前仍然没有任何证据支持扩大 `default-in`。
