@@ -906,3 +906,12 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the behavior feel correct: yes; the dashboard now avoids both internal implementation names and over-explaining narration, which makes the surface easier to scan without feeling like onboarding copy
 - Did the lane help: yes, because it let the wording adjustment stay visible as product work while keeping it out of the reusable-workflow lane
 - Follow-up: keep future dashboard iterations focused on operational clarity and entry-point ergonomics, not more explanatory text
+
+### 2026-05-06 - Dashboard CLI gained an explicit operator-summary refresh entry
+
+- Task type: dashboard/operator usability mainline
+- Classified as: default-out / skipped
+- What happened: added `dashboard --refresh-operator-summary` so the stable operator-summary export can be refreshed in the same step that renders dashboard HTML; the CLI payload now also returns whether refresh happened, where the export was written, and which `generated_at` value was produced
+- Did the behavior feel correct: yes; this removes the awkward extra export step without making every dashboard render perform hidden side effects
+- Did the lane help: yes, because it kept the work visible as governed operator-surface product work rather than blurring it into silent runtime automation
+- Follow-up: the next slice should evaluate whether this explicit refresh is enough in practice before considering any broader dashboard/operator workflow

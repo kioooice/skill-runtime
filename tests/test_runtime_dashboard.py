@@ -992,6 +992,48 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("开发前方向审核", html)
         self.assertNotIn("合并文本文件", html)
 
+    def test_dashboard_cli_can_refresh_operator_summary_export_before_render(self) -> None:
+        output_path = self.runtime_root / ".skill_runtime" / "dashboard.html"
+        export_path = self.runtime_root / ".skill_runtime" / "dashboard" / "operator-summary.json"
+        self.assertFalse(export_path.exists())
+
+        payload = self._run_cli(
+            "dashboard",
+            "--refresh-operator-summary",
+            "--output",
+            str(output_path),
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        self.assertTrue(payload["data"]["operator_summary_refreshed"])
+        self.assertEqual(str(export_path.resolve()), payload["data"]["operator_summary_output_path"])
+        self.assertTrue(export_path.exists())
+        summary_payload = json.loads(export_path.read_text(encoding="utf-8"))
+        self.assertIn("generated_at", summary_payload)
+        self.assertIn("quality_gates", summary_payload)
+        self.assertEqual(summary_payload["generated_at"], payload["data"]["operator_summary_generated_at"])
+
+    def test_dashboard_cli_does_not_refresh_operator_summary_export_by_default(self) -> None:
+        output_path = self.runtime_root / ".skill_runtime" / "dashboard.html"
+        export_path = self.runtime_root / ".skill_runtime" / "dashboard" / "operator-summary.json"
+        self.assertFalse(export_path.exists())
+
+        payload = self._run_cli(
+            "dashboard",
+            "--output",
+            str(output_path),
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        self.assertFalse(payload["data"]["operator_summary_refreshed"])
+        self.assertIsNone(payload["data"]["operator_summary_output_path"])
+        self.assertIsNone(payload["data"]["operator_summary_generated_at"])
+        self.assertFalse(export_path.exists())
+
     def test_global_dashboard_cli_writes_static_html_file(self) -> None:
         workspace_parent = self.runtime_root / "global-cli-workspaces"
         project_alpha = workspace_parent / "alpha"

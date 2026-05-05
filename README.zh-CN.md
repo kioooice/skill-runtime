@@ -581,6 +581,12 @@ python -m skill_runtime.cli dashboard
 python -m skill_runtime.cli dashboard --open
 ```
 
+如果希望在生成前顺手刷新稳定的 operator-summary 导出：
+
+```bash
+python -m skill_runtime.cli dashboard --refresh-operator-summary --open
+```
+
 如果已安装命令入口，也可以运行：
 
 ```bash

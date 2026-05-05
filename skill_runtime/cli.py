@@ -15,7 +15,11 @@ from skill_runtime.api.models import (
 from skill_runtime.api.orchestration import AgentOrchestrationService
 from skill_runtime.api.host import classify_codex_task, finalize_codex_task, run_codex_task, start_codex_task
 from skill_runtime.api.service import RuntimeService, RuntimeServiceError
-from skill_runtime.dashboard.collector import collect_dashboard_data, collect_global_dashboard_data
+from skill_runtime.dashboard.collector import (
+    collect_dashboard_data,
+    collect_global_dashboard_data,
+    export_dashboard_operator_summary_data,
+)
 from skill_runtime.dashboard.render import render_dashboard_html
 from skill_runtime.importers.local_skill_importer import SkillImportError, import_local_skill_to_staging
 from skill_runtime.observability.events import build_global_runtime_events_payload, build_runtime_events_payload
@@ -779,6 +783,10 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
     if not output_path.is_absolute():
         output_path = root / output_path
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    operator_summary_payload = None
+    operator_summary_output_path = None
+    if getattr(args, "refresh_operator_summary", False):
+        operator_summary_payload, operator_summary_output_path = export_dashboard_operator_summary_data(root)
     data = collect_dashboard_data(root)
     if global_view:
         global_data = collect_global_dashboard_data(root, scan_roots=getattr(args, "scan_root", None))
@@ -793,6 +801,13 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
         "root": str(root),
         "global": global_view,
         "event_count": len(data["global"]["events"]) if global_view else len(data["events"]),
+        "operator_summary_refreshed": bool(operator_summary_payload),
+        "operator_summary_output_path": (
+            str(operator_summary_output_path.resolve()) if isinstance(operator_summary_output_path, Path) else None
+        ),
+        "operator_summary_generated_at": (
+            operator_summary_payload.get("generated_at") if isinstance(operator_summary_payload, dict) else None
+        ),
     }
     if global_view:
         payload["project_count"] = data["global"]["overview"]["project_count"]
@@ -980,6 +995,11 @@ def build_parser() -> argparse.ArgumentParser:
     dashboard_parser = subparsers.add_parser("dashboard")
     dashboard_parser.add_argument("--output")
     dashboard_parser.add_argument("--open", action="store_true", help="Open the generated dashboard in the default browser")
+    dashboard_parser.add_argument(
+        "--refresh-operator-summary",
+        action="store_true",
+        help="Refresh the stable operator-summary export before rendering the dashboard",
+    )
     dashboard_parser.add_argument(
         "--global",
         dest="global_view",

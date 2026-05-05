@@ -90,7 +90,7 @@ For one checked-in maintainer-facing proof bundle around this accepted path, see
 
 ## v0.3 Product Completeness Direction
 
-`v0.2.0rc1` is stage evidence, not final product completeness. The current v0.3 mainline is operator usability: start with `python -m skill_runtime.cli --root . operator-summary` for a read-only view of active skills, captured trajectories, staging candidates, visible follow-up operations, intentionally non-automatic boundaries, and any locally persisted gate status under `.skill_runtime/operator_status/`. For dashboard/operator workbench collector use, you can export the stable subset with `python scripts/export_operator_summary_for_dashboard.py --root .`; the existing collector can now read that export and compute availability/freshness metadata without changing dashboard pages.
+`v0.2.0rc1` is stage evidence, not final product completeness. The current v0.3 mainline is operator usability: start with `python -m skill_runtime.cli --root . operator-summary` for a read-only view of active skills, captured trajectories, staging candidates, visible follow-up operations, intentionally non-automatic boundaries, and any locally persisted gate status under `.skill_runtime/operator_status/`. For dashboard/operator workbench collector use, you can export the stable subset with `python scripts/export_operator_summary_for_dashboard.py --root .`; the existing collector can now read that export and compute availability/freshness metadata without changing dashboard pages. If you want the dashboard command to refresh that stable export first, use `python -m skill_runtime.cli dashboard --refresh-operator-summary`.
 
 ## Open Source Participation
 
@@ -598,6 +598,12 @@ Generate the local read-only dashboard:
 
 ```bash
 python -m skill_runtime.cli dashboard --open
+```
+
+Refresh the stable operator summary export before rendering:
+
+```bash
+python -m skill_runtime.cli dashboard --refresh-operator-summary --open
 ```
 
 The dashboard is static local HTML. It reads the current runtime root and shows the skill tree, capability collections, runtime lane trigger log, governance snapshot, and platform inventory as separate views. Capability collections are read-only organization overlays and do not change execution, audit, promotion, or archive semantics.

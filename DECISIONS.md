@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Operator Summary Refresh Should Be An Explicit Dashboard CLI Option, Not A Silent Default
+
+**Decision**
+
+Add an explicit `--refresh-operator-summary` option to the existing `dashboard` command, including `--global`, so operators can refresh the stable summary export in the same step that renders dashboard HTML. Do not make this refresh implicit in every dashboard run.
+
+**Reason**
+
+The product gap after the dashboard wording cleanup was not more UI data; it was refresh ergonomics. Requiring a separate export command before every dashboard run adds friction, but making refresh automatic would blur side effects and make `dashboard` less predictable. An explicit flag gives the mainline a usable closed loop while keeping the boundary honest.
+
+**Impact**
+
+- `python -m skill_runtime.cli dashboard --refresh-operator-summary` now refreshes `.skill_runtime/dashboard/operator-summary.json` before rendering HTML
+- the same flag works with `dashboard --global`
+- CLI success payloads now include `operator_summary_refreshed`, `operator_summary_output_path`, and `operator_summary_generated_at`
+- default `dashboard` behavior remains unchanged when the flag is omitted
+- this still does not run evaluator scripts, execute host operations, promote/apply lifecycle actions, or justify widening `default-in`
+
 ### 2026-05-06 - Dashboard Copy Must Be Professional And Neutral, Not Internal Or Conversational
 
 **Decision**
