@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新 search ranking diagnostics：已新增 `docs/search-ranking-diagnostics.md`，只分析当前固定 search baseline 的 `top_results / score / score_breakdown / why_matched / false neighbors`，不新增 query、不改检索算法、不调权重。当前结论是：negative queries 仍然没有推荐噪音；`alias boost` 在现有 baseline 下不显得过强；主要 false neighbors 都集中在 merge 查询，尤其是 `directory_text_cleanup_dogfood`，其次是 `json_to_csv_dogfood` 的弱邻近项，根因更像 broad metadata 而不是明显的权重失衡。当前更推荐下一步做 metadata 质量收紧，而不是马上调 ranking weights。baseline 结果仍然是 search `matched=7`、provider `matched=8`。当前仍然没有任何证据支持扩大 `default-in`。
+
 最新 v0.2 search quality 收口：已新增 `docs/v0.2-search-quality-summary.md`，把当前 search baseline、alias recall 和 baseline comparison gate 收成一页。summary 明确记录：当前 gate 命令是 `python scripts/evaluate_search_quality.py --baseline docs/search-quality-baseline.json --fail-on-regression`；当前 baseline comparison 结果为 `matched=7`、其余计数全 0；中文支持只来自显式 `search_aliases`，不是通用中文理解；当前没有 embedding、外部服务或 LLM retrieval。summary 也明确说明：这证明的是本地 retrieval-quality 行为已经可复现、可回归比较，不证明 semantic retrieval，也不证明应该扩大 `default-in`。当前仍然没有任何证据支持扩大 `default-in`。
 
 最新 search quality baseline gate：已新增机器可读 baseline `docs/search-quality-baseline.json`，并让 `scripts/evaluate_search_quality.py` 支持 `--baseline` 与 `--fail-on-regression`。当前 search report 在提供 baseline 时会额外带 `baseline_comparison`，并区分 `matched / regressions / improvements / unexpected_failures / unexpected_passes / missing_queries / extra_queries`。当前 baseline 结果为 `matched=7`、其余计数全 0；`--fail-on-regression` 在当前 baseline 下返回 0。分类边界也已收紧：positive query 从 matched 变 unmatched 视为 regression，negative query 从无推荐变成有推荐视为 unexpected failure，query 消失视为 missing query。当前这只是本地可比较 retrieval-quality gate，不是 semantic retrieval，不是 default-in evidence，也没有任何证据支持扩大 `default-in`。

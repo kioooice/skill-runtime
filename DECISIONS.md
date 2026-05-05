@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-05 - Prefer Metadata Tightening Before Search Weight Tuning
+
+**Decision**
+
+After reviewing the fixed baseline ranking diagnostics, prefer metadata quality tightening before any ranking-weight change.
+
+**Reason**
+
+The current baseline is still fully matched, negative queries are clean, and the strongest false neighbors are explainable by broad metadata rather than an obviously broken scoring mix. Adjusting weights now would risk hiding metadata breadth instead of clarifying where retrieval quality actually needs work.
+
+**Impact**
+
+- added `docs/search-ranking-diagnostics.md`
+- current recommendation is to tighten broad text/file metadata before revisiting ranking weights
+- no search algorithm or weight change is justified yet on the current fixed baseline
+- this remains retrieval-quality analysis only and is not evidence for widening `default-in`
+
 ### 2026-05-05 - Close v0.2 Search Quality With A One-Page Summary
 
 **Decision**

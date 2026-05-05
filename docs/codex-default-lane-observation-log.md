@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Search ranking diagnostics review
+
+- Task type: local retrieval diagnostics analysis
+- Classified as: default-out / skipped
+- What happened: analyzed the fixed baseline's top results, score breakdowns, and false neighbors, then documented the conclusion that current neighbor noise is driven more by broad metadata than by obviously wrong ranking weights
+- Did the behavior feel correct: yes; this stayed inside measurement and diagnosis, without changing retrieval behavior or expanding query scope
+- Did the lane help: yes, because the skipped result reinforced that ranking analysis is still local quality work, not default-lane policy evidence
+- Follow-up: prefer metadata tightening before any future ranking-weight adjustment
+
 ### 2026-05-05 - Search quality slice closure summary
 
 - Task type: search-quality stage closure documentation
