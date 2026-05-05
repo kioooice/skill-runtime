@@ -779,6 +779,7 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     global_view = bool(getattr(args, "global_view", False))
     default_output = root / ".skill_runtime" / ("global-dashboard.html" if global_view else "dashboard.html")
+    default_operator_summary_output = root / ".skill_runtime" / "dashboard" / "operator-summary.json"
     output_path = Path(args.output) if args.output else default_output
     if not output_path.is_absolute():
         output_path = root / output_path
@@ -802,11 +803,25 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
         "global": global_view,
         "event_count": len(data["global"]["events"]) if global_view else len(data["events"]),
         "operator_summary_refreshed": bool(operator_summary_payload),
+        "operator_summary_available": isinstance(data.get("operator_summary"), dict),
+        "operator_summary_freshness_status": (
+            (
+                data["operator_summary"].get("freshness", {}).get("status")
+                if isinstance(data["operator_summary"].get("freshness"), dict)
+                else None
+            )
+            if isinstance(data.get("operator_summary"), dict)
+            else None
+        ),
         "operator_summary_output_path": (
-            str(operator_summary_output_path.resolve()) if isinstance(operator_summary_output_path, Path) else None
+            str(
+                (operator_summary_output_path if isinstance(operator_summary_output_path, Path) else default_operator_summary_output).resolve()
+            )
+            if isinstance(data.get("operator_summary"), dict)
+            else None
         ),
         "operator_summary_generated_at": (
-            operator_summary_payload.get("generated_at") if isinstance(operator_summary_payload, dict) else None
+            data["operator_summary"].get("generated_at") if isinstance(data.get("operator_summary"), dict) else None
         ),
     }
     if global_view:

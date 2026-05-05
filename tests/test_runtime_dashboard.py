@@ -1008,6 +1008,8 @@ class RuntimeDashboardTestsMixin:
 
         self.assertEqual("ok", payload["status"])
         self.assertTrue(payload["data"]["operator_summary_refreshed"])
+        self.assertTrue(payload["data"]["operator_summary_available"])
+        self.assertEqual("fresh", payload["data"]["operator_summary_freshness_status"])
         self.assertEqual(str(export_path.resolve()), payload["data"]["operator_summary_output_path"])
         self.assertTrue(export_path.exists())
         summary_payload = json.loads(export_path.read_text(encoding="utf-8"))
@@ -1030,9 +1032,58 @@ class RuntimeDashboardTestsMixin:
 
         self.assertEqual("ok", payload["status"])
         self.assertFalse(payload["data"]["operator_summary_refreshed"])
+        self.assertFalse(payload["data"]["operator_summary_available"])
+        self.assertIsNone(payload["data"]["operator_summary_freshness_status"])
         self.assertIsNone(payload["data"]["operator_summary_output_path"])
         self.assertIsNone(payload["data"]["operator_summary_generated_at"])
         self.assertFalse(export_path.exists())
+
+    def test_dashboard_cli_reports_existing_operator_summary_status_without_refresh(self) -> None:
+        output_path = self.runtime_root / ".skill_runtime" / "dashboard.html"
+        export_path = self.runtime_root / ".skill_runtime" / "dashboard" / "operator-summary.json"
+        export_path.parent.mkdir(parents=True, exist_ok=True)
+        export_path.write_text(
+            json.dumps(
+                {
+                    "generated_at": "2026-05-06T12:00:00+00:00",
+                    "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 86400},
+                    "active_skills": {"count": 1},
+                    "staging_candidates": {"count": 0},
+                    "trajectories": {"count": 0},
+                    "recommended_host_operations": {"count": 0},
+                    "quality_gates": {
+                        "provider_quality": {
+                            "label": "provider_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-06T11:55:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                        }
+                    },
+                    "safe_next_steps": [],
+                    "intentionally_not_automatic": [],
+                    "missing_or_unavailable": [],
+                    "non_automatic_explanation": "read-only summary only",
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        payload = self._run_cli(
+            "dashboard",
+            "--output",
+            str(output_path),
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        self.assertFalse(payload["data"]["operator_summary_refreshed"])
+        self.assertTrue(payload["data"]["operator_summary_available"])
+        self.assertEqual("fresh", payload["data"]["operator_summary_freshness_status"])
+        self.assertEqual(str(export_path.resolve()), payload["data"]["operator_summary_output_path"])
+        self.assertEqual("2026-05-06T12:00:00+00:00", payload["data"]["operator_summary_generated_at"])
 
     def test_global_dashboard_cli_writes_static_html_file(self) -> None:
         workspace_parent = self.runtime_root / "global-cli-workspaces"

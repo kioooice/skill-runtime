@@ -915,3 +915,12 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the behavior feel correct: yes; this removes the awkward extra export step without making every dashboard render perform hidden side effects
 - Did the lane help: yes, because it kept the work visible as governed operator-surface product work rather than blurring it into silent runtime automation
 - Follow-up: the next slice should evaluate whether this explicit refresh is enough in practice before considering any broader dashboard/operator workflow
+
+### 2026-05-06 - Dashboard CLI now reports current operator-summary status without opening HTML
+
+- Task type: dashboard/operator usability mainline
+- Classified as: default-out / skipped
+- What happened: extended the `dashboard` CLI payload so it always reports current local operator-summary availability, freshness status, export path, and generated time; with refresh enabled it now behaves like a complete inspect-or-refresh status endpoint rather than just an HTML generator
+- Did the behavior feel correct: yes; the operator can now tell whether the stable summary exists and whether it is fresh without needing to open the browser view
+- Did the lane help: yes, because it preserved this as explicit product-surface work instead of silently folding it into runtime automation or dashboard-only UI
+- Follow-up: the next mainline decision should judge whether this command family is now sufficient, or whether a narrower summary-status-only entry is still justified

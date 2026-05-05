@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新主线状态面：`dashboard` / `dashboard --global` 现在会在 CLI payload 中返回 `operator_summary_available`、`operator_summary_freshness_status`、`operator_summary_output_path`、`operator_summary_generated_at` 和 `operator_summary_refreshed`。当前 operator 不打开 HTML 也能判断本地稳定摘要是否存在、是否新鲜、文件在哪里、这次是否刚刷新。默认行为仍然无副作用：不带 refresh flag 不生成导出；已有导出时只读报告状态。当前仍然不执行 evaluator、不执行 host operation、不扩大 control-plane 边界，也没有任何证据支持扩大 `default-in`。
+
 - 最新主线 refresh 入口：`dashboard` / `dashboard --global` 现在支持显式 `--refresh-operator-summary`，会在渲染 HTML 前刷新稳定的 operator-summary 导出，并把导出路径与生成时间返回给 CLI 调用方。默认行为保持不变：不带该 flag 时不生成、不刷新导出。当前这仍然只处理稳定摘要导出入口，不执行 evaluator、不执行 host operation、不扩大 control-plane 边界，也没有任何证据支持扩大 `default-in`。
 
 - 最新 dashboard 文案收口：现有 read-only dashboard 第一屏已经从“内部术语”收口到更专业、克制的产品语言。当前导航与页头统一为 `运行状态总览` / `总览` / `可复用流程` / `待审核项` / `近期记录` / `系统状态` / `数据来源`；overview 指标为 `现有流程` / `自动处理` / `观察中` / `常规处理`。`operator-summary` 也已收口为 `系统摘要`、`现有流程`、`待审核候选`、`任务轨迹`、`建议操作`，并显示 `提供器状态`、`基础检索状态`、`工作流检索状态`。当前仍然只消费稳定字段，不绑定 full item lists，不执行 host operation，不 promote/apply，也没有任何证据支持扩大 `default-in`。

@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Dashboard CLI Should Always Report Current Operator Summary Status, Even Without Refresh
+
+**Decision**
+
+After adding the explicit `--refresh-operator-summary` option, extend the `dashboard` CLI success payload so it always reports the current local operator-summary status: whether the export exists, what its freshness status is, where it lives, and which `generated_at` value is currently visible.
+
+**Reason**
+
+Refreshing the export and rendering HTML in one command removed one friction point, but the command still did not answer the operator’s immediate status question unless they opened the generated page. Returning the local summary state directly in the CLI payload finishes the closed loop: operators can inspect, refresh, and verify summary status from the same command family without adding control-plane behavior.
+
+**Impact**
+
+- `dashboard` CLI payloads now include `operator_summary_available`
+- payloads now include `operator_summary_freshness_status`
+- `operator_summary_output_path` and `operator_summary_generated_at` are now populated from the current local export state, not only from the refresh path
+- when no export exists and no refresh is requested, the command explicitly reports unavailable state instead of fabricating metadata
+- this remains read-only status reporting: no evaluator execution, no lifecycle mutation, no hidden refresh, and no justification for widening `default-in`
+
 ### 2026-05-06 - Operator Summary Refresh Should Be An Explicit Dashboard CLI Option, Not A Silent Default
 
 **Decision**

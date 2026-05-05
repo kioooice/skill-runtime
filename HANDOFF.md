@@ -2,6 +2,10 @@
 
 ## Current State
 
+最新主线状态面切片：`dashboard` CLI 现在不只是能显式 `--refresh-operator-summary`，也会在返回 payload 里稳定暴露当前 operator-summary 的本地状态。当前 `dashboard` / `dashboard --global` 返回值会附带 `operator_summary_available`、`operator_summary_freshness_status`、`operator_summary_output_path`、`operator_summary_generated_at`，并继续保留 `operator_summary_refreshed`。这意味着 operator 不打开 HTML 也能判断“当前有没有稳定摘要、它是不是 fresh、文件在哪里、这次有没有刷新”。默认边界不变：不带 refresh flag 时不会生成导出；有导出则只读报告状态，没有导出则诚实返回 unavailable。当前这仍然不执行 evaluator、不执行 host operation、不把 dashboard 变成 control plane。
+
+最新本轮验证与边界：已先补 payload 层失败测试，再补 CLI 返回字段。当前 `python -m py_compile skill_runtime/cli.py tests/test_runtime_dashboard.py`、定向 dashboard CLI 回归、`python -m unittest tests.test_runtime_fast -v`、`git diff --check` 均已通过；当前 fast suite 为 211 tests OK。runtime gate 结果仍是 `default-out / skipped`，原因是这仍属于 dashboard/operator usability 主线上的本地 CLI 产品切片。到这里，这一轮可连续执行的计划已经完成：显式 refresh 入口 + 默认无副作用 + 当前摘要状态返回。下一步不该继续扩 dashboard 字段，更值得判断的是 operator 是否还需要一个更窄的“只看摘要状态、不生成 HTML”的入口，还是现有 `operator-summary` / `dashboard --refresh-operator-summary` / dashboard payload 已经足够。
+
 最新主线 refresh 入口切片：`dashboard` / `dashboard --global` 现在支持显式 `--refresh-operator-summary`。当前行为是：先刷新稳定的 `.skill_runtime/dashboard/operator-summary.json` 导出，再生成 dashboard HTML；CLI 返回值也会带 `operator_summary_refreshed`、`operator_summary_output_path` 和 `operator_summary_generated_at`。默认行为保持不变：不带这个 flag 时不会生成或刷新 operator-summary 导出。当前这仍然只是稳定摘要导出入口收口，不执行 evaluator、不执行 host operation、不把 dashboard 变成 control plane。
 
 最新本轮验证与边界：已先补 CLI 失败测试，再落最小实现与 README 命令文档。当前 `python -m py_compile skill_runtime/cli.py tests/test_runtime_dashboard.py`、定向 dashboard CLI 回归、`python -m unittest tests.test_runtime_fast -v`、`git diff --check` 均已通过；当前 fast suite 为 210 tests OK。runtime gate 结果仍是 `default-out / skipped`，原因是这是 dashboard/operator usability 主线上的本地 CLI 产品切片，而不是 workflow-like runtime family。下一步仍应判断 operator-summary 刷新后的消费路径是否足够顺手，不应继续扩大 dashboard 写操作或自动执行边界。
