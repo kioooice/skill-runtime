@@ -18,6 +18,7 @@ def collect_dashboard_data(root: str | Path, *, event_limit: int = 50) -> dict[s
     runtime_root = Path(root).resolve()
     diagnostics: list[str] = []
     skills = _collect_skills(runtime_root, diagnostics)
+    operator_summary = _load_exported_operator_summary(runtime_root, diagnostics)
     all_events = list(reversed(read_runtime_lane_events(runtime_root)))
     events = _balanced_recent_events(all_events, per_status_limit=event_limit)
     governance = _collect_governance(runtime_root, diagnostics)
@@ -32,6 +33,7 @@ def collect_dashboard_data(root: str | Path, *, event_limit: int = 50) -> dict[s
         "events": events,
         "governance": governance,
         "evolution_candidates": evolution_candidates,
+        "operator_summary": operator_summary,
         "capability_collections": capability_collections,
         "platform_inventory": platform_inventory,
         "diagnostics": diagnostics,
@@ -104,6 +106,7 @@ def collect_global_dashboard_data(
         project_events = list(reversed(read_runtime_lane_events(project_root)))
         if not project_events:
             continue
+        operator_summary = _load_exported_operator_summary(project_root, diagnostics=None)
         annotated_events = [_global_event_payload(event, project_root) for event in project_events]
         events.extend(annotated_events)
         counts = _event_counts(annotated_events)
@@ -114,6 +117,13 @@ def collect_global_dashboard_data(
                 "event_count": len(annotated_events),
                 "latest_event_time": annotated_events[0].get("timestamp"),
                 "recent_event_counts": counts,
+                "operator_summary_available": operator_summary is not None,
+                "operator_summary_generated_at": (
+                    operator_summary.get("generated_at")
+                    if isinstance(operator_summary, dict) and isinstance(operator_summary.get("generated_at"), str)
+                    else None
+                ),
+                "operator_quality_gate_statuses": _operator_quality_gate_statuses(operator_summary),
             }
         )
 
@@ -365,6 +375,15 @@ def _collect_governance(root: Path, diagnostics: list[str]) -> dict[str, Any]:
     }
 
 
+def _load_exported_operator_summary(root: Path, diagnostics: list[str] | None) -> dict[str, Any] | None:
+    path = root / ".skill_runtime" / "dashboard" / "operator-summary.json"
+    if not path.exists():
+        return None
+    bucket = diagnostics if diagnostics is not None else []
+    payload = _read_json(path, bucket)
+    return payload if isinstance(payload, dict) else None
+
+
 def _summary_count(payload: Any) -> int:
     if not isinstance(payload, dict):
         return 0
@@ -406,6 +425,20 @@ def _operator_gate_export(payload: Any, *, fallback_label: str) -> dict[str, Any
         else None,
         "reason": payload.get("reason") if isinstance(payload.get("reason"), str) else None,
     }
+
+
+def _operator_quality_gate_statuses(payload: dict[str, Any] | None) -> dict[str, str]:
+    if not isinstance(payload, dict):
+        return {}
+    quality_gates = payload.get("quality_gates")
+    if not isinstance(quality_gates, dict):
+        return {}
+    statuses: dict[str, str] = {}
+    for key in ("provider_quality", "utility_search_quality", "workflow_search_quality"):
+        gate = quality_gates.get(key)
+        if isinstance(gate, dict) and isinstance(gate.get("status"), str):
+            statuses[key] = gate["status"]
+    return statuses
 
 
 def _build_overview(

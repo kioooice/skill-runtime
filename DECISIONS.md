@@ -2,6 +2,28 @@
 
 ## Decision Log
 
+### 2026-05-06 - Let Existing Dashboard Collectors Consume Exported Operator Summary Before Any UI Change
+
+**Decision**
+
+Keep dashboard/global-dashboard page rendering unchanged, but let the existing collector layer optionally read the exported stable `operator-summary` JSON.
+
+**Reason**
+
+The export path already gave the project a stable operator-facing payload. The next low-risk step is not a new page or render rewrite; it is making existing collectors aware of that payload so future dashboard/operator workbench work can build on a shared read-only source. This preserves the boundary that pages should not depend directly on unstable low-level runtime files or full inventory item lists.
+
+**Impact**
+
+- `collect_dashboard_data(...)` now returns `operator_summary` when `.skill_runtime/dashboard/operator-summary.json` exists
+- `collect_global_dashboard_data(...)` now annotates each discovered project with operator-summary availability, generation time, and gate-status metadata
+- added tests proving local/global collector behavior with and without the export file
+- `skill_runtime/dashboard/render.py` and existing dashboard/global-dashboard HTML pages remain unchanged
+- no evaluator runs were added
+- no host operation is executed
+- no skill is promoted
+- no evolution candidate is applied
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Advance Dashboard Integration Through A Read-Only Operator Summary Export, Not A Page Rewrite
 
 **Decision**

@@ -16,7 +16,7 @@ Today the collector builds dashboard data from:
 - capability collections
 - evolution candidate records
 
-The current HTML pages render that collector output directly. They do not consume `operator-summary`.
+The current HTML pages render that collector output directly. They still do not render `operator-summary`, but the collector layer can now optionally read the exported `operator-summary` payload.
 
 ## Stable Operator Summary v1 Fields
 
@@ -51,7 +51,7 @@ The lowest-risk dashboard-facing subset is:
 - `missing_or_unavailable`
 - `non_automatic_explanation`
 
-This is enough for a future dashboard collector to show operator workbench state without pulling in the full `operator-summary` inventory item lists yet.
+This is enough for the current collector layer to carry operator workbench state without pulling in the full `operator-summary` inventory item lists yet.
 
 ## Fields Dashboard Should Not Consume Yet
 
@@ -94,17 +94,22 @@ The export flow is:
 2. keep only the stable subset intended for dashboard/operator workbench consumption
 3. write it to `.skill_runtime/dashboard/operator-summary.json`
 
-This export does not change existing dashboard HTML generation, and it does not alter current `collect_dashboard_data(...)` or `collect_global_dashboard_data(...)` outputs.
+This export does not change existing dashboard HTML generation.
+
+The current collector implementation now does two read-only things:
+
+- `collect_dashboard_data(...)` includes `operator_summary` when `.skill_runtime/dashboard/operator-summary.json` exists
+- `collect_global_dashboard_data(...)` annotates discovered projects with exported operator-summary availability and gate-status metadata when present
 
 ## Consumption Direction
 
-The intended next-step relationship is:
+The current relationship is:
 
-- current dashboard pages continue using their existing collector payloads
-- future collector work can optionally read `.skill_runtime/dashboard/operator-summary.json`
-- a later page/UI slice can decide whether to merge that export into existing dashboard views
+- current dashboard pages continue using their existing collector payloads and ignore the new operator-summary fields
+- collector/data consumers can read `.skill_runtime/dashboard/operator-summary.json` through the existing collector layer
+- a later page/UI slice can decide whether to render those fields
 
-That keeps the page layer decoupled from unstable implementation details while letting operator-summary become the stable data source first.
+That keeps the page layer decoupled from unstable implementation details while letting `operator-summary` become the stable data source first.
 
 ## Boundaries
 

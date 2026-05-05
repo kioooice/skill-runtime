@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Dashboard collector consumption of exported operator summary
+
+- Task type: collector/data-layer integration for operator workbench visibility
+- Classified as: guarded-in / skipped
+- What happened: extended the existing local and global dashboard collectors so they can optionally read the stable exported `operator-summary` JSON and expose availability/gate-status metadata, while keeping dashboard pages and render logic unchanged
+- Did the behavior feel correct: yes; this is still product/data integration work around governed visibility, not a phase-one default-in task family
+- Did the lane help: yes, because the skipped result reinforced that better operator observability is not by itself evidence for broader automatic runtime entry
+- Follow-up: if this line continues, keep the next slice on stable collector metadata and freshness semantics before any render/UI change
+
 ### 2026-05-05 - Search ranking diagnostics review
 
 - Task type: local retrieval diagnostics analysis

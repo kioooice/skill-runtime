@@ -101,6 +101,51 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual("basic", merge_skill["skill_surface"])
         self.assertEqual("workflow", workflow_skill["skill_surface"])
 
+    def test_dashboard_collector_reads_exported_operator_summary_when_available(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+
+        export_dir = self.runtime_root / ".skill_runtime" / "dashboard"
+        export_dir.mkdir(parents=True, exist_ok=True)
+        (export_dir / "operator-summary.json").write_text(
+            json.dumps(
+                {
+                    "generated_at": "2026-05-06T12:00:00+00:00",
+                    "active_skills": {"count": 14},
+                    "staging_candidates": {"count": 20},
+                    "trajectories": {"count": 20},
+                    "recommended_host_operations": {"count": 1},
+                    "quality_gates": {
+                        "provider_quality": {"label": "provider_quality", "status": "available"},
+                        "utility_search_quality": {"label": "utility_search_quality", "status": "available"},
+                        "workflow_search_quality": {"label": "workflow_search_quality", "status": "unavailable"},
+                    },
+                    "safe_next_steps": [{"action": "distill_trajectory", "automatic": False, "reason": "explicit"}],
+                    "intentionally_not_automatic": ["promote_skill", "apply_evolution_candidate"],
+                    "missing_or_unavailable": ["workflow_search_quality"],
+                    "non_automatic_explanation": "read-only export",
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        data = collect_dashboard_data(self.runtime_root)
+
+        self.assertIn("operator_summary", data)
+        self.assertEqual("2026-05-06T12:00:00+00:00", data["operator_summary"]["generated_at"])
+        self.assertEqual(14, data["operator_summary"]["active_skills"]["count"])
+        self.assertEqual("available", data["operator_summary"]["quality_gates"]["provider_quality"]["status"])
+        self.assertIn("workflow_search_quality", data["operator_summary"]["missing_or_unavailable"])
+
+    def test_dashboard_collector_leaves_operator_summary_empty_without_export(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+
+        data = collect_dashboard_data(self.runtime_root)
+
+        self.assertIn("operator_summary", data)
+        self.assertIsNone(data["operator_summary"])
+
     def test_dashboard_trigger_log_keeps_used_and_entered_when_recent_events_are_skipped(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
         from skill_runtime.dashboard.render import render_dashboard_html
@@ -224,6 +269,52 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual(["beta", "alpha"], [project["project_name"] for project in data["projects"]])
         self.assertEqual("beta", data["events"][0]["project_name"])
         self.assertEqual(str(workspace_parent.resolve()), data["scan_roots"][0])
+
+    def test_global_dashboard_collector_reads_project_operator_summary_metadata(self) -> None:
+        from skill_runtime.dashboard.collector import collect_global_dashboard_data
+
+        workspace_parent = self.runtime_root / "global-operator-summary-workspaces"
+        project_alpha = workspace_parent / "alpha"
+        self._write_dashboard_event(
+            project_alpha,
+            timestamp="2026-05-01T12:00:00+00:00",
+            task_description="merge alpha notes",
+            runtime_lane_status="used",
+            runtime_lane_reason="auto-executed reusable skill",
+            selected_skill_name="merge_text_files",
+        )
+        export_dir = project_alpha / ".skill_runtime" / "dashboard"
+        export_dir.mkdir(parents=True, exist_ok=True)
+        (export_dir / "operator-summary.json").write_text(
+            json.dumps(
+                {
+                    "generated_at": "2026-05-06T12:05:00+00:00",
+                    "active_skills": {"count": 8},
+                    "staging_candidates": {"count": 3},
+                    "trajectories": {"count": 11},
+                    "recommended_host_operations": {"count": 0},
+                    "quality_gates": {
+                        "provider_quality": {"label": "provider_quality", "status": "available"},
+                        "utility_search_quality": {"label": "utility_search_quality", "status": "available"},
+                        "workflow_search_quality": {"label": "workflow_search_quality", "status": "available"},
+                    },
+                    "safe_next_steps": [],
+                    "intentionally_not_automatic": ["promote_skill"],
+                    "missing_or_unavailable": [],
+                    "non_automatic_explanation": "read-only export",
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        data = collect_global_dashboard_data(self.runtime_root, scan_roots=[workspace_parent])
+
+        alpha = next(project for project in data["projects"] if project["project_name"] == "alpha")
+        self.assertTrue(alpha["operator_summary_available"])
+        self.assertEqual("2026-05-06T12:05:00+00:00", alpha["operator_summary_generated_at"])
+        self.assertEqual("available", alpha["operator_quality_gate_statuses"]["provider_quality"])
 
     def test_global_dashboard_renderer_includes_local_and_global_views(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data, collect_global_dashboard_data
