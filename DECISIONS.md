@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-05 - Promote Provider Quality Baseline To A Machine-Readable Check
+
+**Decision**
+
+Treat `docs/provider-quality-baseline.json` as the machine-readable expectation set for the provider quality evaluation fixtures, and let `scripts/evaluate_provider_quality.py --baseline ...` compare current fixture behavior against it.
+
+**Reason**
+
+The Markdown baseline made the expected provider-quality outcomes readable, but it could not act as a repeatable quality gate. A JSON baseline lets the same local fixture run produce a structured `baseline_comparison` with matched fixtures, regressions, improvements, unexpected failures, unexpected passes, missing fixtures, and extra fixtures.
+
+**Impact**
+
+- `--baseline` adds comparison data while still printing the full JSON report
+- `--fail-on-regression` returns non-zero only for regressions, unexpected failures, or missing fixtures
+- Unexpected passes and extra fixtures stay visible without failing the command by default
+- This is a provider-quality check only; it is not a dashboard, not an automatic promotion path, and not evidence for widening `default-in`
+
 ### 2026-05-05 - Bubble Follow-Up Recommendations To The Top-Level Orchestration Result
 
 **Decision**

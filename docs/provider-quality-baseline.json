@@ -1,0 +1,62 @@
+{
+  "baseline_date": "2026-05-05",
+  "description": "Machine-readable baseline for scripts/evaluate_provider_quality.py fixture comparison.",
+  "fixtures": [
+    {
+      "fixture_name": "demo_local_success",
+      "lifecycle_mode": "manual_provider_loop",
+      "expected_loop_stage": "execution_passed",
+      "expected_provider": "local_copy_metadata_fallback_provider",
+      "expected_failure": false
+    },
+    {
+      "fixture_name": "mock_template_execute_failure",
+      "lifecycle_mode": "manual_provider_loop",
+      "expected_loop_stage": "audit_failed",
+      "expected_provider": "mock_fallback_provider",
+      "expected_failure": true
+    },
+    {
+      "fixture_name": "fake_deepseek_repair_success",
+      "lifecycle_mode": "manual_provider_loop",
+      "expected_loop_stage": "execution_passed",
+      "expected_provider": "deepseek_fallback_provider",
+      "expected_failure": false
+    },
+    {
+      "fixture_name": "fake_deepseek_semantic_block",
+      "lifecycle_mode": "manual_provider_loop",
+      "expected_loop_stage": "audit_failed",
+      "expected_provider": "deepseek_fallback_provider",
+      "expected_failure": true
+    },
+    {
+      "fixture_name": "fake_deepseek_generation_failure",
+      "lifecycle_mode": "manual_provider_loop",
+      "expected_loop_stage": "generation_failed",
+      "expected_provider": "deepseek_fallback_provider",
+      "expected_failure": true
+    },
+    {
+      "fixture_name": "review_cleanup_provider_quality",
+      "lifecycle_mode": "manual_provider_loop",
+      "expected_loop_stage": "audit_failed",
+      "expected_provider": "mock_fallback_provider",
+      "expected_failure": true
+    },
+    {
+      "fixture_name": "review_cleanup_demo_provider_success",
+      "lifecycle_mode": "manual_provider_loop",
+      "expected_loop_stage": "execution_passed",
+      "expected_provider": "local_review_cleanup_fallback_provider",
+      "expected_failure": false
+    },
+    {
+      "fixture_name": "runtime_service_distill_demo_provider",
+      "lifecycle_mode": "runtime_service_distill",
+      "expected_loop_stage": "execution_passed",
+      "expected_provider": "local_copy_metadata_fallback_provider",
+      "expected_failure": false
+    }
+  ]
+}

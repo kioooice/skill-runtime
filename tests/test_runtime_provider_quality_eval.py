@@ -282,3 +282,105 @@ class RuntimeProviderQualityEvalTestsMixin:
             self.assertTrue(output_path.exists())
             file_payload = json.loads(output_path.read_text(encoding="utf-8"))
             self.assertEqual(stdout_payload, file_payload)
+
+    def test_provider_quality_evaluation_script_compares_machine_readable_baseline(self) -> None:
+        baseline_path = ROOT / "docs" / "provider-quality-baseline.json"
+        baseline_payload = json.loads(baseline_path.read_text(encoding="utf-8"))
+
+        self.assertIn("fixtures", baseline_payload)
+        self.assertTrue(baseline_payload["fixtures"])
+        for fixture in baseline_payload["fixtures"]:
+            self.assertIn("fixture_name", fixture)
+            self.assertIn("lifecycle_mode", fixture)
+            self.assertIn("expected_loop_stage", fixture)
+            self.assertIn("expected_provider", fixture)
+            self.assertIn("expected_failure", fixture)
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "evaluate_provider_quality.py"),
+                "--baseline",
+                str(baseline_path),
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=str(ROOT),
+            timeout=120,
+            check=False,
+        )
+
+        self.assertEqual(0, result.returncode, msg=result.stderr or result.stdout)
+        payload = json.loads(result.stdout)
+        comparison = payload["baseline_comparison"]
+        self.assertEqual(8, len(comparison["matched"]))
+        self.assertEqual([], comparison["regressions"])
+        self.assertEqual([], comparison["improvements"])
+        self.assertEqual([], comparison["unexpected_failures"])
+        self.assertEqual([], comparison["unexpected_passes"])
+        self.assertEqual([], comparison["missing_fixtures"])
+        self.assertEqual([], comparison["extra_fixtures"])
+
+    def test_provider_quality_fail_on_regression_passes_for_current_baseline(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "evaluate_provider_quality.py"),
+                "--baseline",
+                str(ROOT / "docs" / "provider-quality-baseline.json"),
+                "--fail-on-regression",
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=str(ROOT),
+            timeout=120,
+            check=False,
+        )
+
+        self.assertEqual(0, result.returncode, msg=result.stderr or result.stdout)
+
+    def test_provider_quality_evaluation_script_detects_bad_baseline(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="provider-quality-baseline-") as temp_dir:
+            baseline_path = Path(temp_dir) / "bad-baseline.json"
+            baseline_path.write_text(
+                json.dumps(
+                    {
+                        "fixtures": [
+                            {
+                                "fixture_name": "mock_template_execute_failure",
+                                "lifecycle_mode": "manual_provider_loop",
+                                "expected_loop_stage": "execution_passed",
+                                "expected_provider": "mock_fallback_provider",
+                                "expected_failure": False,
+                            }
+                        ]
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "evaluate_provider_quality.py"),
+                    "--baseline",
+                    str(baseline_path),
+                    "--fail-on-regression",
+                ],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                cwd=str(ROOT),
+                timeout=120,
+                check=False,
+            )
+
+        self.assertNotEqual(0, result.returncode)
+        payload = json.loads(result.stdout)
+        comparison = payload["baseline_comparison"]
+        self.assertEqual([], comparison["matched"])
+        self.assertTrue(comparison["unexpected_failures"])
+        self.assertTrue(comparison["extra_fixtures"])

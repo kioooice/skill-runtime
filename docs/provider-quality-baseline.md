@@ -18,6 +18,24 @@ python scripts/evaluate_provider_quality.py --output .\provider-quality-report.j
 
 The report prints full JSON to stdout. `--output` writes the same JSON to a caller-provided UTF-8 path.
 
+Machine-readable baseline comparison:
+
+```powershell
+python scripts/evaluate_provider_quality.py --baseline docs/provider-quality-baseline.json
+```
+
+Regression-gated comparison:
+
+```powershell
+python scripts/evaluate_provider_quality.py --baseline docs/provider-quality-baseline.json --fail-on-regression
+```
+
+`docs/provider-quality-baseline.json` is the machine-readable source for fixture expectations. It records each fixture's `fixture_name`, `lifecycle_mode`, `expected_loop_stage`, `expected_provider`, and `expected_failure`.
+
+When `--baseline` is provided, the script still prints the full evaluation report and adds `baseline_comparison`. The comparison includes matched fixtures, regressions, improvements, unexpected failures, unexpected passes, missing fixtures, and extra fixtures.
+
+`--baseline` alone does not fail the command. `--fail-on-regression` returns non-zero only when the comparison finds a regression, unexpected failure, or missing fixture. Unexpected passes and extra fixtures remain visible but do not fail the command by themselves.
+
 ## Fixture Table
 
 | Fixture | Lifecycle mode | Expected loop stage | Expected provider | Expected failure | What it proves |

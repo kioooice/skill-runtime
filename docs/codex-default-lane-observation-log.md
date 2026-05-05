@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Provider quality baseline comparison
+
+- Task type: provider-quality measurement hardening
+- Classified as: default-out / skipped by Codex runtime gate
+- What happened: turned the readable provider-quality fixture baseline into `docs/provider-quality-baseline.json` and added `--baseline` / `--fail-on-regression` to the local evaluation script
+- Did the behavior feel correct: yes; the work stayed on the normal implementation path and produced a comparison gate without adding dashboard surface or changing runtime entry policy
+- Did the lane help: yes, because the skipped result reinforced that this is a local quality check, not a default-lane expansion event
+- Follow-up: use the baseline comparison as a provider-quality regression check before treating provider-loop changes as stable
+
 ### 2026-05-05 - Recommendation contract dogfood
 
 - Task type: host integration contract verification

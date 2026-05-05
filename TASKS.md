@@ -2,6 +2,7 @@
 
 ## Current Focus
 
+- 最新 provider quality baseline gate：已将 `docs/provider-quality-baseline.md` 中的 fixture 期望同步为机器可读 `docs/provider-quality-baseline.json`，并让 `scripts/evaluate_provider_quality.py` 支持 `--baseline` 和 `--fail-on-regression`。当前 baseline comparison 是下一步质量门禁候选，只比较 provider-loop fixture 漂移；它不是 dashboard，不扩大 `default-in`，也不会自动 promote 或 apply evolution candidate。
 - 最新 dogfood 结果：已用真实路径验证顶层 recommendation contract 的三条主边界，并新增 `docs/host-follow-up-recommendation-dogfood.md`。当前确认：缺输入的强匹配复用会停在 `background_hint` 但顶层直接给 `execute_skill`；`capture-trajectory` 顶层直接给 `distill_trajectory`；明确 existing-skill gap 的 finalizer 顶层直接给 `review_evolution_candidate`。这意味着宿主可以统一按顶层 recommendation 字段渲染下一步，而不用解析不同 payload 的嵌套结构。
 - 最新序列验收：已新增 `docs/host-follow-up-sequence-runbook.md` 和 acceptance-style 快验，把 `background_hint -> distill_trajectory -> review_evolution_candidate` 串成一条 operator-facing sequence。当前这三类动作不再只是分散正例，而是已经证明可以作为一条非自动、显式、可治理的顺序链被宿主消费。
 - 最新方向门判断：是否要继续做更窄的 host UI / CLI 展示层，当前结论是 `manual_validation_first`，已写入 `docs/host-follow-up-presentation-review.md`。原因很直接：顶层 recommendation contract、dogfood 和 sequence acceptance 已经证明主链路成立，但还没有足够证据证明 raw JSON + runbook 对操作者真的不够用。下一步应先在 2-3 条真实 maintainer 流里验证“是否缺展示层”，而不是直接再造一个新表面。

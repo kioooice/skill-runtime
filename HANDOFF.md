@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新 provider quality baseline gate：`docs/provider-quality-baseline.json` 已作为机器可读 baseline 落地，和 `docs/provider-quality-baseline.md` 放在一起。`scripts/evaluate_provider_quality.py` 现在支持 `--baseline PATH`，会继续输出完整 JSON report 并额外增加 `baseline_comparison`；`--fail-on-regression` 只在 regression、unexpected failure 或 missing fixture 时返回非 0。当前这仍是 provider-loop 质量门禁候选，不是 dashboard、不是扩大 `default-in` 的证据，也不会自动 promote 或 apply evolution candidate。
+
 最新 dogfood 收口：已新增 `docs/host-follow-up-recommendation-dogfood.md`，用三条真实边界验证顶层 recommendation contract。当前已确认：缺输入的强匹配复用会停在 `background_hint`，但顶层直接给 `execute_skill`；`capture-trajectory` 顶层直接给 `distill_trajectory`；明确 existing-skill gap 的 finalizer 顶层直接给 `review_evolution_candidate`。这意味着宿主现在可以统一消费顶层 recommendation 字段，把嵌套 recommendation 只当 provenance。验证中还看到当前会话内 MCP 工具返回的结构可能没有立刻反映新字段，因此本轮结论以本地 CLI / 当前代码导入路径为准。
 
 最新序列验收：已新增 `docs/host-follow-up-sequence-runbook.md`，并补 acceptance-style 快验，把 `background_hint -> distill_trajectory -> review_evolution_candidate` 收成一条 operator-facing sequence。当前结论是：这三类 follow-up 不只是散装能力，而是已经可以作为一条非自动、显式、可治理的宿主顺序链存在。快验已更新为 146 tests OK。

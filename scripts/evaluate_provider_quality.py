@@ -34,6 +34,15 @@ def main() -> int:
         "--output",
         help="Optional path to write the full JSON report. The report is still printed to stdout.",
     )
+    parser.add_argument(
+        "--baseline",
+        help="Optional machine-readable baseline JSON path to compare against the evaluation report.",
+    )
+    parser.add_argument(
+        "--fail-on-regression",
+        action="store_true",
+        help="Return non-zero when baseline comparison finds a regression, unexpected failure, or missing fixture.",
+    )
     args = parser.parse_args()
 
     fixtures = [
@@ -57,13 +66,165 @@ def main() -> int:
             "fixtures_with_failures": failed,
         },
     }
+    exit_code = 0
+    if args.baseline:
+        baseline_path = Path(args.baseline)
+        baseline_payload = json.loads(baseline_path.read_text(encoding="utf-8-sig"))
+        comparison = _compare_to_baseline(fixtures, baseline_payload)
+        payload["baseline_comparison"] = comparison
+        if args.fail_on_regression and _has_blocking_baseline_regression(comparison):
+            exit_code = 1
     rendered = json.dumps(payload, ensure_ascii=False, indent=2)
     if args.output:
         output_path = Path(args.output)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(rendered, encoding="utf-8")
     print(rendered)
-    return 0
+    return exit_code
+
+
+def _compare_to_baseline(fixtures: list[dict[str, Any]], baseline_payload: dict[str, Any]) -> dict[str, Any]:
+    expected_fixtures = baseline_payload.get("fixtures")
+    if not isinstance(expected_fixtures, list):
+        raise ValueError("Baseline JSON must contain a fixtures list.")
+
+    actual_by_name = {
+        item["fixture_name"]: item
+        for item in fixtures
+        if isinstance(item.get("fixture_name"), str) and item.get("fixture_name")
+    }
+    expected_by_name = {
+        item["fixture_name"]: item
+        for item in expected_fixtures
+        if isinstance(item, dict) and isinstance(item.get("fixture_name"), str) and item.get("fixture_name")
+    }
+
+    comparison: dict[str, Any] = {
+        "matched": [],
+        "regressions": [],
+        "improvements": [],
+        "unexpected_failures": [],
+        "unexpected_passes": [],
+        "missing_fixtures": [],
+        "extra_fixtures": [],
+    }
+
+    for fixture_name, expected in expected_by_name.items():
+        actual = actual_by_name.get(fixture_name)
+        if actual is None:
+            comparison["missing_fixtures"].append(fixture_name)
+            continue
+
+        actual_snapshot = _baseline_actual_snapshot(actual)
+        mismatches = _baseline_mismatches(expected, actual_snapshot)
+        if not mismatches:
+            comparison["matched"].append(fixture_name)
+            continue
+
+        actual_failed = actual_snapshot["actual_failure"]
+        expected_failed = bool(expected.get("expected_failure"))
+        if actual_failed and not expected_failed:
+            comparison["unexpected_failures"].append(_baseline_issue(fixture_name, mismatches, actual_snapshot))
+        elif expected_failed and not actual_failed:
+            comparison["unexpected_passes"].append(_baseline_issue(fixture_name, mismatches, actual_snapshot))
+        elif _is_improvement(expected, actual_snapshot):
+            comparison["improvements"].append(_baseline_issue(fixture_name, mismatches, actual_snapshot))
+        else:
+            comparison["regressions"].append(_baseline_issue(fixture_name, mismatches, actual_snapshot))
+
+    for fixture_name in sorted(set(actual_by_name) - set(expected_by_name)):
+        comparison["extra_fixtures"].append(fixture_name)
+
+    for key in comparison:
+        comparison[key] = sorted(comparison[key], key=_comparison_sort_key)
+    return comparison
+
+
+def _baseline_actual_snapshot(actual: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "lifecycle_mode": actual.get("lifecycle_mode"),
+        "loop_stage": actual.get("loop_stage"),
+        "provider": _actual_provider(actual),
+        "actual_failure": bool(actual.get("failure_reason")),
+    }
+
+
+def _actual_provider(actual: dict[str, Any]) -> str | None:
+    provider = actual.get("generated_candidate_provider")
+    if isinstance(provider, str) and provider:
+        return provider
+    provider_used = actual.get("provider_used")
+    if isinstance(provider_used, dict):
+        fallback = provider_used.get("fallback")
+        if isinstance(fallback, str) and fallback:
+            return fallback
+    return None
+
+
+def _baseline_mismatches(expected: dict[str, Any], actual_snapshot: dict[str, Any]) -> list[dict[str, Any]]:
+    checks = [
+        ("lifecycle_mode", "lifecycle_mode"),
+        ("expected_loop_stage", "loop_stage"),
+        ("expected_provider", "provider"),
+        ("expected_failure", "actual_failure"),
+    ]
+    mismatches = []
+    for expected_key, actual_key in checks:
+        expected_value = expected.get(expected_key)
+        actual_value = actual_snapshot.get(actual_key)
+        if expected_value != actual_value:
+            mismatches.append(
+                {
+                    "field": expected_key,
+                    "expected": expected_value,
+                    "actual": actual_value,
+                }
+            )
+    return mismatches
+
+
+def _is_improvement(expected: dict[str, Any], actual_snapshot: dict[str, Any]) -> bool:
+    if bool(expected.get("expected_failure")) and not actual_snapshot["actual_failure"]:
+        return True
+    expected_rank = _loop_stage_rank(expected.get("expected_loop_stage"))
+    actual_rank = _loop_stage_rank(actual_snapshot.get("loop_stage"))
+    return expected_rank is not None and actual_rank is not None and actual_rank > expected_rank
+
+
+def _loop_stage_rank(stage: Any) -> int | None:
+    order = {
+        "generation_failed": 0,
+        "audit_failed": 1,
+        "execution_failed": 2,
+        "execution_passed": 3,
+    }
+    return order.get(stage) if isinstance(stage, str) else None
+
+
+def _baseline_issue(
+    fixture_name: str,
+    mismatches: list[dict[str, Any]],
+    actual_snapshot: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "fixture_name": fixture_name,
+        "mismatches": mismatches,
+        "actual": actual_snapshot,
+    }
+
+
+def _comparison_sort_key(item: Any) -> str:
+    if isinstance(item, dict):
+        return str(item.get("fixture_name", ""))
+    return str(item)
+
+
+def _has_blocking_baseline_regression(comparison: dict[str, Any]) -> bool:
+    return bool(
+        comparison.get("regressions")
+        or comparison.get("unexpected_failures")
+        or comparison.get("missing_fixtures")
+    )
 
 
 def _run_demo_local_success_fixture() -> dict[str, Any]:
