@@ -43,6 +43,7 @@ from skill_runtime.mcp.host_operations import (
 )
 from skill_runtime.memory.trajectory_capture import TrajectoryCapture, TrajectoryCaptureError
 from skill_runtime.memory.trajectory_store import TrajectoryStore, TrajectoryValidationError
+from skill_runtime.observability.events import read_runtime_lane_events
 from skill_runtime.retrieval.skill_index import SkillIndex, SkillIndexError
 
 
@@ -801,6 +802,81 @@ class RuntimeService:
     def governance_report(self) -> dict[str, Any]:
         return LibraryReport(self.root, SkillIndex(self.index_path)).build()
 
+    def operator_summary(
+        self,
+        *,
+        active_limit: int = 20,
+        staging_limit: int = 20,
+        trajectory_limit: int = 20,
+        audit_limit: int = 10,
+        event_limit: int = 10,
+    ) -> dict[str, Any]:
+        active_skills = self._collect_skill_inventory(self.active_dir, status="active", limit=active_limit)
+        staging_candidates = self._collect_skill_inventory(self.staging_dir, status="staging", limit=staging_limit)
+        trajectories = self._collect_trajectories(limit=trajectory_limit)
+        recent_audits = self._collect_recent_audits(limit=audit_limit)
+        recent_runtime_events = self._collect_recent_runtime_events(limit=event_limit)
+        recommended_host_operations = self._collect_recommended_host_operations(recent_runtime_events)
+        quality_gates = {
+            "recent_audits": {
+                "count": len(recent_audits),
+                "items": recent_audits,
+            },
+            "provider_quality": self._collect_optional_gate_status("provider-quality-report.json"),
+            "utility_search_quality": self._collect_optional_gate_status("search-quality-report.json"),
+            "workflow_search_quality": self._collect_optional_gate_status("workflow-search-quality-report.json"),
+        }
+        safe_next_steps = self._build_operator_safe_next_steps(
+            trajectories=trajectories,
+            staging_candidates=staging_candidates,
+            recommended_host_operations=recommended_host_operations["items"],
+        )
+        intentionally_not_automatic = [
+            "distill_trajectory",
+            "promote_skill",
+            "promote_global_codex_skill",
+            "apply_evolution_candidate",
+            "archive_duplicate_candidates",
+        ]
+        missing_or_unavailable = [
+            item["label"]
+            for item in (
+                quality_gates["provider_quality"],
+                quality_gates["utility_search_quality"],
+                quality_gates["workflow_search_quality"],
+            )
+            if item.get("status") == "unavailable"
+        ]
+        return {
+            "root": str(self.root),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "active_skills": {
+                "count": len(active_skills),
+                "items": active_skills,
+            },
+            "staging_candidates": {
+                "count": len(staging_candidates),
+                "items": staging_candidates,
+            },
+            "trajectories": {
+                "count": len(trajectories),
+                "items": trajectories,
+            },
+            "recent_runtime_events": {
+                "count": len(recent_runtime_events),
+                "items": recent_runtime_events,
+            },
+            "recommended_host_operations": recommended_host_operations,
+            "quality_gates": quality_gates,
+            "safe_next_steps": safe_next_steps,
+            "intentionally_not_automatic": intentionally_not_automatic,
+            "missing_or_unavailable": missing_or_unavailable,
+            "non_automatic_explanation": (
+                "operator-summary is read-only. It does not execute host operations, promote skills, "
+                "or apply evolution candidates."
+            ),
+        }
+
     def review_evolution_candidate(
         self,
         candidate: str | Path,
@@ -1532,6 +1608,223 @@ class RuntimeService:
         output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return output_path, payload
 
+    def _collect_skill_inventory(self, directory: Path, *, status: str, limit: int) -> list[dict[str, Any]]:
+        if not directory.exists():
+            return []
+        items: list[dict[str, Any]] = []
+        for metadata_path in sorted(directory.glob("*.metadata.json"))[: max(1, int(limit))]:
+            payload = _load_json_file(metadata_path)
+            if not isinstance(payload, dict):
+                continue
+            skill_name = str(payload.get("skill_name") or metadata_path.stem.replace(".metadata", ""))
+            file_path = str(payload.get("file_path") or metadata_path.with_name(f"{skill_name}.py"))
+            source_trajectory_ids = payload.get("source_trajectory_ids")
+            if not isinstance(source_trajectory_ids, list):
+                source_trajectory_ids = []
+            audit_status = payload.get("audit_status") if isinstance(payload.get("audit_status"), str) else None
+            audit_report_path = self.audits_dir / f"{skill_name}.audit.json"
+            audit_report_status = None
+            if audit_report_path.exists():
+                audit_report = _load_json_file(audit_report_path)
+                if isinstance(audit_report, dict) and isinstance(audit_report.get("status"), str):
+                    audit_report_status = audit_report["status"]
+            items.append(
+                {
+                    "skill_name": skill_name,
+                    "status": status,
+                    "summary": str(payload.get("summary") or ""),
+                    "file_path": file_path,
+                    "source_trajectory_ids": [str(item) for item in source_trajectory_ids],
+                    "source_trajectory_count": len(source_trajectory_ids),
+                    "audit_status": audit_status,
+                    "audit_report_status": audit_report_status,
+                    "usage_count": payload.get("usage_count", 0) if isinstance(payload.get("usage_count"), int) else 0,
+                    "last_used_at": payload.get("last_used_at") if isinstance(payload.get("last_used_at"), str) else None,
+                    "import_source": payload.get("import_source") if isinstance(payload.get("import_source"), str) else None,
+                }
+            )
+        return items
+
+    def _collect_trajectories(self, *, limit: int) -> list[dict[str, Any]]:
+        if not self.trajectories_dir.exists():
+            return []
+        items: list[dict[str, Any]] = []
+        candidates = sorted(
+            self.trajectories_dir.glob("*.json"),
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )[: max(1, int(limit))]
+        for path in candidates:
+            payload = _load_json_file(path)
+            if not isinstance(payload, dict):
+                continue
+            steps = payload.get("steps") if isinstance(payload.get("steps"), list) else []
+            artifacts = payload.get("artifacts") if isinstance(payload.get("artifacts"), list) else []
+            items.append(
+                {
+                    "task_id": str(payload.get("task_id") or path.stem),
+                    "session_id": str(payload.get("session_id") or ""),
+                    "task_description": str(payload.get("task_description") or ""),
+                    "final_status": str(payload.get("final_status") or ""),
+                    "step_count": len(steps),
+                    "artifact_count": len(artifacts),
+                    "file_path": str(path.resolve()),
+                    "started_at": payload.get("started_at") if isinstance(payload.get("started_at"), str) else None,
+                    "ended_at": payload.get("ended_at") if isinstance(payload.get("ended_at"), str) else None,
+                }
+            )
+        return items
+
+    def _collect_recent_audits(self, *, limit: int) -> list[dict[str, Any]]:
+        if not self.audits_dir.exists():
+            return []
+        items: list[dict[str, Any]] = []
+        candidates = sorted(
+            self.audits_dir.glob("*.audit.json"),
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )[: max(1, int(limit))]
+        for path in candidates:
+            payload = _load_json_file(path)
+            if not isinstance(payload, dict):
+                continue
+            items.append(
+                {
+                    "skill_name": path.name.replace(".audit.json", ""),
+                    "status": payload.get("status") if isinstance(payload.get("status"), str) else "unknown",
+                    "security_score": payload.get("security_score")
+                    if isinstance(payload.get("security_score"), int)
+                    else None,
+                    "semantic_provider": payload.get("semantic_provider")
+                    if isinstance(payload.get("semantic_provider"), str)
+                    else None,
+                    "file_path": str(path.resolve()),
+                }
+            )
+        return items
+
+    def _collect_recent_runtime_events(self, *, limit: int) -> list[dict[str, Any]]:
+        events = list(reversed(read_runtime_lane_events(self.root, limit=max(1, int(limit)))))
+        items: list[dict[str, Any]] = []
+        for event in events:
+            available_labels = event.get("available_host_operation_labels")
+            if not isinstance(available_labels, list):
+                available_labels = []
+            items.append(
+                {
+                    "timestamp": event.get("timestamp") if isinstance(event.get("timestamp"), str) else None,
+                    "task_description": event.get("task_description")
+                    if isinstance(event.get("task_description"), str)
+                    else "",
+                    "runtime_lane_status": event.get("runtime_lane_status")
+                    if isinstance(event.get("runtime_lane_status"), str)
+                    else None,
+                    "runtime_lane_reason": event.get("runtime_lane_reason")
+                    if isinstance(event.get("runtime_lane_reason"), str)
+                    else None,
+                    "recommended_next_action": event.get("recommended_next_action")
+                    if isinstance(event.get("recommended_next_action"), str)
+                    else None,
+                    "available_host_operation_labels": [str(item) for item in available_labels if str(item).strip()],
+                    "selected_skill_name": event.get("selected_skill_name")
+                    if isinstance(event.get("selected_skill_name"), str)
+                    else None,
+                    "observed_task_record": event.get("observed_task_record")
+                    if isinstance(event.get("observed_task_record"), str)
+                    else None,
+                }
+            )
+        return items
+
+    def _collect_recommended_host_operations(self, runtime_events: list[dict[str, Any]]) -> dict[str, Any]:
+        items = [
+            event
+            for event in runtime_events
+            if event.get("recommended_next_action") or event.get("available_host_operation_labels")
+        ]
+        return {"count": len(items), "items": items}
+
+    def _collect_optional_gate_status(self, file_name: str) -> dict[str, Any]:
+        label = file_name.replace("-report.json", "").replace("-", "_")
+        for candidate in (
+            self.root / file_name,
+            self.root / ".skill_runtime" / file_name,
+        ):
+            if not candidate.exists():
+                continue
+            payload = _load_json_file(candidate)
+            if not isinstance(payload, dict):
+                continue
+            return {
+                "label": label,
+                "status": "available",
+                "file_path": str(candidate.resolve()),
+                "summary": payload.get("summary") if isinstance(payload.get("summary"), dict) else None,
+            }
+        return {
+            "label": label,
+            "status": "unavailable",
+            "reason": "No persisted local evaluation report found.",
+            "file_path": None,
+        }
+
+    def _build_operator_safe_next_steps(
+        self,
+        *,
+        trajectories: list[dict[str, Any]],
+        staging_candidates: list[dict[str, Any]],
+        recommended_host_operations: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        steps: list[dict[str, Any]] = []
+        if trajectories:
+            steps.append(
+                {
+                    "action": "distill_trajectory",
+                    "scope": "captured_trajectories",
+                    "count": len(trajectories),
+                    "automatic": False,
+                    "reason": "Captured trajectories are available for explicit distillation review.",
+                }
+            )
+        pending_audit = [item for item in staging_candidates if item.get("audit_report_status") != "passed"]
+        if pending_audit:
+            steps.append(
+                {
+                    "action": "audit_skill",
+                    "scope": "staging_candidates",
+                    "count": len(pending_audit),
+                    "automatic": False,
+                    "reason": "Staging candidates exist and still need explicit audit review or a recorded passed audit.",
+                }
+            )
+        passed_audit = [item for item in staging_candidates if item.get("audit_report_status") == "passed"]
+        if passed_audit:
+            steps.append(
+                {
+                    "action": "promote_skill",
+                    "scope": "staging_candidates",
+                    "count": len(passed_audit),
+                    "automatic": False,
+                    "reason": "Some staging candidates already have passed audits, so promotion is available as an explicit next step.",
+                }
+            )
+        seen_actions: set[str] = set()
+        for item in recommended_host_operations:
+            action = item.get("recommended_next_action")
+            if not isinstance(action, str) or action in seen_actions:
+                continue
+            seen_actions.add(action)
+            steps.append(
+                {
+                    "action": action,
+                    "scope": "recent_runtime_events",
+                    "count": 1,
+                    "automatic": False,
+                    "reason": "A recent runtime event surfaced this explicit follow-up recommendation.",
+                }
+            )
+        return steps
+
     def _resolve_rollback_path(self, path: str | Path) -> Path:
         target = Path(path)
         if not target.is_absolute():
@@ -1635,6 +1928,14 @@ def _load_json_object(path: Path, label: str) -> dict[str, Any]:
             {"path": str(path)},
         )
     return payload
+
+
+def _load_json_file(path: Path) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
 
 
 def _yaml_double_quoted(value: str) -> str:

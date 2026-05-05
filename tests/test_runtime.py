@@ -23,6 +23,7 @@ from tests.test_runtime_platform_inventory import RuntimePlatformInventoryTestsM
 from tests.test_runtime_platform_export import RuntimePlatformExportTestsMixin
 from tests.test_runtime_search_quality import RuntimeSearchQualityTestsMixin
 from tests.test_runtime_skill_import import RuntimeSkillImportTestsMixin
+from tests.test_runtime_operator_summary import RuntimeOperatorSummaryTestsMixin
 from tests.test_runtime_trajectory_search import RuntimeTrajectorySearchTestsMixin
 from tests.test_runtime_workflow_search_quality import RuntimeWorkflowSearchQualityTestsMixin
 
@@ -45,6 +46,7 @@ class RuntimeTests(
     RuntimeMcpSmokeTestsMixin,
     RuntimePlatformExportTestsMixin,
     RuntimePlatformInventoryTestsMixin,
+    RuntimeOperatorSummaryTestsMixin,
     RuntimeSearchQualityTestsMixin,
     RuntimeSkillImportTestsMixin,
     RuntimeWorkflowSearchQualityTestsMixin,

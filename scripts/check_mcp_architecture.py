@@ -213,6 +213,7 @@ def check_mcp_architecture(root: Path) -> list[str]:
             "skill_runtime.mcp.host_operations",
             "skill_runtime.memory.trajectory_capture",
             "skill_runtime.memory.trajectory_store",
+            "skill_runtime.observability.events",
             "skill_runtime.retrieval.skill_index",
         },
         library_report_path: {

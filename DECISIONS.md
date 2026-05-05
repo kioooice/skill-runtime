@@ -2,6 +2,30 @@
 
 ## Decision Log
 
+### 2026-05-06 - Pause Release Packaging And Start v0.3 Product Completeness With A Read-Only Operator Summary
+
+**Decision**
+
+Pause the release/tag packaging mainline and move the next product slice to `v0.3 product completeness`, starting with a minimal read-only Operator Workbench summary exposed as `python -m skill_runtime.cli --root . operator-summary`.
+
+**Reason**
+
+`v0.2.0rc1` already proved the narrow claim it needed to prove: governed maintainer-workflow capture, explicit follow-up recommendation, reproducible quality gates, and explicit non-automatic boundaries. What it did not solve is everyday operator visibility. Runtime state is still scattered across trajectories, skill stores, audits, and runtime events, which makes the system harder to use daily than it should be.
+
+The right next slice is therefore not more release packaging. It is a single read-only surface that shows what the runtime already knows and what it can safely do next, without widening automation boundaries.
+
+**Impact**
+
+- added `docs/v0.3-product-completeness-plan.md`
+- added `operator-summary` CLI support with default JSON and optional text rendering
+- `operator-summary` surfaces active skills, staging candidates, captured trajectories, recent audits, recent runtime events, safe next steps, and intentionally non-automatic actions
+- provider/search/workflow baseline status is shown only when a local persisted report exists; otherwise it is marked `unavailable`
+- no host operation is executed
+- no skill is promoted
+- no evolution candidate is applied
+- no runtime state is mutated
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Call The Current Repository State v0.2.0rc1
 
 **Decision**

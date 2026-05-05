@@ -15,6 +15,7 @@ from tests.test_runtime_provider_quality_eval import RuntimeProviderQualityEvalT
 from tests.test_runtime_recommendation_presentation import RuntimeRecommendationPresentationTestsMixin
 from tests.test_runtime_search_quality import RuntimeSearchQualityTestsMixin
 from tests.test_runtime_skill_import import RuntimeSkillImportTestsMixin
+from tests.test_runtime_operator_summary import RuntimeOperatorSummaryTestsMixin
 from tests.test_runtime_workflow_search_quality import RuntimeWorkflowSearchQualityTestsMixin
 
 
@@ -30,6 +31,7 @@ class RuntimeFastTests(
     RuntimePlatformExportTestsMixin,
     RuntimePlatformInventoryTestsMixin,
     RuntimeProviderQualityEvalTestsMixin,
+    RuntimeOperatorSummaryTestsMixin,
     RuntimeRecommendationPresentationTestsMixin,
     RuntimeSearchQualityTestsMixin,
     RuntimeSkillImportTestsMixin,

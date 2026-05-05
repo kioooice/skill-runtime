@@ -323,6 +323,60 @@ def cmd_governance_report(args: argparse.Namespace) -> int:
     return ok(service_for_args(args).governance_report())
 
 
+def _render_operator_summary_text(payload: dict) -> str:
+    lines = [
+        "Operator Summary",
+        f"Root: {payload['root']}",
+        "",
+        f"Active skills: {payload['active_skills']['count']}",
+    ]
+    for item in payload["active_skills"]["items"][:5]:
+        lines.append(f"- {item['skill_name']}: {item['summary'] or 'No summary.'}")
+
+    lines.extend(["", f"Staging candidates: {payload['staging_candidates']['count']}"])
+    for item in payload["staging_candidates"]["items"][:5]:
+        audit_status = item.get("audit_report_status") or item.get("audit_status") or "unavailable"
+        lines.append(f"- {item['skill_name']}: audit={audit_status}")
+
+    lines.extend(["", f"Trajectories: {payload['trajectories']['count']}"])
+    for item in payload["trajectories"]["items"][:5]:
+        lines.append(f"- {item['task_id']}: {item['task_description'] or 'No description.'}")
+
+    lines.extend(["", f"Recommended host operations: {payload['recommended_host_operations']['count']}"])
+    for item in payload["recommended_host_operations"]["items"][:5]:
+        action = item.get("recommended_next_action") or "unavailable"
+        lines.append(f"- {action}: {item.get('task_description') or 'No task description.'}")
+
+    lines.extend(["", "Safe next steps:"])
+    for item in payload["safe_next_steps"]:
+        lines.append(f"- {item['action']}: {item['reason']}")
+
+    lines.extend(["", "Intentionally not automatic:"])
+    for action in payload["intentionally_not_automatic"]:
+        lines.append(f"- {action}")
+
+    missing = payload.get("missing_or_unavailable") or []
+    if missing:
+        lines.extend(["", "Unavailable status sources:"])
+        for item in missing:
+            lines.append(f"- {item}")
+    return "\n".join(lines)
+
+
+def cmd_operator_summary(args: argparse.Namespace) -> int:
+    payload = service_for_args(args).operator_summary(
+        active_limit=args.active_limit,
+        staging_limit=args.staging_limit,
+        trajectory_limit=args.trajectory_limit,
+        audit_limit=args.audit_limit,
+        event_limit=args.event_limit,
+    )
+    if args.format == "text":
+        print(_render_operator_summary_text(payload))
+        return EXIT_OK
+    return ok(payload)
+
+
 def cmd_distill_coverage_report(args: argparse.Namespace) -> int:
     try:
         return ok(
@@ -868,6 +922,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     governance_parser = subparsers.add_parser("governance-report")
     governance_parser.set_defaults(func=cmd_governance_report)
+
+    operator_summary_parser = subparsers.add_parser("operator-summary")
+    operator_summary_parser.add_argument("--format", choices=("json", "text"), default="json")
+    operator_summary_parser.add_argument("--active-limit", type=int, default=20)
+    operator_summary_parser.add_argument("--staging-limit", type=int, default=20)
+    operator_summary_parser.add_argument("--trajectory-limit", type=int, default=20)
+    operator_summary_parser.add_argument("--audit-limit", type=int, default=10)
+    operator_summary_parser.add_argument("--event-limit", type=int, default=10)
+    operator_summary_parser.set_defaults(func=cmd_operator_summary)
 
     dashboard_parser = subparsers.add_parser("dashboard")
     dashboard_parser.add_argument("--output")

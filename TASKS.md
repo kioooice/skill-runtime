@@ -2,6 +2,10 @@
 
 ## Current Focus
 
+- 最新主线已切到 `v0.3 product completeness`。当前第一条产品化切片是最小 Operator Workbench / lifecycle visibility，而不是继续推进 release tag、proof bundle 包装或更多 release 材料。当前已实现只读 CLI `python -m skill_runtime.cli --root . operator-summary`：默认 JSON，可选 `--format text`，当前可见 active skills、staging candidates、captured trajectories、recent runtime events、recommended host operations（若事件存在）、recent audits、safe next steps 和 intentionally-not-automatic 边界。当前实现不执行 host operation、不 promote、不 apply，也不修改 runtime state。下一步更应该补真实缺失的状态索引，而不是扩自动化边界。当前仍然没有任何证据支持扩大 `default-in`。
+
+- 最新 v0.3 方向文档：已新增 `docs/v0.3-product-completeness-plan.md`。当前判断是：`v0.2.0rc1` 已证明 governed maintainer-workflow MVP 和 release-candidate 证据，但没有解决日常 operator 的 runtime 可见性问题。为此 v0.3 先优先做 Operator Workbench，而不是继续堆 release/tag/proof 文档，也不是先做复杂 dashboard。README 只新增了一个很小的 `v0.3 Product Completeness Direction` 段落，把 `operator-summary` 作为 operator 入口暴露出来，并明确 v0.2 RC 只是阶段证据，不是最终产品完成。当前仍然没有任何证据支持扩大 `default-in`。
+
 - 最新 v0.2 release candidate gate：已完成 RC 判断、最小 README/文档修正、release checklist、新版 changelog 入口、proof bundle / baseline / fast suite 验证，以及版本入口收口。当前新增 `docs/v0.2-release-candidate-checklist.md`，`CHANGELOG.md` 已新增 `v0.2.0-rc1` 条目，`pyproject.toml` 已更新为 `0.2.0rc1`。当前结论是：仓库可以称为 `v0.2.0rc1` release candidate；当前没有 blocking gap，且没有任何证据支持扩大 `default-in`。剩余动作只剩 commit + push 本轮 RC gate 结果。
 
 - 最新 v0.2 maintainer-facing proof bundle：已新增 `docs/v0.2-maintainer-proof-bundle.md`，并新增 `scripts/run_v0_2_proof_bundle.py` 来固定一条 maintainer-facing proof path。当前 bundle 只复用已验收路径：`capture-trajectory --render-recommendation text`、`demo/maintainer_review_cleanup/observed_task.json`、provider/search/workflow baseline gates。当前 artifacts 已固定到 `docs/fixtures/v0.2-proof-bundle/`，并证明 recommendation 被渲染出来但没有执行 `distill_trajectory`，也没有 promote/apply。README 只新增了 proof bundle 链接，没有重写叙事。下一步更应该补外部 reader/adoption 级证据，而不是继续扩 CLI flag、继续堆小文档，或者误把这条 proof 路径写成 production dashboard。当前仍然没有任何证据支持扩大 `default-in`。
@@ -404,7 +408,7 @@
 - [x] 新增 `rollback_evolution_candidate` 确认回滚流程：必须显式确认，根据 apply 记录恢复备份并记录 `rolled_back` 状态
 - [x] 新增 CLI `rollback-evolution-candidate --confirm-rollback` 和 MCP tool `rollback_evolution_candidate`
 - [x] 验证未确认不能回滚、目标文件在 apply 后变更会拒绝覆盖、确认后会恢复备份
-- [ ] 下一阶段：进入版本收口，检查当前 diff 并提交这批 workflow/global-skill 与 skill evolution 改造；如继续功能开发，优先做 evolution 生命周期详情面板
+- [ ] 下一阶段：继续补 operator workbench 的只读可见性，而不是回到 release/tag 包装；优先考虑是否需要本地持久化 provider / utility search / workflow search gate 状态索引，以便 `operator-summary` 能显示真实最近状态而不是 `unavailable`
 
 ## Blocked
 

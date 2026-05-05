@@ -88,6 +88,10 @@ If this is your first time in the repo, use this path:
 
 For one checked-in maintainer-facing proof bundle around this accepted path, see [v0.2 Maintainer Proof Bundle](./docs/v0.2-maintainer-proof-bundle.md).
 
+## v0.3 Product Completeness Direction
+
+`v0.2.0rc1` is stage evidence, not final product completeness. The current v0.3 mainline is operator usability: start with `python -m skill_runtime.cli --root . operator-summary` for a read-only view of active skills, captured trajectories, staging candidates, visible follow-up operations, and intentionally non-automatic boundaries.
+
 ## Open Source Participation
 
 - [Contributing Guide](./CONTRIBUTING.md)
