@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Search quality baseline
+
+- Task type: search and reuse baseline measurement
+- Classified as: default-out / skipped
+- What happened: added a local search-quality plan and rewrote the search evaluation script to use a temporary runtime root, a small imported active-skill fixture set, and a fixed query set with per-query diagnostics
+- Did the behavior feel correct: yes; the work stayed on measurement and exposed a real limitation instead of silently reworking retrieval or hiding failures behind a green-only result
+- Did the lane help: yes, because the skipped result reinforced that this is baseline instrumentation for search quality rather than a runtime-entry expansion event
+- Follow-up: keep the next slice on retrieval quality inside the current local search path; do not use search baseline work as evidence for wider automatic entry
+
 ### 2026-05-05 - Fallback provider contract documentation
 
 - Task type: provider-contract closure

@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-05 - Measure Search Quality Before Rewriting Retrieval
+
+**Decision**
+
+Start the next core slice with a local search-quality baseline instead of changing the retrieval algorithm first.
+
+**Reason**
+
+Search and reuse were still being judged mostly through scattered tests and a previous all-green script that ran directly against the real runtime root. That shape was too optimistic and not reproducible enough for honest baseline work. A local evaluator using a temporary runtime root and a fixed small fixture set gives a stable view of current retrieval behavior, including known failures.
+
+**Impact**
+
+- added `docs/v0.2-search-quality-plan.md`
+- rewrote `scripts/evaluate_search_quality.py` to use a temporary runtime root and a selected active-skill fixture subset
+- the search-quality report now shows per-query outcomes, top results, and failure reasons instead of only a boolean all-pass result
+- current baseline exposes a real limitation: pure Chinese search intent does not retrieve `merge_text_files`
+- this is measurement only; it does not change retrieval behavior and is not evidence for widening `default-in`
+
 ### 2026-05-05 - Treat Provider Guidance As Part Of The Formal Fallback Request Contract
 
 **Decision**
