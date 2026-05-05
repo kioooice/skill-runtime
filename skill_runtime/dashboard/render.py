@@ -1117,10 +1117,21 @@ def _event_status(event: dict[str, Any]) -> str:
 
 def _event_body(event: dict[str, Any], *, project_prefix: str = "") -> str:
     selected_skill_name = event.get("selected_skill_name")
-    handler = _skill_display_name(selected_skill_name) if selected_skill_name else "普通 Codex 处理"
+    handler = _event_handler_label(event, selected_skill_name)
     return f"""<div>{project_prefix}{badge(event.get("runtime_lane_status"))} <strong>任务：{text(_event_task_label(event.get("task_description")))}</strong></div>
   <div class="muted">时间：{text(event.get("timestamp"))} · 处理方式：{text(handler)}</div>
   <div class="reason">结果：{text(_event_reason_label(event))}</div>"""
+
+
+def _event_handler_label(event: dict[str, Any], selected_skill_name: Any) -> str:
+    if selected_skill_name:
+        return _skill_display_name(selected_skill_name)
+    status = _event_status(event)
+    if status == "used":
+        return "运行时参与（记录经验）"
+    if status == "entered":
+        return "运行时观察"
+    return "普通 Codex 处理"
 
 
 def _event_task_label(value: Any) -> str:
@@ -1177,11 +1188,22 @@ def _event_follow_up(event: dict[str, Any]) -> str:
     labels = event.get("available_host_operation_labels")
     if not isinstance(next_action, str) or not next_action:
         return ""
-    operation_labels = [str(label) for label in labels if isinstance(label, str)] if isinstance(labels, list) else []
+    operation_labels = [_event_follow_up_label(str(label)) for label in labels if isinstance(label, str)] if isinstance(labels, list) else []
     labels_html = ""
     if operation_labels:
         labels_html = f"""<div class="event-actions">{text("；".join(operation_labels[:4]))}</div>"""
-    return f"""<div class="event-followup"><strong>下一步：{text(next_action)}</strong>{labels_html}</div>"""
+    return f"""<div class="event-followup"><strong>下一步：{text(_event_follow_up_label(next_action))}</strong>{labels_html}</div>"""
+
+
+def _event_follow_up_label(value: Any) -> str:
+    labels = {
+        "distill_trajectory": "整理这次任务轨迹",
+        "Distill captured trajectory": "整理这次任务轨迹",
+        "Promote captured workflow": "提升这条捕获到的工作流",
+        "Promote captured workflow globally": "提升这条捕获到的工作流到全局",
+    }
+    raw = str(value or "").strip()
+    return labels.get(raw, raw)
 
 
 def _governance(governance: dict[str, Any], diagnostics: list[str]) -> str:

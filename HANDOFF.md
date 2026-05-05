@@ -22,6 +22,8 @@
 
 最新治理快照解释优化：用户继续指出 `治理快照` 页面也看不懂，尤其是 `Missing skill directory: skill_store\rejected` 这种内部诊断。当前已把治理快照空状态和诊断文案改成人话：没有重复候选时会解释“当前没有需要合并处理的重复候选”，缺少 `skill_store\rejected` 时会明确说明“当前还没有已拒绝候选目录，这不是错误，暂时不需要处理”。新增回归测试覆盖这个场景，快验已更新为 130 tests OK。
 
+最新触发日志文案收口：用户认为触发日志观感已经够用，不值得继续扩张大量交互。当前只做了最小解释优化，不新增详情抽屉：当 `used` 事件没有 `selected_skill_name` 时，处理方式显示为“运行时参与（记录经验）”；`entered` 显示为“运行时观察”；后续动作 `distill_trajectory` 和常见 host operation label 也改成中文说明。快验继续保持 130 tests OK。
+
 最新开源准备进展：用户确认采用 MIT。当前已新增 `LICENSE`，`pyproject.toml` 已补 license、author、project URLs、keywords 和 classifiers，README / README.zh-CN / README.en 已增加许可证说明。readiness audit 文档也已记录这项进展。剩余开源阻塞主要是 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`、README 顶部公开叙事和 maintainer workflow demo。
 
 最新阶段完成：Open Source readiness audit 已完成并写入 `docs/codex-open-source-readiness-audit.md`。结论：当前不适合直接申请。优势是仓库已公开、已有安装包元数据、CI、README、测试文档、隐私/provenance 文档和本地 demo；`LICENSE` 和基础 package metadata 已在审计后补齐；剩余主要阻塞是缺 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`，README 顶部还不是面向新维护者的 60 秒价值叙事，缺 2-3 个真实 maintainer workflow demo，公开 GitHub traction 当前很弱。下一阶段应做项目定位和 README/application narrative，不要先堆新插件功能。

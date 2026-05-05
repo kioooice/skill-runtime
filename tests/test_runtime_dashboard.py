@@ -283,6 +283,8 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("任务：评审 beta 路线", html)
         self.assertIn("任务：记录共享工作流", html)
         self.assertIn("处理方式：普通 Codex 处理", html)
+        self.assertIn("处理方式：合并文本文件", html)
+        self.assertIn("处理方式：运行时观察", html)
         self.assertIn("结果：运行时已参与处理，并复用了匹配技能。", html)
         self.assertIn("结果：任务已进入运行时观察，但没有自动接管。", html)
         self.assertIn("结果：Codex 直接处理，运行时没有接管。", html)
@@ -559,8 +561,9 @@ class RuntimeDashboardTestsMixin:
 
         html = render_dashboard_html(collect_dashboard_data(self.runtime_root))
 
-        self.assertIn("下一步：distill_trajectory", html)
-        self.assertIn("Promote captured workflow globally", html)
+        self.assertIn("处理方式：运行时参与（记录经验）", html)
+        self.assertIn("下一步：整理这次任务轨迹", html)
+        self.assertIn("提升这条捕获到的工作流到全局", html)
 
     def test_dashboard_governance_snapshot_explains_empty_state_and_missing_rejected_directory(self) -> None:
         from skill_runtime.dashboard.render import render_dashboard_html

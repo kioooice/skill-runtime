@@ -14,6 +14,7 @@
 - 最新验证结果：技能进化生命周期详情面板按 TDD 增加回归测试，`python -m unittest tests.test_runtime_fast -v` 通过 127 tests OK；`git diff --check` 通过；`python -m skill_runtime.cli dashboard --output .skill_runtime\dashboard.html` 成功生成静态 dashboard。
 - 最新 dashboard 修复：触发日志不再按“最近 N 条总记录”截断后再统计状态，避免大量 skipped 把较早的 used / entered 记录挤掉。现在按钮计数基于完整日志，列表保留每个状态各自的最近样本；当前真实日志恢复为 `已使用 17 / 进入观察 39 / 已跳过 105`。
 - 最新 dashboard 解释优化：`治理快照` 页面不再直接暴露 `Missing skill directory: skill_store\rejected` 这类内部诊断。现在没有重复候选时会解释这意味着当前没有相似候选需要合并；缺少 `skill_store\rejected` 时会明确说明这不是错误，只表示尚未出现被明确拒绝的候选。
+- 最新 dashboard 文案收口：按用户反馈，不继续扩张 `触发日志` 交互。当前只把最容易困惑的两处翻成人话：没有匹配技能但 runtime 已参与时显示“运行时参与（记录经验）”，后续动作 `distill_trajectory` 和常见提升动作也改成中文说明。
 - 最新全局技能新增：已创建 `parallel-subagent-orchestration`，用于复杂可并行任务中的主代理/子代理协作。Codex 主线程负责拆分、关键路径、审核、集成、验证和最终汇报；子代理只处理边界清楚、可并行、可审核的任务。项目和全局 `AGENTS.md` 只增加短路由，完整流程保留在全局 skill。
 - 最新全局技能新增：已创建 `plan-progress-tracker`，用于多阶段计划执行时持续显示“第几阶段 / 已完成 / 当前正在做 / 下一步 / 偏离风险”。以后计划列出来后，继续开发、自动模式、阶段汇报、会话接力或压缩恢复都应先恢复这个进度坐标。
 - 最新全局技能新增：已创建 `context-compaction-audit`，用于上下文压缩或 summary 恢复后先判断当前会话是否还能安全继续，还是应该 checkpoint 后继续、完成当前阶段后新开会话，或立即新开会话。它会报告压缩时间、压缩率可计算性、信息丢失风险和下一次压缩前的建议。现在它已与 `session-handoff-maintenance` 联动：需要 checkpoint 或新开会话时，先刷新 handoff 状态文件。
