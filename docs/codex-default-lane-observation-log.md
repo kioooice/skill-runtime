@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Search quality slice closure summary
+
+- Task type: search-quality stage closure documentation
+- Classified as: default-out / skipped
+- What happened: added a one-page summary for the current local search baseline, alias-driven recall improvement, and machine-comparable baseline gate
+- Did the behavior feel correct: yes; this closed the slice without widening query scope, changing retrieval behavior, or using the baseline as policy evidence
+- Did the lane help: yes, because the skipped result reinforced that summary and closeout work still belongs on the normal Codex path
+- Follow-up: keep the next search slice inside local retrieval quality and ranking diagnostics, not default-lane expansion
+
 ### 2026-05-05 - Search baseline comparison gate
 
 - Task type: local search-quality regression gate

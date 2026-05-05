@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-05 - Close v0.2 Search Quality With A One-Page Summary
+
+**Decision**
+
+Close the current `v0.2-search-quality` slice with a single summary page instead of adding more queries or changing retrieval behavior.
+
+**Reason**
+
+The baseline, alias-driven recall improvement, and machine-comparable gate are now all in place. At this point the useful move is not more scope. It is to lock the current evidence into one operator-readable page so later search work starts from a stable, explicit boundary.
+
+**Impact**
+
+- added `docs/v0.2-search-quality-summary.md`
+- recorded the current search gate command and current `matched=7` baseline status
+- documented that Chinese support is explicit-alias only
+- documented that no embedding, external service, or LLM retrieval is involved
+- reinforced that this is still not evidence for widening `default-in`
+
 ### 2026-05-05 - Promote Search Quality Baseline To A Machine-Readable Gate
 
 **Decision**
