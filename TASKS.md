@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新开发节奏记忆：后续默认采用“较大步长的完整切片”，不再优先拆成很多只做计划、只做总结或只做一个小验收点的轮次。除非存在高风险边界，否则单轮应尽量一次完成：必要决策、最小完整实现、对应测试、相关文档与 runbook 更新、`HANDOFF.md / TASKS.md / DECISIONS.md` 状态更新、provider/search/workflow baseline gate 验证，以及 commit + push。硬边界保持不变：不扩大 `default-in`、不自动 promote、不自动 apply evolution candidate、不把 expected gap 硬改成 pass、不把 lifecycle operation 包装成普通 active skill、不为展示跳过 baseline、不做无 acceptance criteria 的 dashboard 大改。
+
 - 最新 v0.2 release readiness / public positioning cleanup：已新增 `docs/v0.2-release-readiness-review.md`，并对 `README.md` 做了最小 wording 调整。当前结论是：README 主叙事已经基本清楚，maintainer/workflow/governed-learning 价值表达成立；残余问题主要是 `Distillation` rule registry 容易让新读者过度注意 utility/file-workflow coverage。当前已补一句 framing，明确这些 utilities 是 coverage/control examples，不是主 public value story；并把 provider / utility search / workflow search 三条 baseline gate 命令直接写进 README，方便 v0.2 外部读者发现质量门禁。下一步更应该评估 release artifact / public examples 是否还缺一条 maintainer-facing proof，而不是继续改 runtime 或扩大 `default-in`。当前仍然没有任何证据支持扩大 `default-in`。
 
 - 最新 CLI recommendation adoption 决策：已新增 `docs/cli-recommendation-adoption-decision.md`，结论是 narrow adopt。当前 README quick path 和 `docs/real-host-payload-rendering-runbook.md` 都可以正式推荐 `capture-trajectory --render-recommendation text`，但边界必须保持严格：opt-in、仅限 `capture-trajectory`、text 在 `stderr`、JSON audit payload 仍在 `stdout`、不会执行 `recommended_host_operation`、不会 promote/apply。当前这不意味着所有命令都支持，也不意味着 dashboard 或 host UI adoption 已完成。当前仍然没有任何证据支持扩大 `default-in`。

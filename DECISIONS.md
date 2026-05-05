@@ -2,6 +2,28 @@
 
 ## Decision Log
 
+### 2026-05-06 - Prefer Larger Complete Slices Over Narrow Documentation-Only Rounds
+
+**Decision**
+
+Switch the default development cadence to larger complete slices. Unless a task hits a genuinely high-risk boundary, each round should try to include the decision, the smallest complete implementation, the relevant tests, the related docs/runbook/summary updates, repository state updates, baseline gate verification, and commit/push in one pass.
+
+**Reason**
+
+The recent work has been correct but too fragmented. The user wants faster momentum and fewer rounds that only produce a plan, a summary page, or one narrow acceptance checkpoint. The project already has strong hard boundaries, so the safer improvement is to increase slice size without relaxing those boundaries.
+
+**Impact**
+
+- future rounds should default to complete vertical slices rather than micro-steps
+- the hard boundaries remain unchanged:
+  - do not widen `default-in`
+  - do not auto-promote
+  - do not auto-apply evolution candidates
+  - do not force expected gaps into passes
+  - do not present lifecycle operations as ordinary active skills
+  - do not skip baseline gates for presentation progress
+  - do not do dashboard overhauls without explicit acceptance criteria
+
 ### 2026-05-06 - Tighten README Positioning Without Reframing The Product
 
 **Decision**
