@@ -18,6 +18,7 @@
 - 最新主流程收口：已新增 `docs/maintainer-mainline-acceptance.md`，选定 `handoff continuation` 作为第一条 maintainer mainline 样板。当前共识是不再继续扩 dashboard，而是先证明 `方向审核（仅在需要时） -> runtime gate -> Codex 执行 -> finalizer -> evolution decision` 这条链本身成立。
 - 最新主流程 runbook：已新增 `docs/maintainer-handoff-mainline-runbook.md`，把 handoff continuation 的 maintainer mainline 写成实际操作步骤。runbook 已验证 demo JSON 输入、`capture-trajectory` 产出 trajectory 的路径，以及当前 `codex-run` 对这类请求返回 `guarded-in/skipped` 的现实边界。
 - 最新 handoff 分类边界：已补测试和文档，明确“结构化 handoff continuation = default-in”，“自然语言 continue from handoff = guarded-in”。当前不扩大 runtime 行为面，只把这个边界固化成回归约束。
+- 最新 handoff 主线验收测试：已补一条 acceptance-style 快验，直接覆盖 handoff continuation 主线的三件事：maintainer-facing continuation brief 结构存在、显式 state-file continuation 仍分类为 `default-in/project-state-maintenance`、`capture-trajectory` 只生成受控 trajectory 并推荐 `distill_trajectory`，不会假装自动 promote。
 - 最新全局技能新增：已创建 `parallel-subagent-orchestration`，用于复杂可并行任务中的主代理/子代理协作。Codex 主线程负责拆分、关键路径、审核、集成、验证和最终汇报；子代理只处理边界清楚、可并行、可审核的任务。项目和全局 `AGENTS.md` 只增加短路由，完整流程保留在全局 skill。
 - 最新全局技能新增：已创建 `plan-progress-tracker`，用于多阶段计划执行时持续显示“第几阶段 / 已完成 / 当前正在做 / 下一步 / 偏离风险”。以后计划列出来后，继续开发、自动模式、阶段汇报、会话接力或压缩恢复都应先恢复这个进度坐标。
 - 最新全局技能新增：已创建 `context-compaction-audit`，用于上下文压缩或 summary 恢复后先判断当前会话是否还能安全继续，还是应该 checkpoint 后继续、完成当前阶段后新开会话，或立即新开会话。它会报告压缩时间、压缩率可计算性、信息丢失风险和下一次压缩前的建议。现在它已与 `session-handoff-maintenance` 联动：需要 checkpoint 或新开会话时，先刷新 handoff 状态文件。
@@ -92,7 +93,8 @@
 - [ ] 下一次启动新功能或新路线前，使用 `pre-implementation-workflow-review` 输出四类 verdict，确认它能先审开发方向价值、替代方案、成功指标和停止条件
 - [x] 基于 `docs/maintainer-mainline-acceptance.md`，为 `handoff continuation` 补一条端到端 runbook
 - [x] 基于 runbook 决定 `handoff continuation` 不应整体升成 default-in，而应保持“结构化 default-in / 自然语言 guarded-in”的双边界
-- [ ] 如后续要扩大 handoff continuation 的 default-in 范围，先补 acceptance-style 测试，再调整分类边界
+- [x] 如后续要扩大 handoff continuation 的 default-in 范围，先补 acceptance-style 测试，再调整分类边界
+- [ ] 如果后续确实要扩大 handoff continuation 的 default-in 范围，先基于这条 acceptance-style 测试决定是否值得改分类边界
 - [ ] 如果后续建议继续验证 runtime / 本地技能 / `entered` / `used` 样本，先检查是否又滑回低价值验证循环；除非它直接服务于方向审核，否则停止
 - [ ] 在下一次自动模式或部署任务中 dogfood 对应 workflow skill，确认从 `AGENTS.md` 下沉后的流程仍好用
 - [x] 在下一次可复用 workflow staging 候选出现时 dogfood `promote-global-codex-skill`，确认全局 skill 写入和新会话触发链路

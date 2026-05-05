@@ -1533,6 +1533,58 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertEqual("default-in", payload["data"]["bucket"])
         self.assertIn("state-files", payload["data"]["matched_signals"])
 
+    def test_maintainer_handoff_mainline_acceptance_path_stays_explicit_and_controlled(self) -> None:
+        expected_brief = self.runtime_root / "demo" / "maintainer_handoff_continuation" / "expected_continuation_brief.md"
+        brief_text = expected_brief.read_text(encoding="utf-8")
+        self.assertIn("## Current Goal", brief_text)
+        self.assertIn("## Current Plan Position", brief_text)
+        self.assertIn("## Next Action", brief_text)
+        self.assertIn("## Decision Needed Now", brief_text)
+
+        classify_payload = self._run_cli(
+            "codex-classify",
+            "--task-description",
+            "Refresh the continuation brief from HANDOFF, TASKS, and DECISIONS state files.",
+            "--known-inputs-json",
+            '{"handoff_path":"HANDOFF.md","tasks_path":"TASKS.md","decisions_path":"DECISIONS.md"}',
+            "--expected-outputs-json",
+            '["continuation_brief.md"]',
+            expect_json=True,
+            root=self.runtime_root,
+        )
+        self.assertEqual("ok", classify_payload["status"])
+        self.assertEqual("default-in", classify_payload["data"]["bucket"])
+        self.assertIn("family:project-state-maintenance", classify_payload["data"]["matched_signals"])
+
+        capture_payload = self._run_cli(
+            "capture-trajectory",
+            "--file",
+            "demo/maintainer_handoff_continuation/observed_task.json",
+            "--task-id",
+            "maintainer_handoff_continuation_demo",
+            "--session-id",
+            "demo_handoff_continuation",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+        self.assertEqual("ok", capture_payload["status"])
+        self.assertEqual("distill_trajectory", capture_payload["data"]["recommended_next_action"])
+        trajectory_path = Path(capture_payload["data"]["trajectory_path"])
+        self.assertTrue(trajectory_path.exists())
+        trajectory = self._read_json_file(trajectory_path)
+        self.assertEqual(
+            "Convert durable project state files into a concise next-session continuation brief.",
+            trajectory["task_description"],
+        )
+        self.assertEqual(
+            [
+                "demo/maintainer_handoff_continuation/expected_continuation_brief.md",
+            ],
+            trajectory["artifacts"],
+        )
+        self.assertEqual("read_json", trajectory["steps"][0]["tool_name"])
+        self.assertEqual("write_text", trajectory["steps"][-1]["tool_name"])
+
     def test_codex_run_cli_executes_default_in_task(self) -> None:
         payload = self._run_cli(
             "codex-run",

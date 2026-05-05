@@ -637,6 +637,15 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the lane help: yes, because the mainline now has a concrete, test-backed boundary instead of an informal judgment in chat
 - Follow-up: if later evidence justifies widening this family, add an acceptance-style test first, then change the classifier
 
+### 2026-05-05 - Handoff continuation acceptance-style fast test
+
+- Task type: maintainer mainline acceptance guardrail
+- Classified as: `guarded-in` / `skipped` by the Codex runtime gate for this tests-and-state-files round
+- What happened: added a single fast test that treats the handoff continuation mainline as a product path, not just a document; it verifies the expected continuation brief structure, confirms explicit state-file continuation still classifies as `default-in / project-state-maintenance`, and checks that `capture-trajectory` creates a governed trajectory with `distill_trajectory` as the next explicit step
+- Did the behavior feel correct: yes; the runtime should help prove this maintainer workflow without pretending it now auto-promotes or broadly auto-takes over continuation
+- Did the lane help: yes, because the mainline now has an executable acceptance baseline for future boundary decisions
+- Follow-up: only widen the handoff continuation family if later evidence beats this narrow explicit baseline
+
 ### 2026-05-01 - Runtime observability dashboard implementation
 
 - Task type: Codex runtime lane observability

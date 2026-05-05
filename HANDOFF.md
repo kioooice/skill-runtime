@@ -30,6 +30,8 @@
 
 最新 handoff 边界固化：已补回归测试和文档，明确 `handoff continuation` 不是“一刀切升成 default-in”。当前规则是：显式 state-file 输入的结构化 continuation 继续属于 `default-in` / `project-state-maintenance`，而自然语言的 `continue from HANDOFF.md` 继续保持 `guarded-in`。这条边界已写入 `docs/codex-task-classification-boundary.md` 和 handoff mainline runbook，并由快验中的新增分类测试覆盖。
 
+最新 handoff 主线验收：已新增 acceptance-style 快验，直接覆盖 maintainer handoff continuation 主线的三件事：expected continuation brief 必须是 maintainer-facing 结构、显式 state-file continuation 通过 `codex-classify` 保持 `default-in / project-state-maintenance`、`capture-trajectory` 只生成受控 trajectory 并推荐 `distill_trajectory`，不会越界成自动 promote。
+
 最新开源准备进展：用户确认采用 MIT。当前已新增 `LICENSE`，`pyproject.toml` 已补 license、author、project URLs、keywords 和 classifiers，README / README.zh-CN / README.en 已增加许可证说明。readiness audit 文档也已记录这项进展。剩余开源阻塞主要是 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`、README 顶部公开叙事和 maintainer workflow demo。
 
 最新阶段完成：Open Source readiness audit 已完成并写入 `docs/codex-open-source-readiness-audit.md`。结论：当前不适合直接申请。优势是仓库已公开、已有安装包元数据、CI、README、测试文档、隐私/provenance 文档和本地 demo；`LICENSE` 和基础 package metadata 已在审计后补齐；剩余主要阻塞是缺 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`，README 顶部还不是面向新维护者的 60 秒价值叙事，缺 2-3 个真实 maintainer workflow demo，公开 GitHub traction 当前很弱。下一阶段应做项目定位和 README/application narrative，不要先堆新插件功能。
@@ -855,7 +857,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-当前新战略目标是“开源申请后继续产品化主线”。申请表已提交，dashboard 当前已经够用，主线已收回到核心机制。第一条 maintainer mainline 的 acceptance doc 和 runbook 都已具备。下一步建议基于这份 runbook 决定一件更实的事：`handoff continuation` 是否应该继续保持 `guarded-in`，还是值得被提升到更明确的 default-in 家族；如果要调整，先补一条 acceptance-style 测试再改分类边界。不要回到继续堆 runtime 样本；也不要把观察面当成产品本体。
+当前新战略目标是“开源申请后继续产品化主线”。申请表已提交，dashboard 当前已经够用，主线已收回到核心机制。第一条 maintainer mainline 现在已有 acceptance doc、runbook 和 acceptance-style 快验三层约束。下一步建议基于这条测试基线决定一件更实的事：`handoff continuation` 是否应该继续保持 `guarded-in`，还是值得被提升到更明确的 default-in 家族；如果要调整，先证明扩大边界真的有价值。不要回到继续堆 runtime 样本；也不要把观察面当成产品本体。
 
 技能进化闭环当前停在确认应用层：下一步如果继续这条主线，应做回滚/撤销应用路径，允许根据 `.skill_runtime/evolution_applications/*.apply.json` 的 `rollback_hint` 恢复备份，并把候选状态从 `applied` 调整为 `rolled_back` 或类似状态；不要做无确认自动写全局技能。
 
