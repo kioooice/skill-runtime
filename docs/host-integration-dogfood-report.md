@@ -133,3 +133,18 @@ What it did not prove:
 Recommended next action: validate the same payloads and boundaries in a real host integration or operator flow.
 
 Do not expand the presentation helper yet. No evidence from this round shows that the current helper is insufficient.
+
+## Next Validation Target
+
+Next validation target: use a real service/orchestration response instead of a checked-in fixture, extract the inner payload object, and render it with the existing CLI.
+
+Runbook:
+
+- [real-host-payload-rendering-runbook.md](D:/02-Projects/vibe/docs/real-host-payload-rendering-runbook.md)
+
+This next step should keep the current helper unchanged and focus on whether a real host/operator flow still preserves:
+
+- the right next tool
+- missing-input visibility
+- confirmation visibility
+- no automatic execution / promotion / apply boundaries

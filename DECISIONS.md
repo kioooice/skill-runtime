@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Use Existing CLI JSON Output For Real Payload Rendering Validation
+
+**Decision**
+
+Do not add a new payload-capture helper for the first real host payload rendering round. Use the existing CLI JSON response, save it, and extract the inner `.data` payload object before rendering.
+
+**Reason**
+
+The current codebase already emits real recommendation-bearing JSON from service and orchestration commands. The actual integration gap is not missing capture logic. It is operator clarity around the outer `status/data` CLI envelope versus the inner payload object expected by the renderer. A runbook closes that gap with less risk than adding another script surface.
+
+**Impact**
+
+- added `docs/real-host-payload-rendering-runbook.md`
+- updated `docs/host-integration-dogfood-report.md` with the next validation target
+- no new capture script was added
+- no service recommendation logic changed
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Keep Host Recommendation Presentation Stable After First Operator Dogfood
 
 **Decision**
