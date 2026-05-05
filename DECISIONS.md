@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Tighten README Positioning Without Reframing The Product
+
+**Decision**
+
+Keep the current maintainer/workflow/governed-learning README narrative, but tighten the wording around rule-based utility coverage and make the v0.2 baseline gates directly discoverable from the main README.
+
+**Reason**
+
+The public story is already mostly correct: the project is positioned as a local workflow governance layer for repeatable maintainer automation, not a generic script bundle. The remaining risk is emphasis drift. The `Distillation` rule registry can still pull attention toward utility/file-transform examples, and the three v0.2 quality gates were easier to miss than they should be for release-readiness.
+
+**Impact**
+
+- added `docs/v0.2-release-readiness-review.md`
+- updated `README.md` wording to frame rule-based utilities as coverage/control examples rather than the main value story
+- added the provider / utility search / workflow search baseline commands to README
+- no runtime behavior, baseline JSON, ranking, workflow query, or `default-in` boundary changed
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Adopt Capture-Trajectory Recommendation Text Narrowly In README And Runbook
 
 **Decision**

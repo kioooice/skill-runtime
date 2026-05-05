@@ -205,7 +205,8 @@ Architecture maintenance guard:
 - optional external fallback provider command via `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD`
 - included local demo fallback provider in `examples/providers/copy_metadata_fallback_provider.py`
 - DeepSeek fallback provider in `examples/providers/deepseek_fallback_provider.py`
-- current rule registry includes:
+- current rule registry mainly provides local automation coverage and control examples; it is not the main public maintainer-value story
+- current rule registry includes utility/file-workflow coverage such as:
   - text merge
   - text replace
   - single-file transform
@@ -308,6 +309,14 @@ python scripts/check_mcp_architecture.py
 python scripts/check_runtime_contracts.py
 python -m unittest tests.test_runtime_fast -v
 python -c "from skill_runtime.mcp import build_mcp_server; build_mcp_server('.')"
+```
+
+v0.2 quality gates:
+
+```bash
+python scripts/evaluate_provider_quality.py --baseline docs/provider-quality-baseline.json --fail-on-regression
+python scripts/evaluate_search_quality.py --baseline docs/search-quality-baseline.json --fail-on-regression
+python scripts/evaluate_workflow_search_quality.py --baseline docs/workflow-search-quality-baseline.json --fail-on-regression
 ```
 
 Installed command entrypoints:

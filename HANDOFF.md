@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新 v0.2 release readiness / public positioning cleanup：已新增 `docs/v0.2-release-readiness-review.md`，并对 `README.md` 做了最小外部叙事收紧。当前结论是：README 顶层 maintainer/workflow/governed-learning 叙事已经基本正确，项目主价值仍然清楚是 `workflow skills + governed learning + auditable reuse`；唯一需要收口的是避免 `Distillation` 里的 rule registry 列表让新读者误读成“本地 utility script 工具箱”。本轮只加了一句 framing，明确这些 rule-based utilities 主要是本地 automation coverage / control examples，不是主 maintainer 价值故事；同时把 v0.2 三条 baseline gate 命令直接补进 README，降低 discoverability 成本。当前没有改 runtime、baseline JSON、ranking、workflow query、default-in 或 governed follow-up ownership，也仍然没有任何证据支持扩大 `default-in`。
+
 最新 CLI recommendation adoption 决策：已新增 `docs/cli-recommendation-adoption-decision.md`，并对 README quick path 与 `docs/real-host-payload-rendering-runbook.md` 做了窄 adoption 更新。当前推荐是：可以正式把 `capture-trajectory --render-recommendation text` 写成 governed follow-up 的 operator path，但必须明确它仍然是 opt-in、仅限 `capture-trajectory`、text 走 `stderr`、JSON audit payload 仍在 `stdout`，而且不会执行 `recommended_host_operation`、不会 promote/apply。当前没有把这条能力扩到其他命令，也没有把它写成 dashboard feature 或 host UI adoption 完成。当前仍然没有任何证据支持扩大 `default-in`。
 
 最新 CLI recommendation summary：已新增 `docs/cli-recommendation-presentation-summary.md`，并更新 `docs/v0.2-core-quality-summary.md`。当前结论是：`capture-trajectory --render-recommendation text` 已经是一个可接受的 CLI/operator surface，且对应 acceptance artifact、边界和副作用证据都已固定；但这还不是 README/runbook adoption 已完成的证明。下一步更应该判断是否要把它写成默认 operator path，而不是继续扩 flag 到其他命令、继续扩 presentation helper，或把它误写成 host UI 已收口。当前仍然没有任何证据支持扩大 `default-in`。
