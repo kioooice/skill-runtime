@@ -23,6 +23,15 @@ class RuntimeProviderQualityEvalTestsMixin:
         payload = json.loads(result.stdout)
         self.assertEqual("ok", payload["status"])
         fixtures = {item["fixture_name"]: item for item in payload["fixtures"]}
+        for fixture in fixtures.values():
+            self.assertIn("lifecycle_mode", fixture)
+            self.assertIn("loop_stage", fixture)
+            self.assertIn("staging_file", fixture)
+            self.assertIn("generated_candidate_provider", fixture)
+            self.assertIn("inferred_or_used_input_schema", fixture)
+            self.assertIn("expected_artifacts", fixture)
+            self.assertIn("produced_artifacts", fixture)
+            self.assertIn("missing_artifacts", fixture)
 
         self.assertIn("demo_local_success", fixtures)
         self.assertIn("lifecycle_mode", fixtures["demo_local_success"])
@@ -82,6 +91,11 @@ class RuntimeProviderQualityEvalTestsMixin:
         runtime_service_fixture = fixtures["runtime_service_distill_demo_provider"]
         if runtime_service_fixture["failure_reason"]:
             self.assertTrue(runtime_service_fixture["failure_reason"])
+            self.assertTrue(runtime_service_fixture["missing_artifacts"])
+            self.assertIn(
+                "demo/output/provider_quality_result.json",
+                runtime_service_fixture["missing_artifacts"],
+            )
         else:
             self.assertEqual("passed", runtime_service_fixture["generated_candidate_status"])
             self.assertEqual("passed", runtime_service_fixture["audit_status"])

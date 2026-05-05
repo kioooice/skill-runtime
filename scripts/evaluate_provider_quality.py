@@ -259,6 +259,12 @@ def _evaluate_fixture(
         "loop_stage": "generation_failed",
         "failure_reason": None,
         "recommended_next_action": None,
+        "staging_file": None,
+        "generated_candidate_provider": None,
+        "inferred_or_used_input_schema": None,
+        "expected_artifacts": [],
+        "produced_artifacts": [],
+        "missing_artifacts": [],
     }
 
     with tempfile.TemporaryDirectory(prefix=f"skill-runtime-provider-quality-{fixture_name}-") as temp_dir:
@@ -271,6 +277,7 @@ def _evaluate_fixture(
         service = RuntimeService(sandbox_root)
         selected_observed_task = observed_task or _observed_task()
         selected_execution_args = execution_args or _execution_args()
+        result["expected_artifacts"] = _expected_artifacts(selected_execution_args)
 
         with _patched_env(env_updates):
             try:
@@ -298,8 +305,11 @@ def _evaluate_fixture(
 
             result["generated_candidate_status"] = "passed"
             result["recommended_next_action"] = capture_result.get("recommended_next_action")
+            result["staging_file"] = distill_result.get("staging_file")
 
             fallback_artifact = distill_result.get("fallback_artifact")
+            result["generated_candidate_provider"] = _generated_candidate_provider(distill_result)
+            result["inferred_or_used_input_schema"] = _inferred_or_used_input_schema(distill_result, fallback_artifact)
             if fallback_artifact:
                 fallback_response = _read_fallback_artifact(Path(fallback_artifact))
                 result["provider_used"]["fallback"] = (
@@ -338,6 +348,8 @@ def _evaluate_fixture(
             )
             result["execution_smoke_status"] = execution_result["status"]
             result["failure_reason"] = execution_result["failure_reason"]
+            result["produced_artifacts"] = execution_result["produced_artifacts"]
+            result["missing_artifacts"] = execution_result["missing_artifacts"]
             if execution_result["status"] == "passed":
                 result["loop_stage"] = "execution_passed"
             else:
@@ -421,6 +433,7 @@ def _generate_candidate(
         "staging_file": str(staging_file.resolve()),
         "fallback_artifact": str(Path(fallback_artifact).resolve()) if fallback_artifact else None,
         "fallback_provider": provider_name,
+        "input_schema": input_schema,
     }
 
 
@@ -460,39 +473,134 @@ def _execution_args() -> dict[str, str]:
     }
 
 
-def _execute_staging_candidate(skill_path: Path, workspace: Path, args: dict[str, str]) -> dict[str, str | None]:
+def _execute_staging_candidate(skill_path: Path, workspace: Path, args: dict[str, str]) -> dict[str, Any]:
+    expected_artifacts = _expected_artifacts(args)
     try:
         spec = importlib.util.spec_from_file_location("provider_quality_candidate", skill_path)
         if spec is None or spec.loader is None:
-            return {"status": "failed", "failure_reason": f"Unable to load candidate module: {skill_path.name}"}
+            return {
+                "status": "failed",
+                "failure_reason": f"Unable to load candidate module: {skill_path.name}",
+                "produced_artifacts": [],
+                "missing_artifacts": expected_artifacts,
+            }
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         run = getattr(module, "run", None)
         if not callable(run):
-            return {"status": "failed", "failure_reason": "Generated candidate is missing run(tools, **kwargs)."}
+            return {
+                "status": "failed",
+                "failure_reason": "Generated candidate is missing run(tools, **kwargs).",
+                "produced_artifacts": [],
+                "missing_artifacts": expected_artifacts,
+            }
         tools = RuntimeTools(workspace)
-        result = run(tools, **args)
+        run_result = run(tools, **args)
+        operation_log = tools.export_records()
     except Exception as exc:  # noqa: BLE001
-        return {"status": "failed", "failure_reason": str(exc)}
-
-    output_path = workspace / args["output_path"]
-    metadata_path = workspace / args["metadata_path"]
-    if not output_path.exists() or not metadata_path.exists():
-        missing = []
-        if not output_path.exists():
-            missing.append(args["output_path"])
-        if not metadata_path.exists():
-            missing.append(args["metadata_path"])
         return {
             "status": "failed",
-            "failure_reason": "Execution smoke did not create expected artifact(s): " + ", ".join(missing),
+            "failure_reason": str(exc),
+            "produced_artifacts": [],
+            "missing_artifacts": expected_artifacts,
         }
-    if not isinstance(result, dict) or result.get("status") not in {"completed", "success"}:
+
+    produced_artifacts = _produced_artifacts(workspace, operation_log, expected_artifacts)
+    missing_artifacts = [path for path in expected_artifacts if path not in produced_artifacts]
+    if missing_artifacts:
+        return {
+            "status": "failed",
+            "failure_reason": "Execution smoke did not create expected artifact(s): " + ", ".join(missing_artifacts),
+            "produced_artifacts": produced_artifacts,
+            "missing_artifacts": missing_artifacts,
+        }
+    if not isinstance(run_result, dict) or run_result.get("status") not in {"completed", "success"}:
         return {
             "status": "failed",
             "failure_reason": "Execution smoke returned a non-success result payload.",
+            "produced_artifacts": produced_artifacts,
+            "missing_artifacts": missing_artifacts,
         }
-    return {"status": "passed", "failure_reason": None}
+    return {
+        "status": "passed",
+        "failure_reason": None,
+        "produced_artifacts": produced_artifacts,
+        "missing_artifacts": missing_artifacts,
+    }
+
+
+def _expected_artifacts(args: dict[str, str]) -> list[str]:
+    expected = []
+    for key in ("output_path", "metadata_path"):
+        value = args.get(key)
+        if isinstance(value, str) and value:
+            expected.append(value.replace("\\", "/"))
+    return expected
+
+
+def _produced_artifacts(
+    workspace: Path,
+    operation_log: list[dict[str, Any]],
+    expected_artifacts: list[str],
+) -> list[str]:
+    produced: set[str] = set()
+    for record in operation_log:
+        artifacts = record.get("artifacts")
+        if not isinstance(artifacts, list):
+            continue
+        for artifact in artifacts:
+            if isinstance(artifact, str):
+                produced.add(artifact.replace("\\", "/"))
+    for artifact in expected_artifacts:
+        if (workspace / artifact).exists():
+            produced.add(artifact)
+    return sorted(produced)
+
+
+def _generated_candidate_provider(distill_result: dict[str, Any]) -> str | None:
+    fallback_provider = distill_result.get("fallback_provider")
+    if isinstance(fallback_provider, str) and fallback_provider:
+        return fallback_provider
+    metadata = _candidate_metadata(distill_result)
+    rule_name = metadata.get("rule_name")
+    if isinstance(rule_name, str) and rule_name:
+        return f"deterministic_rule:{rule_name}"
+    return None
+
+
+def _inferred_or_used_input_schema(
+    distill_result: dict[str, Any],
+    fallback_artifact: str | None,
+) -> dict[str, Any] | None:
+    input_schema = distill_result.get("input_schema")
+    if isinstance(input_schema, dict):
+        return input_schema
+    metadata = _candidate_metadata(distill_result)
+    metadata_input_schema = metadata.get("input_schema")
+    if isinstance(metadata_input_schema, dict):
+        return metadata_input_schema
+    if fallback_artifact:
+        try:
+            payload = json.loads(Path(fallback_artifact).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        request = payload.get("request")
+        if isinstance(request, dict):
+            request_input_schema = request.get("input_schema")
+            if isinstance(request_input_schema, dict):
+                return request_input_schema
+    return None
+
+
+def _candidate_metadata(distill_result: dict[str, Any]) -> dict[str, Any]:
+    metadata_file = distill_result.get("metadata_file")
+    if not isinstance(metadata_file, str) or not metadata_file:
+        return {}
+    try:
+        payload = json.loads(Path(metadata_file).read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
 
 
 def _read_fallback_artifact(path: Path) -> dict[str, Any]:
