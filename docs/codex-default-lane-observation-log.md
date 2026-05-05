@@ -799,6 +799,15 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the lane help: yes, because it kept the work on the normal Codex path and reinforced that the product value now comes from explicit workflow governance, not invisible machinery
 - Follow-up: dogfood the documented operator-facing lifecycle before inventing any richer lifecycle surface
 
+### 2026-05-06 - Dashboard operator-summary visibility slice
+
+- Task type: operator-facing dashboard product-completeness slice
+- Classified as: default-out / skipped
+- What happened: promoted the exported stable `operator-summary` from collector-only data into visible read-only dashboard UI; the local overview now shows freshness, count-only inventory, gate status/freshness, and non-automatic boundary text, while global project cards show summary freshness and gate freshness
+- Did the behavior feel correct: yes, because the page now answers the first-glance operator question without turning dashboard into a new control plane
+- Did the lane help: yes, because the skipped result kept the work on normal Codex product implementation while still recording that this slice is not evidence for wider runtime entry
+- Follow-up: decide whether operator-summary export refresh needs a more ergonomic entry point, without making dashboard execute lifecycle work
+
 ### 2026-05-01 - Runtime observability dashboard implementation
 
 - Task type: Codex runtime lane observability

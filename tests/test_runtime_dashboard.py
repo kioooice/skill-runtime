@@ -481,6 +481,71 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("进入观察", html)
         self.assertIn("setEventFilter", html)
 
+    def test_global_dashboard_renderer_shows_project_operator_summary_statuses(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data, collect_global_dashboard_data
+        from skill_runtime.dashboard.render import render_dashboard_html
+
+        workspace_parent = self.runtime_root / "global-operator-render-workspaces"
+        project_alpha = workspace_parent / "alpha"
+        self._write_dashboard_event(
+            project_alpha,
+            timestamp="2026-05-01T12:00:00+00:00",
+            task_description="merge alpha notes",
+            runtime_lane_status="used",
+            runtime_lane_reason="auto-executed reusable skill",
+            selected_skill_name="merge_text_files",
+        )
+        export_dir = project_alpha / ".skill_runtime" / "dashboard"
+        export_dir.mkdir(parents=True, exist_ok=True)
+        (export_dir / "operator-summary.json").write_text(
+            json.dumps(
+                {
+                    "generated_at": "2026-05-06T12:05:00+00:00",
+                    "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 86400},
+                    "active_skills": {"count": 8},
+                    "staging_candidates": {"count": 3},
+                    "trajectories": {"count": 11},
+                    "recommended_host_operations": {"count": 0},
+                    "quality_gates": {
+                        "provider_quality": {
+                            "label": "provider_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-06T12:04:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                        },
+                        "utility_search_quality": {
+                            "label": "utility_search_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-01T12:04:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 3600},
+                        },
+                        "workflow_search_quality": {
+                            "label": "workflow_search_quality",
+                            "status": "unavailable",
+                            "generated_at": None,
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                        },
+                    },
+                    "safe_next_steps": [],
+                    "intentionally_not_automatic": ["promote_skill"],
+                    "missing_or_unavailable": ["workflow_search_quality"],
+                    "non_automatic_explanation": "read-only export",
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        data = collect_dashboard_data(self.runtime_root)
+        data["global"] = collect_global_dashboard_data(self.runtime_root, scan_roots=[workspace_parent])
+        html = render_dashboard_html(data)
+
+        self.assertIn("摘要：新鲜", html)
+        self.assertIn("质量门：provider_quality 可用 / 新鲜", html)
+        self.assertIn("质量门：utility_search_quality 可用 / 过期", html)
+        self.assertIn("质量门：workflow_search_quality 不可用 / 未知", html)
+
     def test_dashboard_renderer_includes_core_sections(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
         from skill_runtime.dashboard.render import render_dashboard_html
@@ -566,6 +631,76 @@ class RuntimeDashboardTestsMixin:
         self.assertNotIn("合并文本文件", html)
         self.assertIn("进入观察", html)
         self.assertNotIn("Batch export all JSON records in a folder into CSV files.", html)
+
+    def test_dashboard_renderer_shows_operator_summary_overview_when_export_exists(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+        from skill_runtime.dashboard.render import render_dashboard_html
+
+        export_dir = self.runtime_root / ".skill_runtime" / "dashboard"
+        export_dir.mkdir(parents=True, exist_ok=True)
+        (export_dir / "operator-summary.json").write_text(
+            json.dumps(
+                {
+                    "generated_at": "2026-05-06T12:00:00+00:00",
+                    "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 86400},
+                    "active_skills": {"count": 14},
+                    "staging_candidates": {"count": 3},
+                    "trajectories": {"count": 11},
+                    "recommended_host_operations": {"count": 2},
+                    "quality_gates": {
+                        "provider_quality": {
+                            "label": "provider_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-06T11:55:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                        },
+                        "utility_search_quality": {
+                            "label": "utility_search_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-01T11:55:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 3600},
+                        },
+                        "workflow_search_quality": {
+                            "label": "workflow_search_quality",
+                            "status": "unavailable",
+                            "generated_at": None,
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                        },
+                    },
+                    "safe_next_steps": [
+                        {"label": "Export operator summary", "reason": "Refresh the dashboard-facing summary."}
+                    ],
+                    "intentionally_not_automatic": ["promote_skill", "apply_evolution_candidate"],
+                    "missing_or_unavailable": ["workflow_search_quality"],
+                    "non_automatic_explanation": "read-only summary only",
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        html = render_dashboard_html(collect_dashboard_data(self.runtime_root))
+
+        self.assertIn("操作员摘要", html)
+        self.assertIn("data-operator-summary", html)
+        self.assertIn("摘要状态：新鲜", html)
+        self.assertIn("生成时间：2026-05-06T12:00:00+00:00", html)
+        self.assertIn("活跃技能", html)
+        self.assertIn("候选技能", html)
+        self.assertIn("轨迹记录", html)
+        self.assertIn("推荐操作", html)
+        self.assertIn("provider_quality", html)
+        self.assertIn("状态：可用", html)
+        self.assertIn("时效：新鲜", html)
+        self.assertIn("utility_search_quality", html)
+        self.assertIn("时效：过期", html)
+        self.assertIn("workflow_search_quality", html)
+        self.assertIn("状态：不可用", html)
+        self.assertIn("建议下一步：Export operator summary", html)
+        self.assertIn("不自动执行：promote_skill、apply_evolution_candidate", html)
+        self.assertIn("缺失或暂不可用：workflow_search_quality", html)
+        self.assertIn("read-only summary only", html)
 
     def test_dashboard_collector_and_renderer_show_skill_evolution_candidates(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data

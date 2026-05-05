@@ -212,9 +212,13 @@ def render_dashboard_html(data: dict[str, Any]) -> str:
         {_view_nav(data.get("overview", {}), global_enabled=bool(global_data))}
         <button class="sidebar-settings" type="button">{_icon("settings")}<span>设置</span></button>
       </aside>
-      <main class="content-pane">
+        <main class="content-pane">
         {_view_headers(title, subtitle, read_only_text, global_enabled=bool(global_data))}
-        {_overview_page(data.get("overview", {}), global_data.get("overview", {}) if global_data else None)}
+        {_overview_page(
+            data.get("overview", {}),
+            global_data.get("overview", {}) if global_data else None,
+            data.get("operator_summary"),
+        )}
         {_skill_tree(data.get("skills", []), data.get("capability_collections", []))}
         {_evolution_candidates(data.get("evolution_candidates", []))}
         {_trigger_log(
@@ -300,11 +304,17 @@ def _icon(name: str) -> str:
     return f'<span class="icon">{icons.get(name, icons["blocks"])}</span>'
 
 
-def _overview_page(overview: dict[str, Any], global_overview: dict[str, Any] | None = None) -> str:
+def _overview_page(
+    overview: dict[str, Any],
+    global_overview: dict[str, Any] | None = None,
+    operator_summary: dict[str, Any] | None = None,
+) -> str:
     global_html = _global_overview(global_overview) if global_overview else ""
+    operator_html = _operator_summary_overview(operator_summary) if isinstance(operator_summary, dict) else ""
     return f"""<section id="dashboard-page-overview" class="view-panel dashboard-view-page overview-page" data-view-page="overview" hidden>
   <section class="panel overview-panel">
     {_overview(overview)}
+    {operator_html}
     {global_html}
   </section>
 </section>"""
@@ -347,6 +357,7 @@ def _global_overview(overview: dict[str, Any]) -> str:
 
 def _project_card(project: dict[str, Any]) -> str:
     counts = project.get("recent_event_counts", {})
+    operator_summary = _project_operator_summary(project)
     return f"""<article class="project-card">
   <div class="project-name">{text(project.get("project_name"))}</div>
   <div class="project-path">{text(project.get("project_root"))}</div>
@@ -356,6 +367,7 @@ def _project_card(project: dict[str, Any]) -> str:
     <span>{text(counts.get("entered", 0))} 次进入</span>
     <span>{text(counts.get("skipped", 0))} 次跳过</span>
   </div>
+  {operator_summary}
   <div class="muted">最近：{text(project.get("latest_event_time") or "暂无")}</div>
 </article>"""
 
@@ -411,6 +423,106 @@ def _metric(label: str, value: Any, caption: str) -> str:
   <span>{text(label)}</span>
   <small>{text(caption)}</small>
 </div>"""
+
+
+def _operator_summary_overview(summary: dict[str, Any]) -> str:
+    freshness = summary.get("freshness") if isinstance(summary.get("freshness"), dict) else {}
+    quality_gates = summary.get("quality_gates") if isinstance(summary.get("quality_gates"), dict) else {}
+    safe_next_steps = summary.get("safe_next_steps") if isinstance(summary.get("safe_next_steps"), list) else []
+    intentionally_not_automatic = (
+        summary.get("intentionally_not_automatic") if isinstance(summary.get("intentionally_not_automatic"), list) else []
+    )
+    missing_or_unavailable = (
+        summary.get("missing_or_unavailable") if isinstance(summary.get("missing_or_unavailable"), list) else []
+    )
+    gate_lines = []
+    for key in ("provider_quality", "utility_search_quality", "workflow_search_quality"):
+        gate = quality_gates.get(key) if isinstance(quality_gates.get(key), dict) else {}
+        gate_lines.append(
+            f"""<div class="operator-summary-gate">
+  <strong>{text(key)}</strong>
+  <span>状态：{text(_operator_gate_status_label(gate.get("status")))}</span>
+  <span>时效：{text(_operator_freshness_label((gate.get("freshness") or {}).get("status")))}</span>
+</div>"""
+        )
+    next_steps_text = "、".join(
+        str(item.get("label")).strip()
+        for item in safe_next_steps
+        if isinstance(item, dict) and str(item.get("label") or "").strip()
+    )
+    return f"""<section class="overview-section operator-summary-section" data-operator-summary>
+  <div class="overview-section-head">
+    <h2>操作员摘要</h2>
+    <p class="muted">来自稳定导出的只读摘要，不直接执行任何后续动作。</p>
+  </div>
+  <div class="grid metric-grid">
+    {_metric("活跃技能", _summary_count(summary.get("active_skills")), "当前摘要计数")}
+    {_metric("候选技能", _summary_count(summary.get("staging_candidates")), "等待人工处理")}
+    {_metric("轨迹记录", _summary_count(summary.get("trajectories")), "已捕获任务轨迹")}
+    {_metric("推荐操作", _summary_count(summary.get("recommended_host_operations")), "只读建议数量")}
+  </div>
+  <p class="overview-meta">摘要状态：{text(_operator_freshness_label(freshness.get("status")))} · 生成时间：{text(summary.get("generated_at") or "未记录")}</p>
+  <div class="operator-summary-gates">
+    {"".join(gate_lines)}
+  </div>
+  <div class="operator-summary-notes">
+    <p>建议下一步：{text(next_steps_text or "暂无")}</p>
+    <p>不自动执行：{text("、".join(str(item) for item in intentionally_not_automatic) or "暂无")}</p>
+    <p>缺失或暂不可用：{text("、".join(str(item) for item in missing_or_unavailable) or "无")}</p>
+    <p>{text(summary.get("non_automatic_explanation") or "只显示稳定摘要，不推进自动生命周期。")}</p>
+  </div>
+</section>"""
+
+
+def _project_operator_summary(project: dict[str, Any]) -> str:
+    if not project.get("operator_summary_available"):
+        return ""
+    freshness = _operator_freshness_label(project.get("operator_summary_freshness_status"))
+    statuses = project.get("operator_quality_gate_statuses") if isinstance(project.get("operator_quality_gate_statuses"), dict) else {}
+    freshness_statuses = (
+        project.get("operator_quality_gate_freshness_statuses")
+        if isinstance(project.get("operator_quality_gate_freshness_statuses"), dict)
+        else {}
+    )
+    gate_lines = []
+    for key in ("provider_quality", "utility_search_quality", "workflow_search_quality"):
+        status = _operator_gate_status_label(statuses.get(key))
+        gate_freshness = _operator_freshness_label(freshness_statuses.get(key))
+        gate_lines.append(f"<div>质量门：{text(key)} {text(status)} / {text(gate_freshness)}</div>")
+    return f"""<div class="project-operator-summary">
+  <div class="project-stats">
+    <span>摘要：{text(freshness)}</span>
+    <span>生成：{text(project.get("operator_summary_generated_at") or "未记录")}</span>
+  </div>
+  <div class="muted project-operator-summary-lines">
+    {"".join(gate_lines)}
+  </div>
+</div>"""
+
+
+def _summary_count(payload: Any) -> int:
+    if not isinstance(payload, dict):
+        return 0
+    value = payload.get("count")
+    return value if isinstance(value, int) else 0
+
+
+def _operator_gate_status_label(value: Any) -> str:
+    labels = {
+        "available": "可用",
+        "unavailable": "不可用",
+        "unknown": "未知",
+    }
+    return labels.get(str(value or ""), str(value or "未知"))
+
+
+def _operator_freshness_label(value: Any) -> str:
+    labels = {
+        "fresh": "新鲜",
+        "stale": "过期",
+        "unknown": "未知",
+    }
+    return labels.get(str(value or ""), str(value or "未知"))
 
 
 def _skill_display_name(raw_name: Any) -> str:

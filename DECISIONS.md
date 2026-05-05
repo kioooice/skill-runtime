@@ -2,6 +2,26 @@
 
 ## Decision Log
 
+### 2026-05-06 - Render Stable Operator Summary On Existing Dashboard Surfaces Without Turning Dashboard Into A New Control Plane
+
+**Decision**
+
+Expose the exported stable `operator-summary` subset on the existing read-only dashboard surfaces: the local `overview` page and each project card in `global-dashboard`.
+
+**Reason**
+
+The prior slices already proved that `operator-summary` could be exported and consumed safely by collectors. At that point the remaining product gap was no longer data access; it was first-glance operator visibility. Keeping the render scope small closes that gap without reintroducing page churn, unstable full-list dependencies, or any confusion that dashboard itself executes lifecycle work.
+
+**Impact**
+
+- local dashboard overview now renders a read-only `operator-summary` section when export data exists
+- the section shows only stable fields: summary freshness, generated time, count-only inventory, gate status/freshness, safe next steps, missing/unavailable items, and non-automatic boundary text
+- global project cards now show operator-summary freshness plus per-gate status/freshness when metadata exists
+- existing dashboard/global-dashboard navigation and collector boundaries stay intact
+- dashboard still does not consume full item lists from `operator-summary`
+- dashboard still does not execute host operations, evaluator scripts, promote, or apply evolution candidates
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Add Freshness Semantics At The Export And Collector Layer Before Any Dashboard UI Change
 
 **Decision**

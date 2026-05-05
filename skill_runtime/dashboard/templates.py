@@ -241,6 +241,42 @@ body[data-active-view="global-projects"] [data-view-page="global-projects"] { di
 .metric span { color: var(--foreground); display: block; font-size: 13px; font-weight: 800; margin-bottom: 4px; }
 .metric small { color: var(--muted-foreground); display: block; font-size: 12px; line-height: 1.35; }
 .overview-meta { color: var(--muted-foreground); font-size: 13px; margin-top: 9px; }
+.operator-summary-section { display: grid; gap: 14px; }
+.operator-summary-gates {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.operator-summary-gate, .project-operator-summary {
+  background: rgba(204, 208, 218, .34);
+  border: 1px solid rgba(188, 192, 204, .72);
+  border-radius: 12px;
+  padding: 12px;
+}
+.operator-summary-gate strong {
+  color: var(--foreground);
+  display: block;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.operator-summary-gate span, .project-operator-summary-lines div {
+  color: var(--muted-foreground);
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.operator-summary-notes {
+  background: rgba(204, 208, 218, .26);
+  border: 1px dashed rgba(188, 192, 204, .76);
+  border-radius: 12px;
+  padding: 12px;
+}
+.operator-summary-notes p {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.operator-summary-notes p + p { margin-top: 6px; }
 .section-title-row {
   align-items: center;
   display: flex;
@@ -450,6 +486,8 @@ body[data-active-view="global-projects"] [data-view-page="global-projects"] { di
 .project-card { min-height: 0; }
 .project-name { font-size: 18px; font-weight: 900; margin-bottom: 6px; }
 .project-path { color: var(--muted-foreground); font-size: 12px; line-height: 1.4; margin-bottom: 12px; overflow-wrap: anywhere; }
+.project-operator-summary { margin: 12px 0; }
+.project-operator-summary .project-stats { margin-bottom: 8px; }
 .scan-list { color: var(--muted-foreground); margin: 12px 0 18px; padding-left: 20px; }
 pre {
   background: #4c4f69;
