@@ -619,6 +619,15 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the lane help: partly; the skip event is useful because it keeps this UI clarification visible in trigger logs without pretending the runtime should take over
 - Follow-up: continue the same pattern on trigger-log event detail so product pages explain runtime state without exposing raw internals
 
+### 2026-05-05 - Handoff continuation mainline runbook
+
+- Task type: maintainer mainline acceptance runbook
+- Classified as: `guarded-in` / `skipped` by CLI `codex-run`
+- What happened: added a runbook for the handoff continuation mainline, validated the demo JSON inputs, confirmed `capture-trajectory` creates a trajectory and recommends `distill_trajectory`, and checked that the current Codex-facing gate still classifies "continue from HANDOFF.md" as local and reusable but outside the phase-one default-in families
+- Did the behavior feel correct: yes; this is a real maintainer workflow, but the current conservative boundary should not pretend it is already a silent default-in path
+- Did the lane help: yes, because it exposed the exact current boundary instead of leaving handoff continuation in a vague "maybe runtime, maybe not" state
+- Follow-up: decide later whether handoff continuation should remain `guarded-in` or earn a stricter default-in family after acceptance-style proof
+
 ### 2026-05-01 - Runtime observability dashboard implementation
 
 - Task type: Codex runtime lane observability
