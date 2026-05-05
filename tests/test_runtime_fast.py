@@ -11,6 +11,7 @@ from tests.test_runtime_isolation import RuntimeIsolationTestsMixin
 from tests.test_runtime_mcp_smoke import RuntimeMcpSmokeTestsMixin
 from tests.test_runtime_platform_inventory import RuntimePlatformInventoryTestsMixin
 from tests.test_runtime_platform_export import RuntimePlatformExportTestsMixin
+from tests.test_runtime_provider_quality_eval import RuntimeProviderQualityEvalTestsMixin
 from tests.test_runtime_search_quality import RuntimeSearchQualityTestsMixin
 from tests.test_runtime_skill_import import RuntimeSkillImportTestsMixin
 
@@ -26,6 +27,7 @@ class RuntimeFastTests(
     RuntimeMcpSmokeTestsMixin,
     RuntimePlatformExportTestsMixin,
     RuntimePlatformInventoryTestsMixin,
+    RuntimeProviderQualityEvalTestsMixin,
     RuntimeSearchQualityTestsMixin,
     RuntimeSkillImportTestsMixin,
     RuntimeTestCase,
