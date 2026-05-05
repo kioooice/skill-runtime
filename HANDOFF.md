@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新阶段完成：Stage 4 operator-facing recommendation contract 已收口。`AgentOrchestrationResult` 现在统一承载顶层 follow-up recommendation 字段：`recommended_next_action`、`recommended_reason`、`recommended_host_operation`、`available_host_operations`。当前 `background_hint` 会冒泡成顶层 `execute_skill`，`new_skill_candidate` 在 capture 后会冒泡成顶层 `distill_trajectory`，`improve_existing_skill_candidate` 在 candidate 创建后会冒泡成顶层 `review_evolution_candidate`。CLI 和 MCP 的 plan/result 重建层也已补齐这些字段，避免 recommendation 在宿主边界丢失。验证已通过：`python -m unittest tests.test_runtime_fast -v` 通过 145 tests OK，`git diff --check` 通过，新增回归测试覆盖 host、MCP 和 finalizer recommendation 透传。
+
 最新战略目标：用户已明确希望把本项目朝“可申请 OpenAI Codex for Open Source / 开源支持”的方向推进。价值门判断：`manual_validation_first`，目标可以成立，但不能为了“免费会员”直接堆插件功能；更合理路线是把项目打磨成公开、可安装、可演示、对开源维护者有真实价值的 Codex workflow/plugin layer。官方页面当前强调 Codex for Open Source 面向关键开源软件维护者，申请需要公开 GitHub 用户和公开仓库，说明 primary/core maintainer 角色、仓库为什么重要，以及如何使用 API credits；入选维护者可获得 6 个月 ChatGPT Pro（含 Codex）、Codex Security 条件访问和 API credits。Codex open source fund 另一个入口偏 API credits，最高 $25,000。后续不要承诺一定能拿到免费会员，应先补齐公开仓库、README、license、安装/demo、真实 maintainer workflow 用例和 500 字申请材料。
 
 最新阶段完成：Stage 2 项目定位和 README/application narrative 已完成。README / README.zh-CN / README.en 顶部已改成公开维护者价值叙事，不再先从内部 MCP/runtime 形态讲起。新增 `docs/codex-open-source-positioning.md`：一句话定位是 “Skill Runtime helps Codex-style agents capture, audit, reuse, and improve repeatable maintainer workflows.” 文档还记录了公开叙事、差异化、社区文件清单、review cleanup / release readiness / handoff continuation 三个 maintainer workflow demo 候选及成功标准、Codex for Open Source 申请文案草稿。下一阶段进入 Stage 3：做 demo maintainer workflows 和验证路径。
@@ -875,7 +877,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-当前新战略目标是“开源申请后继续产品化主线”。申请表已提交，dashboard 当前已经够用，主线已收回到核心机制。第一条 maintainer mainline 现在已有 acceptance doc、runbook 和 acceptance-style 快验三层约束。下一步建议基于这条测试基线决定一件更实的事：`handoff continuation` 是否应该继续保持 `guarded-in`，还是值得被提升到更明确的 default-in 家族；如果要调整，先证明扩大边界真的有价值。不要回到继续堆 runtime 样本；也不要把观察面当成产品本体。
+当前新战略目标是“开源申请后继续产品化主线”。申请表已提交，dashboard 当前已经够用，主线已收回到核心机制。当前 recommendation contract 已经统一，下一步更值得推进的是按边界采样的 dogfood：优先拿真实 maintainer 任务验证 `background_hint`、`distill_trajectory`、`review_evolution_candidate` 这三类推荐动作是否真的顺手，而不是继续扩 dashboard 或争论更宽的自动接管范围。不要回到继续堆 runtime 样本；也不要把观察面当成产品本体。
 
 技能进化闭环已经有 apply 和 rollback 两端的主线验收，也已经有明确的 host-facing follow-up，并且现在有独立 acceptance doc / runbook。下一步如果继续这条主线，不应再补“能不能回滚”或“按钮能不能显示”这种基础能力，而应判断是否要 dogfood 这条 operator-facing 路径，或者是否需要更强的人工审核策略；不要做无确认自动写全局技能。
 

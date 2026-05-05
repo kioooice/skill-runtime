@@ -111,3 +111,7 @@ class AgentOrchestrationResult:
     selected_skill_args: dict[str, Any] = field(default_factory=dict)
     execution_payload: dict[str, Any] | None = None
     learning_capture_payload: dict[str, Any] | None = None
+    recommended_next_action: str | None = None
+    recommended_reason: str | None = None
+    recommended_host_operation: dict[str, Any] | None = None
+    available_host_operations: list[dict[str, Any]] = field(default_factory=list)

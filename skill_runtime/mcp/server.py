@@ -85,6 +85,18 @@ def _agent_result_from_payload(raw_plan: dict[str, Any]) -> AgentOrchestrationRe
         learning_capture_payload=raw_plan.get("learning_capture_payload")
         if isinstance(raw_plan.get("learning_capture_payload"), dict)
         else None,
+        recommended_next_action=raw_plan.get("recommended_next_action")
+        if isinstance(raw_plan.get("recommended_next_action"), str)
+        else None,
+        recommended_reason=raw_plan.get("recommended_reason")
+        if isinstance(raw_plan.get("recommended_reason"), str)
+        else None,
+        recommended_host_operation=raw_plan.get("recommended_host_operation")
+        if isinstance(raw_plan.get("recommended_host_operation"), dict)
+        else None,
+        available_host_operations=[
+            item for item in raw_plan.get("available_host_operations", []) if isinstance(item, dict)
+        ],
     )
 
 

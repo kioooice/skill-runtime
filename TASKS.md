@@ -2,6 +2,7 @@
 
 ## Current Focus
 
+- 最新 operator-facing recommendation 收口：`AgentOrchestrationResult` 现在统一承载顶层 follow-up recommendation，不再要求 host 从 `learning_capture_payload` 或其他嵌套结果里猜下一步。当前 `background_hint` 会冒泡成顶层 `execute_skill`，`new_skill_candidate` 会冒泡成顶层 `distill_trajectory`，`improve_existing_skill_candidate` 会冒泡成顶层 `review_evolution_candidate`。CLI / MCP 的 plan/result 重建也已补齐这些字段，避免 recommendation 在宿主边界丢失。
 - 最新战略目标：把本项目朝 OpenAI Codex for Open Source / 开源支持申请准备推进。当前价值门结论是 `manual_validation_first`：目标成立，但先验证公开项目价值和申请材料缺口，不直接为了免费会员堆功能。下一步重点是开源 readiness audit：公开仓库、README、license、安装/demo、真实维护者 workflow 用例、生态重要性说明和 API credits 使用说明。
 - 最新阶段完成：Stage 2 项目定位和 README/application narrative 已完成。README / README.zh-CN / README.en 的顶部已经改成面向开源维护者的价值叙事：Skill Runtime 是 Codex 风格编程代理的本地工作流治理层，帮助维护者把重复的 review、triage、release、handoff 和维护自动化流程沉淀为可审计、可复用、可改进的技能。新增 `docs/codex-open-source-positioning.md`，记录一句话定位、公开叙事、差异化、社区文件清单、3 个 maintainer workflow demo 候选和申请文案草稿。
 - 最新阶段完成：Stage 3 maintainer workflow demo set 已完成。当前已有 review cleanup、release readiness、handoff continuation 三个本地 demo；每个 demo 都有 input fixture、expected maintainer output、observed_task record、说明文档，并已通过临时 runtime root 的 `capture-trajectory` 验证，证明可以捕获维护流程但不会自动 promote 未审核技能。
@@ -55,6 +56,8 @@
 
 ## Todo
 
+- [x] 将 reuse / learning / evolution 的 host-facing follow-up recommendation 收口为统一顶层结果字段，并补齐 CLI / MCP 透传
+- [ ] 开始按边界采样的 dogfood 策略：优先验证 `background_hint`、`distill_trajectory`、`review_evolution_candidate` 这三类 recommendation 在真实 maintainer 任务里的顺手程度
 - [x] 做 Codex for Open Source readiness audit：公开状态、license、README、安装验证、demo、维护者 workflow、申请材料缺口
 - [x] 补 MIT License 和基础 package metadata
 - [x] 收敛项目的一句话定位和 README 顶部叙事：面向开源维护者的 Codex workflow/plugin layer，而不是泛泛的本地技能实验

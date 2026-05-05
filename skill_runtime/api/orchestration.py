@@ -11,6 +11,11 @@ from skill_runtime.api.models import (
 )
 from skill_runtime.api.service import RuntimeService
 from skill_runtime.evolution.candidates import EvolutionCandidateStore
+from skill_runtime.mcp.operation_builders import review_evolution_candidate_operation
+from skill_runtime.mcp.recommendation_builders import (
+    recommendation_from_operation,
+    search_recommended_skill_recommendation,
+)
 from skill_runtime.retrieval.skill_index import SkillIndex
 
 
@@ -28,6 +33,7 @@ class AgentOrchestrationService:
         reuse_decision = self.plan_reuse(request)
         selected_skill_name = reuse_decision.skill_name if reuse_decision.decision == "auto_execute" else None
         selected_skill_args = dict(request.known_inputs) if selected_skill_name else {}
+        recommendation = self._reuse_recommendation(reuse_decision)
         return AgentOrchestrationResult(
             request=request,
             reuse_decision=reuse_decision,
@@ -37,6 +43,7 @@ class AgentOrchestrationService:
             selected_skill_args=selected_skill_args,
             execution_payload=None,
             learning_capture_payload=None,
+            **self._recommendation_kwargs(recommendation),
         )
 
     def finalize_task(
@@ -56,6 +63,7 @@ class AgentOrchestrationService:
             learning_decision,
             learning_capture_payload,
         )
+        recommendation = self._result_recommendation(execution_payload, learning_capture_payload)
         return AgentOrchestrationResult(
             request=plan.request,
             reuse_decision=plan.reuse_decision,
@@ -65,6 +73,7 @@ class AgentOrchestrationService:
             selected_skill_args=dict(plan.selected_skill_args),
             execution_payload=execution_payload,
             learning_capture_payload=learning_capture_payload,
+            **self._recommendation_kwargs(recommendation),
         )
 
     def run_task(self, request: AgentTaskRequest) -> AgentOrchestrationResult:
@@ -256,17 +265,24 @@ class AgentOrchestrationService:
         payload = dict(learning_capture_payload or {})
         payload["evolution_candidate"] = candidate
         payload["evolution_candidate_path"] = candidate["candidate_path"]
-        payload["recommended_next_action"] = "review_evolution_candidate"
-        payload["available_host_operations"] = [
-            {
-                "type": "manual_review",
-                "tool_name": "review_evolution_candidate",
-                "display_label": "Review skill evolution candidate",
-                "effect_summary": "Review the proposed existing-skill improvement before editing any global skill.",
-                "risk_level": "low",
-                "requires_confirmation": True,
-            }
-        ]
+        payload.update(
+            recommendation_from_operation(
+                "review_evolution_candidate",
+                review_evolution_candidate_operation(
+                    candidate["candidate_path"],
+                    display_label="Review skill evolution candidate",
+                    effect_summary=(
+                        "Review the proposed existing-skill improvement before editing any global skill."
+                    ),
+                    risk_level="low",
+                    requires_confirmation=True,
+                    operation_group="evolution_manual_path",
+                    delivery_mode="path",
+                    variant_role="preferred",
+                ),
+                reason="A successful task exposed a concrete existing-skill gap that should be reviewed before any global edit.",
+            )
+        )
         return payload
 
     def _build_observed_task_payload(
@@ -478,6 +494,46 @@ class AgentOrchestrationService:
         if not known_output_values:
             return True
         return set(expected_outputs).issubset(known_output_values)
+
+    def _reuse_recommendation(self, reuse_decision: ReuseDecision) -> dict[str, Any] | None:
+        if reuse_decision.decision != "background_hint" or not reuse_decision.skill_name:
+            return None
+        metadata = self.index.get(reuse_decision.skill_name)
+        return search_recommended_skill_recommendation(
+            reuse_decision.skill_name,
+            metadata.input_schema if metadata else None,
+        )
+
+    def _result_recommendation(
+        self,
+        execution_payload: dict[str, Any] | None,
+        learning_capture_payload: dict[str, Any] | None,
+    ) -> dict[str, Any] | None:
+        for payload in (learning_capture_payload, execution_payload):
+            if not isinstance(payload, dict):
+                continue
+            if payload.get("recommended_next_action") is not None:
+                return payload
+        return None
+
+    def _recommendation_kwargs(self, payload: dict[str, Any] | None) -> dict[str, Any]:
+        if not isinstance(payload, dict):
+            return {}
+        operations = payload.get("available_host_operations")
+        if not isinstance(operations, list):
+            operations = []
+        return {
+            "recommended_next_action": payload.get("recommended_next_action")
+            if isinstance(payload.get("recommended_next_action"), str)
+            else None,
+            "recommended_reason": payload.get("recommended_reason")
+            if isinstance(payload.get("recommended_reason"), str)
+            else None,
+            "recommended_host_operation": payload.get("recommended_host_operation")
+            if isinstance(payload.get("recommended_host_operation"), dict)
+            else None,
+            "available_host_operations": [item for item in operations if isinstance(item, dict)],
+        }
 
     def _has_concrete_output_signal(
         self,

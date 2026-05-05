@@ -76,6 +76,10 @@ def finalize_codex_task(
                     f"task bucket {classification.bucket} skipped Codex runtime lane finalization: "
                     f"{classification.reason}"
                 ),
+                recommended_next_action=None,
+                recommended_reason=None,
+                recommended_host_operation=None,
+                available_host_operations=[],
             ),
         )
     result = AgentOrchestrationService(root).finalize_task(plan, execution_payload)
@@ -121,6 +125,10 @@ def _blocked_codex_result(
         learning_capture_payload=None,
         runtime_lane_status="skipped",
         runtime_lane_reason=f"task bucket {classification.bucket} skipped Codex runtime lane: {classification.reason}",
+        recommended_next_action=None,
+        recommended_reason=None,
+        recommended_host_operation=None,
+        available_host_operations=[],
     )
 
 
@@ -142,6 +150,10 @@ def _with_classification(
         selected_skill_args=dict(result.selected_skill_args),
         execution_payload=result.execution_payload,
         learning_capture_payload=result.learning_capture_payload,
+        recommended_next_action=result.recommended_next_action,
+        recommended_reason=result.recommended_reason,
+        recommended_host_operation=result.recommended_host_operation,
+        available_host_operations=list(result.available_host_operations),
     )
 
 

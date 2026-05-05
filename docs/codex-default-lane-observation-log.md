@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Top-level recommendation contract for reuse and learning
+
+- Task type: runtime orchestration contract hardening
+- Classified as: default-in observation plus normal implementation path
+- What happened: top-level follow-up recommendation fields were added to orchestration results so hosts can render `background_hint`, `distill_trajectory`, and `review_evolution_candidate` without reading nested payload-specific shapes
+- Did the behavior feel correct: yes; this does not widen automation, it only makes the next-action contract consistent across reuse and learning paths
+- Did the lane help: yes; the captured development workflow and evolution paths already emitted recommendations, and this stage turned them into a stable host-facing interface
+- Follow-up: keep dashboard changes minimal; the next worthwhile work is targeted dogfood of these recommendation boundaries rather than more UI
+
 ### 2026-05-05 - Trigger log status balance fix
 
 - Task type: dashboard observability bug fix

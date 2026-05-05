@@ -236,6 +236,25 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertEqual("default-in", events[-1]["classification_bucket"])
         self.assertIn("family:development-workflow-observation", events[-1]["matched_signals"])
 
+    def test_codex_host_api_run_task_bubbles_background_hint_recommendation(self) -> None:
+        from skill_runtime.api.host import run_codex_task
+
+        request = AgentTaskRequest(
+            task_description="merge txt files into markdown",
+            known_inputs={"input_dir": "demo/input"},
+            expected_outputs=["demo/output/codex_background_hint.md"],
+            risk_level="low",
+            task_kind="workflow",
+        )
+
+        result = run_codex_task(self.runtime_root, request)
+
+        self.assertEqual("default-in", result.task_classification.bucket)
+        self.assertEqual("background_hint", result.reuse_decision.decision)
+        self.assertEqual("execute_skill", result.recommended_next_action)
+        self.assertEqual("execute_skill", result.recommended_host_operation["tool_name"])
+        self.assertTrue(result.available_host_operations)
+
     def test_codex_finalize_captures_development_workflow_as_used_runtime_participation(self) -> None:
         from skill_runtime.api.host import finalize_codex_task, run_codex_task
 
@@ -282,6 +301,9 @@ class RuntimeAgentOrchestrationTestsMixin:
             "Promote captured workflow globally",
             events[-1]["available_host_operation_labels"],
         )
+        self.assertEqual("distill_trajectory", finalized.recommended_next_action)
+        self.assertEqual("distill_trajectory", finalized.recommended_host_operation["tool_name"])
+        self.assertIn("distill_trajectory", [item["tool_name"] for item in finalized.available_host_operations])
 
     def test_codex_host_api_run_task_executes_default_in_flow(self) -> None:
         from skill_runtime.api.host import run_codex_task
@@ -446,6 +468,25 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertIsNone(data["learning_decision"])
         self.assertFalse((self.runtime_root / "demo" / "output" / "mcp_agent_undercovered.json").exists())
 
+    def test_mcp_experimental_agent_run_bubbles_background_hint_recommendation(self) -> None:
+        payload = self._call_mcp_tool(
+            "run_agent_task_experimental",
+            {
+                "task_description": "merge txt files into markdown",
+                "known_inputs": {"input_dir": "demo/input"},
+                "expected_outputs": ["demo/output/mcp_agent_background_hint.md"],
+                "risk_level": "low",
+                "task_kind": "workflow",
+            },
+            root=self.runtime_root,
+        )
+
+        data = payload["data"]
+        self.assertEqual("background_hint", data["reuse_decision"]["decision"])
+        self.assertEqual("execute_skill", data["recommended_next_action"])
+        self.assertEqual("execute_skill", data["recommended_host_operation"]["tool_name"])
+        self.assertTrue(data["available_host_operations"])
+
     def test_mcp_experimental_agent_run_respects_disabled_silent_reuse(self) -> None:
         payload = self._call_mcp_tool(
             "run_agent_task_experimental",
@@ -542,6 +583,8 @@ class RuntimeAgentOrchestrationTestsMixin:
                 for operation in captured_promote_operations
             )
         )
+        self.assertEqual("distill_trajectory", data["recommended_next_action"])
+        self.assertEqual("distill_trajectory", data["recommended_host_operation"]["tool_name"])
 
     def test_mcp_experimental_agent_finalize_captures_real_project_state_update_workflow(self) -> None:
         plan_payload = self._call_mcp_tool(
@@ -1201,6 +1244,8 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertTrue(candidate_path.exists())
         self.assertEqual("pre_implementation_workflow_review", candidate["target_skill_name"])
         self.assertEqual("review_evolution_candidate", finalized.learning_capture_payload["recommended_next_action"])
+        self.assertEqual("review_evolution_candidate", finalized.recommended_next_action)
+        self.assertEqual("review_evolution_candidate", finalized.recommended_host_operation["tool_name"])
 
     def test_finalize_task_keeps_weak_existing_skill_gap_as_observed_only(self) -> None:
         from skill_runtime.api.orchestration import AgentOrchestrationService

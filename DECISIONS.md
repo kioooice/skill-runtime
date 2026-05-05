@@ -2,6 +2,25 @@
 
 ## Decision Log
 
+### 2026-05-05 - Bubble Follow-Up Recommendations To The Top-Level Orchestration Result
+
+**Decision**
+
+Treat host-facing next actions as part of the primary `AgentOrchestrationResult` contract instead of leaving them only inside nested payloads such as `learning_capture_payload`.
+
+**Reason**
+
+Operator-facing follow-up actions were becoming inconsistent. Evolution review/apply/rollback already had explicit host recommendations, but reuse hints and learning capture recommendations were still buried in nested payloads. That forced hosts to special-case search results, capture payloads, and evolution payloads differently. The host should be able to render one top-level next action contract regardless of whether the workflow is reuse, capture, or existing-skill evolution.
+
+**Impact**
+
+- `AgentOrchestrationResult` now carries top-level recommendation fields
+- `background_hint` now bubbles a top-level `execute_skill` recommendation
+- `new_skill_candidate` now bubbles `distill_trajectory` to the top level after capture
+- `improve_existing_skill_candidate` now bubbles `review_evolution_candidate` to the top level
+- CLI and MCP plan/result reconstruction now preserve the same recommendation fields end to end
+- Added regression coverage for host, MCP, and finalizer recommendation propagation
+
 ### 2026-05-05 - Preserve Original Bytes Across Evolution Rollback
 
 **Decision**

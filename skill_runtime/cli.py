@@ -459,6 +459,18 @@ def _build_agent_orchestration_result(raw_plan: object) -> AgentOrchestrationRes
         selected_skill_args=selected_skill_args,
         execution_payload=execution_payload if isinstance(execution_payload, dict) else None,
         learning_capture_payload=learning_capture_payload if isinstance(learning_capture_payload, dict) else None,
+        recommended_next_action=raw_plan.get("recommended_next_action")
+        if isinstance(raw_plan.get("recommended_next_action"), str)
+        else None,
+        recommended_reason=raw_plan.get("recommended_reason")
+        if isinstance(raw_plan.get("recommended_reason"), str)
+        else None,
+        recommended_host_operation=raw_plan.get("recommended_host_operation")
+        if isinstance(raw_plan.get("recommended_host_operation"), dict)
+        else None,
+        available_host_operations=[
+            item for item in raw_plan.get("available_host_operations", []) if isinstance(item, dict)
+        ],
     )
 
 
@@ -510,6 +522,10 @@ def _build_codex_orchestration_result(raw_plan: object) -> AgentOrchestrationRes
         selected_skill_args=dict(plan.selected_skill_args),
         execution_payload=plan.execution_payload,
         learning_capture_payload=plan.learning_capture_payload,
+        recommended_next_action=plan.recommended_next_action,
+        recommended_reason=plan.recommended_reason,
+        recommended_host_operation=plan.recommended_host_operation,
+        available_host_operations=list(plan.available_host_operations),
     )
 
 
