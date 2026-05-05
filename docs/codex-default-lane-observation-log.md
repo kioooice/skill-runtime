@@ -888,3 +888,12 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the behavior feel correct: yes; this is the right boundary for review-driven work because the maintainer workflow is real, but silent reuse would still be too aggressive
 - Did the lane help: yes, because it proved the product can support valuable maintainer workflows even when the runtime lane should stay conservative
 - Follow-up: the next mainline step should compare whether `release readiness` adds a meaningfully different governed-learning shape, not just more demo surface
+
+### 2026-05-06 - Dashboard information architecture moved from implementation labels to operator-facing language
+
+- Task type: dashboard product-completeness slice
+- Classified as: default-out / skipped
+- What happened: reworked the existing read-only dashboard first screen so the default view, navigation, overview, operator-summary labels, and grouped workflow surface all speak in user-facing language; quality gates were demoted into `系统检查`, and the client-side default view was aligned with the HTML default `overview`
+- Did the behavior feel correct: yes; once the stable summary data existed, the next real gap was comprehension, and fixing the reading path was more valuable than adding more fields
+- Did the lane help: yes, because it kept the slice visible as governed product work without incorrectly treating dashboard copy/layout cleanup as a reusable workflow family
+- Follow-up: the next dashboard-adjacent slice should evaluate whether `operator-summary` refresh entry points are ergonomic enough, not continue expanding surface area or reintroducing internal terminology

@@ -2,6 +2,25 @@
 
 ## Decision Log
 
+### 2026-05-06 - Dashboard First Screen Must Use User-Facing Language And Separate System Checks From Primary Status
+
+**Decision**
+
+Keep the existing read-only dashboard shell, but redesign the first-screen information architecture so it speaks in operator-facing language instead of implementation names. The default landing view must be `overview`, the main navigation must describe user-visible meaning, and the three quality gates must be shown as secondary `系统检查`, not as peer business-state cards.
+
+**Reason**
+
+After the stable `operator-summary` slice landed, the next real product failure was comprehension rather than data access. A user could open the dashboard and still not know what `活跃技能 / 候选技能 / 轨迹记录 / provider_quality` meant or what to read first. That is an information architecture failure, not a missing-field problem. The right move is to relabel and reorder the existing surface before adding more data or actions.
+
+**Impact**
+
+- dashboard title, nav, and section headers now use user-facing labels such as `运行状态总览`, `现在先看什么`, `可直接复用的流程`, `待你决定的事项`, `最近发生了什么`, `系统检查`, and `来源与范围`
+- overview is now the true default view in both initial HTML state and client-side script state
+- operator-summary cards now use `可直接复用的流程`, `待审核流程`, `已记录任务样本`, and `待你确认的建议`
+- quality gates are rendered as `提供器质量`, `基础技能检索质量`, and `工作流检索质量`, framed as system self-checks rather than primary product status
+- the grouped workflow surface inside the skill-tree page is now expressed as `流程分组`, not a separate internal library concept
+- this slice does not add write actions, full item-list dependencies, evaluator execution, promote/apply behavior, or any justification for widening `default-in`
+
 ### 2026-05-06 - Render Stable Operator Summary On Existing Dashboard Surfaces Without Turning Dashboard Into A New Control Plane
 
 **Decision**

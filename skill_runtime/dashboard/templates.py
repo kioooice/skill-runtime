@@ -240,8 +240,33 @@ body[data-active-view="global-projects"] [data-view-page="global-projects"] { di
 .metric strong { color: var(--foreground); display: block; font-size: 27px; font-weight: 900; line-height: 1; margin-bottom: 10px; }
 .metric span { color: var(--foreground); display: block; font-size: 13px; font-weight: 800; margin-bottom: 4px; }
 .metric small { color: var(--muted-foreground); display: block; font-size: 12px; line-height: 1.35; }
+.overview-callout {
+  background: rgba(204, 208, 218, .26);
+  border: 1px dashed rgba(188, 192, 204, .76);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.overview-callout strong {
+  color: var(--foreground);
+  display: block;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.overview-callout p {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.5;
+}
 .overview-meta { color: var(--muted-foreground); font-size: 13px; margin-top: 9px; }
 .operator-summary-section { display: grid; gap: 14px; }
+.operator-summary-checks {
+  background: rgba(204, 208, 218, .16);
+  border: 1px solid rgba(188, 192, 204, .52);
+  border-radius: 12px;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
 .operator-summary-gates {
   display: grid;
   gap: 10px;
@@ -630,7 +655,7 @@ pre {
 SCRIPT = """
 <script>
 (function () {
-  var defaultView = "skill-tree";
+  var defaultView = "overview";
   var viewHashes = {
     "overview": "#overview-view",
     "skill-tree": "#skill-tree-view",

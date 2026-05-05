@@ -185,12 +185,12 @@ LOCAL_COLLECTION_IDS = {
 
 def render_dashboard_html(data: dict[str, Any]) -> str:
     global_data = data.get("global") if isinstance(data.get("global"), dict) else None
-    title = "全局运行时总览" if global_data else "运行时总览"
+    title = "跨项目运行状态总览" if global_data else "运行状态总览"
     subtitle = ""
     read_only_text = (
-        "查看项目技能、触发记录、治理状态与跨工作区调用。"
+        "先看系统现在的状态，再看跨项目记录和来源范围。"
         if global_data
-        else "查看技能、触发记录和治理状态，不修改运行时数据。"
+        else "先看现在能不能直接用、最近发生了什么，以及是否有待你判断的事项。"
     )
     return f"""<!doctype html>
 <html lang="zh-CN">
@@ -200,7 +200,7 @@ def render_dashboard_html(data: dict[str, Any]) -> str:
   <title>{title}</title>
   <style>{STYLE}</style>
 </head>
-<body data-active-view="skill-tree">
+<body data-active-view="overview">
   <div class="desktop-shell">
     <header class="topbar">
       <button class="topbar-icon" type="button" aria-label="应用入口">{_icon("blocks")}</button>
@@ -251,24 +251,24 @@ def _view_headers(title: str, subtitle: str, read_only_text: str, *, global_enab
             title,
             subtitle,
         ),
-        _view_header("skill-tree", "中央技能库", "按功能分组查看工作流技能。"),
+        _view_header("skill-tree", "可直接复用的流程", "已经审核通过、现在能直接复用的流程。"),
         _view_header(
             "skill-evolution",
-            "技能进化",
-            "查看真实任务暴露出的已有技能缺口，先形成候选提案，再决定是否改进全局技能。",
+            "待你决定的事项",
+            "这里放需要你判断是否保留、改进或处理的候选事项。",
         ),
         _view_header(
             "trigger-log",
-            "触发日志",
-            "查看运行时是否参与任务：已使用、进入观察，或由 Codex 直接处理；全局模式下会合并跨工作区记录。",
+            "最近发生了什么",
+            "按人话解释最近任务是被系统接管、进入观察，还是保持普通处理。",
         ),
-        _view_header("governance", "治理快照", "查看重复候选、诊断信息和技能库健康状态。"),
-        _view_header("platforms", "平台与项目", "查看已发现的平台技能目录和来源。"),
+        _view_header("governance", "系统检查", "集中放系统自检、诊断信息和需要维护者关注的健康状态。"),
+        _view_header("platforms", "来源与范围", "查看这些流程和平台信息是从哪里来的、当前扫描了哪些范围。"),
     ]
     if global_enabled:
         headers.extend(
             [
-                _view_header("global-projects", "全局项目", "跨工作区查看 Skill Runtime 调用记录。"),
+                _view_header("global-projects", "跨项目情况", "跨工作区查看哪里有调用记录、哪里最近更活跃。"),
             ]
         )
     return "\n".join(headers)
@@ -324,16 +324,19 @@ def _overview(overview: dict[str, Any]) -> str:
     counts = overview.get("recent_event_counts", {})
     return f"""<section class="overview-section">
   <div class="overview-section-head">
-    <h2>当前项目</h2>
-    <p class="muted">当前工作区的可用技能与运行时参与情况。</p>
+    <h2>先看这里</h2>
+    <p class="muted">如果你是第一次打开，先看这四块：现在能直接用什么、最近系统怎么处理任务、以及系统有没有明显异常。</p>
   </div>
   <div class="grid metric-grid">
-    {_metric("可用技能", overview.get("active_count", 0), "当前活跃")}
-    {_metric("运行时参与", counts.get("used", 0), "已完成参与")}
-    {_metric("进入观察", counts.get("entered", 0), "进入但未接管")}
-    {_metric("普通路径", counts.get("skipped", 0), "Codex 直接处理")}
+    {_metric("当前可直接用", overview.get("active_count", 0), "已审核、可直接复用")}
+    {_metric("最近已自动处理", counts.get("used", 0), "系统已接管完成")}
+    {_metric("仍在观察", counts.get("entered", 0), "有记录，但还没接管")}
+    {_metric("保持普通处理", counts.get("skipped", 0), "由 Codex 直接完成")}
   </div>
-  <p class="overview-meta">最近事件：{text(overview.get("latest_event_time") or "暂无运行通道事件")}</p>
+  <div class="overview-callout">
+    <strong>最近系统处理</strong>
+    <p>最近一条记录：{text(overview.get("latest_event_time") or "暂无运行通道事件")}</p>
+  </div>
 </section>"""
 
 
@@ -341,17 +344,17 @@ def _global_overview(overview: dict[str, Any]) -> str:
     counts = overview.get("recent_event_counts", {})
     return f"""<section class="overview-section">
   <div class="overview-section-head">
-    <h2>跨工作区</h2>
-    <p class="muted">已发现调用记录的工作区和最近全局事件。</p>
+    <h2>跨项目情况</h2>
+    <p class="muted">这里看哪些工作区最近有调用记录，方便判断问题是局部还是跨项目共性。</p>
   </div>
   <div class="grid metric-grid">
-    {_metric("工作区", overview.get("project_count", 0), "发现调用记录")}
-    {_metric("最近事件", overview.get("event_count", 0), "全局事件数")}
-    {_metric("运行时参与", counts.get("used", 0), "已完成参与")}
-    {_metric("进入观察", counts.get("entered", 0), "进入但未接管")}
-    {_metric("普通路径", counts.get("skipped", 0), "Codex 直接处理")}
+    {_metric("有记录的工作区", overview.get("project_count", 0), "最近被扫描到")}
+    {_metric("最近记录总数", overview.get("event_count", 0), "跨项目汇总")}
+    {_metric("已自动处理", counts.get("used", 0), "系统已接管")}
+    {_metric("进入观察", counts.get("entered", 0), "已记录未接管")}
+    {_metric("普通处理", counts.get("skipped", 0), "保持 Codex 直处理")}
   </div>
-  <p class="overview-meta">最近事件：{text(overview.get("latest_event_time") or "暂无全局运行通道事件")}</p>
+  <p class="overview-meta">最近跨项目记录：{text(overview.get("latest_event_time") or "暂无全局运行通道事件")}</p>
 </section>"""
 
 
@@ -405,14 +408,14 @@ def _view_nav(overview: dict[str, Any] | None = None, *, global_enabled: bool = 
     global_links = ""
     if global_enabled:
         global_links = f"""
-        <button class="view-link" type="button" data-view-target="global-projects" aria-controls="dashboard-page-global-projects" aria-current="false">{_icon("globe")}<span>全局项目</span></button>"""
+        <button class="view-link" type="button" data-view-target="global-projects" aria-controls="dashboard-page-global-projects" aria-current="false">{_icon("globe")}<span>跨项目情况</span></button>"""
     return f"""<nav class="view-nav" aria-label="面板视图">
-        <button class="view-link" type="button" data-view-target="overview" aria-controls="dashboard-page-overview" aria-current="false">{_icon("radar")}<span>总览</span></button>
-        <button class="view-link is-active" type="button" data-view-target="skill-tree" aria-controls="dashboard-page-skill-tree" aria-current="page">{_icon("blocks")}<span>中央技能库</span>{_nav_count(overview.get("active_count", 0))}</button>
-        <button class="view-link" type="button" data-view-target="skill-evolution" aria-controls="dashboard-page-skill-evolution" aria-current="false">{_icon("spark")}<span>技能进化</span>{_nav_count(overview.get("evolution_candidate_count", 0))}</button>
-        <button class="view-link" type="button" data-view-target="trigger-log" aria-controls="dashboard-page-trigger-log" aria-current="false">{_icon("activity")}<span>触发日志</span>{_nav_count(counts.get("used", 0) + counts.get("entered", 0))}</button>
-        <button class="view-link" type="button" data-view-target="governance" aria-controls="dashboard-page-governance" aria-current="false">{_icon("shield")}<span>治理快照</span></button>
-        <button class="view-link" type="button" data-view-target="platforms" aria-controls="dashboard-page-platforms" aria-current="false">{_icon("platform")}<span>平台与项目</span></button>
+        <button class="view-link is-active" type="button" data-view-target="overview" aria-controls="dashboard-page-overview" aria-current="page">{_icon("radar")}<span>现在先看什么</span></button>
+        <button class="view-link" type="button" data-view-target="skill-tree" aria-controls="dashboard-page-skill-tree" aria-current="false">{_icon("blocks")}<span>可直接复用的流程</span>{_nav_count(overview.get("active_count", 0))}</button>
+        <button class="view-link" type="button" data-view-target="skill-evolution" aria-controls="dashboard-page-skill-evolution" aria-current="false">{_icon("spark")}<span>待你决定的事项</span>{_nav_count(overview.get("evolution_candidate_count", 0))}</button>
+        <button class="view-link" type="button" data-view-target="trigger-log" aria-controls="dashboard-page-trigger-log" aria-current="false">{_icon("activity")}<span>最近发生了什么</span>{_nav_count(counts.get("used", 0) + counts.get("entered", 0))}</button>
+        <button class="view-link" type="button" data-view-target="governance" aria-controls="dashboard-page-governance" aria-current="false">{_icon("shield")}<span>系统检查</span></button>
+        <button class="view-link" type="button" data-view-target="platforms" aria-controls="dashboard-page-platforms" aria-current="false">{_icon("platform")}<span>来源与范围</span></button>
         {global_links}
       </nav>"""
 
@@ -440,7 +443,7 @@ def _operator_summary_overview(summary: dict[str, Any]) -> str:
         gate = quality_gates.get(key) if isinstance(quality_gates.get(key), dict) else {}
         gate_lines.append(
             f"""<div class="operator-summary-gate">
-  <strong>{text(key)}</strong>
+  <strong>{text(_operator_gate_display_name(key))}</strong>
   <span>状态：{text(_operator_gate_status_label(gate.get("status")))}</span>
   <span>时效：{text(_operator_freshness_label((gate.get("freshness") or {}).get("status")))}</span>
 </div>"""
@@ -452,23 +455,29 @@ def _operator_summary_overview(summary: dict[str, Any]) -> str:
     )
     return f"""<section class="overview-section operator-summary-section" data-operator-summary>
   <div class="overview-section-head">
-    <h2>操作员摘要</h2>
-    <p class="muted">来自稳定导出的只读摘要，不直接执行任何后续动作。</p>
+    <h2>系统当前状态</h2>
+    <p class="muted">这块只回答现在系统大概处在什么状态，不直接执行任何后续动作。</p>
   </div>
   <div class="grid metric-grid">
-    {_metric("活跃技能", _summary_count(summary.get("active_skills")), "当前摘要计数")}
-    {_metric("候选技能", _summary_count(summary.get("staging_candidates")), "等待人工处理")}
-    {_metric("轨迹记录", _summary_count(summary.get("trajectories")), "已捕获任务轨迹")}
-    {_metric("推荐操作", _summary_count(summary.get("recommended_host_operations")), "只读建议数量")}
+    {_metric("可直接复用的流程", _summary_count(summary.get("active_skills")), "已经审核通过")}
+    {_metric("待审核流程", _summary_count(summary.get("staging_candidates")), "还需要人工判断")}
+    {_metric("已记录任务样本", _summary_count(summary.get("trajectories")), "后续可能整理成流程")}
+    {_metric("待你确认的建议", _summary_count(summary.get("recommended_host_operations")), "只读建议，不会自动执行")}
   </div>
-  <p class="overview-meta">摘要状态：{text(_operator_freshness_label(freshness.get("status")))} · 生成时间：{text(summary.get("generated_at") or "未记录")}</p>
+  <p class="overview-meta">系统状态：{text(_operator_freshness_label(freshness.get("status")))} · 生成时间：{text(summary.get("generated_at") or "未记录")}</p>
+  <div class="operator-summary-checks">
+    <div class="overview-section-head">
+      <h3>系统检查</h3>
+      <p class="muted">下面三项是系统自检，用来判断底层链路最近是否健康，不代表会自动替你执行动作。</p>
+    </div>
   <div class="operator-summary-gates">
     {"".join(gate_lines)}
   </div>
+  </div>
   <div class="operator-summary-notes">
-    <p>建议下一步：{text(next_steps_text or "暂无")}</p>
-    <p>不自动执行：{text("、".join(str(item) for item in intentionally_not_automatic) or "暂无")}</p>
-    <p>缺失或暂不可用：{text("、".join(str(item) for item in missing_or_unavailable) or "无")}</p>
+    <p>待你确认的建议：{text(next_steps_text or "暂无")}</p>
+    <p>这些动作不会自动执行：{text("、".join(str(item) for item in intentionally_not_automatic) or "暂无")}</p>
+    <p>暂时缺失或不可用：{text("、".join(_operator_gate_display_name(item) for item in missing_or_unavailable) or "无")}</p>
     <p>{text(summary.get("non_automatic_explanation") or "只显示稳定摘要，不推进自动生命周期。")}</p>
   </div>
 </section>"""
@@ -488,11 +497,13 @@ def _project_operator_summary(project: dict[str, Any]) -> str:
     for key in ("provider_quality", "utility_search_quality", "workflow_search_quality"):
         status = _operator_gate_status_label(statuses.get(key))
         gate_freshness = _operator_freshness_label(freshness_statuses.get(key))
-        gate_lines.append(f"<div>质量门：{text(key)} {text(status)} / {text(gate_freshness)}</div>")
+        gate_lines.append(
+            f"<div>{text(_project_operator_gate_display_name(key))}：{text(status)} / {text(gate_freshness)}</div>"
+        )
     return f"""<div class="project-operator-summary">
   <div class="project-stats">
-    <span>摘要：{text(freshness)}</span>
-    <span>生成：{text(project.get("operator_summary_generated_at") or "未记录")}</span>
+    <span>系统摘要：{text(freshness)}</span>
+    <span>最近摘要时间：{text(project.get("operator_summary_generated_at") or "未记录")}</span>
   </div>
   <div class="muted project-operator-summary-lines">
     {"".join(gate_lines)}
@@ -523,6 +534,24 @@ def _operator_freshness_label(value: Any) -> str:
         "unknown": "未知",
     }
     return labels.get(str(value or ""), str(value or "未知"))
+
+
+def _operator_gate_display_name(value: Any) -> str:
+    labels = {
+        "provider_quality": "提供器质量",
+        "utility_search_quality": "基础技能检索质量",
+        "workflow_search_quality": "工作流检索质量",
+    }
+    return labels.get(str(value or ""), str(value or "未知检查项"))
+
+
+def _project_operator_gate_display_name(value: Any) -> str:
+    labels = {
+        "provider_quality": "提供器质量",
+        "utility_search_quality": "基础技能检索",
+        "workflow_search_quality": "工作流检索",
+    }
+    return labels.get(str(value or ""), _operator_gate_display_name(value))
 
 
 def _skill_display_name(raw_name: Any) -> str:
@@ -737,8 +766,8 @@ def _workflow_skill_group_cards(skills: list[dict[str, Any]], collections: list[
     if not workflow_collections:
         workflow_collections = _workflow_collections_from_skills(skills)
     body = _collection_section(
-        "工作流功能组",
-        "按开发方向、自动推进、运行时验证和会话接续组织当前工作流技能。",
+        "流程分组",
+        "按功能分组查看当前可直接复用的流程。",
         workflow_collections,
         show_candidates=False,
     )
@@ -809,7 +838,7 @@ def _skill_detail_drawer() -> str:
       <div>
         <div class="view-kicker">技能详情</div>
         <h2 id="skill-detail-title" data-detail-field="name">选择技能</h2>
-        <p data-detail-field="rawName">点击中央技能库卡片查看详情。</p>
+        <p data-detail-field="rawName">点击流程卡片查看详情。</p>
       </div>
       <button class="detail-close" type="button" data-skill-detail-close aria-label="关闭技能详情">关闭</button>
     </div>

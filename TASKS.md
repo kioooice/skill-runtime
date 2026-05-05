@@ -2,9 +2,9 @@
 
 ## Current Focus
 
-- 最新 dashboard operator-summary 可视化：现有 read-only dashboard 现在已经会在 `总览` 页显示稳定导出的 `operator-summary` 摘要，也会在 `全局项目` 卡片显示项目级 summary freshness 和 quality-gate freshness。当前只消费稳定字段：summary freshness、generated_at、count-only inventory、gate status/freshness、safe next steps、missing/unavailable 和 non-automatic explanation；仍然不绑定 full item lists，不执行 host operation，不 promote/apply，也没有任何证据支持扩大 `default-in`。
+- 最新 dashboard 信息架构重构：现有 read-only dashboard 第一屏已经改成人话和默认阅读路径。当前导航与页头统一收口到 `运行状态总览` / `现在先看什么` / `可直接复用的流程` / `待你决定的事项` / `最近发生了什么` / `系统检查` / `来源与范围`；overview 先回答“现在能直接用什么、最近系统怎么处理、有没有明显异常”。`operator-summary` 也已改成 `可直接复用的流程`、`待审核流程`、`已记录任务样本`、`待你确认的建议`，三条 quality gates 下沉到 `系统检查` 语义下。当前仍然只消费稳定字段，不绑定 full item lists，不执行 host operation，不 promote/apply，也没有任何证据支持扩大 `default-in`。
 
-- 最新 freshness/staleness 语义：`operator-summary` dashboard export 现在会带稳定 freshness policy，collector 读取时会补出 top-level/per-gate freshness 元数据，global collector 也会汇总项目级 freshness status。下一步更应该判断这些 freshness 摘要是否已经足够稳定，值得未来页面只读显示；不应该跳回页面重写，也不应该让模板自己解释时间戳。当前仍然没有任何证据支持扩大 `default-in`。
+- 下一步主线：判断 `dashboard` / `global-dashboard` 的 `operator-summary` export 刷新入口是否要更顺手；重点是 operator 闭环，不是继续扩页面字段，也不是让 dashboard 执行 evaluator 或 lifecycle operation。当前仍然没有任何证据支持扩大 `default-in`。
 
 - 最新 workflow correction：已记录两条需要复用的流程 guard。其一，在当前 PowerShell 环境下不要再用 `&&` 串 shell 命令，顺序命令改用 `;` 或拆成独立 tool call；其二，长时验证命令超时只能先记为 `timed out / not yet verified`，必须先放宽超时或单独重跑，再判断是否失败。下一次触发点分别是 commit/push shell 流程，以及 `python -m unittest tests.test_runtime_fast -v` 这类已知接近数分钟的验证。当前仍然没有任何证据支持扩大 `default-in`。
 
@@ -431,6 +431,7 @@
 - [x] 新增 CLI `rollback-evolution-candidate --confirm-rollback` 和 MCP tool `rollback_evolution_candidate`
 - [x] 验证未确认不能回滚、目标文件在 apply 后变更会拒绝覆盖、确认后会恢复备份
 - [x] 下一阶段：在不改 dashboard 页面的前提下，判断现有 dashboard collector 应该最小接 `operator-summary` 的哪些稳定字段；如果要接，只接稳定字段，不直接依赖不稳定低层文件形状
+- [x] 将 dashboard 第一屏和 operator-summary 从内部实现名词改为用户可读信息架构，并把 quality gates 下沉为 `系统检查`
 - [ ] 下一阶段：判断 `dashboard` / `global-dashboard` 的 operator-summary export 刷新入口是否要更顺手；重点是 operator 闭环，不是继续扩页面字段，也不是让 dashboard 执行 evaluator 或 lifecycle operation
 
 ## Blocked
