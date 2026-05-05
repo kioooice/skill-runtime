@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Review cleanup provider gap analysis
+
+- Task type: provider-fidelity gap analysis
+- Classified as: default-out / skipped
+- What happened: compared the existing review-cleanup expected-failure fixture with the controlled positive-control fixture and documented the gap in `docs/review-cleanup-provider-gap-analysis.md`
+- Did the behavior feel correct: yes; the work stayed on provider-quality analysis and did not drift into dashboard work or runtime entry expansion
+- Did the lane help: yes, because the skipped result reinforced that this is still governed-learning fidelity analysis rather than evidence for wider automatic entry
+- Follow-up: improve provider guidance inside the current fixture family without turning the positive control into default-in evidence
+
 ### 2026-05-05 - Provider quality baseline comparison
 
 - Task type: provider-quality measurement hardening
