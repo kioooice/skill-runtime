@@ -8,10 +8,15 @@ PRIORITY = 65
 def matches(trajectory: Trajectory, input_schema: dict[str, str]) -> bool:
     description = trajectory.task_description.lower()
     tool_names = {step.tool_name.lower() for step in trajectory.steps}
+    mutating_tools = {
+        name
+        for name in tool_names
+        if name == "copy_file" or name.startswith("write_") or name in {"move_file", "rename_path", "move_path"}
+    }
     required_inputs = {"input_path", "output_path"}
     return (
         "list_files" not in tool_names
-        and "copy_file" in tool_names
+        and mutating_tools == {"copy_file"}
         and required_inputs.issubset(set(input_schema.keys()))
         and "copy" in description
     )

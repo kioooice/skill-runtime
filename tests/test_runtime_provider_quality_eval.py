@@ -8,6 +8,67 @@ from tests.runtime_test_support import ROOT
 
 
 class RuntimeProviderQualityEvalTestsMixin:
+    def test_single_file_copy_rule_still_matches_pure_copy_workflow(self) -> None:
+        capture = self.service.capture_trajectory(
+            observed_task={
+                "task": "Copy one text file into a new output file.",
+                "actions": [
+                    {
+                        "tool": "copy_file",
+                        "input": {
+                            "source_file": "demo/input/a.txt",
+                            "destination_file": "demo/output/copied_a.txt",
+                        },
+                        "result": "Copied the source file.",
+                    }
+                ],
+                "outputs": ["demo/output/copied_a.txt"],
+            },
+            task_id="provider_quality_pure_copy",
+            session_id="provider_quality_eval_tests",
+        )
+        distill = self.service.distill(capture["trajectory_path"], skill_name="provider_quality_pure_copy_test")
+        metadata = self._read_json_file(Path(distill["metadata_file"]))
+
+        self.assertEqual("single_file_copy", metadata["rule_name"])
+        self.assertNotIn("fallback_artifact", distill)
+
+    def test_single_file_copy_rule_does_not_match_copy_plus_write_json_workflow(self) -> None:
+        capture = self.service.capture_trajectory(
+            observed_task={
+                "task": "Copy one file and write a metadata sidecar for provider quality evaluation.",
+                "actions": [
+                    {
+                        "tool": "copy_file",
+                        "input": {
+                            "source_path": "demo/input/provider_quality_source.txt",
+                            "target_path": "demo/output/provider_quality_result.txt",
+                        },
+                        "result": "Copied the source file into the output directory.",
+                    },
+                    {
+                        "tool": "write_json",
+                        "input": {
+                            "path": "demo/output/provider_quality_result.json",
+                            "payload": {"source": "demo/input/provider_quality_source.txt"},
+                        },
+                        "result": "Wrote a JSON metadata sidecar.",
+                    },
+                ],
+                "outputs": [
+                    "demo/output/provider_quality_result.txt",
+                    "demo/output/provider_quality_result.json",
+                ],
+            },
+            task_id="provider_quality_copy_plus_json",
+            session_id="provider_quality_eval_tests",
+        )
+        distill = self.service.distill(capture["trajectory_path"], skill_name="provider_quality_copy_plus_json_test")
+        metadata = self._read_json_file(Path(distill["metadata_file"]))
+
+        self.assertNotEqual("single_file_copy", metadata["rule_name"])
+        self.assertIn("fallback_artifact", distill)
+
     def test_provider_quality_evaluation_script_reports_fixture_outcomes(self) -> None:
         result = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "evaluate_provider_quality.py")],
@@ -89,13 +150,20 @@ class RuntimeProviderQualityEvalTestsMixin:
         )
         self.assertIn("loop_stage", fixtures["runtime_service_distill_demo_provider"])
         runtime_service_fixture = fixtures["runtime_service_distill_demo_provider"]
+        self.assertNotEqual(
+            "deterministic_rule:single_file_copy",
+            runtime_service_fixture["generated_candidate_provider"],
+        )
+        self.assertEqual(
+            "local_copy_metadata_fallback_provider",
+            runtime_service_fixture["generated_candidate_provider"],
+        )
         if runtime_service_fixture["failure_reason"]:
             self.assertTrue(runtime_service_fixture["failure_reason"])
-            self.assertTrue(runtime_service_fixture["missing_artifacts"])
-            self.assertIn(
-                "demo/output/provider_quality_result.json",
-                runtime_service_fixture["missing_artifacts"],
-            )
+            if runtime_service_fixture["loop_stage"] == "execution_failed":
+                self.assertTrue(runtime_service_fixture["missing_artifacts"])
+            else:
+                self.assertTrue(runtime_service_fixture["failure_reason"])
         else:
             self.assertEqual("passed", runtime_service_fixture["generated_candidate_status"])
             self.assertEqual("passed", runtime_service_fixture["audit_status"])

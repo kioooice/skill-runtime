@@ -561,6 +561,12 @@ def _generated_candidate_provider(distill_result: dict[str, Any]) -> str | None:
     fallback_provider = distill_result.get("fallback_provider")
     if isinstance(fallback_provider, str) and fallback_provider:
         return fallback_provider
+    fallback_artifact = distill_result.get("fallback_artifact")
+    if isinstance(fallback_artifact, str) and fallback_artifact:
+        fallback_response = _read_fallback_artifact(Path(fallback_artifact))
+        artifact_provider = fallback_response.get("provider_name")
+        if isinstance(artifact_provider, str) and artifact_provider:
+            return artifact_provider
     metadata = _candidate_metadata(distill_result)
     rule_name = metadata.get("rule_name")
     if isinstance(rule_name, str) and rule_name:
