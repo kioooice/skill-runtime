@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-05 - Promote Search Quality Baseline To A Machine-Readable Gate
+
+**Decision**
+
+Treat `docs/search-quality-baseline.json` as the machine-readable expectation set for the local search-quality query set, and let `scripts/evaluate_search_quality.py --baseline ...` compare current retrieval behavior against it.
+
+**Reason**
+
+The local search-quality evaluator was already honest and reproducible, but it was still only a report. To detect retrieval drift the same way provider quality now does, the query set needs a machine-comparable baseline that distinguishes stable matches, regressions, negative-query failures, and missing coverage without forcing a search-algorithm rewrite.
+
+**Impact**
+
+- `--baseline` now adds `baseline_comparison` to the search-quality report
+- `--fail-on-regression` now returns non-zero only for regressions, unexpected failures, or missing queries
+- the current baseline captures 7 queries and currently matches all 7
+- this remains a local lexical-retrieval quality gate; it is not semantic retrieval and not evidence for widening `default-in`
+
 ### 2026-05-05 - Use Explicit Metadata Aliases For Narrow Chinese Search Recall
 
 **Decision**

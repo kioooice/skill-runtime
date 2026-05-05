@@ -1,0 +1,55 @@
+{
+  "baseline_date": "2026-05-05",
+  "description": "Machine-readable baseline for scripts/evaluate_search_quality.py query comparison.",
+  "queries": [
+    {
+      "query_id": "exact_merge_english",
+      "expected_top_skill": "merge_text_files",
+      "expected_matched": true,
+      "expected_recommended_skill": "merge_text_files",
+      "query_type": "positive_exact_english"
+    },
+    {
+      "query_id": "fuzzy_merge_english",
+      "expected_top_skill": "merge_text_files",
+      "expected_matched": true,
+      "expected_recommended_skill": "merge_text_files",
+      "query_type": "positive_fuzzy_english"
+    },
+    {
+      "query_id": "structured_json_to_csv",
+      "expected_top_skill": "json_to_csv_dogfood",
+      "expected_matched": true,
+      "expected_recommended_skill": "json_to_csv_dogfood",
+      "query_type": "positive_structured_conversion"
+    },
+    {
+      "query_id": "maintainer_handoff_workflow",
+      "expected_top_skill": "session_handoff_maintenance",
+      "expected_matched": true,
+      "expected_recommended_skill": "session_handoff_maintenance",
+      "query_type": "positive_maintainer_workflow"
+    },
+    {
+      "query_id": "chinese_merge_query",
+      "expected_top_skill": "merge_text_files",
+      "expected_matched": true,
+      "expected_recommended_skill": "merge_text_files",
+      "query_type": "positive_alias_driven_chinese"
+    },
+    {
+      "query_id": "negative_email_newsletter",
+      "expected_top_skill": null,
+      "expected_matched": true,
+      "expected_recommended_skill": null,
+      "query_type": "negative_no_strong_match"
+    },
+    {
+      "query_id": "negative_chinese_email_campaign",
+      "expected_top_skill": null,
+      "expected_matched": true,
+      "expected_recommended_skill": null,
+      "query_type": "negative_no_strong_match_chinese"
+    }
+  ]
+}

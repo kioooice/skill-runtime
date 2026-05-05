@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Search baseline comparison gate
+
+- Task type: local search-quality regression gate
+- Classified as: default-out / skipped
+- What happened: promoted the search-quality evaluator from a local JSON report into a machine-comparable baseline gate with `docs/search-quality-baseline.json`, `--baseline`, and `--fail-on-regression`
+- Did the behavior feel correct: yes; this tightened local retrieval measurement without changing runtime entry, retrieval architecture, or semantic-search scope
+- Did the lane help: yes, because the skipped result reinforced that retrieval-quality instrumentation is still separate from any widening decision
+- Follow-up: keep using the local baseline comparison to judge search drift; do not treat a stable lexical baseline as evidence for wider `default-in`
+
 ### 2026-05-05 - Search alias recall support
 
 - Task type: local search-quality recall improvement

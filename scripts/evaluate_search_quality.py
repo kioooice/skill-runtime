@@ -82,19 +82,36 @@ def main() -> int:
     )
     parser.add_argument("--top-k", type=int, default=5, help="Number of search results to inspect.")
     parser.add_argument(
+        "--baseline",
+        help="Optional machine-readable baseline JSON path to compare against the evaluation report.",
+    )
+    parser.add_argument(
+        "--fail-on-regression",
+        action="store_true",
+        help="Return non-zero when baseline comparison finds a regression, unexpected failure, or missing query.",
+    )
+    parser.add_argument(
         "--output",
         help="Optional path to write the JSON report. The report is still printed to stdout.",
     )
     args = parser.parse_args()
 
     payload = evaluate(Path(args.source_root), top_k=args.top_k)
+    exit_code = 0
+    if args.baseline:
+        baseline_path = Path(args.baseline)
+        baseline_payload = json.loads(baseline_path.read_text(encoding="utf-8-sig"))
+        comparison = compare_to_baseline(payload["queries"], baseline_payload)
+        payload["baseline_comparison"] = comparison
+        if args.fail_on_regression and has_blocking_baseline_regression(comparison):
+            exit_code = 1
     rendered = json.dumps(payload, ensure_ascii=False, indent=2)
     if args.output:
         output_path = Path(args.output)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(rendered, encoding="utf-8")
     print(rendered)
-    return 0
+    return exit_code
 
 
 def evaluate(source_root: Path, *, top_k: int = 5) -> dict[str, Any]:
@@ -126,6 +143,82 @@ def evaluate(source_root: Path, *, top_k: int = 5) -> dict[str, Any]:
             "A result can appear in top_k without being recommended for reuse if it stays below RuntimeService.RECOMMENDED_EXECUTION_SCORE.",
         ],
     }
+
+
+def compare_to_baseline(queries: list[dict[str, Any]], baseline_payload: dict[str, Any]) -> dict[str, Any]:
+    expected_queries = baseline_payload.get("queries")
+    if not isinstance(expected_queries, list):
+        raise ValueError("Baseline JSON must contain a queries list.")
+
+    actual_by_id = {
+        item["query_id"]: item
+        for item in queries
+        if isinstance(item.get("query_id"), str) and item.get("query_id")
+    }
+    expected_by_id = {
+        item["query_id"]: item
+        for item in expected_queries
+        if isinstance(item, dict) and isinstance(item.get("query_id"), str) and item.get("query_id")
+    }
+
+    comparison: dict[str, Any] = {
+        "matched": [],
+        "regressions": [],
+        "improvements": [],
+        "unexpected_failures": [],
+        "unexpected_passes": [],
+        "missing_queries": [],
+        "extra_queries": [],
+    }
+
+    for query_id, expected in expected_by_id.items():
+        actual = actual_by_id.get(query_id)
+        if actual is None:
+            comparison["missing_queries"].append(query_id)
+            continue
+
+        actual_snapshot = _baseline_actual_snapshot(actual)
+        mismatches = _baseline_mismatches(expected, actual_snapshot)
+        if not mismatches:
+            comparison["matched"].append(query_id)
+            continue
+
+        expected_query_type = expected.get("query_type")
+        expected_matched = bool(expected.get("expected_matched"))
+        actual_matched = bool(actual_snapshot["matched"])
+        expected_recommended_skill = expected.get("expected_recommended_skill")
+        actual_recommended_skill = actual_snapshot["recommended_skill"]
+
+        if _is_negative_query_type(expected_query_type) and expected_matched and actual_recommended_skill is not None:
+            comparison["unexpected_failures"].append(_baseline_issue(query_id, mismatches, actual_snapshot))
+        elif expected_matched and not actual_matched:
+            comparison["regressions"].append(_baseline_issue(query_id, mismatches, actual_snapshot))
+        elif not expected_matched and actual_matched:
+            if _is_negative_query_type(expected_query_type):
+                comparison["unexpected_passes"].append(_baseline_issue(query_id, mismatches, actual_snapshot))
+            else:
+                comparison["improvements"].append(_baseline_issue(query_id, mismatches, actual_snapshot))
+        elif expected_recommended_skill is None and actual_recommended_skill is not None:
+            comparison["unexpected_failures"].append(_baseline_issue(query_id, mismatches, actual_snapshot))
+        elif expected_recommended_skill != actual_recommended_skill:
+            comparison["regressions"].append(_baseline_issue(query_id, mismatches, actual_snapshot))
+        else:
+            comparison["regressions"].append(_baseline_issue(query_id, mismatches, actual_snapshot))
+
+    for query_id in sorted(set(actual_by_id) - set(expected_by_id)):
+        comparison["extra_queries"].append(query_id)
+
+    for key in comparison:
+        comparison[key] = sorted(comparison[key], key=_comparison_sort_key)
+    return comparison
+
+
+def has_blocking_baseline_regression(comparison: dict[str, Any]) -> bool:
+    return bool(
+        comparison.get("regressions")
+        or comparison.get("unexpected_failures")
+        or comparison.get("missing_queries")
+    )
 
 
 def _prepare_search_sandbox(source_root: Path, sandbox_root: Path) -> None:
@@ -200,6 +293,59 @@ def _evaluate_query(service: RuntimeService, case: dict[str, Any], *, top_k: int
             for item in results
         ],
     }
+
+
+def _baseline_actual_snapshot(actual: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "query_type": actual.get("query_type"),
+        "top_skill": actual.get("actual_top_skill"),
+        "matched": bool(actual.get("matched")),
+        "recommended_skill": actual.get("actual_recommended_skill"),
+    }
+
+
+def _baseline_mismatches(expected: dict[str, Any], actual_snapshot: dict[str, Any]) -> list[dict[str, Any]]:
+    checks = [
+        ("query_type", "query_type"),
+        ("expected_top_skill", "top_skill"),
+        ("expected_matched", "matched"),
+        ("expected_recommended_skill", "recommended_skill"),
+    ]
+    mismatches = []
+    for expected_key, actual_key in checks:
+        expected_value = expected.get(expected_key)
+        actual_value = actual_snapshot.get(actual_key)
+        if expected_value != actual_value:
+            mismatches.append(
+                {
+                    "field": expected_key,
+                    "expected": expected_value,
+                    "actual": actual_value,
+                }
+            )
+    return mismatches
+
+
+def _baseline_issue(
+    query_id: str,
+    mismatches: list[dict[str, Any]],
+    actual_snapshot: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "query_id": query_id,
+        "mismatches": mismatches,
+        "actual": actual_snapshot,
+    }
+
+
+def _comparison_sort_key(item: Any) -> str:
+    if isinstance(item, dict):
+        return str(item.get("query_id", ""))
+    return str(item)
+
+
+def _is_negative_query_type(query_type: Any) -> bool:
+    return isinstance(query_type, str) and query_type.startswith("negative_")
 
 
 def _skill_rank(results: list[dict[str, Any]], skill_name: str | None) -> int | None:
