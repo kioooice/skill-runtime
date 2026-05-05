@@ -21,6 +21,13 @@
 - 最新 handoff 主线验收测试：已补一条 acceptance-style 快验，直接覆盖 handoff continuation 主线的三件事：maintainer-facing continuation brief 结构存在、显式 state-file continuation 仍分类为 `default-in/project-state-maintenance`、`capture-trajectory` 只生成受控 trajectory 并推荐 `distill_trajectory`，不会假装自动 promote。
 - 最新 rollback 主线验收：已补一条 acceptance-style 快验，直接覆盖 `candidate -> review -> apply -> rollback` 的审计闭环。当前 rollback 记录除了 `application_path` 外，也会直接保留 `review_path`，因此回滚记录本身就能追溯完整生命周期，而不需要二次推断。
 - 最新 evolution host 路径收紧：`review_evolution_candidate`、`apply_evolution_candidate`、`rollback_evolution_candidate` 现在都会返回统一的 host-facing recommendation。review 完成后主推荐是显式 `apply_evolution_candidate`；apply 完成后主推荐是显式 `rollback_evolution_candidate`，并附带 `governance_report`；rollback 完成后主推荐是 `governance_report`。这让人工审核路径从“能力存在”变成“下一步动作明确可渲染”。
+- 最新 evolution 主线文档：已新增 `docs/evolution-lifecycle-acceptance.md` 和 `docs/evolution-lifecycle-runbook.md`，把 `candidate -> review -> apply -> rollback` 收成一条 operator-facing 主线。当前这条链不只是工具存在，还具备 acceptance path、runbook、host follow-up 和回滚审计链四层约束。
+- 最新 evolution 主线 dogfood：已用临时 runtime root 真实跑通 operator-facing lifecycle runbook，并修复 rollback 对 BOM-backed skill 文件只做文本恢复的问题。当前 backup/rollback 改为按原始字节保存和恢复，因此 `restored_content_hash` 会和 apply 前原始 hash 对齐，回滚结果不再丢失 BOM。
+- 最新 finalizer evolution 边界：已补 acceptance-style 决策测试并收紧实现。现在只有明确 existing-skill gap 证据同时包含 `evidence` 和 `proposed_changes` 时，`plan_learning` / `finalize_task` 才会产出 `improve_existing_skill_candidate`；弱 `skill_gap` 提示会降级成 `observed_only`，不再直接生成 evolution candidate。
+- 最新 new-skill 学习边界：已补 acceptance-style 决策测试并收紧实现。现在 `new_skill_candidate` 不再只靠“任务成功 + 有 expected_outputs”触发；还必须有成功写入类操作，且 `expected_outputs` 能和真实 artifacts / 写入路径对齐。读操作任务、输出未真正落地、或输出路径和真实产物不匹配的场景，会降级成 `observed_only`。
+- 最新 silent reuse 边界：已补 acceptance-style 复用测试并收紧实现。现在 `auto_execute` 除了要求强匹配、完整输入和 scope 兼容，还要求请求中的 `expected_outputs` 与已知输出参数对齐；若输出声明和输入中的 `output_path` 等输出参数不一致，则降级成 `background_hint`。另外，严格 scope_policy 不兼容的场景已明确固定为 `background_hint`。
+- 最新 learning matrix 文档：已新增 `docs/finalizer-learning-decision-matrix.md`，把 finalizer 的四种学习结果 `skip / observed_only / new_skill_candidate / improve_existing_skill_candidate` 收成一张统一矩阵，说明 reuse、observation、new-skill distillation 和 existing-skill evolution 分别在什么条件下触发。
+- 最新第二条 maintainer mainline：已新增 `docs/maintainer-review-cleanup-mainline-acceptance.md` 和 `docs/maintainer-review-cleanup-mainline-runbook.md`，把 `review cleanup` 收成第二条真实 maintainer 主线。当前验证结果是：runtime gate 对这类任务仍保持 `default-out / skipped` 的保守边界，但 demo 可通过 observed-task capture 留下 trajectory，并明确推荐 `distill_trajectory`。
 - 最新全局技能新增：已创建 `parallel-subagent-orchestration`，用于复杂可并行任务中的主代理/子代理协作。Codex 主线程负责拆分、关键路径、审核、集成、验证和最终汇报；子代理只处理边界清楚、可并行、可审核的任务。项目和全局 `AGENTS.md` 只增加短路由，完整流程保留在全局 skill。
 - 最新全局技能新增：已创建 `plan-progress-tracker`，用于多阶段计划执行时持续显示“第几阶段 / 已完成 / 当前正在做 / 下一步 / 偏离风险”。以后计划列出来后，继续开发、自动模式、阶段汇报、会话接力或压缩恢复都应先恢复这个进度坐标。
 - 最新全局技能新增：已创建 `context-compaction-audit`，用于上下文压缩或 summary 恢复后先判断当前会话是否还能安全继续，还是应该 checkpoint 后继续、完成当前阶段后新开会话，或立即新开会话。它会报告压缩时间、压缩率可计算性、信息丢失风险和下一次压缩前的建议。现在它已与 `session-handoff-maintenance` 联动：需要 checkpoint 或新开会话时，先刷新 handoff 状态文件。
@@ -100,6 +107,7 @@
 - [ ] 如果后续建议继续验证 runtime / 本地技能 / `entered` / `used` 样本，先检查是否又滑回低价值验证循环；除非它直接服务于方向审核，否则停止
 - [x] 为 skill evolution rollback 主线补 acceptance-style 测试，并确认 rollback 记录能直接追溯 review/apply 链路
 - [x] 收紧 skill evolution 的 host-facing review/apply/rollback follow-up，避免 host 只能看到原始结果而看不出下一步
+- [x] 为 skill evolution lifecycle 补 operator-facing acceptance doc 和 runbook
 - [ ] 在下一次自动模式或部署任务中 dogfood 对应 workflow skill，确认从 `AGENTS.md` 下沉后的流程仍好用
 - [x] 在下一次可复用 workflow staging 候选出现时 dogfood `promote-global-codex-skill`，确认全局 skill 写入和新会话触发链路
 - [x] 让 `distill-and-promote` 支持 `--promotion-target global-codex`，打通 observed/trajectory 到全局 Codex skill 的一条链路

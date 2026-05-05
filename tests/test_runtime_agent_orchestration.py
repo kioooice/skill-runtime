@@ -816,6 +816,71 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertEqual("merge_text_files", decision.skill_name)
         self.assertIn("output_path", decision.missing_inputs)
 
+    def test_plan_reuse_falls_back_to_background_hint_when_scope_policy_disallows_working_directory(self) -> None:
+        from skill_runtime.api.orchestration import AgentOrchestrationService
+
+        self._write_active_skill_fixture(
+            "scoped_merge_only",
+            {
+                "summary": "Merge text files inside a tightly scoped project root.",
+                "docstring": "Merge text files with strict scope restrictions.",
+                "input_schema": {"input_dir": "str", "output_path": "str"},
+                "output_schema": {"status": "str", "output_path": "str"},
+                "source_trajectory_ids": [],
+                "created_at": "2026-05-05T00:00:00+00:00",
+                "last_used_at": "2026-05-05T00:00:00+00:00",
+                "usage_count": 10,
+                "status": "active",
+                "audit_score": 95,
+                "rule_name": "text_merge",
+                "rule_priority": 80,
+                "rule_reason": "Scoped merge fixture.",
+                "tags": ["scoped", "merge"],
+                "scope_policy": {"allowed_roots": ["D:/outside-scope-only"]},
+            },
+            source='def run(tools, **kwargs):\n    return {"status": "completed"}\n',
+        )
+        self.index.rebuild_from_directory(self.runtime_root / "skill_store" / "active")
+        planner = AgentOrchestrationService(self.runtime_root)
+        request = AgentTaskRequest(
+            task_description="Merge text files inside a tightly scoped project root.",
+            known_inputs={
+                "input_dir": "demo/input",
+                "output_path": "demo/output/scoped_merge.md",
+            },
+            expected_outputs=["demo/output/scoped_merge.md"],
+            working_directory=str(self.runtime_root),
+            risk_level="low",
+            task_kind="workflow",
+        )
+
+        decision = planner.plan_reuse(request)
+
+        self.assertEqual("background_hint", decision.decision)
+        self.assertEqual("scoped_merge_only", decision.skill_name)
+        self.assertEqual([], decision.missing_inputs)
+
+    def test_plan_reuse_falls_back_to_background_hint_when_expected_outputs_do_not_match_known_output_inputs(self) -> None:
+        from skill_runtime.api.orchestration import AgentOrchestrationService
+
+        planner = AgentOrchestrationService(self.runtime_root)
+        request = AgentTaskRequest(
+            task_description="merge txt files into markdown",
+            known_inputs={
+                "input_dir": "demo/input",
+                "output_path": "demo/output/actual_merge.md",
+            },
+            expected_outputs=["demo/output/different_expected.md"],
+            risk_level="low",
+            task_kind="workflow",
+        )
+
+        decision = planner.plan_reuse(request)
+
+        self.assertEqual("background_hint", decision.decision)
+        self.assertEqual("merge_text_files", decision.skill_name)
+        self.assertEqual([], decision.missing_inputs)
+
     def test_plan_learning_skips_when_existing_skill_already_solved_the_task_cleanly(self) -> None:
         from skill_runtime.api.orchestration import AgentOrchestrationService
 
@@ -881,6 +946,70 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertTrue(decision.should_distill_now)
         self.assertIsNone(decision.related_skill_name)
 
+    def test_plan_learning_keeps_read_only_success_as_observed_only_even_with_expected_outputs(self) -> None:
+        from skill_runtime.api.orchestration import AgentOrchestrationService
+
+        planner = AgentOrchestrationService(self.runtime_root)
+        request = AgentTaskRequest(
+            task_description="Inspect a note and decide what summary file would be useful later.",
+            known_inputs={"input_path": "demo/input/template_note.txt"},
+            expected_outputs=["demo/output/read_only_summary.json"],
+            risk_level="low",
+            task_kind="workflow",
+        )
+        execution_payload = {
+            "result": {"status": "completed", "artifacts": []},
+            "operation_log": [
+                {
+                    "tool_name": "read_text",
+                    "status": "success",
+                    "path": "demo/input/template_note.txt",
+                }
+            ],
+        }
+
+        decision = planner.plan_learning(request, execution_payload)
+
+        self.assertEqual("observed_only", decision.decision)
+        self.assertTrue(decision.should_capture_trajectory)
+        self.assertFalse(decision.should_distill_now)
+
+    def test_plan_learning_keeps_output_mismatch_as_observed_only(self) -> None:
+        from skill_runtime.api.orchestration import AgentOrchestrationService
+
+        planner = AgentOrchestrationService(self.runtime_root)
+        request = AgentTaskRequest(
+            task_description="Create a summary JSON file from a text note and save it next to the original.",
+            known_inputs={
+                "input_path": "demo/input/template_note.txt",
+                "output_path": "demo/output/orchestration_summary.json",
+            },
+            expected_outputs=["demo/output/orchestration_summary.json"],
+            risk_level="low",
+            task_kind="workflow",
+        )
+        execution_payload = {
+            "result": {"status": "completed", "artifacts": ["demo/output/unexpected_summary.json"]},
+            "operation_log": [
+                {
+                    "tool_name": "read_text",
+                    "status": "success",
+                    "path": "demo/input/template_note.txt",
+                },
+                {
+                    "tool_name": "write_json",
+                    "status": "success",
+                    "path": "demo/output/unexpected_summary.json",
+                },
+            ],
+        }
+
+        decision = planner.plan_learning(request, execution_payload)
+
+        self.assertEqual("observed_only", decision.decision)
+        self.assertTrue(decision.should_capture_trajectory)
+        self.assertFalse(decision.should_distill_now)
+
     def test_plan_learning_prefers_existing_skill_improvement_when_gap_is_explicit(self) -> None:
         from skill_runtime.api.orchestration import AgentOrchestrationService
 
@@ -912,6 +1041,98 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertEqual("pre_implementation_workflow_review", decision.related_skill_name)
         self.assertTrue(decision.should_capture_trajectory)
         self.assertFalse(decision.should_distill_now)
+
+    def test_plan_learning_keeps_weak_existing_skill_gap_signal_as_observed_only(self) -> None:
+        from skill_runtime.api.orchestration import AgentOrchestrationService
+
+        planner = AgentOrchestrationService(self.runtime_root)
+        request = AgentTaskRequest(
+            task_description="Improve the direction review workflow after a user correction.",
+            expected_outputs=["C:/Users/Administrator/.codex/skills/pre-implementation-workflow-review/SKILL.md"],
+            risk_level="medium",
+            task_kind="workflow",
+        )
+        execution_payload = {
+            "result": {"status": "completed", "artifacts": []},
+            "operation_log": [
+                {"tool_name": "read_text", "status": "success", "path": "AGENTS.md"},
+                {"tool_name": "write_text", "status": "success", "path": "docs/decision-note.md"},
+            ],
+            "skill_gap": {
+                "target_skill_name": "pre_implementation_workflow_review",
+                "reason": "The workflow may need refinement.",
+            },
+        }
+
+        decision = planner.plan_learning(request, execution_payload)
+
+        self.assertEqual("observed_only", decision.decision)
+        self.assertTrue(decision.should_capture_trajectory)
+        self.assertFalse(decision.should_distill_now)
+        self.assertIsNone(decision.related_skill_name)
+
+    def test_plan_learning_allows_existing_skill_improvement_after_reuse_when_gap_is_explicit(self) -> None:
+        from skill_runtime.api.orchestration import AgentOrchestrationService
+
+        planner = AgentOrchestrationService(self.runtime_root)
+        request = AgentTaskRequest(
+            task_description="Run pre-implementation-workflow-review and improve it after a real user correction.",
+            expected_outputs=["C:/Users/Administrator/.codex/skills/pre-implementation-workflow-review/SKILL.md"],
+            risk_level="medium",
+            task_kind="workflow",
+        )
+        execution_payload = {
+            "skill_name": "pre_implementation_workflow_review",
+            "result": {"status": "completed", "artifacts": []},
+            "operation_log": [
+                {"tool_name": "read_text", "status": "success", "path": "AGENTS.md"},
+                {"tool_name": "write_text", "status": "success", "path": "docs/decision-note.md"},
+            ],
+            "skill_gap": {
+                "target_skill_name": "pre_implementation_workflow_review",
+                "reason": "A real correction showed the reused workflow still misses low-value route drift.",
+                "evidence": ["The reused workflow did not redirect the task back to the value gate soon enough."],
+                "proposed_changes": ["Add a guard for repeated low-value validation loops after reuse."],
+                "change_type": "guardrail",
+            },
+        }
+
+        decision = planner.plan_learning(request, execution_payload)
+
+        self.assertEqual("improve_existing_skill_candidate", decision.decision)
+        self.assertEqual("pre_implementation_workflow_review", decision.related_skill_name)
+        self.assertTrue(decision.should_capture_trajectory)
+        self.assertFalse(decision.should_distill_now)
+
+    def test_plan_learning_does_not_override_clean_reuse_with_weak_gap_signal(self) -> None:
+        from skill_runtime.api.orchestration import AgentOrchestrationService
+
+        planner = AgentOrchestrationService(self.runtime_root)
+        request = AgentTaskRequest(
+            task_description="Run pre-implementation-workflow-review and capture the result.",
+            expected_outputs=["C:/Users/Administrator/.codex/skills/pre-implementation-workflow-review/SKILL.md"],
+            risk_level="medium",
+            task_kind="workflow",
+        )
+        execution_payload = {
+            "skill_name": "pre_implementation_workflow_review",
+            "result": {"status": "completed", "artifacts": []},
+            "operation_log": [
+                {"tool_name": "read_text", "status": "success", "path": "AGENTS.md"},
+                {"tool_name": "write_text", "status": "success", "path": "docs/decision-note.md"},
+            ],
+            "skill_gap": {
+                "target_skill_name": "pre_implementation_workflow_review",
+                "reason": "Maybe improve this later.",
+            },
+        }
+
+        decision = planner.plan_learning(request, execution_payload)
+
+        self.assertEqual("observed_only", decision.decision)
+        self.assertTrue(decision.should_capture_trajectory)
+        self.assertFalse(decision.should_distill_now)
+        self.assertIsNone(decision.related_skill_name)
 
     def test_finalize_task_attaches_learning_decision_to_existing_plan(self) -> None:
         from skill_runtime.api.orchestration import AgentOrchestrationService
@@ -980,6 +1201,35 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertTrue(candidate_path.exists())
         self.assertEqual("pre_implementation_workflow_review", candidate["target_skill_name"])
         self.assertEqual("review_evolution_candidate", finalized.learning_capture_payload["recommended_next_action"])
+
+    def test_finalize_task_keeps_weak_existing_skill_gap_as_observed_only(self) -> None:
+        from skill_runtime.api.orchestration import AgentOrchestrationService
+
+        planner = AgentOrchestrationService(self.runtime_root)
+        request = AgentTaskRequest(
+            task_description="Improve the direction review workflow after a user correction.",
+            expected_outputs=["C:/Users/Administrator/.codex/skills/pre-implementation-workflow-review/SKILL.md"],
+            risk_level="medium",
+            task_kind="workflow",
+        )
+        plan = planner.start_task(request)
+        execution_payload = {
+            "result": {"status": "completed", "artifacts": []},
+            "operation_log": [
+                {"tool_name": "read_text", "status": "success", "path": "AGENTS.md"},
+                {"tool_name": "write_text", "status": "success", "path": "docs/decision-note.md"},
+            ],
+            "skill_gap": {
+                "target_skill_name": "pre_implementation_workflow_review",
+                "reason": "The workflow may need refinement.",
+            },
+        }
+
+        finalized = planner.finalize_task(plan, execution_payload)
+
+        self.assertEqual("observed_only", finalized.learning_decision.decision)
+        self.assertIsNotNone(finalized.learning_capture_payload)
+        self.assertNotIn("evolution_candidate", finalized.learning_capture_payload)
 
     def test_review_evolution_candidate_creates_manual_diff_without_editing_global_skill(self) -> None:
         from skill_runtime.evolution.candidates import EvolutionCandidateStore
@@ -1398,6 +1648,51 @@ class RuntimeAgentOrchestrationTestsMixin:
             applied["application"]["previous_content_hash"],
             rollback["restored_content_hash"],
         )
+
+    def test_rollback_evolution_candidate_restores_original_hash_for_bom_backed_skill_file(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        skill_path = skill_dir / "SKILL.md"
+        original_bytes = (
+            b"\xef\xbb\xbf"
+            b"---\r\n"
+            b"name: pre-implementation-workflow-review\r\n"
+            b"description: Review direction before implementation.\r\n"
+            b"---\r\n\r\n"
+            b"# Skill\r\n\r\n"
+            b"Review value before building.\r\n"
+        )
+        skill_path.write_bytes(original_bytes)
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Preserve BOM-backed skill bytes across rollback.",
+            reason="Rollback should restore the exact original file bytes, not only normalized text content.",
+            evidence=["The original target file may carry a UTF-8 BOM."],
+            proposed_changes=["Restore from backup bytes instead of reconstructed text."],
+            risk_level="medium",
+            change_type="guardrail",
+        )
+
+        self.service.review_evolution_candidate(candidate["candidate_path"], global_skills_dir=global_skills_dir)
+        applied = self.service.apply_evolution_candidate(
+            candidate["candidate_path"],
+            confirm_apply=True,
+            global_skills_dir=global_skills_dir,
+        )
+        rolled_back = self.service.rollback_evolution_candidate(
+            candidate["candidate_path"],
+            confirm_rollback=True,
+            global_skills_dir=global_skills_dir,
+        )
+
+        self.assertEqual(
+            applied["application"]["previous_content_hash"],
+            rolled_back["rollback"]["restored_content_hash"],
+        )
+        self.assertEqual(original_bytes, skill_path.read_bytes())
 
     def test_rollback_evolution_candidate_rejects_target_changed_after_apply(self) -> None:
         from skill_runtime.evolution.candidates import EvolutionCandidateStore

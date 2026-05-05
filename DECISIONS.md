@@ -2,6 +2,107 @@
 
 ## Decision Log
 
+### 2026-05-05 - Preserve Original Bytes Across Evolution Rollback
+
+**Decision**
+
+Treat evolution backups and rollbacks as byte-preserving file operations. Do not reconstruct the original global skill file from decoded text during rollback.
+
+**Reason**
+
+Real operator-facing dogfood of the evolution lifecycle exposed a gap: a BOM-backed `SKILL.md` could be semantically restored but still lose its original bytes because apply wrote the backup from decoded text and rollback rewrote the file in normalized UTF-8. That made `restored_content_hash` drift from the pre-apply hash even though the visible content looked the same. The lifecycle is only trustworthy if rollback restores the exact original file bytes.
+
+**Impact**
+
+- `apply_evolution_candidate` now records the backup from `target_skill_path.read_bytes()`
+- `rollback_evolution_candidate` now restores the target with `write_bytes()` from the recorded backup
+- Added a regression test covering BOM-backed skill files and exact hash restoration
+- The operator-facing lifecycle runbook has now been dogfooded against a real byte-preservation scenario
+
+### 2026-05-05 - Require Concrete Existing-Skill Gap Evidence Before Evolution
+
+**Decision**
+
+Do not let finalization create `improve_existing_skill_candidate` from a weak or vague `skill_gap` hint. Existing-skill evolution now requires concrete `evidence` and `proposed_changes`.
+
+**Reason**
+
+The governed evolution lifecycle is only useful if candidates represent real gaps in an existing workflow skill. A payload that merely says “maybe improve this later” is not enough. Without a stricter boundary, any task loosely related to a known skill could create noisy evolution candidates and blur the difference between observed execution, new workflow distillation, and real existing-skill improvement.
+
+**Impact**
+
+- `plan_learning` now treats weak existing-skill gap hints as `observed_only`
+- `finalize_task` no longer persists evolution candidates from vague `skill_gap` payloads
+- Existing-skill evolution still proceeds when the payload carries explicit `evidence` and `proposed_changes`
+- Added acceptance-style tests covering weak-gap downgrade and explicit-gap approval after reuse
+
+### 2026-05-05 - Require Concrete Output Signals Before New Skill Distillation
+
+**Decision**
+
+Do not let finalization create `new_skill_candidate` from a merely successful workflow plus declared `expected_outputs`. Immediate distillation now requires a concrete output signal: successful write-like operations and expected outputs that match real artifacts or written paths.
+
+**Reason**
+
+The under-covered workflow path should only distill tasks that actually produced stable, inspectable outputs. A read-only task, or a task whose declared outputs do not match the files it really wrote, is still useful to observe but is not stable enough to crystallize into a new reusable skill.
+
+**Impact**
+
+- `plan_learning` now downgrades read-only success with declared outputs to `observed_only`
+- `plan_learning` now downgrades output-mismatch cases to `observed_only`
+- `new_skill_candidate` still proceeds for concrete write-backed workflows whose expected outputs match the actual written artifacts
+- Added acceptance-style tests covering read-only success, output mismatch, and preserved positive cases
+
+### 2026-05-05 - Require Expected Output Alignment Before Silent Reuse
+
+**Decision**
+
+Do not allow `auto_execute` when the request declares `expected_outputs` that do not line up with the known output parameters for the reusable skill.
+
+**Reason**
+
+Strong search score and complete required inputs are not enough if the caller says the task should produce output A while the known output arguments point at B. In that situation the reusable skill may still be relevant, but the runtime should only surface it as `background_hint`, not silently take over execution.
+
+**Impact**
+
+- `plan_reuse` now keeps `auto_execute` only when declared expected outputs align with known output-like inputs such as `output_path`
+- mismatched output declarations now downgrade to `background_hint`
+- strict scope-policy mismatch remains a confirmed `background_hint` case
+- added acceptance-style tests for scope mismatch and expected-output mismatch
+
+### 2026-05-05 - Publish Finalizer Learning Decision Matrix
+
+**Decision**
+
+Promote the hardened finalizer rules into a dedicated operator-facing matrix document.
+
+**Reason**
+
+The project now has enough decision boundaries that tests alone are not an adequate explanation layer. Operators need a single document that explains why a task became `skip`, `observed_only`, `new_skill_candidate`, or `improve_existing_skill_candidate`.
+
+**Impact**
+
+- Added `docs/finalizer-learning-decision-matrix.md`
+- The matrix now explains reuse-aware learning, weak-gap downgrade, output-driven new-skill distillation, and clean-reuse skip behavior
+- Future boundary work should update this matrix instead of relying on scattered notes
+
+### 2026-05-05 - Establish Review Cleanup As The Second Maintainer Mainline
+
+**Decision**
+
+Use `review cleanup` as the second maintainer-facing mainline after `handoff continuation`.
+
+**Reason**
+
+This workflow is highly representative of real open-source maintenance work, but it also tests an important product truth: some valuable maintainer workflows should remain conservative in the Codex-facing runtime gate because they are dominated by open-ended review judgment. That makes it a strong companion to the more structured handoff continuation path.
+
+**Impact**
+
+- Added `docs/maintainer-review-cleanup-mainline-acceptance.md`
+- Added `docs/maintainer-review-cleanup-mainline-runbook.md`
+- Verified that the current gate classifies this family as `default-out / skipped`
+- Verified that governed learning still works through `capture-trajectory` and explicit `distill_trajectory` follow-up
+
 ### 2026-05-05 - Choose Docs-First Open Source Readiness Route
 
 **Decision**
@@ -2583,3 +2684,20 @@ Skill Runtime 的技能进化第一版只生成 `improve_existing_skill_candidat
 - apply 完成后主推荐动作是 `rollback_evolution_candidate`，并附带 `governance_report`
 - rollback 完成后主推荐动作是 `governance_report`
 - 回归测试现在会校验 `recommended_next_action`、`recommended_host_operation` 和 `available_host_operations`
+
+### 2026-05-05 - Evolution lifecycle is now a documented operator-facing mainline
+
+**Decision**
+
+将 skill evolution lifecycle 从“若干 service/CLI/MCP 能力”提升为明确的 operator-facing mainline，并补独立 acceptance doc 与 runbook。
+
+**Reason**
+
+在 review/apply/rollback 都具备后，缺的已经不是能力，而是主线表达。如果没有一份把 candidate、manual diff、confirmed apply、confirmed rollback、host next actions 串起来的文档，后续很容易又回到“底层存在，但人不知道该怎么用”的状态。
+
+**Impact**
+
+- 新增 `docs/evolution-lifecycle-acceptance.md`
+- 新增 `docs/evolution-lifecycle-runbook.md`
+- 这条主线现在与 handoff mainline 一样，具备 acceptance path、runbook、host follow-up 和 rollback audit chain
+- 后续如果继续，应优先 dogfood 这条 operator-facing 主线，而不是继续新增 lifecycle 机制

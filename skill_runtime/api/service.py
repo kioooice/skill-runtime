@@ -1002,9 +1002,10 @@ class RuntimeService:
             )
 
         apply_text = _required_candidate_string(review, "proposed_apply_text")
-        original_text = target_skill_path.read_text(encoding="utf-8-sig")
+        original_bytes = target_skill_path.read_bytes()
+        original_text = original_bytes.decode("utf-8-sig")
         next_text = original_text.rstrip() + "\n\n" + apply_text.strip() + "\n"
-        backup_path = self._write_evolution_backup(candidate_payload, target_skill_path, original_text)
+        backup_path = self._write_evolution_backup(candidate_payload, target_skill_path, original_bytes)
         target_skill_path.write_text(next_text, encoding="utf-8")
         application = store.create_application(
             candidate_payload,
@@ -1137,8 +1138,8 @@ class RuntimeService:
                 },
             )
 
-        restored_text = backup_path.read_text(encoding="utf-8-sig")
-        target_skill_path.write_text(restored_text, encoding="utf-8")
+        restored_bytes = backup_path.read_bytes()
+        target_skill_path.write_bytes(restored_bytes)
         rollback = store.create_rollback(
             candidate_payload,
             {
@@ -1387,13 +1388,13 @@ class RuntimeService:
         ]
         return "\n".join(lines)
 
-    def _write_evolution_backup(self, candidate: dict[str, Any], target_skill_path: Path, content: str) -> Path:
+    def _write_evolution_backup(self, candidate: dict[str, Any], target_skill_path: Path, content: bytes) -> Path:
         candidate_id = str(candidate.get("candidate_id") or "evolution_candidate")
         stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
         backup_dir = self.root / ".skill_runtime" / "evolution_backups" / candidate_id
         backup_dir.mkdir(parents=True, exist_ok=True)
         backup_path = backup_dir / f"{target_skill_path.name}.{stamp}.bak"
-        backup_path.write_text(content, encoding="utf-8")
+        backup_path.write_bytes(content)
         return backup_path
 
     def _global_skill_description(

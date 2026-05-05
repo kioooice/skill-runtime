@@ -112,6 +112,7 @@ class AgentOrchestrationService:
             score >= self.AUTO_EXECUTION_SCORE
             and not missing_inputs
             and self._scope_is_compatible(metadata.scope_policy if metadata else None, request)
+            and self._expected_outputs_are_compatible(request)
         ):
             return ReuseDecision(
                 "auto_execute",
@@ -140,7 +141,8 @@ class AgentOrchestrationService:
         if status not in self.SUCCESS_STATUSES:
             return LearningDecision("skip", "task did not complete successfully")
 
-        improvement_signal = self._skill_improvement_signal(request, execution_payload)
+        raw_improvement_signal = self._raw_skill_improvement_signal(execution_payload)
+        improvement_signal = self._skill_improvement_signal(request, execution_payload, raw_signal=raw_improvement_signal)
         if execution_payload.get("skill_name") and improvement_signal is not None:
             return LearningDecision(
                 "improve_existing_skill_candidate",
@@ -150,6 +152,13 @@ class AgentOrchestrationService:
                 should_distill_now=False,
             )
         if execution_payload.get("skill_name"):
+            if raw_improvement_signal is not None:
+                return LearningDecision(
+                    "observed_only",
+                    "task hinted at an existing-skill gap, but the evidence was not concrete enough to propose evolution",
+                    should_capture_trajectory=True,
+                    should_distill_now=False,
+                )
             return LearningDecision("skip", "existing skill reuse already solved the task cleanly")
 
         operation_log = execution_payload.get("operation_log")
@@ -175,10 +184,24 @@ class AgentOrchestrationService:
                 should_capture_trajectory=True,
                 should_distill_now=False,
             )
+        if raw_improvement_signal is not None:
+            return LearningDecision(
+                "observed_only",
+                "task hinted at an existing-skill gap, but the evidence was not concrete enough to propose evolution",
+                should_capture_trajectory=True,
+                should_distill_now=False,
+            )
         if not request.expected_outputs:
             return LearningDecision(
                 "observed_only",
                 "task succeeded, but expected outputs are not stable enough for immediate distillation",
+                should_capture_trajectory=True,
+                should_distill_now=False,
+            )
+        if not self._has_concrete_output_signal(request, execution_payload, operation_log):
+            return LearningDecision(
+                "observed_only",
+                "task succeeded, but the concrete output signal is too weak for immediate distillation",
                 should_capture_trajectory=True,
                 should_distill_now=False,
             )
@@ -346,8 +369,10 @@ class AgentOrchestrationService:
         self,
         request: AgentTaskRequest,
         execution_payload: dict[str, Any],
+        *,
+        raw_signal: dict[str, Any] | None = None,
     ) -> dict[str, Any] | None:
-        raw_signal = self._raw_skill_improvement_signal(execution_payload)
+        raw_signal = raw_signal or self._raw_skill_improvement_signal(execution_payload)
         if raw_signal is None:
             return None
 
@@ -362,6 +387,8 @@ class AgentOrchestrationService:
             reason = f"successful task revealed an improvement opportunity for {target_skill_name}"
         evidence = self._signal_list(raw_signal, "evidence", "observed_gaps", "examples")
         proposed_changes = self._signal_list(raw_signal, "proposed_changes", "changes", "recommendations")
+        if not evidence or not proposed_changes:
+            return None
         change_type = self._signal_string(raw_signal, "change_type", "gap_type", "improvement_type")
         return {
             "target_skill_name": target_skill_name,
@@ -428,6 +455,60 @@ class AgentOrchestrationService:
             if value is None or (isinstance(value, str) and not value.strip()):
                 missing.append(field_name)
         return missing
+
+    def _expected_outputs_are_compatible(self, request: AgentTaskRequest) -> bool:
+        expected_outputs = [str(item).strip() for item in request.expected_outputs if isinstance(item, str) and str(item).strip()]
+        if not expected_outputs:
+            return True
+
+        known_output_values = {
+            str(value).strip()
+            for key, value in request.known_inputs.items()
+            if isinstance(key, str)
+            and isinstance(value, str)
+            and value.strip()
+            and (
+                key == "output_path"
+                or key == "output_dir"
+                or key.endswith("_output")
+                or key.endswith("_output_path")
+                or key.endswith("_output_dir")
+            )
+        }
+        if not known_output_values:
+            return True
+        return set(expected_outputs).issubset(known_output_values)
+
+    def _has_concrete_output_signal(
+        self,
+        request: AgentTaskRequest,
+        execution_payload: dict[str, Any],
+        operation_log: list[Any],
+    ) -> bool:
+        write_paths: set[str] = set()
+        for entry in operation_log:
+            if not isinstance(entry, dict):
+                continue
+            if self._entry_status(entry) != "success":
+                continue
+            tool_name = str(entry.get("tool_name", "")).strip().lower()
+            path = entry.get("path")
+            if not isinstance(path, str) or not path.strip():
+                continue
+            if tool_name.startswith(("write_", "append_", "copy_", "move_", "rename_")):
+                write_paths.add(path.strip())
+
+        if not write_paths:
+            return False
+
+        result = execution_payload.get("result")
+        artifacts = result.get("artifacts") if isinstance(result, dict) else []
+        artifact_paths = {str(item).strip() for item in artifacts if isinstance(item, str) and str(item).strip()}
+        concrete_paths = write_paths | artifact_paths
+        expected_outputs = {
+            str(item).strip() for item in request.expected_outputs if isinstance(item, str) and str(item).strip()
+        }
+        return expected_outputs.issubset(concrete_paths)
 
     def _scope_is_compatible(self, scope_policy: dict[str, Any] | None, request: AgentTaskRequest) -> bool:
         if not scope_policy or not request.working_directory:

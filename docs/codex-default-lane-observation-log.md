@@ -664,6 +664,15 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the lane help: yes, because it kept the work focused on workflow clarity rather than expanding automation or UI surface
 - Follow-up: if the evolution lifecycle continues, the next serious step should be an operator-facing acceptance doc or runbook, not more hidden lifecycle affordances
 
+### 2026-05-05 - Evolution lifecycle acceptance docs
+
+- Task type: operator-facing lifecycle documentation
+- Classified as: `guarded-in` / `skipped` by the Codex runtime gate for this docs round
+- What happened: added `docs/evolution-lifecycle-acceptance.md` and `docs/evolution-lifecycle-runbook.md`, turning the evolution lifecycle into a documented operator-facing mainline instead of a set of disconnected lifecycle tools
+- Did the behavior feel correct: yes; this is the right follow-up after tightening host recommendations, because the next gap was workflow clarity, not more mutation logic
+- Did the lane help: yes, because it kept the work on the normal Codex path and reinforced that the product value now comes from explicit workflow governance, not invisible machinery
+- Follow-up: dogfood the documented operator-facing lifecycle before inventing any richer lifecycle surface
+
 ### 2026-05-01 - Runtime observability dashboard implementation
 
 - Task type: Codex runtime lane observability
@@ -690,3 +699,57 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the behavior feel correct: yes
 - Did the lane help: yes, because the project now has a clear way to judge whether widening is justified
 - Follow-up: append only real later tasks that touch the current default lane
+
+### 2026-05-05 - Evolution lifecycle byte-preserving rollback dogfood
+
+- Task type: operator-facing evolution lifecycle dogfood
+- Classified as: guarded-in / skipped
+- What happened: ran the documented `candidate -> review -> apply -> rollback` lifecycle against a BOM-backed global skill file in a temporary runtime root; the run exposed that rollback restored normalized text instead of exact original bytes, so `restored_content_hash` drifted from the pre-apply hash even though the visible content matched
+- Did the behavior feel correct: partially; the manual path and host recommendations were right, but rollback needed byte-preserving backup/restore to make the audit trail trustworthy
+- Did the lane help: yes, because staying on the normal Codex path surfaced a real correctness gap in the governed lifecycle instead of hiding it behind UI work
+- Follow-up: keep future evolution-lifecycle dogfood focused on real file-integrity and operator-trust edges, not richer surface area
+
+### 2026-05-05 - Finalizer existing-skill evolution boundary tightening
+
+- Task type: evolution decision boundary hardening
+- Classified as: guarded-in / skipped
+- What happened: added acceptance-style tests showing that a weak `skill_gap` hint was enough to generate `improve_existing_skill_candidate`; tightened `plan_learning` so existing-skill evolution now requires concrete `evidence` plus `proposed_changes`, while weak hints downgrade to `observed_only`
+- Did the behavior feel correct: yes; this matches the intended rule that real task evidence must expose an existing-skill gap before the system proposes modifying that skill
+- Did the lane help: yes, because the normal Codex path made it easy to inspect the decision boundary directly instead of smuggling it into dashboard behavior
+- Follow-up: future evolution work should keep testing the learning-decision boundary first, before adding richer lifecycle surface
+
+### 2026-05-05 - Finalizer new-skill distillation boundary tightening
+
+- Task type: under-covered workflow learning boundary hardening
+- Classified as: guarded-in / skipped
+- What happened: added acceptance-style tests showing that a successful workflow with declared `expected_outputs` could become `new_skill_candidate` even when it only read files or wrote different outputs than declared; tightened `plan_learning` so immediate distillation now requires successful write-like operations and expected outputs that match real artifacts or written paths
+- Did the behavior feel correct: yes; a new reusable skill should come from a task that actually produced stable outputs, not just from a declared intention
+- Did the lane help: yes, because it exposed the product boundary in the learning decision itself instead of letting weak cases drift into later skill governance
+- Follow-up: future learning-boundary work should continue proving positive and negative cases at the finalizer layer before widening any automatic distillation path
+
+### 2026-05-05 - Silent reuse expected-output boundary tightening
+
+- Task type: reuse boundary hardening
+- Classified as: guarded-in / skipped
+- What happened: added acceptance-style tests showing that a strong reusable match could still auto-execute when the request declared expected output A but the known output argument pointed to B; tightened `plan_reuse` so this mismatch now downgrades to `background_hint` instead of silent reuse
+- Did the behavior feel correct: yes; silent reuse should only take over when the task intent, required inputs, scope, and declared outputs all line up
+- Did the lane help: yes, because it pushed the safety boundary into the reuse decision itself rather than leaving it to later execution or explanation
+- Follow-up: future reuse-boundary work should keep proving downgrade cases before widening `auto_execute`
+
+### 2026-05-05 - Finalizer learning decision matrix published
+
+- Task type: operator-facing mainline clarification
+- Classified as: guarded-in / skipped
+- What happened: added `docs/finalizer-learning-decision-matrix.md`, consolidating the hardened finalizer outcomes `skip / observed_only / new_skill_candidate / improve_existing_skill_candidate` into one explanation layer
+- Did the behavior feel correct: yes; the runtime now has a single document that explains why a task became observation, new-skill distillation, or existing-skill evolution instead of leaving that logic scattered across tests
+- Did the lane help: yes, because it kept the work on governed runtime behavior instead of drifting back to dashboard-only explanation
+- Follow-up: keep this matrix in sync whenever reuse or finalizer boundaries move
+
+### 2026-05-05 - Review cleanup mainline established
+
+- Task type: maintainer mainline expansion
+- Classified as: guarded-in / skipped
+- What happened: promoted `review cleanup` into the second maintainer mainline with dedicated acceptance and runbook docs; real verification showed that the current Codex-facing gate keeps this family `default-out / skipped`, while the observed-task capture path still produces a governed trajectory and explicit `distill_trajectory` follow-up
+- Did the behavior feel correct: yes; this is the right boundary for review-driven work because the maintainer workflow is real, but silent reuse would still be too aggressive
+- Did the lane help: yes, because it proved the product can support valuable maintainer workflows even when the runtime lane should stay conservative
+- Follow-up: the next mainline step should compare whether `release readiness` adds a meaningfully different governed-learning shape, not just more demo surface
