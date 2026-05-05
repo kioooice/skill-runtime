@@ -43,6 +43,7 @@ def main() -> int:
         _run_fake_deepseek_semantic_block_fixture(),
         _run_fake_deepseek_generation_failure_fixture(),
         _run_review_cleanup_provider_quality_fixture(),
+        _run_review_cleanup_demo_provider_success_fixture(),
         _run_runtime_service_distill_demo_provider_fixture(),
     ]
     passed = sum(1 for item in fixtures if item["execution_smoke_status"] == "passed")
@@ -214,6 +215,55 @@ def _run_review_cleanup_provider_quality_fixture() -> dict[str, Any]:
     )
 
 
+def _run_review_cleanup_demo_provider_success_fixture() -> dict[str, Any]:
+    observed_task = json.loads(
+        (ROOT / "demo" / "maintainer_review_cleanup" / "observed_task.json").read_text(encoding="utf-8")
+    )
+    return _evaluate_fixture(
+        fixture_name="review_cleanup_demo_provider_success",
+        lifecycle_mode="manual_provider_loop",
+        configured_providers={
+            "fallback": "local_review_cleanup_fallback_provider",
+            "semantic": "local_pass_semantic_review_provider",
+        },
+        env_updates={
+            "SKILL_RUNTIME_FALLBACK_PROVIDER_CMD": json.dumps(
+                [sys.executable, str(ROOT / "examples" / "providers" / "review_cleanup_fallback_provider.py")]
+            ),
+            "SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD": json.dumps(
+                [sys.executable, str(ROOT / "examples" / "providers" / "pass_semantic_review_provider.py")]
+            ),
+        },
+        observed_task=observed_task,
+        execution_args={
+            "input_path": "demo/maintainer_review_cleanup/review_comments.json",
+            "output_path": "demo/maintainer_review_cleanup/generated_cleanup_plan.md",
+            "metadata_path": "demo/maintainer_review_cleanup/generated_cleanup_plan.json",
+        },
+        seed_callback=_seed_review_cleanup_fixture,
+        manual_generation_config={
+            "summary": "Read review comments and write a grouped maintainer cleanup plan.",
+            "docstring": (
+                "功能描述:\n"
+                "    Read review comments and write a grouped maintainer cleanup plan.\n\n"
+                "输入参数:\n"
+                "    - input_path: str\n"
+                "    - output_path: str\n"
+                "    - metadata_path: str\n\n"
+                "输出结果:\n"
+                "    - status: str\n"
+                "    - artifacts: list[str]\n"
+                "    - steps_executed: int"
+            ),
+            "input_schema": {
+                "input_path": "str",
+                "output_path": "str",
+                "metadata_path": "str",
+            },
+        },
+    )
+
+
 def _run_runtime_service_distill_demo_provider_fixture() -> dict[str, Any]:
     return _evaluate_fixture(
         fixture_name="runtime_service_distill_demo_provider",
@@ -244,6 +294,7 @@ def _evaluate_fixture(
     execution_args: dict[str, str] | None = None,
     seed_callback=None,
     use_runtime_service_distill: bool = False,
+    manual_generation_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     result = {
         "fixture_name": fixture_name,
@@ -307,6 +358,7 @@ def _evaluate_fixture(
                         sandbox_root=sandbox_root,
                         trajectory_path=Path(capture_result["trajectory_path"]),
                         skill_name=f"{fixture_name}_candidate",
+                        generation_config=manual_generation_config,
                     )
             except Exception as exc:  # noqa: BLE001
                 result["failure_reason"] = str(exc)
@@ -417,26 +469,37 @@ def _generate_candidate(
     sandbox_root: Path,
     trajectory_path: Path,
     skill_name: str,
+    generation_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     trajectory = TrajectoryStore(service.trajectories_dir).load_file(trajectory_path)
-    summary = "Copy one file and write a metadata sidecar for provider quality evaluation."
-    docstring = (
-        "功能描述:\n"
-        "    Copy one file and write a metadata sidecar for provider quality evaluation.\n\n"
-        "输入参数:\n"
-        "    - input_path: str\n"
-        "    - output_path: str\n"
-        "    - metadata_path: str\n\n"
-        "输出结果:\n"
-        "    - status: str\n"
-        "    - artifacts: list[str]\n"
-        "    - steps_executed: int"
+    generation_config = generation_config or {}
+    summary = generation_config.get(
+        "summary",
+        "Copy one file and write a metadata sidecar for provider quality evaluation.",
     )
-    input_schema = {
-        "input_path": "str",
-        "output_path": "str",
-        "metadata_path": "str",
-    }
+    docstring = generation_config.get(
+        "docstring",
+        (
+            "功能描述:\n"
+            "    Copy one file and write a metadata sidecar for provider quality evaluation.\n\n"
+            "输入参数:\n"
+            "    - input_path: str\n"
+            "    - output_path: str\n"
+            "    - metadata_path: str\n\n"
+            "输出结果:\n"
+            "    - status: str\n"
+            "    - artifacts: list[str]\n"
+            "    - steps_executed: int"
+        ),
+    )
+    input_schema = generation_config.get(
+        "input_schema",
+        {
+            "input_path": "str",
+            "output_path": "str",
+            "metadata_path": "str",
+        },
+    )
     code, provider_name, fallback_artifact = FallbackService(sandbox_root / "skill_store" / "staging").generate(
         skill_name,
         summary,

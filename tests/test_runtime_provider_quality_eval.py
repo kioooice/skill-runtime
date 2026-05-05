@@ -191,10 +191,28 @@ class RuntimeProviderQualityEvalTestsMixin:
         self.assertIn("review_cleanup_provider_quality", fixtures)
         self.assertEqual("manual_provider_loop", fixtures["review_cleanup_provider_quality"]["lifecycle_mode"])
         self.assertIn("loop_stage", fixtures["review_cleanup_provider_quality"])
+        self.assertEqual("audit_failed", fixtures["review_cleanup_provider_quality"]["loop_stage"])
         self.assertTrue(
             isinstance(fixtures["review_cleanup_provider_quality"]["repair_attempted"], bool)
         )
         self.assertTrue(fixtures["review_cleanup_provider_quality"]["failure_reason"])
+
+        self.assertIn("review_cleanup_demo_provider_success", fixtures)
+        review_cleanup_success = fixtures["review_cleanup_demo_provider_success"]
+        self.assertEqual("manual_provider_loop", review_cleanup_success["lifecycle_mode"])
+        self.assertEqual(
+            "local_review_cleanup_fallback_provider",
+            review_cleanup_success["generated_candidate_provider"],
+        )
+        self.assertEqual("passed", review_cleanup_success["generated_candidate_status"])
+        self.assertEqual("passed", review_cleanup_success["audit_status"])
+        self.assertEqual("passed", review_cleanup_success["execution_smoke_status"])
+        self.assertEqual("execution_passed", review_cleanup_success["loop_stage"])
+        self.assertIsNone(review_cleanup_success["failure_reason"])
+        self.assertIn(
+            "demo/maintainer_review_cleanup/generated_cleanup_plan.md",
+            review_cleanup_success["produced_artifacts"],
+        )
 
         self.assertIn("runtime_service_distill_demo_provider", fixtures)
         self.assertEqual(
