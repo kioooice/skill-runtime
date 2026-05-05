@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Full-auto finite-plan requests were folded into the auto-mode workflow skill
+
+- Task type: workflow-skill behavior correction
+- Classified as: default-out / skipped
+- What happened: user clarified that “列长计划后一直自动推进、中间不汇报、不停下来直到计划完成” was about Codex execution behavior, not product automation; the authoritative global `auto-mode-stage-runner` skill was updated to treat that pattern as a full-auto finite-plan mode
+- Did the behavior feel correct: yes; this kept the change in the workflow layer and avoided turning explicit read-only operator surfaces into hidden background actions
+- Did the lane help: yes, because the skip result reinforced that this was skill/process work, not a case for widening runtime product behavior
+- Follow-up: if similar requests recur, route them directly to `auto-mode-stage-runner` instead of proposing product-surface automation
+
 ### 2026-05-06 - Operator-summary became the summary-first inspect and refresh entry
 
 - Task type: operator visibility mainline closure

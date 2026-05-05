@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新 workflow 自动模式收口：当用户明确要求“先列长计划，然后自动推进，中间不要汇报，不要停下来，直到计划全部完成”时，当前应走全局 `auto-mode-stage-runner` 的 `full-auto finite-plan mode`，而不是把 operator-summary / dashboard 之类产品入口改成自动执行。全局技能定义已更新，仓库 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 也已同步路由语义。当前这仍是 workflow 层行为收口，不是产品功能改造。
+
 - 最新 operator visibility 主线收口：`operator-summary` 现在会在 JSON 返回里附带 `dashboard_export`，统一暴露当前稳定摘要导出的 `available`、`freshness_status`、`output_path`、`generated_at` 和 `refreshed`；同时新增 `operator-summary --refresh-dashboard-export`，用于“只刷新稳定导出、不生成 HTML”。当前三条入口角色已经明确：`operator-summary` 负责摘要 inspect/refresh，`dashboard` 负责可视化只读观察，`runtime-events` 负责原始事件流查看。README、Codex integration 文档和 `docs/operator-visibility-runbook.md` 已同步这条标准路径。当前仍然不执行 evaluator、不执行 host operation，也没有任何证据支持扩大 `default-in`。
 
 - 最新主线状态面：`dashboard` / `dashboard --global` 现在会在 CLI payload 中返回 `operator_summary_available`、`operator_summary_freshness_status`、`operator_summary_output_path`、`operator_summary_generated_at` 和 `operator_summary_refreshed`。当前 operator 不打开 HTML 也能判断本地稳定摘要是否存在、是否新鲜、文件在哪里、这次是否刚刷新。默认行为仍然无副作用：不带 refresh flag 不生成导出；已有导出时只读报告状态。当前仍然不执行 evaluator、不执行 host operation、不扩大 control-plane 边界，也没有任何证据支持扩大 `default-in`。

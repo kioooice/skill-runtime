@@ -428,6 +428,26 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         ]:
             self.assertIn(phrase, content)
 
+    def test_global_auto_mode_stage_runner_supports_full_auto_finite_plan_mode(self) -> None:
+        skill_path = (
+            Path("C:/Users/Administrator/.codex/skills")
+            / "auto-mode-stage-runner"
+            / "SKILL.md"
+        )
+        self.assertTrue(skill_path.exists())
+        content = skill_path.read_text(encoding="utf-8")
+
+        for phrase in [
+            "full-auto finite-plan mode",
+            "列个长计划，然后自动推进",
+            "中间不要汇报",
+            "不要停下来",
+            "直到计划全部完成",
+            "send one consolidated final report after the plan is finished",
+            "Skip intermediate stage reports in full-auto finite-plan mode.",
+        ]:
+            self.assertIn(phrase, content)
+
     def test_workflow_error_correction_keeps_agents_lightweight(self) -> None:
         agents_content = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("workflow-error-correction", agents_content)

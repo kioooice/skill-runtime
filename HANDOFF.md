@@ -2,6 +2,10 @@
 
 ## Current State
 
+最新 workflow 行为收口：用户澄清“列长计划后一直自动推进、中间不汇报、不停下来直到计划完成”说的是 Codex 执行流程，不是 operator-summary / dashboard 产品行为。为此，当前已把这类请求正式并入全局 `auto-mode-stage-runner` 技能：`C:\Users\Administrator\.codex\skills\auto-mode-stage-runner\SKILL.md` 现在包含 `full-auto finite-plan mode`，会把这类明确请求视为“先定义有限计划，再连续执行，除真实阻塞外不做阶段性打断，计划完成后一次性汇总”。仓库内 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 的技能路由也已同步这条触发语义。
+
+最新边界说明：这次改的是 workflow 层，不是产品面。`operator-summary` / `dashboard` / `runtime-events` 的显式只读入口保持不变，没有被并进自动模式。自动模式技能现在只吸收“如何连续执行一个已批准的有限计划”的规则，不接管 operator visibility 命令面。
+
 最新 operator visibility 主线收口：`operator-summary` 现在不只是返回本地 summary，还会稳定返回当前 dashboard 摘要导出状态 `dashboard_export`，包含 `available`、`freshness_status`、`output_path`、`generated_at` 和 `refreshed`。同时新增显式 `operator-summary --refresh-dashboard-export`，用于“只刷新稳定摘要导出、不生成 HTML”。到这里三条入口角色已经收清：`operator-summary` 负责摘要型 inspect/refresh，`dashboard` 负责可视化只读观察，`runtime-events` 负责原始事件流查看。README、Codex integration 文档和新 runbook `docs/operator-visibility-runbook.md` 已同步这条标准路径。
 
 最新本轮验证与停止条件：已先补 `operator-summary` 失败测试，再补 CLI 与文档。当前 `python -m py_compile skill_runtime/cli.py tests/test_runtime_operator_summary.py tests/test_runtime_dashboard.py`、定向 operator-summary/dashboard CLI 回归、`python -m unittest tests.test_runtime_fast -v`、`git diff --check` 均应作为本轮必跑验证；当前主线停止条件也已满足：摘要入口、刷新入口、状态返回、只读可视化入口、原始事件入口、runbook 和文档统一都已具备。下一步不该继续扩 dashboard 字段或再造新入口，更值得做真实使用验证，判断现有三条入口是否已经足够。

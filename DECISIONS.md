@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Full-Auto Finite-Plan Requests Belong To The Auto-Mode Workflow Skill, Not To Product Surfaces
+
+**Decision**
+
+Treat requests like “列个长计划，然后自动推进，中间不要汇报，不要停下来，直到计划全部完成” as a workflow-level variant of `auto-mode-stage-runner`, not as a dashboard/operator-summary product feature.
+
+**Reason**
+
+The user clarified that the desired change was about Codex execution behavior, not about making the operator-visibility product surfaces run automatically. The right integration point is the global auto-mode workflow skill: it already owns autonomous continuation, stage boundaries, and stopping rules. Extending that skill with an explicit full-auto finite-plan mode keeps the behavior in the workflow layer instead of blurring product visibility commands into background execution.
+
+**Impact**
+
+- the authoritative global skill `C:\Users\Administrator\.codex\skills\auto-mode-stage-runner\SKILL.md` now includes a full-auto finite-plan mode
+- that mode is triggered by explicit requests for a long plan plus uninterrupted autonomous execution with no mid-progress reports
+- in that mode, Codex should define a finite plan, execute it continuously, suppress routine stage-boundary reports, and stop only at a real blocker or after the plan is complete
+- the repository `AGENTS.md` routing note now points those requests at `auto-mode-stage-runner`
+- the operator-visibility command family remains explicit and read-only; it is not folded into auto-mode
+
 ### 2026-05-06 - Operator Summary Should Be The Summary-First Inspect And Refresh Entry
 
 **Decision**
