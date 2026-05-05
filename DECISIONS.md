@@ -53,6 +53,22 @@ After the top-level contract was unified, the next real question was whether the
 - added acceptance-style coverage for the three-step operator sequence
 - the next product question shifts from payload shape to whether a narrow host presentation layer is warranted
 
+### 2026-05-05 - Do Not Build A Narrow Host Presentation Layer Yet
+
+**Decision**
+
+Do not immediately build a new host UI / CLI presentation layer for follow-up recommendations. Use `manual_validation_first`.
+
+**Reason**
+
+The product boundary is now clear enough to validate without new code: the host already has a top-level recommendation contract, a dogfood note, and a sequence runbook. Building another surface right now would risk packaging work before the operator pain is proven.
+
+**Impact**
+
+- no new presentation command or host UI layer is added yet
+- the next validation step is operator use across 2-3 real maintainer flows
+- implementation should reopen only if the gap is clearly presentation-specific rather than another workflow-boundary issue
+
 ### 2026-05-05 - Preserve Original Bytes Across Evolution Rollback
 
 **Decision**

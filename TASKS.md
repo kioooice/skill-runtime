@@ -4,6 +4,8 @@
 
 - 最新 dogfood 结果：已用真实路径验证顶层 recommendation contract 的三条主边界，并新增 `docs/host-follow-up-recommendation-dogfood.md`。当前确认：缺输入的强匹配复用会停在 `background_hint` 但顶层直接给 `execute_skill`；`capture-trajectory` 顶层直接给 `distill_trajectory`；明确 existing-skill gap 的 finalizer 顶层直接给 `review_evolution_candidate`。这意味着宿主可以统一按顶层 recommendation 字段渲染下一步，而不用解析不同 payload 的嵌套结构。
 - 最新序列验收：已新增 `docs/host-follow-up-sequence-runbook.md` 和 acceptance-style 快验，把 `background_hint -> distill_trajectory -> review_evolution_candidate` 串成一条 operator-facing sequence。当前这三类动作不再只是分散正例，而是已经证明可以作为一条非自动、显式、可治理的顺序链被宿主消费。
+- 最新方向门判断：是否要继续做更窄的 host UI / CLI 展示层，当前结论是 `manual_validation_first`，已写入 `docs/host-follow-up-presentation-review.md`。原因很直接：顶层 recommendation contract、dogfood 和 sequence acceptance 已经证明主链路成立，但还没有足够证据证明 raw JSON + runbook 对操作者真的不够用。下一步应先在 2-3 条真实 maintainer 流里验证“是否缺展示层”，而不是直接再造一个新表面。
+- 最新内部验证：已新增 `docs/host-follow-up-manual-validation-round-1.md`，对三条 maintainer-style 流做了第一轮人工验证。当前结论仍是 `manual_validation_first`，但证据往前推进了一步：对 `background_hint`、`distill_trajectory`、`review_evolution_candidate` 这三类 follow-up，raw JSON + runbook 已经“至少可用”，还没有强到足以证明必须再做一个新展示层。
 - 最新 operator-facing recommendation 收口：`AgentOrchestrationResult` 现在统一承载顶层 follow-up recommendation，不再要求 host 从 `learning_capture_payload` 或其他嵌套结果里猜下一步。当前 `background_hint` 会冒泡成顶层 `execute_skill`，`new_skill_candidate` 会冒泡成顶层 `distill_trajectory`，`improve_existing_skill_candidate` 会冒泡成顶层 `review_evolution_candidate`。CLI / MCP 的 plan/result 重建也已补齐这些字段，避免 recommendation 在宿主边界丢失。
 - 最新战略目标：把本项目朝 OpenAI Codex for Open Source / 开源支持申请准备推进。当前价值门结论是 `manual_validation_first`：目标成立，但先验证公开项目价值和申请材料缺口，不直接为了免费会员堆功能。下一步重点是开源 readiness audit：公开仓库、README、license、安装/demo、真实维护者 workflow 用例、生态重要性说明和 API credits 使用说明。
 - 最新阶段完成：Stage 2 项目定位和 README/application narrative 已完成。README / README.zh-CN / README.en 的顶部已经改成面向开源维护者的价值叙事：Skill Runtime 是 Codex 风格编程代理的本地工作流治理层，帮助维护者把重复的 review、triage、release、handoff 和维护自动化流程沉淀为可审计、可复用、可改进的技能。新增 `docs/codex-open-source-positioning.md`，记录一句话定位、公开叙事、差异化、社区文件清单、3 个 maintainer workflow demo 候选和申请文案草稿。
@@ -61,7 +63,9 @@
 - [x] 将 reuse / learning / evolution 的 host-facing follow-up recommendation 收口为统一顶层结果字段，并补齐 CLI / MCP 透传
 - [x] 开始按边界采样的 dogfood 策略：优先验证 `background_hint`、`distill_trajectory`、`review_evolution_candidate` 这三类 recommendation 在真实 maintainer 任务里的顺手程度
 - [x] 继续把 recommendation dogfood 扩到真实 maintainer 顺序链：先 hint、后 capture、再 evolution review，验证这三类动作串起来是否自然
-- [ ] 继续判断这条 operator-facing sequence 是否需要一个更窄的 host UI / CLI 展示层，而不是继续扩 dashboard
+- [x] 继续判断这条 operator-facing sequence 是否需要一个更窄的 host UI / CLI 展示层，而不是继续扩 dashboard
+- [x] 用 2-3 条真实 maintainer 流验证 raw JSON + runbook 是否已经够用；只有确认不够用时，才进入更窄的 host presentation 实现
+- [ ] 继续等待真实操作者/宿主集成中的 presentation 证据；没有明确痛点前不做新展示层
 - [x] 做 Codex for Open Source readiness audit：公开状态、license、README、安装验证、demo、维护者 workflow、申请材料缺口
 - [x] 补 MIT License 和基础 package metadata
 - [x] 收敛项目的一句话定位和 README 顶部叙事：面向开源维护者的 Codex workflow/plugin layer，而不是泛泛的本地技能实验
