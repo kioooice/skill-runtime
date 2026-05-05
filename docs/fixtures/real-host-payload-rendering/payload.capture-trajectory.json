@@ -1,0 +1,203 @@
+{
+    "trajectory_path":  "D:\\02-Projects\\vibe\\.tmp_real_payload_demo\\trajectories\\real_payload_demo.json",
+    "task_id":  "real_payload_demo",
+    "session_id":  "real_payload_demo",
+    "captured":  true,
+    "recommended_next_action":  "distill_trajectory",
+    "recommended_reason":  "The observed task has been captured into a trajectory and is ready for distillation.",
+    "recommended_host_operation":  {
+                                       "type":  "mcp_tool_call",
+                                       "operation_id":  "distill_trajectory:054bed923ff1",
+                                       "tool_name":  "distill_trajectory",
+                                       "arguments":  {
+                                                         "trajectory_path":  "D:\\02-Projects\\vibe\\.tmp_real_payload_demo\\trajectories\\real_payload_demo.json"
+                                                     },
+                                       "source_ref":  "trajectory:real_payload_demo",
+                                       "display_label":  "Distill captured trajectory",
+                                       "effect_summary":  "Distill the captured trajectory into a staging skill draft.",
+                                       "argument_schema":  {
+                                                               "trajectory_path":  {
+                                                                                       "type":  "string",
+                                                                                       "required":  true,
+                                                                                       "prefilled":  true
+                                                                                   },
+                                                               "skill_name":  {
+                                                                                  "type":  "string",
+                                                                                  "required":  false,
+                                                                                  "prefilled":  false
+                                                                              }
+                                                           },
+                                       "risk_level":  "low",
+                                       "requires_confirmation":  false,
+                                       "confirmation_message":  null,
+                                       "operation_role":  "default",
+                                       "operation_group":  null,
+                                       "delivery_mode":  null,
+                                       "variant_role":  null
+                                   },
+    "available_host_operations":  [
+                                      {
+                                          "type":  "mcp_tool_call",
+                                          "operation_id":  "distill_trajectory:054bed923ff1",
+                                          "tool_name":  "distill_trajectory",
+                                          "arguments":  {
+                                                            "trajectory_path":  "D:\\02-Projects\\vibe\\.tmp_real_payload_demo\\trajectories\\real_payload_demo.json"
+                                                        },
+                                          "source_ref":  "trajectory:real_payload_demo",
+                                          "display_label":  "Distill captured trajectory",
+                                          "effect_summary":  "Distill the captured trajectory into a staging skill draft.",
+                                          "argument_schema":  {
+                                                                  "trajectory_path":  {
+                                                                                          "type":  "string",
+                                                                                          "required":  true,
+                                                                                          "prefilled":  true
+                                                                                      },
+                                                                  "skill_name":  {
+                                                                                     "type":  "string",
+                                                                                     "required":  false,
+                                                                                     "prefilled":  false
+                                                                                 }
+                                                              },
+                                          "risk_level":  "low",
+                                          "requires_confirmation":  false,
+                                          "confirmation_message":  null,
+                                          "operation_role":  "primary",
+                                          "operation_group":  null,
+                                          "delivery_mode":  null,
+                                          "variant_role":  null
+                                      },
+                                      {
+                                          "type":  "mcp_tool_call",
+                                          "operation_id":  "distill_and_promote_candidate:099f14fc84b7",
+                                          "tool_name":  "distill_and_promote_candidate",
+                                          "arguments":  {
+                                                            "trajectory_path":  "D:\\02-Projects\\vibe\\.tmp_real_payload_demo\\trajectories\\real_payload_demo.json",
+                                                            "register_trajectory":  false
+                                                        },
+                                          "source_ref":  "trajectory:real_payload_demo",
+                                          "display_label":  "Promote captured workflow",
+                                          "effect_summary":  "Distill, audit, and promote the captured trajectory into the active skill library.",
+                                          "argument_schema":  {
+                                                                  "trajectory_path":  {
+                                                                                          "type":  "string",
+                                                                                          "required":  false,
+                                                                                          "prefilled":  false
+                                                                                      },
+                                                                  "observed_task_path":  {
+                                                                                             "type":  "string",
+                                                                                             "required":  false,
+                                                                                             "prefilled":  false
+                                                                                         },
+                                                                  "observed_task":  {
+                                                                                        "type":  "object",
+                                                                                        "required":  false,
+                                                                                        "prefilled":  false
+                                                                                    },
+                                                                  "skill_name":  {
+                                                                                     "type":  "string",
+                                                                                     "required":  false,
+                                                                                     "prefilled":  false
+                                                                                 },
+                                                                  "register_trajectory":  {
+                                                                                              "type":  "boolean",
+                                                                                              "required":  false,
+                                                                                              "prefilled":  false
+                                                                                          },
+                                                                  "promotion_target":  {
+                                                                                           "type":  "string",
+                                                                                           "required":  false,
+                                                                                           "prefilled":  false
+                                                                                       },
+                                                                  "global_skills_dir":  {
+                                                                                            "type":  "string",
+                                                                                            "required":  false,
+                                                                                            "prefilled":  false
+                                                                                        },
+                                                                  "global_skill_name":  {
+                                                                                            "type":  "string",
+                                                                                            "required":  false,
+                                                                                            "prefilled":  false
+                                                                                        },
+                                                                  "overwrite_global_skill":  {
+                                                                                                 "type":  "boolean",
+                                                                                                 "required":  false,
+                                                                                                 "prefilled":  false
+                                                                                             }
+                                                              },
+                                          "risk_level":  "low",
+                                          "requires_confirmation":  false,
+                                          "confirmation_message":  null,
+                                          "operation_role":  "default",
+                                          "operation_group":  "captured_trajectory_promote",
+                                          "delivery_mode":  "path",
+                                          "variant_role":  "active"
+                                      },
+                                      {
+                                          "type":  "mcp_tool_call",
+                                          "operation_id":  "distill_and_promote_candidate:0c6cb665824f",
+                                          "tool_name":  "distill_and_promote_candidate",
+                                          "arguments":  {
+                                                            "trajectory_path":  "D:\\02-Projects\\vibe\\.tmp_real_payload_demo\\trajectories\\real_payload_demo.json",
+                                                            "register_trajectory":  false,
+                                                            "promotion_target":  "global_codex"
+                                                        },
+                                          "source_ref":  "trajectory:real_payload_demo",
+                                          "display_label":  "Promote captured workflow globally",
+                                          "effect_summary":  "Distill, audit, and promote the captured trajectory into the global Codex skill library.",
+                                          "argument_schema":  {
+                                                                  "trajectory_path":  {
+                                                                                          "type":  "string",
+                                                                                          "required":  false,
+                                                                                          "prefilled":  false
+                                                                                      },
+                                                                  "observed_task_path":  {
+                                                                                             "type":  "string",
+                                                                                             "required":  false,
+                                                                                             "prefilled":  false
+                                                                                         },
+                                                                  "observed_task":  {
+                                                                                        "type":  "object",
+                                                                                        "required":  false,
+                                                                                        "prefilled":  false
+                                                                                    },
+                                                                  "skill_name":  {
+                                                                                     "type":  "string",
+                                                                                     "required":  false,
+                                                                                     "prefilled":  false
+                                                                                 },
+                                                                  "register_trajectory":  {
+                                                                                              "type":  "boolean",
+                                                                                              "required":  false,
+                                                                                              "prefilled":  false
+                                                                                          },
+                                                                  "promotion_target":  {
+                                                                                           "type":  "string",
+                                                                                           "required":  false,
+                                                                                           "prefilled":  false
+                                                                                       },
+                                                                  "global_skills_dir":  {
+                                                                                            "type":  "string",
+                                                                                            "required":  false,
+                                                                                            "prefilled":  false
+                                                                                        },
+                                                                  "global_skill_name":  {
+                                                                                            "type":  "string",
+                                                                                            "required":  false,
+                                                                                            "prefilled":  false
+                                                                                        },
+                                                                  "overwrite_global_skill":  {
+                                                                                                 "type":  "boolean",
+                                                                                                 "required":  false,
+                                                                                                 "prefilled":  false
+                                                                                             }
+                                                              },
+                                          "risk_level":  "medium",
+                                          "requires_confirmation":  false,
+                                          "confirmation_message":  null,
+                                          "operation_role":  "default",
+                                          "operation_group":  "captured_trajectory_promote",
+                                          "delivery_mode":  "path",
+                                          "variant_role":  "global"
+                                      }
+                                  ]
+}

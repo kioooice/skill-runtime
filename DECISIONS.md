@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Treat Capture-Trajectory As The First Real Payload Validation Target
+
+**Decision**
+
+Use `capture-trajectory` as the first real CLI payload validation target for host recommendation rendering, and keep the current presentation helper unchanged after this run.
+
+**Reason**
+
+The command already appears in the README quick path, already returns top-level recommendation fields, and produces a clean governed follow-up case: `distill_trajectory`. The real run confirmed that the only meaningful interpretation risk remains the raw `requires_confirmation=false` field, and the current renderer already resolves that risk by keeping the non-automatic promotion boundary explicit.
+
+**Impact**
+
+- added checked-in real artifacts under `docs/fixtures/real-host-payload-rendering/`
+- added `docs/real-host-payload-rendering-report.md`
+- confirmed the current helper is sufficient for this real CLI path
+- no service recommendation logic changed
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Use Existing CLI JSON Output For Real Payload Rendering Validation
 
 **Decision**
