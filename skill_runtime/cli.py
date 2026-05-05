@@ -1,5 +1,6 @@
 import argparse
 import json
+import sys
 import webbrowser
 from dataclasses import asdict
 from pathlib import Path
@@ -19,6 +20,7 @@ from skill_runtime.dashboard.render import render_dashboard_html
 from skill_runtime.importers.local_skill_importer import SkillImportError, import_local_skill_to_staging
 from skill_runtime.observability.events import build_global_runtime_events_payload, build_runtime_events_payload
 from skill_runtime.platforms.export_plan import plan_platform_export
+from skill_runtime.presentation.recommendation import format_recommendation_text
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -94,6 +96,31 @@ def extract_rollback_request(payload: object) -> tuple[object, list[str] | None,
 def ok(data: dict) -> int:
     print(json.dumps({"status": "ok", "data": data}, ensure_ascii=False))
     return EXIT_OK
+
+
+def render_recommendation_text_for_payload(
+    payload: dict | None,
+    *,
+    recommendation_format: str | None,
+) -> str | None:
+    if recommendation_format != "text":
+        return None
+    if not isinstance(payload, dict):
+        return None
+    return format_recommendation_text(payload)
+
+
+def emit_recommendation_text_for_payload(
+    payload: dict | None,
+    *,
+    recommendation_format: str | None,
+) -> None:
+    text = render_recommendation_text_for_payload(
+        payload,
+        recommendation_format=recommendation_format,
+    )
+    if text:
+        print(text, file=sys.stderr)
 
 
 def error(
@@ -257,14 +284,18 @@ def cmd_capture_trajectory(args: argparse.Namespace) -> int:
             )
 
     try:
-        return ok(
-            service_for_args(args).capture_trajectory(
-                args.file,
-                observed_task=observed_task,
-                task_id=args.task_id,
-                session_id=args.session_id,
-            )
+        payload = service_for_args(args).capture_trajectory(
+            args.file,
+            observed_task=observed_task,
+            task_id=args.task_id,
+            session_id=args.session_id,
         )
+        exit_code = ok(payload)
+        emit_recommendation_text_for_payload(
+            payload,
+            recommendation_format=args.render_recommendation,
+        )
+        return exit_code
     except RuntimeServiceError as exc:
         exit_code = EXIT_NOT_FOUND if exc.code == "OBSERVED_TASK_NOT_FOUND" else EXIT_VALIDATION_ERROR
         return error(exc.message, exc.code, exc.details, exit_code=exit_code)
@@ -818,6 +849,11 @@ def build_parser() -> argparse.ArgumentParser:
     capture_parser.add_argument("--observed-task-json-file")
     capture_parser.add_argument("--task-id")
     capture_parser.add_argument("--session-id")
+    capture_parser.add_argument(
+        "--render-recommendation",
+        choices=("text",),
+        help="Optionally print operator-facing recommendation text to stderr while keeping JSON output on stdout.",
+    )
     capture_parser.set_defaults(func=cmd_capture_trajectory)
 
     reindex_parser = subparsers.add_parser("reindex")

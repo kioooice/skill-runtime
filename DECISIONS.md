@@ -2,6 +2,25 @@
 
 ## Decision Log
 
+### 2026-05-06 - Keep CLI Recommendation Rendering Opt-In And Separate From JSON Audit Output
+
+**Decision**
+
+Use an explicit `capture-trajectory --render-recommendation text` flag for the first real CLI/operator integration. Keep the normal JSON response unchanged on `stdout`, and print the human-readable recommendation text to `stderr`.
+
+**Reason**
+
+This is the smallest safe integration that matches the current placement decision. It gives operators an in-flow text surface without changing payload shape, without hiding the raw JSON audit payload, and without implying automatic execution of governed follow-up operations.
+
+**Impact**
+
+- added `docs/cli-recommendation-presentation-integration-plan.md`
+- `capture-trajectory` now accepts `--render-recommendation text`
+- default CLI JSON output remains unchanged
+- recommendation text is opt-in and presentation-only
+- this does not execute `recommended_host_operation`
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Start Real Host Integration With CLI Operator Text, Not Dashboard
 
 **Decision**

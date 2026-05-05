@@ -11,6 +11,88 @@ RECOMMENDATION_FIXTURE_DIR = ROOT / "docs" / "fixtures" / "recommendation-payloa
 
 
 class RuntimeRecommendationPresentationTestsMixin:
+    def test_cli_capture_trajectory_default_output_stays_json_only(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/skill_cli.py",
+                "--root",
+                str(self.runtime_root),
+                "capture-trajectory",
+                "--file",
+                "demo/maintainer_review_cleanup/observed_task.json",
+                "--task-id",
+                "cli_recommendation_default_output",
+                "--session-id",
+                "cli_recommendation_default_output",
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(0, result.returncode, msg=result.stderr or result.stdout)
+        payload = json.loads(result.stdout)
+        self.assertEqual("ok", payload["status"])
+        self.assertEqual("distill_trajectory", payload["data"]["recommended_next_action"])
+        self.assertEqual("", result.stderr)
+
+    def test_cli_capture_trajectory_render_recommendation_text_keeps_json_audit_output(self) -> None:
+        staging_dir = self.runtime_root / "skill_store" / "staging"
+        staging_before = sorted(
+            str(path.relative_to(self.runtime_root))
+            for path in staging_dir.rglob("*")
+            if path.is_file()
+        )
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/skill_cli.py",
+                "--root",
+                str(self.runtime_root),
+                "capture-trajectory",
+                "--file",
+                "demo/maintainer_review_cleanup/observed_task.json",
+                "--task-id",
+                "cli_recommendation_text_output",
+                "--session-id",
+                "cli_recommendation_text_output",
+                "--render-recommendation",
+                "text",
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(0, result.returncode, msg=result.stderr or result.stdout)
+        payload = json.loads(result.stdout)
+        self.assertEqual("ok", payload["status"])
+        self.assertEqual("distill_trajectory", payload["data"]["recommended_next_action"])
+        self.assertIn("Follow-up: Distill captured workflow", result.stderr)
+        self.assertIn("does not promote", result.stderr)
+        self.assertIn("not automatic promotion", result.stderr)
+
+        staging_after = sorted(
+            str(path.relative_to(self.runtime_root))
+            for path in staging_dir.rglob("*")
+            if path.is_file()
+        )
+        self.assertEqual(staging_before, staging_after)
+
+    def test_cli_recommendation_rendering_helper_handles_non_recommendation_payload(self) -> None:
+        from skill_runtime.cli import render_recommendation_text_for_payload
+
+        text = render_recommendation_text_for_payload(
+            {"captured": True, "trajectory_path": "trajectories/example.json"},
+            recommendation_format="text",
+        )
+
+        self.assertIsNotNone(text)
+        self.assertIn("Follow-up: No automatic follow-up", text)
+        self.assertIn("No host operation should run automatically", text)
+
     def test_recommendation_presentation_shows_observed_only_as_manual_observation(self) -> None:
         from skill_runtime.presentation.recommendation import format_recommendation_card
 
