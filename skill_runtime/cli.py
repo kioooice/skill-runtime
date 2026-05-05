@@ -19,6 +19,7 @@ from skill_runtime.dashboard.collector import (
     collect_dashboard_data,
     collect_global_dashboard_data,
     export_dashboard_operator_summary_data,
+    load_exported_dashboard_operator_summary,
 )
 from skill_runtime.dashboard.render import render_dashboard_html
 from skill_runtime.importers.local_skill_importer import SkillImportError, import_local_skill_to_staging
@@ -409,16 +410,62 @@ def _render_operator_summary_text(payload: dict) -> str:
     explanation = payload.get("non_automatic_explanation")
     if explanation:
         lines.extend(["", f"Boundary: {explanation}"])
+    dashboard_export = payload.get("dashboard_export")
+    if isinstance(dashboard_export, dict):
+        status = "available" if dashboard_export.get("available") else "unavailable"
+        freshness = dashboard_export.get("freshness_status")
+        detail = f"{status} ({freshness})" if freshness else status
+        lines.extend(["", f"Dashboard export: {detail}"])
+        if dashboard_export.get("output_path"):
+            lines.append(f"- Path: {dashboard_export['output_path']}")
+        if dashboard_export.get("generated_at"):
+            lines.append(f"- Generated at: {dashboard_export['generated_at']}")
     return "\n".join(lines)
 
 
+def _operator_summary_export_status(
+    root: Path,
+    *,
+    current_export: dict | None = None,
+    refreshed_payload: dict | None = None,
+    refreshed_output_path: Path | None = None,
+) -> dict:
+    default_output = root / ".skill_runtime" / "dashboard" / "operator-summary.json"
+    export_payload = current_export
+    if export_payload is None:
+        export_payload = load_exported_dashboard_operator_summary(root)
+    available = isinstance(export_payload, dict)
+    freshness = export_payload.get("freshness") if available else None
+    return {
+        "refreshed": bool(refreshed_payload),
+        "available": available,
+        "freshness_status": freshness.get("status") if isinstance(freshness, dict) else None,
+        "output_path": (
+            str((refreshed_output_path if isinstance(refreshed_output_path, Path) else default_output).resolve())
+            if available
+            else None
+        ),
+        "generated_at": export_payload.get("generated_at") if available else None,
+    }
+
+
 def cmd_operator_summary(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
     payload = service_for_args(args).operator_summary(
         active_limit=args.active_limit,
         staging_limit=args.staging_limit,
         trajectory_limit=args.trajectory_limit,
         audit_limit=args.audit_limit,
         event_limit=args.event_limit,
+    )
+    dashboard_export_payload = None
+    dashboard_export_output_path = None
+    if getattr(args, "refresh_dashboard_export", False):
+        dashboard_export_payload, dashboard_export_output_path = export_dashboard_operator_summary_data(root)
+    payload["dashboard_export"] = _operator_summary_export_status(
+        root,
+        refreshed_payload=dashboard_export_payload,
+        refreshed_output_path=dashboard_export_output_path,
     )
     if args.format == "text":
         print(_render_operator_summary_text(payload))
@@ -779,7 +826,6 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     global_view = bool(getattr(args, "global_view", False))
     default_output = root / ".skill_runtime" / ("global-dashboard.html" if global_view else "dashboard.html")
-    default_operator_summary_output = root / ".skill_runtime" / "dashboard" / "operator-summary.json"
     output_path = Path(args.output) if args.output else default_output
     if not output_path.is_absolute():
         output_path = root / output_path
@@ -795,6 +841,12 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
     output_path.write_text(render_dashboard_html(data), encoding="utf-8")
     dashboard_url = output_path.resolve().as_uri()
     opened = bool(webbrowser.open(dashboard_url)) if getattr(args, "open", False) else False
+    operator_summary_status = _operator_summary_export_status(
+        root,
+        current_export=data.get("operator_summary") if isinstance(data.get("operator_summary"), dict) else None,
+        refreshed_payload=operator_summary_payload,
+        refreshed_output_path=operator_summary_output_path,
+    )
     payload = {
         "output_path": str(output_path.resolve()),
         "dashboard_url": dashboard_url,
@@ -802,27 +854,11 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
         "root": str(root),
         "global": global_view,
         "event_count": len(data["global"]["events"]) if global_view else len(data["events"]),
-        "operator_summary_refreshed": bool(operator_summary_payload),
-        "operator_summary_available": isinstance(data.get("operator_summary"), dict),
-        "operator_summary_freshness_status": (
-            (
-                data["operator_summary"].get("freshness", {}).get("status")
-                if isinstance(data["operator_summary"].get("freshness"), dict)
-                else None
-            )
-            if isinstance(data.get("operator_summary"), dict)
-            else None
-        ),
-        "operator_summary_output_path": (
-            str(
-                (operator_summary_output_path if isinstance(operator_summary_output_path, Path) else default_operator_summary_output).resolve()
-            )
-            if isinstance(data.get("operator_summary"), dict)
-            else None
-        ),
-        "operator_summary_generated_at": (
-            data["operator_summary"].get("generated_at") if isinstance(data.get("operator_summary"), dict) else None
-        ),
+        "operator_summary_refreshed": operator_summary_status["refreshed"],
+        "operator_summary_available": operator_summary_status["available"],
+        "operator_summary_freshness_status": operator_summary_status["freshness_status"],
+        "operator_summary_output_path": operator_summary_status["output_path"],
+        "operator_summary_generated_at": operator_summary_status["generated_at"],
     }
     if global_view:
         payload["project_count"] = data["global"]["overview"]["project_count"]
@@ -1005,6 +1041,11 @@ def build_parser() -> argparse.ArgumentParser:
     operator_summary_parser.add_argument("--trajectory-limit", type=int, default=20)
     operator_summary_parser.add_argument("--audit-limit", type=int, default=10)
     operator_summary_parser.add_argument("--event-limit", type=int, default=10)
+    operator_summary_parser.add_argument(
+        "--refresh-dashboard-export",
+        action="store_true",
+        help="Refresh the stable dashboard operator-summary export before returning the summary",
+    )
     operator_summary_parser.set_defaults(func=cmd_operator_summary)
 
     dashboard_parser = subparsers.add_parser("dashboard")

@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Operator Summary Should Be The Summary-First Inspect And Refresh Entry
+
+**Decision**
+
+Keep `operator-summary` as the summary-first local operator entry, and extend it with an explicit `--refresh-dashboard-export` flag plus current export-status reporting. Use `dashboard` for visual inspection and `runtime-events` for raw event evidence.
+
+**Reason**
+
+After `dashboard` gained explicit refresh and current export-status reporting, the remaining plan gap was role clarity. Operators still had to infer whether summary inspection should start from `operator-summary` or from the dashboard command family. A narrow summary-first path closes that ambiguity: inspect with `operator-summary`, refresh the stable export there when no HTML is needed, render with `dashboard` when visual context is needed, and use `runtime-events` only for event-level evidence.
+
+**Impact**
+
+- `operator-summary` now reports current dashboard export state under `dashboard_export`
+- `operator-summary --refresh-dashboard-export` refreshes `.skill_runtime/dashboard/operator-summary.json` without rendering HTML
+- the current export-status fields are aligned across the summary and dashboard command families: availability, freshness, path, generation time, and whether refresh happened
+- README, Codex integration docs, and a dedicated operator-visibility runbook now describe the intended roles of `operator-summary`, `dashboard`, and `runtime-events`
+- this closes the current operator-visibility mainline without adding lifecycle execution, evaluator runs, or a new control-plane surface
+
 ### 2026-05-06 - Dashboard CLI Should Always Report Current Operator Summary Status, Even Without Refresh
 
 **Decision**

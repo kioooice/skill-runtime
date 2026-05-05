@@ -44,6 +44,10 @@ def collect_dashboard_data(root: str | Path, *, event_limit: int = 50) -> dict[s
     }
 
 
+def load_exported_dashboard_operator_summary(root: str | Path) -> dict[str, Any] | None:
+    return _load_exported_operator_summary(Path(root).resolve(), diagnostics=None)
+
+
 def collect_dashboard_operator_summary_data(root: str | Path) -> dict[str, Any]:
     runtime_root = Path(root).resolve()
     summary = RuntimeService(runtime_root).operator_summary()

@@ -581,6 +581,18 @@ python -m skill_runtime.cli dashboard
 python -m skill_runtime.cli dashboard --open
 ```
 
+查看当前本地 operator summary，并同时看到当前 dashboard 摘要导出状态：
+
+```bash
+python -m skill_runtime.cli operator-summary
+```
+
+只刷新稳定的 dashboard 摘要导出、不生成 HTML：
+
+```bash
+python -m skill_runtime.cli operator-summary --refresh-dashboard-export
+```
+
 如果希望在生成前顺手刷新稳定的 operator-summary 导出：
 
 ```bash
@@ -602,6 +614,8 @@ python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open
 ```
 
 全局面板默认输出到 `.skill_runtime/global-dashboard.html`。它和普通面板是同一套界面：仍然可以看当前项目的技能树、触发日志和治理快照，同时额外增加“全局项目”和“全局日志”两页，用来回答“其他工作区有没有触发过 runtime lane”。它只扫描指定目录下一层项目里的 `.skill_runtime/runtime_lane_events.jsonl`。如果不传 `--scan-root`，默认扫描当前 runtime root 的父目录。
+
+这条最窄的 operator 可见性路径已经收成 [docs/operator-visibility-runbook.md](./docs/operator-visibility-runbook.md)。
 
 运行本地快验：
 

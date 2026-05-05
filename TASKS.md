@@ -2,13 +2,15 @@
 
 ## Current Focus
 
+- 最新 operator visibility 主线收口：`operator-summary` 现在会在 JSON 返回里附带 `dashboard_export`，统一暴露当前稳定摘要导出的 `available`、`freshness_status`、`output_path`、`generated_at` 和 `refreshed`；同时新增 `operator-summary --refresh-dashboard-export`，用于“只刷新稳定导出、不生成 HTML”。当前三条入口角色已经明确：`operator-summary` 负责摘要 inspect/refresh，`dashboard` 负责可视化只读观察，`runtime-events` 负责原始事件流查看。README、Codex integration 文档和 `docs/operator-visibility-runbook.md` 已同步这条标准路径。当前仍然不执行 evaluator、不执行 host operation，也没有任何证据支持扩大 `default-in`。
+
 - 最新主线状态面：`dashboard` / `dashboard --global` 现在会在 CLI payload 中返回 `operator_summary_available`、`operator_summary_freshness_status`、`operator_summary_output_path`、`operator_summary_generated_at` 和 `operator_summary_refreshed`。当前 operator 不打开 HTML 也能判断本地稳定摘要是否存在、是否新鲜、文件在哪里、这次是否刚刷新。默认行为仍然无副作用：不带 refresh flag 不生成导出；已有导出时只读报告状态。当前仍然不执行 evaluator、不执行 host operation、不扩大 control-plane 边界，也没有任何证据支持扩大 `default-in`。
 
 - 最新主线 refresh 入口：`dashboard` / `dashboard --global` 现在支持显式 `--refresh-operator-summary`，会在渲染 HTML 前刷新稳定的 operator-summary 导出，并把导出路径与生成时间返回给 CLI 调用方。默认行为保持不变：不带该 flag 时不生成、不刷新导出。当前这仍然只处理稳定摘要导出入口，不执行 evaluator、不执行 host operation、不扩大 control-plane 边界，也没有任何证据支持扩大 `default-in`。
 
 - 最新 dashboard 文案收口：现有 read-only dashboard 第一屏已经从“内部术语”收口到更专业、克制的产品语言。当前导航与页头统一为 `运行状态总览` / `总览` / `可复用流程` / `待审核项` / `近期记录` / `系统状态` / `数据来源`；overview 指标为 `现有流程` / `自动处理` / `观察中` / `常规处理`。`operator-summary` 也已收口为 `系统摘要`、`现有流程`、`待审核候选`、`任务轨迹`、`建议操作`，并显示 `提供器状态`、`基础检索状态`、`工作流检索状态`。当前仍然只消费稳定字段，不绑定 full item lists，不执行 host operation，不 promote/apply，也没有任何证据支持扩大 `default-in`。
 
-- 下一步主线：判断 `dashboard` / `global-dashboard` 的 `operator-summary` export 刷新入口是否要更顺手；重点是 operator 闭环，不是继续扩页面字段，也不是让 dashboard 执行 evaluator 或 lifecycle operation。当前仍然没有任何证据支持扩大 `default-in`。
+- 下一步主线：这条 operator visibility 主线已经完成，下一步不该继续扩 dashboard 字段、再造第四个入口，或让 dashboard 执行 evaluator / lifecycle operation。更合理的是先做真实使用验证，判断现有 `operator-summary` / `dashboard` / `runtime-events` 三条路径是否已经足够。当前仍然没有任何证据支持扩大 `default-in`。
 
 - 最新 workflow correction：已记录两条需要复用的流程 guard。其一，在当前 PowerShell 环境下不要再用 `&&` 串 shell 命令，顺序命令改用 `;` 或拆成独立 tool call；其二，长时验证命令超时只能先记为 `timed out / not yet verified`，必须先放宽超时或单独重跑，再判断是否失败。下一次触发点分别是 commit/push shell 流程，以及 `python -m unittest tests.test_runtime_fast -v` 这类已知接近数分钟的验证。当前仍然没有任何证据支持扩大 `default-in`。
 

@@ -35,6 +35,7 @@ class RuntimeOperatorSummaryTestsMixin:
         self.assertIn("trajectories", payload["data"])
         self.assertIn("safe_next_steps", payload["data"])
         self.assertIn("intentionally_not_automatic", payload["data"])
+        self.assertIn("dashboard_export", payload["data"])
 
     def test_operator_summary_marks_gate_status_unavailable_without_persisted_operator_status(self) -> None:
         payload = self._run_cli(
@@ -171,6 +172,140 @@ class RuntimeOperatorSummaryTestsMixin:
         self.assertIn("provider_quality: available", result.stdout)
         self.assertIn("fixture_count=8", result.stdout)
         self.assertIn("matched=8", result.stdout)
+
+    def test_operator_summary_reports_dashboard_export_status_without_refresh(self) -> None:
+        export_path = self.runtime_root / ".skill_runtime" / "dashboard" / "operator-summary.json"
+        export_path.parent.mkdir(parents=True, exist_ok=True)
+        self._write_json_file(
+            export_path,
+            {
+                "generated_at": "2026-05-06T12:00:00+00:00",
+                "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 86400},
+                "active_skills": {"count": 14},
+                "staging_candidates": {"count": 20},
+                "trajectories": {"count": 20},
+                "recommended_host_operations": {"count": 0},
+                "quality_gates": {
+                    "provider_quality": {
+                        "label": "provider_quality",
+                        "status": "available",
+                        "generated_at": "2026-05-06T10:00:00+00:00",
+                        "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                    },
+                    "utility_search_quality": {
+                        "label": "utility_search_quality",
+                        "status": "available",
+                        "generated_at": "2026-05-06T10:01:00+00:00",
+                        "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                    },
+                    "workflow_search_quality": {
+                        "label": "workflow_search_quality",
+                        "status": "available",
+                        "generated_at": "2026-05-06T10:02:00+00:00",
+                        "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                    },
+                },
+                "safe_next_steps": [],
+                "intentionally_not_automatic": [],
+                "missing_or_unavailable": [],
+                "non_automatic_explanation": "read-only summary",
+            },
+        )
+
+        payload = self._run_cli(
+            "operator-summary",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        dashboard_export = payload["data"]["dashboard_export"]
+        self.assertFalse(dashboard_export["refreshed"])
+        self.assertTrue(dashboard_export["available"])
+        self.assertEqual("fresh", dashboard_export["freshness_status"])
+        self.assertEqual(str(export_path.resolve()), dashboard_export["output_path"])
+        self.assertEqual("2026-05-06T12:00:00+00:00", dashboard_export["generated_at"])
+
+    def test_operator_summary_reports_missing_dashboard_export_honestly(self) -> None:
+        payload = self._run_cli(
+            "operator-summary",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        dashboard_export = payload["data"]["dashboard_export"]
+        self.assertFalse(dashboard_export["refreshed"])
+        self.assertFalse(dashboard_export["available"])
+        self.assertIsNone(dashboard_export["freshness_status"])
+        self.assertIsNone(dashboard_export["output_path"])
+        self.assertIsNone(dashboard_export["generated_at"])
+
+    def test_operator_summary_can_refresh_dashboard_export_without_rendering_html(self) -> None:
+        export_path = self.runtime_root / ".skill_runtime" / "dashboard" / "operator-summary.json"
+
+        payload = self._run_cli(
+            "operator-summary",
+            "--refresh-dashboard-export",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        dashboard_export = payload["data"]["dashboard_export"]
+        self.assertTrue(dashboard_export["refreshed"])
+        self.assertTrue(dashboard_export["available"])
+        self.assertEqual("fresh", dashboard_export["freshness_status"])
+        self.assertEqual(str(export_path.resolve()), dashboard_export["output_path"])
+        self.assertTrue(export_path.exists())
+
+    def test_operator_summary_text_reports_dashboard_export_status(self) -> None:
+        export_path = self.runtime_root / ".skill_runtime" / "dashboard" / "operator-summary.json"
+        export_path.parent.mkdir(parents=True, exist_ok=True)
+        self._write_json_file(
+            export_path,
+            {
+                "generated_at": "2026-05-06T12:00:00+00:00",
+                "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 86400},
+                "active_skills": {"count": 14},
+                "staging_candidates": {"count": 20},
+                "trajectories": {"count": 20},
+                "recommended_host_operations": {"count": 0},
+                "quality_gates": {
+                    "provider_quality": {
+                        "label": "provider_quality",
+                        "status": "available",
+                        "generated_at": "2026-05-06T10:00:00+00:00",
+                        "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                    },
+                    "utility_search_quality": {
+                        "label": "utility_search_quality",
+                        "status": "available",
+                        "generated_at": "2026-05-06T10:01:00+00:00",
+                        "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                    },
+                    "workflow_search_quality": {
+                        "label": "workflow_search_quality",
+                        "status": "available",
+                        "generated_at": "2026-05-06T10:02:00+00:00",
+                        "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                    },
+                },
+                "safe_next_steps": [],
+                "intentionally_not_automatic": [],
+                "missing_or_unavailable": [],
+                "non_automatic_explanation": "read-only summary",
+            },
+        )
+
+        result = self._run_cli(
+            "operator-summary",
+            "--format",
+            "text",
+            root=self.runtime_root,
+            expect_json=False,
+        )
+
+        self.assertIn("Dashboard export:", result.stdout)
+        self.assertIn("available (fresh)", result.stdout)
+        self.assertIn(str(export_path.resolve()), result.stdout)
 
     def test_operator_summary_cli_lists_active_skills(self) -> None:
         payload = self._run_cli(

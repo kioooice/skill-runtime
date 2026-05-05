@@ -143,6 +143,8 @@ events, `used / entered / skipped` counts, and learning follow-up fields such as
 Codex MCP hosts can read the same data with the read-only `runtime_events` tool.
 Use `global_events=true` and `scan_roots=[...]` to aggregate sibling project event logs.
 
+For the operator-facing visibility split between `operator-summary`, `dashboard`, and `runtime-events`, use [operator-visibility-runbook.md](./operator-visibility-runbook.md).
+
 For complex Codex-facing CLI calls on PowerShell, prefer file-based JSON inputs over
 large inline JSON strings:
 

@@ -10,6 +10,12 @@ Primary command:
 python -m skill_runtime.cli --root . operator-summary
 ```
 
+Optional export refresh:
+
+```bash
+python -m skill_runtime.cli --root . operator-summary --refresh-dashboard-export
+```
+
 It is designed to be a stable data source for future operator surfaces, including the existing read-only dashboard, without requiring the dashboard to depend on ad hoc or unstable runtime files directly.
 
 ## Dashboard Export Subset
@@ -40,6 +46,7 @@ The export is intentionally narrower than the full CLI/service `operator-summary
 - `intentionally_not_automatic`
 - `missing_or_unavailable`
 - `non_automatic_explanation`
+- `dashboard_export`
 
 ## Stable v1 Fields
 
@@ -65,6 +72,15 @@ These fields should be treated as stable for v1 consumers:
 - `intentionally_not_automatic`
 - `missing_or_unavailable`
 - `non_automatic_explanation`
+- `dashboard_export`
+
+Stable `dashboard_export` fields are:
+
+- `refreshed`
+- `available`
+- `freshness_status`
+- `output_path`
+- `generated_at`
 
 For each persisted gate-status object under `quality_gates.*`, these fields are stable:
 
@@ -227,6 +243,8 @@ It will not:
 - promote a global Codex skill
 - apply an evolution candidate
 - archive duplicate candidates
+
+Refreshing the dashboard export does not change that boundary. `--refresh-dashboard-export` writes only the stable `.skill_runtime/dashboard/operator-summary.json` snapshot for downstream read-only consumers.
 
 It is a visibility surface, not a lifecycle executor.
 

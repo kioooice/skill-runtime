@@ -564,6 +564,18 @@ Generate the local read-only dashboard:
 python -m skill_runtime.cli dashboard --open
 ```
 
+Inspect the current local operator summary and the current dashboard export status:
+
+```bash
+python -m skill_runtime.cli operator-summary
+```
+
+Refresh the stable dashboard export without rendering HTML:
+
+```bash
+python -m skill_runtime.cli operator-summary --refresh-dashboard-export
+```
+
 Refresh the stable operator-summary export before rendering:
 
 ```bash
@@ -586,6 +598,8 @@ python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects -
 ```
 
 `runtime-events` returns recent events, `used / entered / skipped` counts, and finalizer follow-up fields such as `recommended_next_action` and available operation labels.
+
+The narrow operator visibility path is documented in [docs/operator-visibility-runbook.md](./docs/operator-visibility-runbook.md).
 
 Run the fast local validation suite:
 

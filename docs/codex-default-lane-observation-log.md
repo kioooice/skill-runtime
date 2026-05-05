@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Operator-summary became the summary-first inspect and refresh entry
+
+- Task type: operator visibility mainline closure
+- Classified as: default-out / skipped
+- What happened: extended `operator-summary` so it now reports current dashboard export status and can explicitly refresh `.skill_runtime/dashboard/operator-summary.json` without rendering HTML; also documented the three-way split between `operator-summary`, `dashboard`, and `runtime-events`
+- Did the behavior feel correct: yes; the lane stayed out of the way while the product surface became easier to operate without creating new lifecycle behavior
+- Did the lane help: yes, because the skip result kept the work framed as read-only operator ergonomics rather than evidence for broader automatic runtime entry
+- Follow-up: do real usage validation before adding any new operator entry surface
+
 ### 2026-05-06 - Operator-summary freshness semantics for collector integration
 
 - Task type: operator workbench collector/data-layer hardening
