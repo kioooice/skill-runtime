@@ -2,6 +2,32 @@
 
 ## Decision Log
 
+### 2026-05-06 - Keep Host Recommendation Presentation Stable After First Operator Dogfood
+
+**Decision**
+
+Do not expand the current recommendation presentation helper after the first host/operator dogfood round. Treat the current formatter, fixture demo, payload renderer CLI, and checked-in payload fixtures as sufficient for now.
+
+**Reason**
+
+The first dogfood round covered the three main governed follow-up families that matter for host integration:
+
+- `background_hint -> execute_skill` with missing inputs
+- `new_skill_candidate -> distill_trajectory`
+- `improve_existing_skill_candidate -> review_evolution_candidate`
+
+Those payloads rendered cleanly through the current formatter and renderer. The operator could understand the next step and the governance boundary in each case, and the output kept the no-automatic-execution, no-automatic-promotion, and no-automatic-apply boundaries visible. No blocking ambiguity appeared that justified changing helper behavior.
+
+**Impact**
+
+- added `docs/host-integration-dogfood-plan.md`
+- added checked-in payload fixtures under `docs/fixtures/recommendation-payloads/`
+- added `scripts/dogfood_recommendation_presentation.py`
+- added `docs/host-integration-dogfood-report.md`
+- presentation helper remains unchanged
+- next recommended slice is real host integration dogfood / operator validation
+- this does not justify widening `default-in`
+
 ### 2026-05-06 - Split Workflow Search Quality From The Utility Fixture Baseline
 
 **Decision**

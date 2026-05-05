@@ -1,0 +1,64 @@
+{
+  "request": {
+    "task_description": "Capture a concrete successful workflow that may be reusable later.",
+    "working_directory": "D:\\02-Projects\\vibe",
+    "known_inputs": {},
+    "expected_outputs": [],
+    "risk_level": "low",
+    "task_kind": "development_workflow",
+    "allow_silent_reuse": false,
+    "allow_learning": false
+  },
+  "reuse_decision": {
+    "decision": "skip",
+    "reason": "no reusable skill should be executed before governed follow-up",
+    "skill_name": null,
+    "search_query": null,
+    "search_score": null,
+    "missing_inputs": []
+  },
+  "learning_decision": {
+    "decision": "new_skill_candidate",
+    "reason": "task succeeded with a concrete under-covered workflow pattern",
+    "related_skill_name": null,
+    "should_capture_trajectory": true,
+    "should_distill_now": false
+  },
+  "task_classification": {
+    "bucket": "default-out",
+    "reason": "fixture payload for host/operator dogfood",
+    "matched_signals": [
+      "non-workflow"
+    ]
+  },
+  "runtime_lane_status": "skipped",
+  "runtime_lane_reason": "fixture payload for host/operator dogfood",
+  "selected_skill_name": null,
+  "selected_skill_args": {},
+  "execution_payload": {
+    "status": "completed"
+  },
+  "learning_capture_payload": {
+    "trajectory_path": "trajectories/example_task.json"
+  },
+  "recommended_next_action": "distill_trajectory",
+  "recommended_reason": "The successful workflow should be distilled into a staging candidate before any later audit or promotion step.",
+  "recommended_host_operation": {
+    "tool_name": "distill_trajectory",
+    "display_label": "Distill trajectory",
+    "effect_summary": "Create a staging candidate from the captured trajectory.",
+    "risk_level": "low",
+    "requires_confirmation": false,
+    "arguments": {
+      "trajectory_path": "trajectories/example_task.json"
+    }
+  },
+  "available_host_operations": [
+    {
+      "tool_name": "distill_trajectory",
+      "display_label": "Distill trajectory",
+      "risk_level": "low",
+      "requires_confirmation": false
+    }
+  ]
+}

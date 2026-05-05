@@ -1,0 +1,74 @@
+{
+  "request": {
+    "task_description": "Finalize a successful task that exposed a concrete gap in an existing skill.",
+    "working_directory": "D:\\02-Projects\\vibe",
+    "known_inputs": {},
+    "expected_outputs": [],
+    "risk_level": "low",
+    "task_kind": "development_workflow",
+    "allow_silent_reuse": false,
+    "allow_learning": false
+  },
+  "reuse_decision": {
+    "decision": "skip",
+    "reason": "no reusable skill should be executed at this stage",
+    "skill_name": null,
+    "search_query": null,
+    "search_score": null,
+    "missing_inputs": []
+  },
+  "learning_decision": {
+    "decision": "improve_existing_skill_candidate",
+    "reason": "task exposed a concrete existing-skill gap",
+    "related_skill_name": "session_handoff_maintenance",
+    "should_capture_trajectory": false,
+    "should_distill_now": false
+  },
+  "task_classification": {
+    "bucket": "default-out",
+    "reason": "fixture payload for host/operator dogfood",
+    "matched_signals": [
+      "non-workflow"
+    ]
+  },
+  "runtime_lane_status": "skipped",
+  "runtime_lane_reason": "fixture payload for host/operator dogfood",
+  "selected_skill_name": null,
+  "selected_skill_args": {},
+  "execution_payload": {
+    "status": "completed",
+    "skill_gap": {
+      "evidence": [
+        "The existing skill omitted a required review note grouping step."
+      ],
+      "proposed_changes": [
+        "Add explicit grouping for required fixes versus follow-up items."
+      ]
+    }
+  },
+  "learning_capture_payload": {
+    "candidate": "evolution/candidate.json",
+    "evolution_candidate_path": "evolution/candidate.json"
+  },
+  "recommended_next_action": "review_evolution_candidate",
+  "recommended_reason": "The task exposed a concrete existing-skill gap that should be reviewed manually before any later apply operation.",
+  "recommended_host_operation": {
+    "tool_name": "review_evolution_candidate",
+    "display_label": "Review evolution candidate",
+    "effect_summary": "Open a manual review of the proposed change to the existing skill.",
+    "risk_level": "low",
+    "requires_confirmation": true,
+    "confirmation_message": "Review before editing any global skill.",
+    "arguments": {
+      "candidate": "evolution/candidate.json"
+    }
+  },
+  "available_host_operations": [
+    {
+      "tool_name": "review_evolution_candidate",
+      "display_label": "Review evolution candidate",
+      "risk_level": "low",
+      "requires_confirmation": true
+    }
+  ]
+}

@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
+RECOMMENDATION_FIXTURE_DIR = ROOT / "docs" / "fixtures" / "recommendation-payloads"
 
 
 class RuntimeRecommendationPresentationTestsMixin:
@@ -274,6 +275,51 @@ class RuntimeRecommendationPresentationTestsMixin:
             self.assertNotEqual(0, result.returncode)
             self.assertIn("Invalid JSON", result.stderr)
             self.assertEqual(original, payload_path.read_text(encoding="utf-8"))
+
+    def test_dogfood_recommendation_presentation_script_outputs_fixture_scenarios(self) -> None:
+        result = subprocess.run(
+            [sys.executable, "scripts/dogfood_recommendation_presentation.py"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        payload = json.loads(result.stdout)
+        scenario_ids = [item["scenario_id"] for item in payload["scenarios"]]
+
+        self.assertEqual(
+            [
+                "background_hint_execute_skill_missing_inputs",
+                "improve_existing_skill_candidate_review_evolution",
+                "new_skill_candidate_distill_trajectory",
+            ],
+            scenario_ids,
+        )
+        self.assertEqual(3, payload["summary"]["scenario_count"])
+        self.assertIn("not automatic execution", result.stdout)
+        self.assertIn("does not promote", result.stdout)
+        self.assertIn("does not apply", result.stdout)
+
+    def test_dogfood_recommendation_presentation_script_does_not_modify_fixture_payloads(self) -> None:
+        originals = {
+            path.name: path.read_text(encoding="utf-8")
+            for path in sorted(RECOMMENDATION_FIXTURE_DIR.glob("*.json"))
+        }
+
+        subprocess.run(
+            [sys.executable, "scripts/dogfood_recommendation_presentation.py"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        after = {
+            path.name: path.read_text(encoding="utf-8")
+            for path in sorted(RECOMMENDATION_FIXTURE_DIR.glob("*.json"))
+        }
+        self.assertEqual(originals, after)
 
 
 def _sample_recommendation_payload() -> dict[str, object]:
