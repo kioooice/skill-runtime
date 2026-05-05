@@ -3,101 +3,92 @@
 ## Runtime Test Tiers
 
 - Fast local validation: `python -m unittest tests.test_runtime_fast -v`
+- Runtime contract checks:
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
 - Full slow runtime suite: `python -m unittest tests.test_runtime -v`
 - Slow-test profiling: `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 20`
 
-Use the fast suite for routine development feedback. Use the full suite before release-level changes or when broad runtime generation behavior may be affected. The full suite currently takes about 9 minutes on the Windows development machine.
+Use the fast suite for routine development feedback. Use the two contract scripts when touching runtime/MCP boundaries, recommendation payloads, docs that claim contract shape, or orchestration layering. Use the full suite before release-level changes or when broad runtime behavior may be affected.
 
-Current slow-test profile from `python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 10`:
+## Current Suite Status
 
-- Full suite result after adding `directory_text_cleanup_dogfood`: 366 tests passed in about 9 minutes.
-- Slowest single test: `test_check_runtime_contracts_script_passes`, about 11.5 seconds after contract sandbox copy optimization.
-- Other slow areas: MCP/provider dogfood tests, generated skill rule combinations, distill coverage reporting, provenance/governance flows, and CLI rollback execution.
-- Fast suite result after adding `directory_text_cleanup_dogfood`: 20 tests passed in about 27 seconds.
-- Fast suite provider dogfood uses the repository demo providers under `examples/providers/`, not ad-hoc scripts generated inside the test.
-- Fast suite DeepSeek provider checks use a local fake DeepSeek API server, not a real API key or real network call.
-- DeepSeek live smoke with the real API is not part of the automated suite; latest manual result passed the full generate -> audit -> promote -> execute loop through `scripts/smoke_deepseek_provider_loop.py`.
-- DeepSeek fallback provider tests cover local quality gates for low-quality candidates, missing schema kwargs, invalid runtime tool signatures, double-escaped code strings, one-pass repair, and repair-disabled behavior.
-- Manual live DeepSeek loop smoke: `python scripts/smoke_deepseek_provider_loop.py`; this requires `DEEPSEEK_API_KEY`, uses a temporary sandbox, and verifies generate -> audit -> promote -> execute.
-- Search quality baseline: `python scripts/evaluate_search_quality.py`; this checks current active skills against a small expected-query set and is also covered by the fast suite. Current baseline: 13 checks passed.
+- Fast suite test count: `146`
+- Full suite test count: `493`
+- Last verified fast command: `python -m unittest tests.test_runtime_fast -v`
+- Last verified contract commands:
+  - `python scripts/check_mcp_architecture.py`
+  - `python scripts/check_runtime_contracts.py`
+- Last known full-suite description: the suite remains the broad regression gate and is materially slower than the fast suite; do not use it as the default loop for small changes.
 
-## CLI
+## Recent Validation Commands
 
-- `search` returns an empty list when the index is empty
-- `distill` rejects invalid trajectory files
-- `audit` rejects missing skill files
-- `promote` rejects skills without a passing audit
-- `execute` rejects missing skills
-- `execute` accepts `--args-file` for shell-safe invocation
+Most recent recommendation-dogfood validation pass:
 
-## Trajectory
+```text
+python scripts/check_mcp_architecture.py
+python scripts/check_runtime_contracts.py
+python -m unittest tests.test_runtime_fast -v
+```
 
-- valid trajectories can be saved and loaded
-- invalid trajectories are rejected
+## Fast Suite Coverage Highlights
 
-## Audit
+- Codex task classification boundaries:
+  - `default-in`
+  - `guarded-in`
+  - `default-out`
+- Silent reuse boundaries:
+  - complete strong match -> `auto_execute`
+  - missing required inputs -> `background_hint`
+  - scope mismatch -> `background_hint`
+  - expected-output mismatch -> `background_hint`
+- Learning decision boundaries:
+  - clean existing-skill reuse -> `skip`
+  - weak existing-skill gap -> `observed_only`
+  - concrete new workflow output -> `new_skill_candidate`
+  - explicit existing-skill gap -> `improve_existing_skill_candidate`
+- Recommendation contract propagation:
+  - `background_hint -> execute_skill`
+  - `new_skill_candidate -> distill_trajectory`
+  - `improve_existing_skill_candidate -> review_evolution_candidate`
+- Evolution lifecycle:
+  - `candidate -> review -> apply -> rollback`
+  - byte-preserving rollback for BOM-backed skill files
+- Dashboard regression coverage for:
+  - trigger log balancing
+  - evolution lifecycle detail panel
+  - governance snapshot wording
+  - grouped workflow library views
 
-- detects `shell=True`
-- detects `os.system`
-- detects hardcoded absolute paths
-- detects missing docstrings
-
-## Promotion
-
-- blocks missing audit reports
-- blocks `needs_fix`
-- accepts `passed`
-
-## Retrieval
-
-- `reindex` rebuilds `skill_store/index.json`
-- `search` returns `score` and `why_matched`
-
-## MCP Contract Architecture
+## Contract Architecture Expectations
 
 - `build_mcp_server` can be imported and construct a server without starting a stdio loop
 - `skill_runtime/mcp/source_refs.py` does not import other `skill_runtime.mcp` modules
 - `operation_builders.py` only depends on `source_refs.py`
 - `recommendation_builders.py` only depends on `operation_builders.py` and `source_refs.py`
 - `governance_actions.py` only depends on `operation_builders.py` and `source_refs.py`
-- internal MCP split modules explicitly declare literal `__all__` export lists
+- modules outside `skill_runtime/mcp/` import MCP helpers through `skill_runtime.mcp.host_operations` or `skill_runtime.mcp.server`
 - `host_operations.py` remains the compatibility export surface
 - `host_operations.py` stays a pure re-export facade with no implementation logic
 - `host_operations.__all__` matches the combined public exports from the internal MCP modules
-- `docs/mcp-integration.md` stays aligned with the current MCP module layout and maintenance command
-- `docs/codex-integration.md` stays aligned with the Codex-facing MCP contract surface
-- `README.md` and `README.zh-CN.md` stay aligned with the runtime contract guard entry points
-- `.github/workflows/runtime-contracts.yml` stays aligned with the runtime contract checks and doc coverage
-- modules outside `skill_runtime/mcp/` do not import internal MCP submodules directly; they use `skill_runtime.mcp.host_operations` or `skill_runtime.mcp.server`
-- contract check sandboxes default to empty runtime-history directories instead of copying old `observed_tasks` and `output`
-- `python scripts/check_mcp_architecture.py` passes as a standalone architecture check
-- `python scripts/check_runtime_contracts.py` passes as a standalone payload contract check
-- `.github/workflows/runtime-contracts.yml` runs both the architecture check and `tests.test_runtime`
+- `README.md`, `README.zh-CN.md`, and runtime contract docs stay aligned with the current contract entry points
 
-## Runtime Layer Architecture
-
-- `skill_runtime/api/service.py` remains the orchestration layer and only depends on the current runtime service collaborators
-- `skill_runtime/governance/library_report.py` depends only on models, retrieval, and MCP host-operation builders
-- `promotion_guard.py` depends only on API models
-- `provenance_backfill.py` depends only on API models and retrieval
-- `skill_runtime/retrieval/skill_index.py` depends only on API models and MCP host-operation builders
-- `skill_runtime/memory/trajectory_capture.py` and `trajectory_store.py` depend only on API models
-- `skill_runtime/distill/skill_generator.py` depends only on models plus distill rule/fallback layers
-- `skill_runtime/audit/skill_auditor.py` depends only on models plus audit semantic/static review layers
-- `skill_runtime/execution/skill_executor.py` depends only on the loader and retrieval index
-- `skill_loader.py` and `runtime_tools.py` stay free of internal `skill_runtime` imports
-- `distill/fallback` stays split between provider contracts, prompt building, mock provider behavior, and fallback orchestration
-- `distill/rules` modules stay on the rule-local layer: rule files depend only on models plus `rules.common`
-- `audit` sublayers stay split between semantic/static checks, provider contracts, provider mocks, prompt building, and orchestration
-
-## Execution
+## Execution / Lifecycle Expectations
 
 - active skills with `run` execute successfully
 - active skills without `run` fail cleanly
 - non-dict results are wrapped as `raw_result`
 - `copy_file` rollback deletes a newly created copied target
 - `copy_file` overwrite rollback remains `manual_restore_required` and is not auto-applied
-
-## End-to-End
-
 - `log-trajectory -> distill -> audit -> promote -> search -> execute` runs successfully
+
+## DeepSeek / Provider Notes
+
+- Fast suite provider dogfood uses the repository demo providers under `examples/providers/`, not ad-hoc generated scripts
+- Fast suite DeepSeek provider checks use a local fake DeepSeek API server, not a real network call
+- DeepSeek live smoke with the real API is not part of the automated suite
+- Manual live DeepSeek loop smoke remains:
+  - `python scripts/smoke_deepseek_provider_loop.py`
+  - requires `DEEPSEEK_API_KEY`
+  - uses a temporary sandbox
+  - verifies generate -> audit -> promote -> execute

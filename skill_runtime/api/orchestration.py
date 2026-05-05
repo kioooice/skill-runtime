@@ -11,9 +11,9 @@ from skill_runtime.api.models import (
 )
 from skill_runtime.api.service import RuntimeService
 from skill_runtime.evolution.candidates import EvolutionCandidateStore
-from skill_runtime.mcp.operation_builders import review_evolution_candidate_operation
-from skill_runtime.mcp.recommendation_builders import (
+from skill_runtime.mcp.host_operations import (
     recommendation_from_operation,
+    review_evolution_candidate_operation,
     search_recommended_skill_recommendation,
 )
 from skill_runtime.retrieval.skill_index import SkillIndex

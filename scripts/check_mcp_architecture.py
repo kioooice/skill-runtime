@@ -203,6 +203,7 @@ def check_mcp_architecture(root: Path) -> list[str]:
             "skill_runtime.audit.skill_auditor",
             "skill_runtime.distill.coverage_report",
             "skill_runtime.distill.skill_generator",
+            "skill_runtime.evolution.candidates",
             "skill_runtime.execution.runtime_tools",
             "skill_runtime.execution.skill_executor",
             "skill_runtime.governance.library_report",

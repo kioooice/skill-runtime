@@ -4,88 +4,75 @@ Date: 2026-05-05
 
 ## Purpose
 
-Verify that the top-level follow-up recommendation contract is usable across the three highest-value operator paths:
+Verify that the current top-level follow-up recommendation contract is actually usable for maintainers, without adding new rules, widening `default-in`, or building a new presentation layer.
 
-- `background_hint`
-- `distill_trajectory`
-- `review_evolution_candidate`
+## Case 1 - `background_hint -> execute_skill`
 
-This is not a UI exercise. The goal is to confirm that a host can render a concrete next step without reading payload-specific nested shapes.
+- Input task:
+  `merge txt files into markdown`
+  with `known_inputs={"input_dir":"demo/input"}` and one expected output path
+- runtime_lane_status:
+  `entered`
+- reuse_decision / learning_decision:
+  `background_hint` / `none`
+- recommended_next_action:
+  `execute_skill`
+- recommended_host_operation.tool_name:
+  `execute_skill`
+- Did this feel natural for a maintainer:
+  Yes. The runtime did not auto-run a partially specified workflow, but it still surfaced one clear next step.
+- Noise or misleading behavior:
+  Low noise. The missing input `output_path` stayed explicit, which prevented the hint from reading like an automatic approval.
 
-## Verified Cases
+## Case 2 - `new_skill_candidate -> distill_trajectory`
 
-### 1. Reuse hint stays non-automatic but bubbles a concrete next step
+- Input task:
+  Development-style workflow finalize path: update a runtime test plus observation log with a successful write-backed execution payload
+- runtime_lane_status:
+  `used`
+- reuse_decision / learning_decision:
+  `skip` / `new_skill_candidate`
+- recommended_next_action:
+  `distill_trajectory`
+- recommended_host_operation.tool_name:
+  `distill_trajectory`
+- Did this feel natural for a maintainer:
+  Yes. After a concrete successful workflow, the next step being “distill this trajectory” is consistent and easy to understand.
+- Noise or misleading behavior:
+  Minor wording caveat only: this path is clear for `new_skill_candidate`, but maintainers still need to know that weaker `observed_only` cases may require capture-first behavior instead of immediate distill.
 
-Input shape:
+## Case 3 - `improve_existing_skill_candidate -> review_evolution_candidate`
 
-- task: `merge txt files into markdown`
-- known inputs: only `input_dir`
-- expected outputs: one markdown output path
+- Input task:
+  Improve the direction review workflow after a user correction, with a successful payload carrying explicit `skill_gap.evidence` and `skill_gap.proposed_changes`
+- runtime_lane_status:
+  `used` on the Codex-facing finalize path, or `not set` on plain host finalization
+- reuse_decision / learning_decision:
+  `skip` / `improve_existing_skill_candidate`
+- recommended_next_action:
+  `review_evolution_candidate`
+- recommended_host_operation.tool_name:
+  `review_evolution_candidate`
+- Did this feel natural for a maintainer:
+  Yes. The recommendation correctly routes to manual review instead of pretending the existing skill should change automatically.
+- Noise or misleading behavior:
+  Low noise. The strongest remaining caveat is that host-only flows may not always expose `runtime_lane_status`, so maintainers should read the learning decision and recommendation together.
 
-Observed result:
+## Conclusion
 
-- reuse decision: `background_hint`
-- top-level next action: `execute_skill`
-- recommended skill: `merge_text_files`
-- missing input stays explicit: `output_path`
+The current recommendation contract is usable:
 
-Why this matters:
+- `background_hint` gives a conservative but actionable next step
+- `new_skill_candidate` gives a concrete distillation step
+- `improve_existing_skill_candidate` gives a governed manual-review step
 
-- the runtime does not silently execute when required inputs are missing
-- the host still gets one concrete next step to render
+## Real Issues Found
 
-## 2. Captured workflow bubbles distillation at the top level
+1. `observed_only` and `new_skill_candidate` are adjacent in maintainer mental models, but only the concrete `new_skill_candidate` case was a clean top-level `distill_trajectory` recommendation in this round.
+2. `runtime_lane_status` is clearest on Codex-facing entry/finalize paths; plain host-finalize paths can still be useful, but they are less uniform as dogfood artifacts.
 
-Command used:
+## Recommendation
 
-`python -m skill_runtime.cli --root D:\02-Projects\vibe capture-trajectory --file demo\maintainer_review_cleanup\observed_task.json --task-id recommendation_dogfood_review_cleanup --session-id recommendation_dogfood`
+Do not widen `default-in` based on this evidence.
 
-Observed result:
-
-- capture succeeded
-- top-level next action: `distill_trajectory`
-- alternate operations remained available for active/global promotion paths
-
-Why this matters:
-
-- the host does not need to inspect nested capture-specific payloads to discover the next step
-- the governed learning path still stays explicit and non-automatic
-
-## 3. Concrete existing-skill gap bubbles manual evolution review
-
-Input shape:
-
-- task: improve direction review workflow after user correction
-- no silent reuse
-- successful execution payload with explicit `skill_gap.evidence` and `skill_gap.proposed_changes`
-
-Observed result:
-
-- learning decision: `improve_existing_skill_candidate`
-- top-level next action: `review_evolution_candidate`
-- the same review operation remains present inside the capture payload for provenance
-
-Why this matters:
-
-- the host can render the manual-review next step directly
-- the lifecycle stays governed; no global skill edit is performed automatically
-
-## Operator Conclusion
-
-The contract is now good enough for host rendering:
-
-- reuse hints surface one direct execution action
-- captured workflows surface one direct distillation action
-- existing-skill improvements surface one direct manual-review action
-
-The host can prefer top-level recommendation fields and treat nested recommendation payloads as provenance, not as the primary integration surface.
-
-## Follow-Up
-
-The next worthwhile dogfood is not more dashboard work.
-
-It is targeted sampling of real maintainer tasks to judge whether these three recommendations feel natural in sequence:
-
-- `background_hint` before manual execution
-- `distill_trajectory` after observed capture
-- `review_evolution_candidate` after concrete existing-skill gap detection
+The contract is good enough to keep dogfooding, but there is no evidence here that broader automatic entry would improve maintainer outcomes.

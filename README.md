@@ -67,6 +67,19 @@ That means a host AI can:
 - [Release readiness](./docs/maintainer-release-readiness-demo.md)
 - [Handoff continuation](./docs/maintainer-handoff-continuation-demo.md)
 
+## 3-Minute Maintainer Demo Path
+
+If this is your first time in the repo, use this path:
+
+1. Problem:
+   Skill Runtime is for maintainers who want repeated Codex-style workflows to become governed, reusable follow-up actions instead of staying trapped in chat history.
+2. Local verification:
+   Run `python -m unittest tests.test_runtime_fast -v`.
+3. See one runtime recommendation:
+   Run `python -m skill_runtime.cli --root D:\02-Projects\vibe capture-trajectory --file demo\maintainer_review_cleanup\observed_task.json --task-id quick_demo_review_cleanup --session-id quick_demo`.
+4. Follow the next action:
+   Inspect `recommended_next_action` and then follow `recommended_host_operation`. In this quick path, the expected next tool is `distill_trajectory`.
+
 ## Open Source Participation
 
 - [Contributing Guide](./CONTRIBUTING.md)
