@@ -69,13 +69,33 @@ Verify that the current top-level follow-up recommendation contract is actually 
 - Input task:
   Improve the direction review workflow after a user correction, with a successful payload carrying explicit `skill_gap.evidence` and `skill_gap.proposed_changes`
 - Repro files:
-  - plan request shape:
-    `{"task_description":"Improve the direction review workflow after a user correction.","working_directory":".","known_inputs":{},"expected_outputs":["C:/Users/Administrator/.codex/skills/pre-implementation-workflow-review/SKILL.md"],"risk_level":"medium","task_kind":"workflow","allow_silent_reuse":false,"allow_learning":true}`
   - finalize payload:
     [`demo/recommendation_dogfood_case3_execution_payload.json`](../demo/recommendation_dogfood_case3_execution_payload.json)
-- Repro command:
-  1. `python -m skill_runtime.cli --root ./.tmp_recommendation_dogfood_case3 agent-plan --task-description "Improve the direction review workflow after a user correction." --working-directory . --expected-outputs-json "[\"C:/Users/Administrator/.codex/skills/pre-implementation-workflow-review/SKILL.md\"]" --disable-silent-reuse`
-  2. feed that plan into `agent-plan-learning` with `--execution-json-file demo/recommendation_dogfood_case3_execution_payload.json`
+- Repro command (PowerShell):
+  1. Create a disposable runtime root and a matching global-skill fixture:
+     ```powershell
+     $root = "./.tmp_recommendation_dogfood_case3"
+     New-Item -ItemType Directory -Force "$root/global-skills/pre-implementation-workflow-review" | Out-Null
+     @'
+     ---
+     name: pre-implementation-workflow-review
+     ---
+
+     # Skill
+     '@ | Set-Content "$root/global-skills/pre-implementation-workflow-review/SKILL.md"
+     ```
+  2. Save the `agent-plan` output to a temporary JSON file:
+     ```powershell
+     python -m skill_runtime.cli --root $root agent-plan --task-description "Improve the direction review workflow after a user correction." --working-directory . --expected-outputs-json "[\"./.tmp_recommendation_dogfood_case3/global-skills/pre-implementation-workflow-review/SKILL.md\"]" --disable-silent-reuse > "$root/plan.json"
+     ```
+  3. Reuse that saved plan with the execution payload:
+     ```powershell
+     python -m skill_runtime.cli --root $root agent-plan-learning --plan-json-file "$root/plan.json" --execution-json-file "demo/recommendation_dogfood_case3_execution_payload.json"
+     ```
+  4. Cleanup when done:
+     ```powershell
+     Remove-Item $root -Recurse -Force
+     ```
 - runtime_lane_status:
   `not set on plain host-finalize style reproduction`
 - reuse_decision / learning_decision:
@@ -90,9 +110,10 @@ Verify that the current top-level follow-up recommendation contract is actually 
   - `recommended_host_operation.tool_name == "review_evolution_candidate"`
   - `learning_capture_payload.evolution_candidate_path` exists
 - Failure signs:
+  - the fixture command was skipped or edited incorrectly and the expected output path no longer points at `./.tmp_recommendation_dogfood_case3/global-skills/pre-implementation-workflow-review/SKILL.md` (`setup failure`)
   - `observed_only` appears despite explicit evidence and proposed changes
   - `recommended_next_action` is missing
-  - no `evolution_candidate_path` is emitted
+  - no `evolution_candidate_path` is emitted (`recommendation contract failure`)
 - Did this feel natural for a maintainer:
   Yes. The recommendation correctly routes to manual review instead of pretending the existing skill should change automatically.
 - Noise or misleading behavior:
