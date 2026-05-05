@@ -17,6 +17,8 @@ class SkillGenerationError(ValueError):
 
 
 class SkillGenerator:
+    _KWARGS_GET_PATTERN = re.compile(r"kwargs\.get\(\s*['\"]([^'\"]+)['\"]\s*\)")
+
     def __init__(self, staging_dir: str | Path) -> None:
         self.staging_dir = Path(staging_dir)
         self.staging_dir.mkdir(parents=True, exist_ok=True)
@@ -47,12 +49,17 @@ class SkillGenerator:
         )
         fallback_artifact: str | None = None
         fallback_provider: str | None = None
+        schema_source = "trajectory_inference"
         if not selected_rule:
             code, fallback_provider, fallback_artifact = self.fallback_service.generate(
                 resolved_skill_name,
                 summary,
                 docstring,
                 trajectory,
+                input_schema,
+            )
+            input_schema, schema_source = self._align_fallback_input_schema(
+                code,
                 input_schema,
             )
 
@@ -75,6 +82,7 @@ class SkillGenerator:
             rule_name=get_rule_name(selected_rule) if selected_rule else "llm_fallback",
             rule_priority=get_rule_priority(selected_rule) if selected_rule else 0,
             rule_reason=explain_match(selected_rule, trajectory, input_schema) if selected_rule else f"No deterministic rule matched; fallback provider {fallback_provider} generated a candidate skill.",
+            schema_source=schema_source,
             tags=self._derive_tags(trajectory.task_description, input_schema),
         )
 
@@ -617,6 +625,19 @@ class SkillGenerator:
         tags = sorted(set(token for token in tokens if len(token) >= 3))
         tags.extend(name.lower() for name in input_schema.keys())
         return sorted(set(tags))[:12]
+
+    def _align_fallback_input_schema(
+        self,
+        code: str,
+        input_schema: dict[str, str],
+    ) -> tuple[dict[str, str], str]:
+        candidate_kwargs = sorted(set(self._KWARGS_GET_PATTERN.findall(code)))
+        if not candidate_kwargs:
+            return dict(input_schema), "trajectory_inference"
+        candidate_schema = {key: input_schema.get(key, "str") for key in candidate_kwargs}
+        if candidate_schema == input_schema:
+            return dict(input_schema), "trajectory_inference"
+        return candidate_schema, "fallback_candidate_kwargs"
 
     def _select_rule(self, trajectory: Trajectory, input_schema: dict[str, str]):
         for rule in RULES:

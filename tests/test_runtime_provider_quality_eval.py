@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -68,6 +69,54 @@ class RuntimeProviderQualityEvalTestsMixin:
 
         self.assertNotEqual("single_file_copy", metadata["rule_name"])
         self.assertIn("fallback_artifact", distill)
+
+    def test_fallback_generated_metadata_schema_aligns_with_candidate_kwargs(self) -> None:
+        fallback_provider = ROOT / "examples" / "providers" / "copy_metadata_fallback_provider.py"
+        original_fallback = os.environ.get("SKILL_RUNTIME_FALLBACK_PROVIDER_CMD")
+        os.environ["SKILL_RUNTIME_FALLBACK_PROVIDER_CMD"] = json.dumps(
+            [sys.executable, str(fallback_provider)]
+        )
+        self.addCleanup(self._restore_env, "SKILL_RUNTIME_FALLBACK_PROVIDER_CMD", original_fallback)
+
+        capture = self.service.capture_trajectory(
+            observed_task={
+                "task": "Copy one file and write a metadata sidecar for provider quality evaluation.",
+                "actions": [
+                    {
+                        "tool": "copy_file",
+                        "input": {
+                            "source_path": "demo/input/provider_quality_source.txt",
+                            "target_path": "demo/output/provider_quality_result.txt",
+                        },
+                        "result": "Copied the source file into the output directory.",
+                    },
+                    {
+                        "tool": "write_json",
+                        "input": {
+                            "path": "demo/output/provider_quality_result.json",
+                            "payload": {"source": "demo/input/provider_quality_source.txt"},
+                        },
+                        "result": "Wrote a JSON metadata sidecar.",
+                    },
+                ],
+                "outputs": [
+                    "demo/output/provider_quality_result.txt",
+                    "demo/output/provider_quality_result.json",
+                ],
+            },
+            task_id="provider_quality_fallback_schema_alignment",
+            session_id="provider_quality_eval_tests",
+        )
+        distill = self.service.distill(capture["trajectory_path"], skill_name="provider_quality_schema_alignment")
+        metadata = self._read_json_file(Path(distill["metadata_file"]))
+
+        self.assertEqual("llm_fallback", metadata["rule_name"])
+        self.assertEqual(
+            ["input_path", "metadata_path", "output_path"],
+            sorted(metadata["input_schema"].keys()),
+        )
+        self.assertEqual("fallback_candidate_kwargs", metadata["schema_source"])
+        self.assertNotIn("payload", metadata["input_schema"])
 
     def test_provider_quality_evaluation_script_reports_fixture_outcomes(self) -> None:
         result = subprocess.run(
@@ -162,19 +211,22 @@ class RuntimeProviderQualityEvalTestsMixin:
             "local_copy_metadata_fallback_provider",
             runtime_service_fixture["generated_candidate_provider"],
         )
-        self.assertIn("payload", runtime_service_fixture["declared_input_schema_keys"])
+        self.assertEqual(
+            ["input_path", "metadata_path", "output_path"],
+            runtime_service_fixture["declared_input_schema_keys"],
+        )
         self.assertIn("metadata_path", runtime_service_fixture["execution_arg_keys"])
         self.assertIn("metadata_path", runtime_service_fixture["candidate_kwargs_keys"])
-        self.assertIn(
-            "payload",
+        self.assertEqual(
+            [],
             runtime_service_fixture["schema_execution_arg_mismatch"]["schema_not_in_execution_args"],
         )
-        self.assertIn(
-            "metadata_path",
+        self.assertEqual(
+            [],
             runtime_service_fixture["schema_execution_arg_mismatch"]["execution_args_not_in_schema"],
         )
-        self.assertIn(
-            "metadata_path",
+        self.assertEqual(
+            [],
             runtime_service_fixture["schema_execution_arg_mismatch"]["candidate_kwargs_not_in_schema"],
         )
         if runtime_service_fixture["failure_reason"]:

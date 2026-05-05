@@ -41,6 +41,7 @@ class SkillMetadata:
     rule_name: str | None = None
     rule_priority: int | None = None
     rule_reason: str | None = None
+    schema_source: str | None = None
     tags: list[str] = field(default_factory=list)
     scope_policy: dict[str, Any] | None = None
 
