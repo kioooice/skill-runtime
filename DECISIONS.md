@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Accept Capture-Trajectory CLI Recommendation Surface As-Is
+
+**Decision**
+
+Accept the current `capture-trajectory --render-recommendation text` CLI surface without further CLI logic changes.
+
+**Reason**
+
+A real run now has checked-in `stdout` and `stderr` artifacts. The JSON audit payload remained intact on `stdout`, the operator-facing recommendation text was clear on `stderr`, and no `distill_trajectory`, promote, or apply operation was executed.
+
+**Impact**
+
+- added `docs/fixtures/cli-recommendation-presentation/stdout.capture-trajectory.json`
+- added `docs/fixtures/cli-recommendation-presentation/stderr.capture-trajectory.txt`
+- added `docs/cli-recommendation-presentation-acceptance.md`
+- no CLI logic change was required from acceptance
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Keep CLI Recommendation Rendering Opt-In And Separate From JSON Audit Output
 
 **Decision**
