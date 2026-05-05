@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Search alias recall support
+
+- Task type: local search-quality recall improvement
+- Classified as: default-out / skipped
+- What happened: added optional `search_aliases` to skill metadata, wired aliases into local `SkillIndex` scoring, and turned the known Chinese merge query into an explicit alias-driven expected pass while keeping a Chinese negative query unrecommended
+- Did the behavior feel correct: yes; this improved local recall for a known intent without rewriting retrieval, introducing semantic search, or changing runtime entry policy
+- Did the lane help: yes, because the skipped result reinforced that this is retrieval-quality hardening inside the local search path, not evidence for broader automatic entry
+- Follow-up: keep future search work focused on measured local retrieval boundaries; do not treat alias recall as a reason to widen `default-in`
+
 ### 2026-05-05 - Search quality baseline
 
 - Task type: search and reuse baseline measurement

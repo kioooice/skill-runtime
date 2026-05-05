@@ -271,6 +271,11 @@
       "rule_name": "text_merge",
       "rule_priority": 70,
       "rule_reason": "Backfilled text_merge because the skill source lists files, reads text, and writes merged output.",
+      "search_aliases": [
+        "合并 文本 文件 文档",
+        "把多个文本文件合并成一个文档",
+        "combine text files into one document"
+      ],
       "tags": [
         "merge",
         "text",

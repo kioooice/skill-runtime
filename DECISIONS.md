@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-05 - Use Explicit Metadata Aliases For Narrow Chinese Search Recall
+
+**Decision**
+
+Add optional `search_aliases` to skill metadata and let local lexical search use those aliases as a small metadata-driven recall signal.
+
+**Reason**
+
+The first search-quality baseline exposed a concrete gap: known Chinese intent for `merge_text_files` produced no usable recall because the current search path is still ASCII-heavy and lexical. The narrowest honest improvement is not semantic retrieval or algorithm rewrite. It is explicit alias metadata that can teach the local search path a few known intents while keeping the retrieval contract local, inspectable, and reproducible.
+
+**Impact**
+
+- `SkillMetadata` now supports `search_aliases`
+- `SkillIndex.search` now includes aliases in searchable text and a lightweight score boost
+- `merge_text_files` now declares explicit Chinese aliases for known merge-document intents
+- `scripts/evaluate_search_quality.py` now treats the Chinese merge query as an expected pass and adds a Chinese negative query
+- this remains metadata-driven recall only; it is not semantic retrieval, does not introduce embeddings or external services, and is not evidence for widening `default-in`
+
 ### 2026-05-05 - Measure Search Quality Before Rewriting Retrieval
 
 **Decision**

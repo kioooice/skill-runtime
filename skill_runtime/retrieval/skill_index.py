@@ -172,12 +172,17 @@ class SkillIndex:
         if not query.strip():
             raise SkillIndexError("query cannot be empty")
 
+        normalized_query = self._normalize_search_text(query)
         query_terms = self._tokenize(query)
         results: list[dict] = []
         for skill in self.load_all():
             if skill.status != "active":
                 continue
-            score, matched_terms, library_tier, score_breakdown = self._score_skill(skill, query_terms)
+            score, matched_terms, library_tier, score_breakdown = self._score_skill(
+                skill,
+                query_terms,
+                normalized_query,
+            )
             if score <= 0:
                 continue
             results.append(
@@ -198,23 +203,41 @@ class SkillIndex:
         return results[:top_k]
 
     def _score_skill(
-        self, skill: SkillMetadata, query_terms: set[str]
+        self,
+        skill: SkillMetadata,
+        query_terms: set[str],
+        normalized_query: str,
     ) -> tuple[float, list[str], str, dict[str, float]]:
         name_terms = self._tokenize(skill.skill_name)
         summary_terms = self._tokenize(skill.summary)
         docstring_terms = self._tokenize(skill.docstring)
+        alias_terms = self._tokenize(" ".join(skill.search_aliases))
         tag_terms = {tag.lower() for tag in skill.tags}
         input_terms = {key.lower() for key in skill.input_schema.keys()}
         output_terms = {key.lower() for key in skill.output_schema.keys()}
         rule_terms = self._tokenize(" ".join(filter(None, [skill.rule_name or "", skill.rule_reason or ""])))
+        alias_match_terms, alias_string_overlap = self._alias_matches(skill.search_aliases, normalized_query)
 
-        corpus_terms = name_terms | summary_terms | docstring_terms | tag_terms | input_terms | output_terms | rule_terms
-        matched_terms = sorted(query_terms & corpus_terms)
-        if not matched_terms:
+        corpus_terms = (
+            name_terms
+            | summary_terms
+            | docstring_terms
+            | alias_terms
+            | tag_terms
+            | input_terms
+            | output_terms
+            | rule_terms
+        )
+        matched_terms = sorted((query_terms & corpus_terms) | alias_match_terms)
+        if not matched_terms and alias_string_overlap <= 0:
             return 0.0, [], "hidden", {}
 
         lexical_score = len(matched_terms) / max(len(query_terms), 1)
         summary_overlap = len(query_terms & summary_terms) / max(len(query_terms), 1)
+        alias_overlap = max(
+            len(query_terms & alias_terms) / max(len(query_terms), 1),
+            alias_string_overlap,
+        )
         schema_overlap = len(query_terms & (input_terms | output_terms)) / max(len(query_terms), 1)
         tags_overlap = len(query_terms & tag_terms) / max(len(query_terms), 1)
         provenance_overlap = len(query_terms & rule_terms) / max(len(query_terms), 1)
@@ -223,6 +246,7 @@ class SkillIndex:
         score_breakdown = {
             "lexical": round(lexical_score, 4),
             "summary": round(summary_overlap * 0.2, 4),
+            "aliases": round(alias_overlap * 0.2, 4),
             "schema": round(schema_overlap * 0.15, 4),
             "tags": round(tags_overlap * 0.1, 4),
             "provenance": round(provenance_overlap * 0.1, 4),
@@ -232,6 +256,7 @@ class SkillIndex:
             "library_penalty": 0.0,
         }
         base_score += summary_overlap * 0.2
+        base_score += alias_overlap * 0.2
         base_score += schema_overlap * 0.15
         base_score += tags_overlap * 0.1
         base_score += provenance_overlap * 0.1
@@ -260,11 +285,32 @@ class SkillIndex:
             return "No strong match terms found."
         components = [
             name
-            for name in ("summary", "schema", "tags", "provenance", "usage", "audit")
+            for name in ("summary", "aliases", "schema", "tags", "provenance", "usage", "audit")
             if score_breakdown.get(name, 0.0) > 0
         ]
         suffix = f" Boosted by: {', '.join(components)}." if components else ""
         return f"Matched on keywords: {', '.join(matched_terms)}.{suffix}"
+
+    def _alias_matches(self, aliases: list[str], normalized_query: str) -> tuple[set[str], float]:
+        matched_aliases: set[str] = set()
+        best_overlap = 0.0
+        for alias in aliases:
+            if not isinstance(alias, str):
+                continue
+            normalized_alias = self._normalize_search_text(alias)
+            if not normalized_alias:
+                continue
+            if normalized_alias == normalized_query:
+                matched_aliases.add(alias)
+                best_overlap = max(best_overlap, 1.0)
+                continue
+            if normalized_alias in normalized_query or normalized_query in normalized_alias:
+                matched_aliases.add(alias)
+                best_overlap = max(best_overlap, 0.5)
+        return matched_aliases, best_overlap
+
+    def _normalize_search_text(self, text: str) -> str:
+        return "".join(text.lower().split())
 
     def _tokenize(self, text: str) -> set[str]:
         return {
@@ -311,6 +357,7 @@ class SkillIndex:
             rule_name=payload.get("rule_name"),
             rule_priority=payload.get("rule_priority"),
             rule_reason=payload.get("rule_reason"),
+            search_aliases=payload.get("search_aliases", []),
             tags=payload.get("tags", []),
             scope_policy=payload.get("scope_policy"),
         )

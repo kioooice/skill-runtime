@@ -54,13 +54,19 @@ QUERY_CASES = [
         "query_id": "chinese_merge_query",
         "query": "把多个文本文件合并成一个文档",
         "expected_top_skill": "merge_text_files",
-        "query_type": "known_limitation_chinese",
+        "query_type": "positive_alias_driven_chinese",
     },
     {
         "query_id": "negative_email_newsletter",
         "query": "send an email newsletter campaign",
         "expected_top_skill": None,
         "query_type": "negative_no_strong_match",
+    },
+    {
+        "query_id": "negative_chinese_email_campaign",
+        "query": "发送邮件营销活动",
+        "expected_top_skill": None,
+        "query_type": "negative_no_strong_match_chinese",
     },
 ]
 
@@ -116,7 +122,7 @@ def evaluate(source_root: Path, *, top_k: int = 5) -> dict[str, Any]:
         },
         "current_limitations": [
             "Search is lexical and local only; no embeddings or external retrieval are used.",
-            "Tokenization only keeps ASCII-style alphanumeric tokens and underscores, so Chinese-only queries are expected to be weak or unmatched.",
+            "Chinese intent support is still alias-driven only; there is no general Chinese tokenization or semantic retrieval.",
             "A result can appear in top_k without being recommended for reuse if it stays below RuntimeService.RECOMMENDED_EXECUTION_SCORE.",
         ],
     }

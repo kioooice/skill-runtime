@@ -27,13 +27,22 @@ class RuntimeSearchQualityTestsMixin:
 
         self.assertTrue(positive_queries)
         self.assertTrue(any(item["matched"] for item in positive_queries), payload)
+        chinese_query = next(item for item in payload["queries"] if item["query_id"] == "chinese_merge_query")
+        self.assertTrue(chinese_query["matched"], payload)
+        self.assertEqual("merge_text_files", chinese_query["actual_recommended_skill"])
 
     def test_active_skill_search_quality_negative_query_is_not_fake_pass(self) -> None:
         payload = evaluate(self.runtime_root)
-        negative_query = next(item for item in payload["queries"] if item["query_id"] == "negative_email_newsletter")
+        negative_queries = [
+            item
+            for item in payload["queries"]
+            if item["query_id"] in {"negative_email_newsletter", "negative_chinese_email_campaign"}
+        ]
 
-        self.assertIsNone(negative_query["expected_top_skill"])
-        if negative_query["matched"]:
-            self.assertIsNone(negative_query["actual_recommended_skill"])
-        else:
-            self.assertTrue(negative_query["failure_reason"])
+        self.assertEqual(2, len(negative_queries))
+        for negative_query in negative_queries:
+            self.assertIsNone(negative_query["expected_top_skill"])
+            if negative_query["matched"]:
+                self.assertIsNone(negative_query["actual_recommended_skill"])
+            else:
+                self.assertTrue(negative_query["failure_reason"])
