@@ -21,6 +21,38 @@ Operator-facing follow-up actions were becoming inconsistent. Evolution review/a
 - CLI and MCP plan/result reconstruction now preserve the same recommendation fields end to end
 - Added regression coverage for host, MCP, and finalizer recommendation propagation
 
+### 2026-05-05 - Prefer Top-Level Recommendations As The Host Integration Surface
+
+**Decision**
+
+Treat nested recommendation payloads as provenance only. Hosts should prefer the top-level recommendation fields on `AgentOrchestrationResult`.
+
+**Reason**
+
+Targeted dogfood across `background_hint`, `capture-trajectory`, and explicit existing-skill evolution showed that the top-level contract now carries the right next step in all three cases. Continuing to integrate against nested payload-specific shapes would reintroduce branching and make host behavior harder to keep consistent.
+
+**Impact**
+
+- host integrations can render one next-step contract across reuse and learning paths
+- nested recommendation payloads remain available for debugging and provenance
+- follow-up dogfood should now focus on whether the recommendation sequence feels natural in real maintainer tasks, not on payload-shape differences
+
+### 2026-05-05 - Treat Recommendation Consumption As An Operator Sequence
+
+**Decision**
+
+Treat `background_hint`, `distill_trajectory`, and `review_evolution_candidate` as one operator-facing sequence family, not as three unrelated point features.
+
+**Reason**
+
+After the top-level contract was unified, the next real question was whether these recommendations still felt fragmented in practice. Acceptance-style sequencing showed they can already form a coherent non-automatic flow: the host can first surface a hint, then a capture follow-up, then a governed existing-skill review step. That is a stronger product boundary than three isolated examples.
+
+**Impact**
+
+- added a dedicated sequence runbook
+- added acceptance-style coverage for the three-step operator sequence
+- the next product question shifts from payload shape to whether a narrow host presentation layer is warranted
+
 ### 2026-05-05 - Preserve Original Bytes Across Evolution Rollback
 
 **Decision**

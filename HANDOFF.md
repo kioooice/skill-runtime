@@ -2,6 +2,10 @@
 
 ## Current State
 
+最新 dogfood 收口：已新增 `docs/host-follow-up-recommendation-dogfood.md`，用三条真实边界验证顶层 recommendation contract。当前已确认：缺输入的强匹配复用会停在 `background_hint`，但顶层直接给 `execute_skill`；`capture-trajectory` 顶层直接给 `distill_trajectory`；明确 existing-skill gap 的 finalizer 顶层直接给 `review_evolution_candidate`。这意味着宿主现在可以统一消费顶层 recommendation 字段，把嵌套 recommendation 只当 provenance。验证中还看到当前会话内 MCP 工具返回的结构可能没有立刻反映新字段，因此本轮结论以本地 CLI / 当前代码导入路径为准。
+
+最新序列验收：已新增 `docs/host-follow-up-sequence-runbook.md`，并补 acceptance-style 快验，把 `background_hint -> distill_trajectory -> review_evolution_candidate` 收成一条 operator-facing sequence。当前结论是：这三类 follow-up 不只是散装能力，而是已经可以作为一条非自动、显式、可治理的宿主顺序链存在。快验已更新为 146 tests OK。
+
 最新阶段完成：Stage 4 operator-facing recommendation contract 已收口。`AgentOrchestrationResult` 现在统一承载顶层 follow-up recommendation 字段：`recommended_next_action`、`recommended_reason`、`recommended_host_operation`、`available_host_operations`。当前 `background_hint` 会冒泡成顶层 `execute_skill`，`new_skill_candidate` 在 capture 后会冒泡成顶层 `distill_trajectory`，`improve_existing_skill_candidate` 在 candidate 创建后会冒泡成顶层 `review_evolution_candidate`。CLI 和 MCP 的 plan/result 重建层也已补齐这些字段，避免 recommendation 在宿主边界丢失。验证已通过：`python -m unittest tests.test_runtime_fast -v` 通过 145 tests OK，`git diff --check` 通过，新增回归测试覆盖 host、MCP 和 finalizer recommendation 透传。
 
 最新战略目标：用户已明确希望把本项目朝“可申请 OpenAI Codex for Open Source / 开源支持”的方向推进。价值门判断：`manual_validation_first`，目标可以成立，但不能为了“免费会员”直接堆插件功能；更合理路线是把项目打磨成公开、可安装、可演示、对开源维护者有真实价值的 Codex workflow/plugin layer。官方页面当前强调 Codex for Open Source 面向关键开源软件维护者，申请需要公开 GitHub 用户和公开仓库，说明 primary/core maintainer 角色、仓库为什么重要，以及如何使用 API credits；入选维护者可获得 6 个月 ChatGPT Pro（含 Codex）、Codex Security 条件访问和 API credits。Codex open source fund 另一个入口偏 API credits，最高 $25,000。后续不要承诺一定能拿到免费会员，应先补齐公开仓库、README、license、安装/demo、真实 maintainer workflow 用例和 500 字申请材料。
@@ -877,7 +881,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 ## Next Action
 
-当前新战略目标是“开源申请后继续产品化主线”。申请表已提交，dashboard 当前已经够用，主线已收回到核心机制。当前 recommendation contract 已经统一，下一步更值得推进的是按边界采样的 dogfood：优先拿真实 maintainer 任务验证 `background_hint`、`distill_trajectory`、`review_evolution_candidate` 这三类推荐动作是否真的顺手，而不是继续扩 dashboard 或争论更宽的自动接管范围。不要回到继续堆 runtime 样本；也不要把观察面当成产品本体。
+当前新战略目标是“开源申请后继续产品化主线”。申请表已提交，dashboard 当前已经够用，主线已收回到核心机制。当前 recommendation contract 已经统一，边界 dogfood 和顺序链验收也都完成。下一步更值得推进的是判断这条 operator-facing sequence 是否需要一个更窄的 host UI / CLI 展示层，还是继续保持 JSON contract + runbook 即可，而不是继续扩 dashboard 或争论更宽的自动接管范围。不要回到继续堆 runtime 样本；也不要把观察面当成产品本体。
 
 技能进化闭环已经有 apply 和 rollback 两端的主线验收，也已经有明确的 host-facing follow-up，并且现在有独立 acceptance doc / runbook。下一步如果继续这条主线，不应再补“能不能回滚”或“按钮能不能显示”这种基础能力，而应判断是否要 dogfood 这条 operator-facing 路径，或者是否需要更强的人工审核策略；不要做无确认自动写全局技能。
 

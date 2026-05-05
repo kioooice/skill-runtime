@@ -2010,6 +2010,68 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertEqual("read_json", trajectory["steps"][0]["tool_name"])
         self.assertEqual("write_text", trajectory["steps"][-1]["tool_name"])
 
+    def test_host_follow_up_sequence_acceptance_stays_explicit_and_non_automatic(self) -> None:
+        from skill_runtime.api.host import run_codex_task
+        from skill_runtime.api.orchestration import AgentOrchestrationService
+        from skill_runtime.api.models import AgentTaskRequest
+
+        background_request = AgentTaskRequest(
+            task_description="merge txt files into markdown",
+            working_directory=str(self.runtime_root),
+            known_inputs={"input_dir": "demo/input"},
+            expected_outputs=["demo/output/host_sequence_background.md"],
+            risk_level="low",
+            task_kind="workflow",
+        )
+        background_result = run_codex_task(self.runtime_root, background_request)
+        self.assertEqual("background_hint", background_result.reuse_decision.decision)
+        self.assertEqual("execute_skill", background_result.recommended_next_action)
+        self.assertEqual(["output_path"], background_result.reuse_decision.missing_inputs)
+
+        capture_payload = self._run_cli(
+            "capture-trajectory",
+            "--file",
+            "demo/maintainer_review_cleanup/observed_task.json",
+            "--task-id",
+            "host_follow_up_sequence_review_cleanup",
+            "--session-id",
+            "host_follow_up_sequence",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+        self.assertEqual("ok", capture_payload["status"])
+        self.assertEqual("distill_trajectory", capture_payload["data"]["recommended_next_action"])
+
+        planner = AgentOrchestrationService(self.runtime_root)
+        evolution_request = AgentTaskRequest(
+            task_description="Improve the direction review workflow after a user correction.",
+            working_directory=str(self.runtime_root),
+            expected_outputs=["C:/Users/Administrator/.codex/skills/pre-implementation-workflow-review/SKILL.md"],
+            risk_level="medium",
+            task_kind="workflow",
+            allow_silent_reuse=False,
+        )
+        evolution_plan = planner.start_task(evolution_request)
+        evolution_result = planner.finalize_task(
+            evolution_plan,
+            {
+                "result": {"status": "completed", "artifacts": []},
+                "operation_log": [
+                    {"tool_name": "read_text", "status": "success", "path": "AGENTS.md"},
+                    {"tool_name": "write_text", "status": "success", "path": "docs/decision-note.md"},
+                ],
+                "skill_gap": {
+                    "target_skill_name": "pre_implementation_workflow_review",
+                    "reason": "User correction showed the workflow should challenge low-value routes earlier.",
+                    "evidence": ["The old route allowed low-value skill work to continue too long."],
+                    "proposed_changes": ["Add a guard for repeated low-value validation loops."],
+                },
+            },
+        )
+        self.assertEqual("improve_existing_skill_candidate", evolution_result.learning_decision.decision)
+        self.assertEqual("review_evolution_candidate", evolution_result.recommended_next_action)
+        self.assertTrue(evolution_result.recommended_host_operation["requires_confirmation"])
+
     def test_codex_run_cli_executes_default_in_task(self) -> None:
         payload = self._run_cli(
             "codex-run",

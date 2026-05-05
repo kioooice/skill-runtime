@@ -23,6 +23,24 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Recommendation contract dogfood
+
+- Task type: host integration contract verification
+- Classified as: normal implementation path plus local runtime verification
+- What happened: verified the top-level recommendation contract across three real paths: `background_hint -> execute_skill`, captured workflow -> `distill_trajectory`, and explicit existing-skill gap -> `review_evolution_candidate`
+- Did the behavior feel correct: yes; the runtime stayed conservative, but the host still got one concrete next step in each case
+- Did the lane help: yes; it turned reuse and learning boundary results into a stable operator-facing interface instead of payload-specific internals
+- Follow-up: sample these three recommendations in a more realistic maintainer sequence rather than expanding dashboard UI
+
+### 2026-05-05 - Recommendation sequence acceptance
+
+- Task type: operator-facing sequence hardening
+- Classified as: normal implementation path plus local runtime verification
+- What happened: added a runbook and acceptance-style test that chains `background_hint`, `distill_trajectory`, and `review_evolution_candidate` into one explicit operator sequence
+- Did the behavior feel correct: yes; each step stays non-automatic, but the host always has one concrete next move
+- Did the lane help: yes; it reframed follow-up recommendations as a real sequence family rather than three separate payload features
+- Follow-up: decide whether this sequence deserves a narrow host presentation surface beyond raw JSON and current dashboard observation
+
 ### 2026-05-05 - Top-level recommendation contract for reuse and learning
 
 - Task type: runtime orchestration contract hardening
