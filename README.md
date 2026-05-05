@@ -90,6 +90,7 @@ If this is your first time in the repo, use this path:
 - [Contributing Guide](./CONTRIBUTING.md)
 - [Security Policy](./SECURITY.md)
 - [Code Of Conduct](./CODE_OF_CONDUCT.md)
+- [Changelog](./CHANGELOG.md)
 - [Open Source Release Readiness Checklist](./docs/open-source-release-readiness-checklist.md)
 - [Codex Open Source Application Draft](./docs/codex-open-source-application-draft.md)
 
