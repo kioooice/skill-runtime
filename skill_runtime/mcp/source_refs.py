@@ -25,6 +25,9 @@ __all__ = [
     "source_ref_governance_report_refresh",
     "source_ref_distill_coverage_report_refresh",
     "source_ref_distill_coverage_report_view",
+    "source_ref_evolution_review_follow_up",
+    "source_ref_evolution_apply_follow_up",
+    "source_ref_evolution_rollback_follow_up",
 ]
 
 
@@ -122,3 +125,15 @@ def source_ref_distill_coverage_report_refresh() -> str:
 
 def source_ref_distill_coverage_report_view(view_name: str) -> str:
     return f"distill_coverage:view:{view_name}"
+
+
+def source_ref_evolution_review_follow_up(candidate_id: str) -> str:
+    return f"evolution:review:{candidate_id}:follow_up"
+
+
+def source_ref_evolution_apply_follow_up(candidate_id: str) -> str:
+    return f"evolution:apply:{candidate_id}:follow_up"
+
+
+def source_ref_evolution_rollback_follow_up(candidate_id: str) -> str:
+    return f"evolution:rollback:{candidate_id}:follow_up"

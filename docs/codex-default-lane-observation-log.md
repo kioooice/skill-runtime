@@ -646,6 +646,24 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the lane help: yes, because the mainline now has an executable acceptance baseline for future boundary decisions
 - Follow-up: only widen the handoff continuation family if later evidence beats this narrow explicit baseline
 
+### 2026-05-05 - Evolution rollback lifecycle acceptance
+
+- Task type: skill evolution safety mainline tightening
+- Classified as: `guarded-in` / `skipped` by the Codex runtime gate for this service-and-tests round
+- What happened: added an acceptance-style rollback lifecycle test for `candidate -> review -> apply -> rollback`, and tightened rollback records so they now keep a direct `review_path` alongside `application_path`, backup linkage, and restored hashes
+- Did the behavior feel correct: yes; this is core lifecycle hardening for global skill mutation and should remain an explicit Codex implementation task, not a silently executed runtime action
+- Did the lane help: yes, because it kept the work on the normal path while clarifying the next evolution mechanism gap as lifecycle auditability rather than more UI or sample collection
+- Follow-up: if the evolution lifecycle continues, prefer an operator-facing acceptance doc or stricter manual-review route before adding more mutation surface
+
+### 2026-05-05 - Evolution host follow-up recommendations
+
+- Task type: host-facing lifecycle guidance tightening
+- Classified as: `guarded-in` / `skipped` by the Codex runtime gate for this service-and-tests round
+- What happened: tightened the evolution lifecycle so review/apply/rollback now return explicit host-facing next actions instead of leaving the host to infer the manual path from raw records; review now recommends explicit apply, apply keeps explicit rollback plus governance refresh available, and rollback recommends governance refresh
+- Did the behavior feel correct: yes; this stays on the normal Codex path while making the manual approval flow concrete for hosts
+- Did the lane help: yes, because it kept the work focused on workflow clarity rather than expanding automation or UI surface
+- Follow-up: if the evolution lifecycle continues, the next serious step should be an operator-facing acceptance doc or runbook, not more hidden lifecycle affordances
+
 ### 2026-05-01 - Runtime observability dashboard implementation
 
 - Task type: Codex runtime lane observability

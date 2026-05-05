@@ -146,6 +146,40 @@ TOOL_PRESETS = {
         "requires_confirmation": True,
         "confirmation_message": "Rollback the selected execution changes?",
     },
+    "review_evolution_candidate": {
+        "display_label": "Review evolution candidate",
+        "effect_summary": "Review an evolution candidate and produce a governed manual diff proposal.",
+        "argument_schema": {
+            "candidate": {"type": "string", "required": True, "prefilled": True},
+            "global_skills_dir": {"type": "string", "required": False, "prefilled": False},
+        },
+        "risk_level": "low",
+        "requires_confirmation": False,
+    },
+    "apply_evolution_candidate": {
+        "display_label": "Apply reviewed evolution",
+        "effect_summary": "Apply a reviewed evolution candidate to the target global skill after confirmation.",
+        "argument_schema": {
+            "candidate": {"type": "string", "required": True, "prefilled": True},
+            "confirm_apply": {"type": "boolean", "required": True, "prefilled": True},
+            "global_skills_dir": {"type": "string", "required": False, "prefilled": False},
+        },
+        "risk_level": "high",
+        "requires_confirmation": True,
+        "confirmation_message": "Apply this reviewed evolution candidate to the target global skill?",
+    },
+    "rollback_evolution_candidate": {
+        "display_label": "Rollback applied evolution",
+        "effect_summary": "Restore the recorded backup for an applied evolution candidate after confirmation.",
+        "argument_schema": {
+            "candidate": {"type": "string", "required": True, "prefilled": True},
+            "confirm_rollback": {"type": "boolean", "required": True, "prefilled": True},
+            "global_skills_dir": {"type": "string", "required": False, "prefilled": False},
+        },
+        "risk_level": "high",
+        "requires_confirmation": True,
+        "confirmation_message": "Rollback this applied evolution candidate and restore its backup?",
+    },
 }
 
 TYPE_ALIASES = {
@@ -182,6 +216,9 @@ __all__ = [
     "archive_fixture_skills_operation",
     "distill_and_promote_operation",
     "rollback_operations_operation",
+    "review_evolution_candidate_operation",
+    "apply_evolution_candidate_operation",
+    "rollback_evolution_candidate_operation",
 ]
 
 
@@ -591,6 +628,110 @@ def rollback_operations_operation(
     )
 
 
+def review_evolution_candidate_operation(
+    candidate: str,
+    *,
+    global_skills_dir: str | None = None,
+    display_label: str | None = None,
+    effect_summary: str | None = None,
+    risk_level: str | None = None,
+    requires_confirmation: bool | None = None,
+    confirmation_message: str | None = None,
+    operation_role: str = "default",
+    source_ref: str | None = None,
+    operation_group: str | None = None,
+    delivery_mode: str | None = None,
+    variant_role: str | None = None,
+) -> dict[str, Any]:
+    arguments = {"candidate": candidate}
+    if global_skills_dir is not None:
+        arguments["global_skills_dir"] = global_skills_dir
+    return tool_call(
+        "review_evolution_candidate",
+        arguments,
+        display_label=display_label,
+        effect_summary=effect_summary,
+        risk_level=risk_level,
+        requires_confirmation=requires_confirmation,
+        confirmation_message=confirmation_message,
+        operation_role=operation_role,
+        source_ref=source_ref,
+        operation_group=operation_group,
+        delivery_mode=delivery_mode,
+        variant_role=variant_role,
+    )
+
+
+def apply_evolution_candidate_operation(
+    candidate: str,
+    *,
+    confirm_apply: bool = True,
+    global_skills_dir: str | None = None,
+    display_label: str | None = None,
+    effect_summary: str | None = None,
+    risk_level: str | None = None,
+    requires_confirmation: bool | None = None,
+    confirmation_message: str | None = None,
+    operation_role: str = "default",
+    source_ref: str | None = None,
+    operation_group: str | None = None,
+    delivery_mode: str | None = None,
+    variant_role: str | None = None,
+) -> dict[str, Any]:
+    arguments = {"candidate": candidate, "confirm_apply": confirm_apply}
+    if global_skills_dir is not None:
+        arguments["global_skills_dir"] = global_skills_dir
+    return tool_call(
+        "apply_evolution_candidate",
+        arguments,
+        display_label=display_label,
+        effect_summary=effect_summary,
+        risk_level=risk_level,
+        requires_confirmation=requires_confirmation,
+        confirmation_message=confirmation_message,
+        operation_role=operation_role,
+        source_ref=source_ref,
+        operation_group=operation_group,
+        delivery_mode=delivery_mode,
+        variant_role=variant_role,
+    )
+
+
+def rollback_evolution_candidate_operation(
+    candidate: str,
+    *,
+    confirm_rollback: bool = True,
+    global_skills_dir: str | None = None,
+    display_label: str | None = None,
+    effect_summary: str | None = None,
+    risk_level: str | None = None,
+    requires_confirmation: bool | None = None,
+    confirmation_message: str | None = None,
+    operation_role: str = "default",
+    source_ref: str | None = None,
+    operation_group: str | None = None,
+    delivery_mode: str | None = None,
+    variant_role: str | None = None,
+) -> dict[str, Any]:
+    arguments = {"candidate": candidate, "confirm_rollback": confirm_rollback}
+    if global_skills_dir is not None:
+        arguments["global_skills_dir"] = global_skills_dir
+    return tool_call(
+        "rollback_evolution_candidate",
+        arguments,
+        display_label=display_label,
+        effect_summary=effect_summary,
+        risk_level=risk_level,
+        requires_confirmation=requires_confirmation,
+        confirmation_message=confirmation_message,
+        operation_role=operation_role,
+        source_ref=source_ref,
+        operation_group=operation_group,
+        delivery_mode=delivery_mode,
+        variant_role=variant_role,
+    )
+
+
 def governance_report_operation(
     *,
     display_label: str | None = None,
@@ -600,6 +741,9 @@ def governance_report_operation(
     confirmation_message: str | None = None,
     operation_role: str = "default",
     source_ref: str | None = None,
+    operation_group: str | None = None,
+    delivery_mode: str | None = None,
+    variant_role: str | None = None,
 ) -> dict[str, Any]:
     return tool_call(
         "governance_report",
@@ -611,6 +755,9 @@ def governance_report_operation(
         confirmation_message=confirmation_message,
         operation_role=operation_role,
         source_ref=source_ref,
+        operation_group=operation_group,
+        delivery_mode=delivery_mode,
+        variant_role=variant_role,
     )
 
 

@@ -2550,3 +2550,36 @@ Skill Runtime 的技能进化第一版只生成 `improve_existing_skill_candidat
 **Impact**
 
 候选状态现在可以推进到 `applied`。下一阶段如果继续，应实现 rollback/undo 路径：根据 `.skill_runtime/evolution_applications/*.apply.json` 里的备份记录恢复目标文件，并把候选状态更新为 `rolled_back`，而不是继续扩大自动应用范围。
+
+### 2026-05-05 - Rollback records must link directly to review and apply
+
+**Decision**
+
+将 `candidate -> review -> apply -> rollback` 视为一条完整可审计生命周期。回滚记录除了指向 application 和 backup 之外，还必须直接保留 `review_path`。
+
+**Reason**
+
+仅靠 `application_path` 间接回跳到 review 虽然 technically 可行，但不够干净。回滚记录本身应该能直接回答“这次撤回的是哪一份已审核提案”，这样审计和人工复核时不需要再做二次推断。
+
+**Impact**
+
+- `rollback_evolution_candidate` 现在会把 `review_path` 写进 `.skill_runtime/evolution_rollbacks/*.rollback.json`
+- 新 acceptance-style 测试会直接校验 review linkage、application linkage、backup linkage 和 restored hash
+- 下一步如果继续 skill evolution 主线，应优先补 operator-facing acceptance doc / runbook 或更明确的人工审核路径，而不是再回头补 rollback 基础能力
+
+### 2026-05-05 - Evolution lifecycle tools must return explicit host follow-up actions
+
+**Decision**
+
+`review_evolution_candidate`、`apply_evolution_candidate`、`rollback_evolution_candidate` 不再只返回原始 lifecycle 结果；它们还必须返回统一的 host-facing recommendation。
+
+**Reason**
+
+仅有 candidate/review/application/rollback 数据并不等于人工审核路径清楚。Host 还需要直接知道下一步是什么：review 后该显式 apply，apply 后该保留显式 rollback，rollback 后该刷新治理视图确认状态。如果没有这些 recommendation，流程虽然存在，但对 host 来说仍然是隐式的。
+
+**Impact**
+
+- review 完成后主推荐动作是 `apply_evolution_candidate`
+- apply 完成后主推荐动作是 `rollback_evolution_candidate`，并附带 `governance_report`
+- rollback 完成后主推荐动作是 `governance_report`
+- 回归测试现在会校验 `recommended_next_action`、`recommended_host_operation` 和 `available_host_operations`

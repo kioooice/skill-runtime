@@ -22,6 +22,7 @@ from skill_runtime.library_tiers import classify_skill_name
 from skill_runtime.mcp.host_operations import (
     archive_duplicate_candidates_follow_up_recommendation,
     archive_fixture_skills_follow_up_recommendation,
+    applied_evolution_candidate_follow_up_recommendation,
     captured_trajectory_recommendation,
     distilled_skill_audit_recommendation,
     executed_skill_promotion_recommendation,
@@ -32,6 +33,8 @@ from skill_runtime.mcp.host_operations import (
     promoted_skill_execution_recommendation,
     recommendation_from_payload,
     registered_trajectory_recommendation,
+    reviewed_evolution_candidate_recommendation,
+    rolled_back_evolution_candidate_follow_up_recommendation,
     source_ref_audit,
     search_response_payload,
     search_recommended_skill_recommendation,
@@ -846,7 +849,10 @@ class RuntimeService:
                     "review_path": review["review_path"],
                 },
             )
-            return {"candidate": updated, "review": review, "mutated_global_skill": False}
+            return with_recommendation(
+                {"candidate": updated, "review": review, "mutated_global_skill": False},
+                no_recommendation("Target global skill could not be found. Fix the target before reviewing again."),
+            )
 
         if not evidence or not proposed_changes:
             review = store.create_review(
@@ -869,7 +875,10 @@ class RuntimeService:
                     "review_path": review["review_path"],
                 },
             )
-            return {"candidate": updated, "review": review, "mutated_global_skill": False}
+            return with_recommendation(
+                {"candidate": updated, "review": review, "mutated_global_skill": False},
+                no_recommendation("Add clearer evidence and proposed changes before this candidate can move to apply."),
+            )
 
         proposed_diff = self._build_evolution_candidate_diff(
             target_skill_path,
@@ -907,7 +916,15 @@ class RuntimeService:
                 "diff_path": review.get("diff_path"),
             },
         )
-        return {"candidate": updated, "review": review, "mutated_global_skill": False}
+        return with_recommendation(
+            {"candidate": updated, "review": review, "mutated_global_skill": False},
+            reviewed_evolution_candidate_recommendation(
+                str(candidate_path),
+                str(candidate_payload.get("candidate_id") or ""),
+                global_skills_dir=str(global_skills_dir) if global_skills_dir is not None else None,
+                reason="Review completed. Apply only after manually checking the proposed diff and confirming the target should change.",
+            ),
+        )
 
     def apply_evolution_candidate(
         self,
@@ -1015,7 +1032,15 @@ class RuntimeService:
                 "backup_path": application["backup_path"],
             },
         )
-        return {"candidate": updated, "application": application, "mutated_global_skill": True}
+        return with_recommendation(
+            {"candidate": updated, "application": application, "mutated_global_skill": True},
+            applied_evolution_candidate_follow_up_recommendation(
+                str(candidate_path),
+                str(candidate_payload.get("candidate_id") or ""),
+                global_skills_dir=str(global_skills_dir) if global_skills_dir is not None else None,
+                reason="The reviewed evolution was applied. Keep explicit rollback available while you inspect the updated global skill.",
+            ),
+        )
 
     def rollback_evolution_candidate(
         self,
@@ -1122,6 +1147,7 @@ class RuntimeService:
                 "target_skill_path": str(target_skill_path),
                 "backup_path": str(backup_path),
                 "application_path": str(Path(application_path).resolve()),
+                "review_path": application.get("review_path") or candidate_payload.get("review_path"),
                 "previous_content_hash": current_hash,
                 "restored_content_hash": _file_sha256(target_skill_path),
                 "rollback_hint": {
@@ -1139,7 +1165,13 @@ class RuntimeService:
                 "rolled_back_at": rollback["created_at"],
             },
         )
-        return {"candidate": updated, "rollback": rollback, "mutated_global_skill": True}
+        return with_recommendation(
+            {"candidate": updated, "rollback": rollback, "mutated_global_skill": True},
+            rolled_back_evolution_candidate_follow_up_recommendation(
+                str(candidate_payload.get("candidate_id") or ""),
+                reason="Rollback completed. Refresh governance to confirm the rolled-back lifecycle state and current library health.",
+            ),
+        )
 
     def distill_coverage_report(
         self,

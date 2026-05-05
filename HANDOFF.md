@@ -32,6 +32,10 @@
 
 最新 handoff 主线验收：已新增 acceptance-style 快验，直接覆盖 maintainer handoff continuation 主线的三件事：expected continuation brief 必须是 maintainer-facing 结构、显式 state-file continuation 通过 `codex-classify` 保持 `default-in / project-state-maintenance`、`capture-trajectory` 只生成受控 trajectory 并推荐 `distill_trajectory`，不会越界成自动 promote。
 
+最新 rollback 主线验收：已新增 acceptance-style 快验，直接覆盖 `candidate -> review -> apply -> rollback` 的审计闭环。当前 rollback 记录除了 `application_path` 外，还会直接保留 `review_path`，因此一条 rollback 记录本身就能追溯完整技能进化生命周期，不需要再从 application 记录间接回跳。
+
+最新 evolution host 路径：`review_evolution_candidate`、`apply_evolution_candidate`、`rollback_evolution_candidate` 现在都返回统一的 host-facing recommendation。review 完成后会明确推荐显式 apply；apply 完成后会明确把 rollback 保留为下一步安全动作，并附带 governance refresh；rollback 完成后会明确推荐 governance refresh。当前 host 不需要再靠文档猜“下一步该点什么”。
+
 最新开源准备进展：用户确认采用 MIT。当前已新增 `LICENSE`，`pyproject.toml` 已补 license、author、project URLs、keywords 和 classifiers，README / README.zh-CN / README.en 已增加许可证说明。readiness audit 文档也已记录这项进展。剩余开源阻塞主要是 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`、README 顶部公开叙事和 maintainer workflow demo。
 
 最新阶段完成：Open Source readiness audit 已完成并写入 `docs/codex-open-source-readiness-audit.md`。结论：当前不适合直接申请。优势是仓库已公开、已有安装包元数据、CI、README、测试文档、隐私/provenance 文档和本地 demo；`LICENSE` 和基础 package metadata 已在审计后补齐；剩余主要阻塞是缺 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`，README 顶部还不是面向新维护者的 60 秒价值叙事，缺 2-3 个真实 maintainer workflow demo，公开 GitHub traction 当前很弱。下一阶段应做项目定位和 README/application narrative，不要先堆新插件功能。
@@ -859,7 +863,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 当前新战略目标是“开源申请后继续产品化主线”。申请表已提交，dashboard 当前已经够用，主线已收回到核心机制。第一条 maintainer mainline 现在已有 acceptance doc、runbook 和 acceptance-style 快验三层约束。下一步建议基于这条测试基线决定一件更实的事：`handoff continuation` 是否应该继续保持 `guarded-in`，还是值得被提升到更明确的 default-in 家族；如果要调整，先证明扩大边界真的有价值。不要回到继续堆 runtime 样本；也不要把观察面当成产品本体。
 
-技能进化闭环当前停在确认应用层：下一步如果继续这条主线，应做回滚/撤销应用路径，允许根据 `.skill_runtime/evolution_applications/*.apply.json` 的 `rollback_hint` 恢复备份，并把候选状态从 `applied` 调整为 `rolled_back` 或类似状态；不要做无确认自动写全局技能。
+技能进化闭环已经有 apply 和 rollback 两端的主线验收，也已经有明确的 host-facing follow-up。下一步如果继续这条主线，不应再补“能不能回滚”或“按钮能不能显示”这种基础能力，而应判断是否需要给 evolution 生命周期补一份独立 acceptance doc / runbook；不要做无确认自动写全局技能。
 
 开发前方向审核已经升级为主流程门禁。下一次任何新产品方向、新工具、新功能路线或“继续开发还是换方向”的问题，都先用全局 `pre-implementation-workflow-review` 输出 verdict；只有 `build_now` 可以进入实现，其余结论都先验证、改路线或停止。不要默认继续 runtime/sample/dashboard 验证，除非它直接服务于方向审核。下一次进入 AGENTS 编辑、runtime 验证、路线纠正、自动模式延续、方向审核等已知风险场景时，先应用全局 `workflow-error-correction` 里的 known guards，直接改变下一步行为；不要等用户重复指出，也不要把它当成单纯记录工具。后续新增通用工作流时，默认创建或提升为全局 Codex skill，再让项目 `AGENTS.md`、runtime inventory 或薄 adapter 指向它，不在项目内复制完整流程。dashboard 默认界面应继续保持 `skills-manage` 式管理应用外壳、workflow-first 主视图和 workflow-only 集合页；基础本地 helpers 不再作为默认可视化界面内容出现，只保留底层能力和显式检索路径。`总览` 页不要恢复路径副标题或本页搜索栏；`中央技能库` 导航计数按 active workflow skills 统计；跨工作区日志合并到唯一的 `触发日志` 入口，不再单独放 `全局日志`；触发日志卡片必须用中文解释任务、处理方式和结果，不要直接展示英文 runtime 内部原因。`skills-manage` control-plane 吸收方案 Phase 1-5 已完成；下一步不默认做 GitHub import。查看当前项目用 `python -m skill_runtime.cli dashboard --open` 或 `python -m skill_runtime.cli runtime-events`；查看多个项目用 `python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open` 或 `python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects`。如果下一轮需要 GitNexus 做精确影响分析，先更新当前仓库 GitNexus 索引。
 

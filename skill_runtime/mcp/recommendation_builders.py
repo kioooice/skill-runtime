@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from skill_runtime.mcp.operation_builders import (
+    apply_evolution_candidate_operation,
     archive_duplicate_candidates_operation,
     archive_fixture_skills_operation,
     audit_skill_operation,
@@ -15,7 +16,9 @@ from skill_runtime.mcp.operation_builders import (
     operation_list,
     promote_global_codex_skill_operation,
     promote_skill_operation,
+    review_evolution_candidate_operation,
     rollback_operations_operation,
+    rollback_evolution_candidate_operation,
     refresh_governance_report_operation,
 )
 from skill_runtime.mcp.source_refs import (
@@ -26,6 +29,10 @@ from skill_runtime.mcp.source_refs import (
     source_ref_audit,
     source_ref_distill_coverage_report_refresh,
     source_ref_distill,
+    source_ref_evolution_apply_follow_up,
+    source_ref_evolution_review_follow_up,
+    source_ref_evolution_rollback_follow_up,
+    source_ref_governance_report_refresh,
     source_ref_log_trajectory,
     source_ref_observed_task,
     source_ref_observed_task_rollback,
@@ -69,6 +76,9 @@ __all__ = [
     "archive_duplicate_candidates_follow_up_recommendation",
     "archive_fixture_skills_follow_up_recommendation",
     "rollback_operations_recommendation",
+    "reviewed_evolution_candidate_recommendation",
+    "applied_evolution_candidate_follow_up_recommendation",
+    "rolled_back_evolution_candidate_follow_up_recommendation",
 ]
 
 
@@ -310,6 +320,91 @@ def archive_fixture_skills_recommendation(
     return recommendation_from_operation(
         "archive_fixture_skills",
         archive_fixture_skills_operation(skill_names, **operation_kwargs),
+        reason=reason,
+        additional_operations=additional_operations,
+    )
+
+
+def reviewed_evolution_candidate_recommendation(
+    candidate_path: str,
+    candidate_id: str,
+    *,
+    global_skills_dir: str | None = None,
+    reason: str | None = None,
+    additional_operations: list[dict[str, Any] | None] | None = None,
+) -> dict[str, Any]:
+    return recommendation_from_operation(
+        "apply_evolution_candidate",
+        apply_evolution_candidate_operation(
+            candidate_path,
+            confirm_apply=True,
+            global_skills_dir=global_skills_dir,
+            display_label="Apply reviewed evolution",
+            effect_summary=(
+                "Apply this reviewed evolution candidate only after manually checking the proposed diff."
+            ),
+            source_ref=source_ref_evolution_review_follow_up(candidate_id),
+            operation_group="evolution_manual_path",
+            delivery_mode="path",
+            variant_role="preferred",
+        ),
+        reason=reason,
+        additional_operations=additional_operations,
+    )
+
+
+def applied_evolution_candidate_follow_up_recommendation(
+    candidate_path: str,
+    candidate_id: str,
+    *,
+    global_skills_dir: str | None = None,
+    reason: str | None = None,
+    additional_operations: list[dict[str, Any] | None] | None = None,
+) -> dict[str, Any]:
+    governance_operation = governance_report_operation(
+        display_label="Refresh governance report",
+        effect_summary="Refresh governance after this global skill update to inspect the latest lifecycle state.",
+        source_ref=source_ref_governance_report_refresh(),
+        operation_group="evolution_manual_path",
+        delivery_mode="path",
+        variant_role="alternate",
+    )
+    return recommendation_from_operation(
+        "rollback_evolution_candidate",
+        rollback_evolution_candidate_operation(
+            candidate_path,
+            confirm_rollback=True,
+            global_skills_dir=global_skills_dir,
+            display_label="Keep rollback ready",
+            effect_summary=(
+                "Rollback this applied evolution candidate if the reviewed change proves wrong after inspection."
+            ),
+            source_ref=source_ref_evolution_apply_follow_up(candidate_id),
+            operation_group="evolution_manual_path",
+            delivery_mode="path",
+            variant_role="preferred",
+        ),
+        reason=reason,
+        additional_operations=[governance_operation, *(additional_operations or [])],
+    )
+
+
+def rolled_back_evolution_candidate_follow_up_recommendation(
+    candidate_id: str,
+    *,
+    reason: str | None = None,
+    additional_operations: list[dict[str, Any] | None] | None = None,
+) -> dict[str, Any]:
+    return recommendation_from_operation(
+        "governance_report",
+        governance_report_operation(
+            display_label="Refresh governance report",
+            effect_summary="Refresh governance to confirm the rolled-back candidate state and current library health.",
+            source_ref=source_ref_evolution_rollback_follow_up(candidate_id),
+            operation_group="evolution_manual_path",
+            delivery_mode="path",
+            variant_role="preferred",
+        ),
         reason=reason,
         additional_operations=additional_operations,
     )

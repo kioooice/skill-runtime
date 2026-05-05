@@ -1017,6 +1017,16 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertEqual("reviewed", result["candidate"]["status"])
         self.assertEqual("ready_for_manual_diff", result["review"]["decision"])
         self.assertTrue(Path(result["review"]["review_path"]).exists())
+        self.assertEqual("apply_evolution_candidate", result["recommended_next_action"])
+        self.assertTrue(result["recommended_host_operation"]["requires_confirmation"])
+        self.assertEqual(
+            "apply_evolution_candidate",
+            result["recommended_host_operation"]["tool_name"],
+        )
+        self.assertEqual(
+            ["apply_evolution_candidate"],
+            [item["tool_name"] for item in result["available_host_operations"]],
+        )
         diff_path = Path(result["review"]["diff_path"])
         self.assertTrue(diff_path.exists())
         diff_text = diff_path.read_text(encoding="utf-8")
@@ -1142,6 +1152,16 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertIn("## Evolution Update", updated_text)
         self.assertIn("Require a verdict before implementation.", updated_text)
         self.assertIn("restore_backup_file", result["application"]["rollback_hint"]["strategy"])
+        self.assertEqual("rollback_evolution_candidate", result["recommended_next_action"])
+        self.assertEqual(
+            "rollback_evolution_candidate",
+            result["recommended_host_operation"]["tool_name"],
+        )
+        self.assertTrue(result["recommended_host_operation"]["requires_confirmation"])
+        self.assertEqual(
+            ["rollback_evolution_candidate", "governance_report"],
+            [item["tool_name"] for item in result["available_host_operations"]],
+        )
 
     def test_apply_evolution_candidate_rejects_stale_target(self) -> None:
         from skill_runtime.evolution.candidates import EvolutionCandidateStore
@@ -1313,6 +1333,71 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertTrue(Path(result["rollback"]["rollback_path"]).exists())
         self.assertEqual(original_text, skill_path.read_text(encoding="utf-8"))
         self.assertEqual("restore_backup_file", result["rollback"]["rollback_hint"]["strategy"])
+        self.assertEqual("governance_report", result["recommended_next_action"])
+        self.assertEqual("governance_report", result["recommended_host_operation"]["tool_name"])
+        self.assertEqual(
+            ["governance_report"],
+            [item["tool_name"] for item in result["available_host_operations"]],
+        )
+
+    def test_evolution_rollback_acceptance_preserves_auditable_lifecycle_chain(self) -> None:
+        from skill_runtime.evolution.candidates import EvolutionCandidateStore
+
+        global_skills_dir = self.runtime_root / "global-skills"
+        skill_dir = global_skills_dir / "pre-implementation-workflow-review"
+        skill_dir.mkdir(parents=True)
+        skill_path = skill_dir / "SKILL.md"
+        original_text = (
+            "---\n"
+            "name: pre-implementation-workflow-review\n"
+            "description: Review direction before implementation.\n"
+            "---\n\n"
+            "# Skill\n\n"
+            "Review value before building.\n"
+        )
+        skill_path.write_text(original_text, encoding="utf-8")
+        candidate = EvolutionCandidateStore(self.runtime_root).create_candidate(
+            target_skill_name="pre_implementation_workflow_review",
+            source_task_description="Tighten the direction review rollback lifecycle.",
+            reason="A global skill change should be fully auditable and reversible.",
+            evidence=["The lifecycle now reaches review, apply, and rollback."],
+            proposed_changes=["Keep direct record links across review, apply, and rollback."],
+            risk_level="medium",
+            change_type="guardrail",
+        )
+
+        reviewed = self.service.review_evolution_candidate(
+            candidate["candidate_path"],
+            global_skills_dir=global_skills_dir,
+        )
+        applied = self.service.apply_evolution_candidate(
+            candidate["candidate_path"],
+            confirm_apply=True,
+            global_skills_dir=global_skills_dir,
+        )
+        rolled_back = self.service.rollback_evolution_candidate(
+            candidate["candidate_path"],
+            confirm_rollback=True,
+            global_skills_dir=global_skills_dir,
+        )
+
+        rollback = rolled_back["rollback"]
+        self.assertEqual("rolled_back", rolled_back["candidate"]["status"])
+        self.assertEqual(original_text, skill_path.read_text(encoding="utf-8"))
+        self.assertEqual(applied["application"]["application_path"], rollback["application_path"])
+        self.assertEqual(reviewed["review"]["review_path"], rollback["review_path"])
+        self.assertEqual(
+            applied["application"]["backup_path"],
+            rollback["rollback_hint"]["backup_path"],
+        )
+        self.assertEqual(
+            applied["application"]["new_content_hash"],
+            rollback["previous_content_hash"],
+        )
+        self.assertEqual(
+            applied["application"]["previous_content_hash"],
+            rollback["restored_content_hash"],
+        )
 
     def test_rollback_evolution_candidate_rejects_target_changed_after_apply(self) -> None:
         from skill_runtime.evolution.candidates import EvolutionCandidateStore
