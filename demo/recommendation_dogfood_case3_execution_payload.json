@@ -1,0 +1,28 @@
+{
+  "result": {
+    "status": "completed",
+    "artifacts": []
+  },
+  "operation_log": [
+    {
+      "tool_name": "read_text",
+      "status": "success",
+      "path": "AGENTS.md"
+    },
+    {
+      "tool_name": "write_text",
+      "status": "success",
+      "path": "docs/decision-note.md"
+    }
+  ],
+  "skill_gap": {
+    "target_skill_name": "pre_implementation_workflow_review",
+    "reason": "User correction showed the workflow should challenge low-value routes earlier.",
+    "evidence": [
+      "The old route allowed low-value skill work to continue too long."
+    ],
+    "proposed_changes": [
+      "Add a guard for repeated low-value validation loops."
+    ]
+  }
+}

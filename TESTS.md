@@ -20,6 +20,7 @@ Use the fast suite for routine development feedback. Use the two contract script
   - `python scripts/check_mcp_architecture.py`
   - `python scripts/check_runtime_contracts.py`
 - Last known full-suite description: the suite remains the broad regression gate and is materially slower than the fast suite; do not use it as the default loop for small changes.
+- README quick demo should use a disposable runtime root such as `./.tmp_quick_demo`.
 
 ## Recent Validation Commands
 
