@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Start Real Host Integration With CLI Operator Text, Not Dashboard
+
+**Decision**
+
+Use CLI/operator text output, paired with the original JSON payload for audit, as the first real host integration surface for governed follow-up rendering.
+
+**Reason**
+
+The current evidence proves renderer output works in fixture payloads and one real CLI payload path. It does not prove dashboard ergonomics or placement. Starting with dashboard would force a larger surface decision before the actual placement question is settled.
+
+**Impact**
+
+- added `docs/host-integration-placement-decision.md`
+- recommended first surface is CLI/operator text output or an equivalent renderer command reference
+- dashboard is explicitly not the first integration surface
+- next step should define operator acceptance criteria for that placement
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Close Host Operator Validation At The Evidence Boundary
 
 **Decision**
