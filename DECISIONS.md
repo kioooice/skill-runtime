@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-06 - Treat Accepted Capture-Trajectory Recommendation Text As A Candidate Operator Path, Not Final Adoption
+
+**Decision**
+
+Treat the accepted `capture-trajectory --render-recommendation text` path as an available CLI/operator surface, but do not yet declare it the default operator path in README or runbooks.
+
+**Reason**
+
+Implementation and acceptance are complete for one narrow command path. The remaining question is adoption, not feature expansion. That decision should be made explicitly rather than inferred from the existence of the flag.
+
+**Impact**
+
+- added `docs/cli-recommendation-presentation-summary.md`
+- updated `docs/v0.2-core-quality-summary.md`
+- next slice should ask whether README/runbook should recommend this flag as the default operator path
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Accept Capture-Trajectory CLI Recommendation Surface As-Is
 
 **Decision**
