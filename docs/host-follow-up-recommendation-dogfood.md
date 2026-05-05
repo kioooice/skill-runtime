@@ -86,7 +86,8 @@ Verify that the current top-level follow-up recommendation contract is actually 
      ```
   2. Save the `agent-plan` output to a temporary JSON file:
      ```powershell
-     python -m skill_runtime.cli --root $root agent-plan --task-description "Improve the direction review workflow after a user correction." --working-directory . --expected-outputs-json "[\"./.tmp_recommendation_dogfood_case3/global-skills/pre-implementation-workflow-review/SKILL.md\"]" --disable-silent-reuse > "$root/plan.json"
+     $planResponse = python -m skill_runtime.cli --root $root agent-plan --task-description "Improve the direction review workflow after a user correction." --working-directory . --expected-outputs-json "[\"./.tmp_recommendation_dogfood_case3/global-skills/pre-implementation-workflow-review/SKILL.md\"]" --disable-silent-reuse | ConvertFrom-Json
+     $planResponse.data | ConvertTo-Json -Depth 20 | Set-Content "$root/plan.json"
      ```
   3. Reuse that saved plan with the execution payload:
      ```powershell
@@ -111,6 +112,7 @@ Verify that the current top-level follow-up recommendation contract is actually 
   - `learning_capture_payload.evolution_candidate_path` exists
 - Failure signs:
   - the fixture command was skipped or edited incorrectly and the expected output path no longer points at `./.tmp_recommendation_dogfood_case3/global-skills/pre-implementation-workflow-review/SKILL.md` (`setup failure`)
+  - `plan.json` still contains the top-level `status` / `data` wrapper instead of the internal plan object with `request` and `reuse_decision`
   - `observed_only` appears despite explicit evidence and proposed changes
   - `recommended_next_action` is missing
   - no `evolution_candidate_path` is emitted (`recommendation contract failure`)
