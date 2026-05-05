@@ -1,6 +1,6 @@
 # Skill Runtime
 
-[中文说明](./README.md)
+[中文说明](./README.zh-CN.md)
 
 `Skill Runtime` is a local workflow governance layer for Codex-style coding agents. It helps open-source maintainers turn repeated review, triage, release, handoff, and maintenance automation workflows into auditable, reusable, improvable skills.
 

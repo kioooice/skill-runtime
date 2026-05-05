@@ -1,84 +1,85 @@
 # Skill Runtime
 
-[English](./README.en.md)
+[中文说明](./README.zh-CN.md)
 
-`Skill Runtime` 是面向 Codex 风格编程代理的本地工作流治理层，帮助开源维护者把重复的 review、triage、release、handoff 和维护自动化流程沉淀成可审计、可复用、可改进的技能。
+`Skill Runtime` is a local workflow governance layer for Codex-style coding agents. It helps open-source maintainers turn repeated review, triage, release, handoff, and maintenance automation workflows into auditable, reusable, improvable skills.
 
-它不是第二个聊天 AI，而是挂在 Codex 这类宿主 AI 下方的一层能力内核。
+It is designed as a capability layer under tools like Codex, not as a second chat agent.
 
-## 面向谁
+## Who It Is For
 
-这个项目优先服务这些场景：
+This project is for:
 
-- 开源维护者希望把重复的维护任务从聊天记录里沉淀出来
-- agent 完成过一次复杂流程后，下一次不想从头规划
-- 团队需要在复用自动化前先看到审计、来源和提升记录
-- Codex / MCP / CLI 等宿主需要一个本地优先、可治理的 skill 生命周期层
+- open-source maintainers who want repeated maintenance work to outlive chat history
+- agents that completed a workflow once and should not re-plan it from scratch next time
+- teams that need audit, provenance, and promotion records before reusing automation
+- Codex / MCP / CLI hosts that need a local-first governed skill lifecycle layer
 
-一句话定位：
+One-line positioning:
 
 ```text
 Skill Runtime helps Codex-style agents capture, audit, reuse, and improve repeatable maintainer workflows.
 ```
 
-## 它解决什么问题
+## What It Does
 
-很多 AI 系统能完成任务，但并不能真正建立一套“被治理的技能层”。
+Most AI systems can complete tasks, but they often fail to build a governed layer of reusable workflows.
 
-常见问题包括：
+Typical failure modes are:
 
-- 重复任务每次都从头规划
-- 成功工作流只留在上下文里，无法沉淀
-- agent 生成的脚本或 skill 没有审计和生命周期管理
-- skill 检索和复用缺乏解释，容易变成黑箱
+- repetitive tasks get solved from scratch every time
+- successful workflows remain trapped in chat history
+- agent-generated scripts or skills are stored without audit or lifecycle rules
+- skill search and reuse become black boxes with weak explainability
 
-Skill Runtime 的重点不是“积累技能”，而是“治理技能”，再把这套治理能力逐步藏到正常的 Codex 执行流程下面。
+Skill Runtime focuses on governing skills, then gradually hiding that lifecycle under normal Codex task execution.
 
-系统围绕一条完整闭环展开：
+The runtime supports a full local loop:
 
-`检索 -> 执行 -> 蒸馏 -> 审计 -> 入库 -> 复用`
+`search -> execute -> distill -> audit -> promote -> reuse`
 
-现在也支持一条更轻的执行反馈闭环：
+It now also supports a lighter execution feedback loop:
 
-`检索 -> 执行 -> observed task record -> capture/distill`
+`search -> execute -> observed task record -> capture/distill`
 
-也就是说，宿主 AI 可以：
+That means a host AI can:
 
-- 在重做工作流之前，先检索有没有现成 skill
-- 通过统一的 `run(tools, **kwargs)` 接口执行 active skill
-- 把成功任务轨迹蒸馏成 staging skill
-- 对候选 skill 做静态和语义审计
-- 只有通过审计的 skill 才能 promote 到 active 库
-- 在后续类似任务中直接复用
+- search for an existing reusable skill before rebuilding a workflow
+- execute active skills through a stable `run(tools, **kwargs)` contract
+- automatically emit an observed task record after successful execution
+- distill successful trajectories into staging skills
+- audit candidate skills with static and semantic checks
+- promote only passed skills into the active library
+- reuse previously learned skills on future tasks
 
-## 核心特性
+## Core Properties
 
-- `宿主优先`：宿主 AI 负责理解任务、规划和交互
-- `可治理`：skill 必须走 staging -> audit -> promote 流程
-- `可解释`：搜索结果可以返回命中原因、规则来源和推荐下一步动作
-- `可扩展`：同一套 runtime 同时暴露 CLI 和 MCP，但它们都不是最终产品形态本身
-- `本地优先`：文件型存储，容易检查和调试
-- `来源可见`：导入、蒸馏、导出和 legacy skill 的 provenance 边界需要显式记录
+- `Host-first`: the host AI keeps planning, task understanding, and user interaction
+- `Governed`: new skills pass through staging, audit, and promotion before becoming active
+- `Explainable`: search results can expose match reasons, rule provenance, and recommended next action
+- `Extensible`: the same runtime is exposed through CLI and MCP, but neither is the final product shape
+- `Local-first`: storage is file-based and easy to inspect
+- `Provenance-visible`: imported, distilled, exported, and legacy skills should keep explicit source history
 
-## Maintainer workflow demos
+## Maintainer Workflow Demos
 
 - [Review cleanup](./docs/maintainer-review-cleanup-demo.md)
 - [Release readiness](./docs/maintainer-release-readiness-demo.md)
 - [Handoff continuation](./docs/maintainer-handoff-continuation-demo.md)
 
-## 开源参与
+## Open Source Participation
 
-- [贡献指南](./CONTRIBUTING.md)
-- [安全政策](./SECURITY.md)
-- [行为准则](./CODE_OF_CONDUCT.md)
-- [开源发布就绪清单](./docs/open-source-release-readiness-checklist.md)
-- [Codex Open Source 申请草稿](./docs/codex-open-source-application-draft.md)
+- [Contributing Guide](./CONTRIBUTING.md)
+- [Security Policy](./SECURITY.md)
+- [Code Of Conduct](./CODE_OF_CONDUCT.md)
+- [Open Source Release Readiness Checklist](./docs/open-source-release-readiness-checklist.md)
+- [Codex Open Source Application Draft](./docs/codex-open-source-application-draft.md)
 
-## 产品形态
+## Product Shape
 
-这个项目现在经历了两种不同的描述方式。
+The project has moved through two different descriptions.
 
-### 较早的描述方式
+### Earlier description
 
 ```text
 Codex
@@ -86,9 +87,9 @@ Codex
 -> runtime service
 ```
 
-这个说法在技术上仍然成立，但已经不是最准确的产品描述。
+That shape is still technically true, but it is no longer the best product description.
 
-### 现在更准确的描述方式
+### Current description
 
 ```text
 User task
@@ -98,24 +99,24 @@ User task
 -> runtime finalize
 ```
 
-在这条链里：
+In this shape:
 
-- Codex 继续负责用户交互和任务完成
-- runtime 在后台判断什么时候值得复用
-- 任务成功后，runtime 再决定是否回收这次经验
-- MCP 仍然重要，但它更像宿主接口，而不是这套系统的本体
+- Codex stays responsible for user interaction and task completion
+- the runtime quietly decides when reuse is worth attempting
+- successful work can be captured after execution
+- MCP remains a useful host interface, not the main product identity
 
-## 当前架构
+## Current Architecture
 
 ```text
 Host AI
 -> runtime gate / lifecycle adapter
 -> Runtime service
 -> skill store / trajectories / audits
--> CLI / MCP / scripts 作为接口层
+-> CLI / MCP / scripts as interface surfaces
 ```
 
-主要目录结构：
+Main workspace layout:
 
 ```text
 scripts/
@@ -146,106 +147,100 @@ tests/
 docs/
 ```
 
-架构维护 guard：
+Architecture maintenance guard:
 
-- 运行 `python scripts/check_mcp_architecture.py` 可验证当前文档化分层和 contract 边界
-- 运行 `python scripts/check_runtime_contracts.py` 可验证 host-operation 和 recommendation payload 不变量
-- 更细的 MCP contract 说明见 [MCP Integration](./docs/mcp-integration.md)
-- Codex 默认通道说明见 [Codex Integration](./docs/codex-integration.md)
-- 隐私、外部 provider 和 provenance 边界见 [Privacy And Provenance](./docs/privacy-and-provenance.md)
-- 当前这次架构转向的总说明见 [Agent-First Runtime Architecture](./docs/agent-first-runtime-architecture.md)
-- 当前运行时分层 guard 明确覆盖 `service / governance / retrieval`
-- 也覆盖 `memory / distill / audit / execution`
+- run `python scripts/check_mcp_architecture.py` to verify the documented layering and contract boundaries
+- run `python scripts/check_runtime_contracts.py` to validate host-operation and recommendation payload invariants
+- deeper MCP contract details live in [MCP Integration](./docs/mcp-integration.md)
+- Codex-facing default-lane details live in [Codex Integration](./docs/codex-integration.md)
+- privacy, external provider, and provenance boundaries live in [Privacy And Provenance](./docs/privacy-and-provenance.md)
+- the current architecture pivot is summarized in [Agent-First Runtime Architecture](./docs/agent-first-runtime-architecture.md)
+- the current runtime layering guard explicitly covers `service / governance / retrieval`
+- it also covers `memory / distill / audit / execution`
 
-## 当前能力一览
+## Feature Snapshot
 
 ### Runtime service
 
-- CLI 和 MCP 共用同一层业务服务
-- 搜索结果带顶层推荐字段：
+- shared service layer used by both CLI and MCP
+- top-level recommendation fields on search:
   - `recommended_next_action`
   - `recommended_skill_name`
   - `recommended_host_operation`
-- 成功执行 `execute` 后也会带：
+- successful execute responses now also include:
   - `recommended_next_action`
   - `recommended_reason`
   - `recommended_host_operation`
-- 显式生命周期接口现在也会带宿主后续动作：
+- explicit lifecycle responses now also include host follow-ups:
   - `log_trajectory -> distill_trajectory`
   - `capture_trajectory -> distill_trajectory`
   - `distill_trajectory -> audit_skill`
-  - `audit_skill -> promote_skill`（通过时）
+  - `audit_skill -> promote_skill` on pass
   - `promote_skill -> execute_skill`
 
 ### Distillation
 
-- 已知本地工作流走规则蒸馏
-- 未命中的成功轨迹可走 fallback provider
-- 可通过 `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD` 接入外部 fallback provider 命令
-- 仓库内已提供本地示例 fallback provider：`examples/providers/copy_metadata_fallback_provider.py`
-- 已提供 DeepSeek fallback provider：`examples/providers/deepseek_fallback_provider.py`
-- 当前规则库包括：
-  - 文本合并
-  - 文本替换
-  - 单文件转换
-  - 批量重命名
-  - 目录复制
-  - 目录移动
-  - 目录级文本替换
-  - CSV 转 JSON
-  - JSON 转 CSV
+- rule-based executable generation for known local automation patterns
+- fallback provider pipeline for unmatched successful trajectories
+- optional external fallback provider command via `SKILL_RUNTIME_FALLBACK_PROVIDER_CMD`
+- included local demo fallback provider in `examples/providers/copy_metadata_fallback_provider.py`
+- DeepSeek fallback provider in `examples/providers/deepseek_fallback_provider.py`
+- current rule registry includes:
+  - text merge
+  - text replace
+  - single-file transform
+  - batch rename
+  - directory copy
+  - directory move
+  - directory-wide text replace
+  - CSV to JSON
+  - JSON to CSV
 
 ### Audit
 
-- 静态审计：
-  - 危险命令
-  - shell 调用
-  - 缺失入口函数
-  - 硬编码路径
-- provider-backed 语义审计：
-  - 默认本地 mock provider
-  - 可通过 `SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD` 接入外部语义审核命令
-  - provider 命令契约见 [Provider Integration](./docs/provider-integration.md)
-  - 仓库内已提供本地示例 semantic provider：`examples/providers/pass_semantic_review_provider.py`
-  - 已提供 DeepSeek semantic provider：`examples/providers/deepseek_semantic_review_provider.py`
-  - 审计 prompt artifact
-  - provider review summary
-  - 轨迹对齐
-  - 参数覆盖
-  - 模板 skill 检测
-  - 面向检索的 docstring 结构检查
+- static checks for dangerous commands, shell usage, missing entrypoints, and hardcoded paths
+- provider-backed semantic review with prompt artifacts and a mock provider by default
+- optional external semantic review command via `SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD`
+- provider command details live in [Provider Integration](./docs/provider-integration.md)
+- included local demo semantic provider in `examples/providers/pass_semantic_review_provider.py`
+- DeepSeek semantic review provider in `examples/providers/deepseek_semantic_review_provider.py`
+- semantic checks for:
+  - trajectory alignment
+  - parameter coverage
+  - template-like skills
+  - retrieval-oriented docstring structure
 
 ### Retrieval
 
-- 用 `skill_store/index.json` 维护 active skill 索引
-- 当前是轻量混合检索
-- 搜索结果可返回：
+- active-skill indexing through `skill_store/index.json`
+- lightweight hybrid ranking
+- provenance surfaced in search results:
   - `host_operation`
   - `rule_name`
   - `rule_priority`
   - `rule_reason`
-  - `why_matched`
   - `score_breakdown`
   - `library_tier`
+  - `why_matched`
 
 ### Governance
 
-- 严格的 staging -> audit -> promote 流程
-- promote 后保留 provenance
-- 支持 legacy skill provenance 回填
-- `archive-cold` 可用
-- `governance-report` 可查看库状态和重复候选
-  - 重复候选里会直接给 `canonical_skill` 和 `archive_candidates`
-  - 还会给宿主更容易消费的 `recommended_actions`
-  - 每条建议现在还会带 `host_operation`，直接给出 MCP `tool_name`
-    和 `arguments`，方便宿主从“看建议”直接切到“执行建议”
-- `archive-duplicate-candidates` 可按建议安全归档重复候选
+- strict staging -> audit -> promote flow
+- provenance persistence on promoted skills
+- legacy provenance backfill command
+- cold-skill archival through `archive-cold`
+- lightweight governance reporting through `governance-report`
+  - duplicate clusters now include `canonical_skill` and `archive_candidates`
+  - host-friendly `recommended_actions`
+  - each recommended action now includes a `host_operation` payload with the MCP `tool_name`
+    and `arguments` needed for direct host execution
+- duplicate candidate archival through `archive-duplicate-candidates`
 
-## 本地安装
+## Local Installation
 
-### Clone 后最短验证路径
+### Clone-to-Verify Path
 
-从一个全新 clone 下来的仓库开始，在项目根目录按顺序执行：
+From a fresh clone, run this sequence from the repository root:
 
 ```bash
 python -m pip install --upgrade pip
@@ -258,41 +253,35 @@ python -m skill_runtime.cli search --query "merge txt files into markdown"
 python -m skill_runtime.mcp_stdio --help
 ```
 
-预期结果：
+Expected result:
 
-- 架构检查和 runtime contract 检查通过
-- runtime 快验通过
-- MCP smoke 命令能构造 server，不会启动长期运行的 stdio loop
-- search 命令能在靠前结果中看到 `merge_text_files`
+- the architecture and runtime contract checks pass
+- the fast runtime suite passes
+- the MCP smoke command exits without starting a long-running stdio loop
+- the search command returns `merge_text_files` near the top of the results
 
-完整 runtime 测试更全面，也更慢：
+The full runtime suite is intentionally broader and slower:
 
 ```bash
 python -m unittest tests.test_runtime -v
 ```
 
-它适合发布前、或影响大范围 runtime 行为时运行。当前 Windows 开发机上大约需要 9 分钟。要查看哪些测试最慢，可以运行：
+Use it before release-level changes or when broad runtime generation behavior may be affected. On the current Windows development machine it takes about 9 minutes. To inspect slow tests:
 
 ```bash
 python scripts/profile_runtime_tests.py --suite tests.test_runtime --top 20
 ```
 
-需要保留可比较的耗时基线时，增加 JSON 输出：
+If `skill-runtime` or `skill-runtime-mcp` is not on your shell `PATH` after install, use the portable module commands shown above.
 
-```bash
-python scripts/profile_runtime_tests.py --suite tests.test_runtime_fast --top 20 --json-output .skill_runtime/test-profile-fast.json
-```
-
-如果安装后当前 shell 找不到 `skill-runtime` 或 `skill-runtime-mcp`，请优先使用上面的 `python -m skill_runtime...` 模块入口。
-
-在项目根目录执行可编辑安装：
+Install the runtime in editable mode from the project root:
 
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -e .
 ```
 
-最小本地验证命令：
+Minimum local verification:
 
 ```bash
 python scripts/check_mcp_architecture.py
@@ -301,23 +290,23 @@ python -m unittest tests.test_runtime_fast -v
 python -c "from skill_runtime.mcp import build_mcp_server; build_mcp_server('.')"
 ```
 
-安装后可直接使用的命令入口：
+Installed command entrypoints:
 
 ```bash
 skill-runtime search --query "<task>"
 skill-runtime-mcp --root .
 ```
 
-更稳的模块入口写法：
+Portable module entrypoints:
 
 ```bash
 python -m skill_runtime.cli search --query "<task>"
 python -m skill_runtime.mcp_stdio --root .
 ```
 
-本地运行产生的 skill 使用统计会写到 `.skill_runtime/usage.json`，该文件默认已被 Git 忽略，因此日常执行 skill 不会继续改脏版本管理下的 active skill 元数据。
+Local runtime usage statistics are stored in `.skill_runtime/usage.json`, which is ignored by Git so normal skill execution does not dirty versioned active-skill metadata.
 
-## CLI 快速开始
+## CLI Quick Start
 
 ```bash
 skill-runtime search --query "<task>"
@@ -338,7 +327,7 @@ skill-runtime archive-duplicate-candidates --skill-name <name>
 skill-runtime backfill-provenance
 ```
 
-如果还在仓库根目录，也可以继续使用旧脚本路径：
+Legacy script path still works from the repo root:
 
 ```bash
 python scripts/skill_cli.py search --query "<task>"
@@ -359,39 +348,38 @@ python scripts/skill_cli.py archive-duplicate-candidates --skill-name <name>
 python scripts/skill_cli.py backfill-provenance
 ```
 
-现在成功执行 `execute` 后，返回值里会带上 `observed_task_record` 路径。
-这份文件后面可以直接：
+Successful `execute` calls now return an `observed_task_record` path. That file can be:
 
-- 用 `capture-trajectory` 转成标准 trajectory
-- 或直接喂给 `distill-and-promote --observed-task`
+- captured into a standard trajectory with `capture-trajectory`
+- sent directly into `distill-and-promote --observed-task`
 
-## MCP 快速开始
+## MCP Quick Start
 
-在项目根目录启动：
+Start the stdio MCP server from the project root:
 
 ```bash
 skill-runtime-mcp --root .
 ```
 
-更稳的模块入口写法：
+Portable module entrypoint:
 
 ```bash
 python -m skill_runtime.mcp_stdio --root .
 ```
 
-如果仍想走旧脚本路径，也可以继续使用：
+Legacy script path still works from the repo root:
 
 ```bash
 python scripts/skill_mcp_server.py
 ```
 
-或者从任意目录启动：
+Or from any directory:
 
 ```bash
 python D:/02-Projects/vibe/scripts/skill_mcp_server.py --root D:/02-Projects/vibe
 ```
 
-当前 MCP tools：
+Current MCP tools:
 
 - `search_skill`
 - `execute_skill`
@@ -409,10 +397,11 @@ python D:/02-Projects/vibe/scripts/skill_mcp_server.py --root D:/02-Projects/vib
 - `archive_fixture_skills`
 - `archive_cold_skills`
 
-`distill_coverage_report` 会汇总当前成功 trajectory 中有多少已经命中 deterministic
-rule、有多少仍落到 `llm_fallback`，并按工具序列与推断出的输入 schema 聚合剩余热点。
+`distill_coverage_report` summarizes how many saved successful trajectories currently hit
+deterministic rules versus `llm_fallback`, and clusters the remaining fallback hotspots by
+tool sequence and inferred input schema.
 
-`governance_report` 现在返回可直接执行的宿主调用信息，例如：
+`governance_report` now returns host-ready recommendations. Example:
 
 ```json
 {
@@ -442,30 +431,31 @@ rule、有多少仍落到 `llm_fallback`，并按工具序列与推断出的输�
 }
 ```
 
-这样宿主侧可以直接：
+That lets a host go directly from recommendation display to:
 
-- 用 `preview` 先做 dry-run 预览
-- 再用主 `host_operation` 正式执行
+- preview via the `preview` call
+- execution via the main `host_operation` call
 
-治理维护闭环：
+Governance maintenance loop:
 
-1. 在 active 库发生变化后先调用 `reindex_skills`
-2. 调用 `governance_report` 查看重复项和维护建议
-3. 需要为旧 metadata 补规则来源时调用 `backfill_skill_provenance`
-4. 用 `archive_duplicate_candidates` 做重复技能的预览或正式归档
-5. 用 `archive_fixture_skills` 做 fixture skill 的预览或正式归档
-6. 用 `archive_cold_skills` 把长期未使用的 active skill 移入 archive
+1. call `reindex_skills` after active-library changes
+2. call `governance_report` to inspect duplicates and maintenance actions
+3. call `backfill_skill_provenance` when legacy metadata needs rule provenance
+4. call `archive_duplicate_candidates` to preview or apply duplicate cleanup
+5. call `archive_fixture_skills` to preview or apply fixture-skill cleanup
+6. call `archive_cold_skills` to move stale active skills into the archive
 
-现在这些会改变或刷新库状态的治理工具都会把 `governance_report` 作为标准后续动作，
-这样宿主侧在每一步维护之后都可以回到同一个稳定的检查入口。
+All maintenance tools that mutate or refresh library state now converge back to
+`governance_report` as the approved follow-up, so a host can keep using one stable review
+surface after each maintenance step.
 
-`search_skill` 现在也用了同样的模式：
+`search_skill` now follows the same pattern:
 
-- 每条命中结果都带 `host_operation`
-- 顶层响应带 `recommended_host_operation`
-- 顶层响应也带 `available_host_operations`
+- each result includes `host_operation`
+- the top-level response includes `recommended_host_operation`
+- the top-level response also includes `available_host_operations`
 
-例如：
+Example:
 
 ```json
 {
@@ -485,11 +475,12 @@ rule、有多少仍落到 `llm_fallback`，并按工具序列与推断出的输�
 }
 ```
 
-对于没有强命中的查询，`search_skill` 现在会把 `capture_trajectory` 作为主推荐，
-同时把 `distill_and_promote_candidate` 保留在 `available_host_operations`
-里作为更短的次级路径，适合宿主已经拿到了可用 artifact 的情况。
+For no-strong-match queries, `search_skill` now recommends `capture_trajectory` as the
+primary next step and keeps `distill_and_promote_candidate` in
+`available_host_operations` as a shorter secondary path when the host already has the
+needed artifact.
 
-成功执行 `execute_skill` 后也会返回同样的下一跳信息：
+Successful `execute_skill` responses now do as well:
 
 ```json
 {
@@ -510,143 +501,115 @@ rule、有多少仍落到 `llm_fallback`，并按工具序列与推断出的输�
 }
 ```
 
-这样宿主调用链就能闭环：
+That closes the host call chain:
 
 - `search_skill`
 - `execute_skill`
 - `recommended_host_operation`
 - `distill_and_promote_candidate`
 
-宿主现在还可以直接用这些字段驱动交互：
+Hosts can use the extra fields to drive interaction:
 
-- `display_label`：按钮或菜单文案
-- `risk_level`：风险提示等级
-- `requires_confirmation`：是否需要二次确认
+- `display_label` for button or menu text
+- `risk_level` for visual emphasis
+- `requires_confirmation` for confirmation gating
 
-Host-call 生命周期闭环：
+Host-call lifecycle loop:
 
-- `log_trajectory` 推荐 `distill_trajectory`
-- `capture_trajectory` 推荐 `distill_trajectory`
-- `distill_trajectory` 推荐 `audit_skill`
-- `audit_skill` 在通过时推荐 `promote_skill`
-- `promote_skill` 推荐 `execute_skill`
-- `distill_and_promote_candidate` 在成功 promote 后也会推荐 `execute_skill`
+- `log_trajectory` recommends `distill_trajectory`
+- `capture_trajectory` recommends `distill_trajectory`
+- `distill_trajectory` recommends `audit_skill`
+- `audit_skill` recommends `promote_skill` when the audit passes
+- `promote_skill` recommends `execute_skill`
+- `distill_and_promote_candidate` recommends `execute_skill` after a successful promotion
 
-这条短路径现在可以从两种输入开始：
+The orchestration short path can now start from either:
 
-- 一份完整 trajectory JSON
-- 一份更轻量的 observed task record，系统会先自动 capture 成 trajectory
+- a full trajectory JSON
+- a lightweight observed task record that is captured into a trajectory first
 
-Observed task 输入格式现在统一收口在
-[MCP Integration](./docs/mcp-integration.md#observed-task-input-shapes)：
-其中包含 `capture_trajectory` 和 `distill_and_promote_candidate` 支持的详细格式、
-压缩格式和嵌套工具日志格式。
+Observed task input shapes are documented centrally in
+[MCP Integration](./docs/mcp-integration.md#observed-task-input-shapes), including the
+verbose, compact, and nested tool-log forms accepted by `capture_trajectory` and
+`distill_and_promote_candidate`.
 
-## Codex 接入方式
+## Codex Integration
 
-本项目已经按 “Codex 下方的本地背景能力层” 这个方向组织好。
+This project is already structured to sit under Codex as a local background capability layer.
 
-MCP 仍然是其中一个很重要的宿主接入面，但它已经不是全部。
+MCP is still one important transport for that layer, but it is no longer the whole story.
 
-推荐使用顺序：
+Recommended Codex usage:
 
-1. 先让 Codex 判断这次任务是否属于 runtime lane
-2. 如果属于，保守地尝试静默复用
-3. 如果不适合复用，就正常完成任务
-4. 任务成功后，再回收有复用价值的经验
-5. 只有在需要手动控制、调试或治理时，才显式走 MCP 生命周期工具
-6. 库状态变化后，再使用治理维护闭环
+1. let Codex decide whether the task belongs to the runtime lane
+2. if it does, try quiet reuse conservatively
+3. if reuse is weak or unsuitable, complete the task normally
+4. after success, capture reusable experience when it is worth keeping
+5. use explicit MCP lifecycle tools only when manual control, debugging, or governance is the real goal
+6. use the governance maintenance loop after library changes
 
-### 如何知道 runtime lane 有没有触发
-
-Codex 侧的默认通道结果会返回两个可见字段：
-
-- `runtime_lane_status`
-  - `used`：runtime lane 真的执行了复用技能，或捕获了可沉淀的任务经验
-  - `entered`：任务进入过 runtime lane 判断，但这次没有实际复用或捕获
-  - `skipped`：任务被判定留在普通 Codex 路径，没有进入 runtime lane
-- `runtime_lane_reason`：用一句话说明为什么进入、使用或跳过
-
-这两个字段用于回答“这次到底有没有用上 Skill Runtime”。正常使用时不需要手动找技能；如果要排查体验，可以看这两个字段。
-
-详细说明见：
+See:
 
 - [MCP Integration](./docs/mcp-integration.md)
 - [Codex Integration](./docs/codex-integration.md)
+- [Codex Default Lane Stage Closure](./docs/codex-default-lane-stage-closure.md)
+- [Codex Default Lane Observation Plan](./docs/codex-default-lane-observation-plan.md)
+- [Agent-First Runtime Architecture](./docs/agent-first-runtime-architecture.md)
 
-## Demo 与验证
+## Demo and Verification
 
-生成本地只读观察面板：
-
-```bash
-python -m skill_runtime.cli dashboard
-```
-
-一键生成并用默认浏览器打开：
+Generate the local read-only dashboard:
 
 ```bash
 python -m skill_runtime.cli dashboard --open
 ```
 
-如果已安装命令入口，也可以运行：
+The dashboard is static local HTML. It reads the current runtime root and shows the skill tree, capability collections, runtime lane trigger log, governance snapshot, and platform inventory as separate views. Capability collections are read-only organization overlays and do not change execution, audit, promotion, or archive semantics.
 
-```bash
-skill-runtime dashboard --open
-```
-
-默认输出到 `.skill_runtime/dashboard.html`。它只读取当前 runtime root 的本地数据，用于查看技能树、能力集合、runtime lane 触发日志、治理快照和平台目录观察；这些内容在面板中是独立视图，不混在同一页。技能树采用中心向四周发散的径向布局，四个象限分别展示 active / staging / archived / rejected 分支；分支内优先展示“格式转换、文本处理、文件整理、运行时治理”等组别，而不是逐个技能堆叠。点击组别时，组内技能会在居中的详情界面中凸显出来；页面不会自动滚动，技能树本身也不会被撑开。能力集合是只读组织层，不改变执行、审核、提升或归档语义。面板默认中文显示；技能调用仍使用原始英文 `skill_name`，页面只在展示层把技能名称和说明翻译成中文。
-
-查看多个项目的全局触发记录：
+To inspect runtime lane records across sibling projects:
 
 ```bash
 python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open
 ```
 
-全局面板默认输出到 `.skill_runtime/global-dashboard.html`。它和普通面板是同一套界面：仍然可以看当前项目的技能树、触发日志和治理快照，同时额外增加“全局项目”和“全局日志”两页，用来回答“其他工作区有没有触发过 runtime lane”。它只扫描指定目录下一层项目里的 `.skill_runtime/runtime_lane_events.jsonl`。如果不传 `--scan-root`，默认扫描当前 runtime root 的父目录。
-
-如果不想打开 HTML，也可以直接查看只读 JSON 事件：
+To inspect the same runtime lane records as read-only JSON without opening HTML:
 
 ```bash
 python -m skill_runtime.cli runtime-events --limit 20
-```
-
-查看多个项目的 JSON 事件：
-
-```bash
 python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects --limit 20
 ```
 
-`runtime-events` 会返回最近事件、`used / entered / skipped` 统计，以及 finalizer 捕获后推荐的 `recommended_next_action` 和可用 follow-up 操作标签。
+`runtime-events` returns recent events, `used / entered / skipped` counts, and finalizer follow-up fields such as `recommended_next_action` and available operation labels.
 
-运行本地快验：
+Run the fast local validation suite:
 
 ```bash
 python -m unittest tests.test_runtime_fast -v
 ```
 
-运行当前 active 技能搜索质量基线：
+Run the current active-skill search quality baseline:
 
 ```bash
 python scripts/evaluate_search_quality.py
 ```
 
-运行仓库内置的本地 provider 示例路径：
+Run the included local provider demo path by setting trusted command providers:
 
 ```bash
 export SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/copy_metadata_fallback_provider.py"]'
 export SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_semantic_review_provider.py"]'
 ```
 
-PowerShell：
+PowerShell:
 
 ```powershell
 $env:SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/copy_metadata_fallback_provider.py"]'
 $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_semantic_review_provider.py"]'
 ```
 
-这两个 provider 是很窄的本地示例，不是通用 LLM 后端。它们用于验证真实 provider hook 可以在不临时写脚本的情况下完成生成、审核、入库和复用。
+These providers are narrow local examples, not a general LLM backend. They are useful for verifying that the real provider hook can generate, audit, promote, and reuse an executable skill without writing ad-hoc scripts.
 
-使用 DeepSeek 作为真实 provider：
+Use DeepSeek as the real provider by setting local environment variables:
 
 ```bash
 export DEEPSEEK_API_KEY="<your-deepseek-api-key>"
@@ -656,7 +619,7 @@ export SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deeps
 export SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
 ```
 
-PowerShell：
+PowerShell:
 
 ```powershell
 $env:DEEPSEEK_API_KEY="<your-deepseek-api-key>"
@@ -666,15 +629,15 @@ $env:SKILL_RUNTIME_FALLBACK_PROVIDER_CMD='["python", "examples/providers/deepsee
 $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/deepseek_semantic_review_provider.py"]'
 ```
 
-不要把 API key 提交进仓库。fallback provider 会先做本地质量检查，失败时可让 DeepSeek 自动修复一次；细节见 [Provider Integration](./docs/provider-integration.md#deepseek-providers)。
+Do not commit API keys. The fallback provider runs a local quality gate and can ask DeepSeek for one repair pass before failing. DeepSeek provider details live in [Provider Integration](./docs/provider-integration.md#deepseek-providers).
 
-可选真实 DeepSeek 闭环 smoke：
+Optional live DeepSeek loop smoke:
 
 ```bash
 python scripts/smoke_deepseek_provider_loop.py
 ```
 
-运行 demo：
+Run the demo flow:
 
 ```bash
 python scripts/skill_cli.py log-trajectory --file trajectories/demo_merge_text_files.json
@@ -687,38 +650,35 @@ python scripts/skill_cli.py search --query "merge txt files into markdown"
 python scripts/skill_cli.py execute --skill merge_text_files_generated --args-file demo/execute_args.json
 ```
 
-## 文档入口
+## Documentation
 
-- [开源发布就绪清单](./docs/open-source-release-readiness-checklist.md)
-- [Codex Open Source 申请草稿](./docs/codex-open-source-application-draft.md)
-- [项目详细报告](./docs/skill-runtime-project-report.md)
-- [MCP 接入说明](./docs/mcp-integration.md)
-- [Codex 接入说明](./docs/codex-integration.md)
-- [隐私与 Provenance 边界](./docs/privacy-and-provenance.md)
-- [多宿主适配方案](./docs/multi-host-adaptation-plan.md)
-- [Codex 默认通道阶段收口](./docs/codex-default-lane-stage-closure.md)
-- [Codex 默认通道观察计划](./docs/codex-default-lane-observation-plan.md)
-- [Agent-First 架构说明](./docs/agent-first-runtime-architecture.md)
-- [视频脚本素材包](./docs/skill-runtime-video-cover.md)
+- [Open Source Release Readiness Checklist](./docs/open-source-release-readiness-checklist.md)
+- [Codex Open Source Application Draft](./docs/codex-open-source-application-draft.md)
+- [Project Report](./docs/skill-runtime-project-report.md)
+- [MCP Integration](./docs/mcp-integration.md)
+- [Codex Integration](./docs/codex-integration.md)
+- [Privacy And Provenance](./docs/privacy-and-provenance.md)
+- [Multi-Host Adaptation Plan](./docs/multi-host-adaptation-plan.md)
+- [Dogfooding Workflow](./docs/dogfooding-workflow.md)
+- [Video Script Pack](./docs/skill-runtime-video-cover.md)
 
-## 当前局限
+## Current Limits
 
-- 语义审计已经是 provider-backed，但默认 provider 还是 mock
-- fallback distillation 默认还是 mock provider
-- 检索目前是轻量混合版本，但还不是 embedding / 向量检索
-- `archive-cold` 已经可用，但还没有更复杂的重复检测和自动治理
-- 当前最强的是本地文件工作流
+- semantic audit is provider-backed but still uses a mock provider by default
+- fallback distillation still uses a mock provider by default
+- retrieval is still lightweight and not yet embedding-based
+- the current runtime is strongest on local file workflows
 
-## 许可证
+## License
 
-本项目采用 [MIT License](./LICENSE)。
+This project is licensed under the [MIT License](./LICENSE).
 
-## 当前阶段结论
+## Status
 
-这个项目已经是可用的本地 MVP。
+This project is already usable as a local MVP.
 
-下一步最值得继续补的方向通常是：
+The next meaningful upgrades are likely:
 
-1. 真实的 LLM 语义审计
-2. 轻量混合检索
-3. 更长期的技能库治理
+1. real LLM semantic audit
+2. lightweight hybrid retrieval
+3. longer-term library governance
