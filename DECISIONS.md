@@ -2,6 +2,29 @@
 
 ## Decision Log
 
+### 2026-05-06 - Close Host Operator Validation At The Evidence Boundary
+
+**Decision**
+
+Close the current host/operator validation slice with a summary page and do not keep expanding fixtures or presentation behavior by default.
+
+**Reason**
+
+The current evidence chain is now complete enough for this slice:
+
+- fixture payload dogfood proved the main governed follow-up families render cleanly
+- the real payload runbook proved no new capture helper is needed
+- the real CLI validation proved one actual service response can be captured, extracted, and rendered clearly
+
+What remains unresolved is no longer rendering capability. It is the integration decision: where current renderer output should appear in a real host/operator flow.
+
+**Impact**
+
+- added `docs/host-operator-validation-summary.md`
+- updated `docs/v0.2-core-quality-summary.md`
+- next recommended slice is `real host integration decision: where should renderer output appear?`
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Treat Capture-Trajectory As The First Real Payload Validation Target
 
 **Decision**
