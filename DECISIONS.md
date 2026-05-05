@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Adopt Capture-Trajectory Recommendation Text Narrowly In README And Runbook
+
+**Decision**
+
+Recommend `capture-trajectory --render-recommendation text` in README and the relevant payload-rendering runbook as the narrow operator path for governed follow-up.
+
+**Reason**
+
+The implementation and acceptance evidence are complete for this one command path. The operator text is clear, the JSON audit payload stays intact, and no host operation execution, promotion, or apply side effect occurs. That is enough for narrow documentation adoption, but not enough for broader CLI or host-surface claims.
+
+**Impact**
+
+- added `docs/cli-recommendation-adoption-decision.md`
+- updated README quick path wording
+- updated `docs/real-host-payload-rendering-runbook.md`
+- adoption remains opt-in and `capture-trajectory`-only
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Treat Accepted Capture-Trajectory Recommendation Text As A Candidate Operator Path, Not Final Adoption
 
 **Decision**

@@ -87,6 +87,21 @@ Render plain text:
 python scripts/render_recommendation_presentation.py --input payload.json --format text
 ```
 
+For the accepted `capture-trajectory` path only, operators may also use the built-in opt-in CLI surface instead of the separate renderer step:
+
+```powershell
+python -m skill_runtime.cli --root ./.tmp_real_payload_demo capture-trajectory --file demo/maintainer_review_cleanup/observed_task.json --task-id real_payload_demo --session-id real_payload_demo --render-recommendation text
+```
+
+That built-in CLI surface is narrow by design:
+
+- opt-in only
+- `capture-trajectory` only
+- human-readable text goes to `stderr`
+- JSON audit output remains on `stdout`
+- it does not execute `recommended_host_operation`
+- it does not promote or apply anything
+
 Render structured output:
 
 ```powershell

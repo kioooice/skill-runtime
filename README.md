@@ -82,6 +82,7 @@ If this is your first time in the repo, use this path:
    Run `python -m skill_runtime.cli --root ./.tmp_quick_demo capture-trajectory --file demo/maintainer_review_cleanup/observed_task.json --task-id quick_demo_review_cleanup --session-id quick_demo`.
 5. Follow the next action:
    Inspect `recommended_next_action` and then follow `recommended_host_operation`. In this quick path, the expected next tool is `distill_trajectory`.
+   Optional operator view: add `--render-recommendation text` when you want a human-readable governed follow-up summary on `stderr`. This is opt-in and `capture-trajectory`-only. The JSON audit payload remains on `stdout`, and the command does not execute `recommended_host_operation`, promote a skill, or apply an evolution candidate.
 6. Clean up:
    Delete `./.tmp_quick_demo` when you are done.
 
