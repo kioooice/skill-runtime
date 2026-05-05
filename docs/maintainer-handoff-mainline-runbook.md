@@ -142,6 +142,13 @@ What it does **not** prove yet:
 
 That is acceptable for now. The next step is to decide whether this task family should remain `guarded-in`, or whether later evidence justifies moving it into a stricter default-in family.
 
+Current boundary after review:
+
+- structured handoff continuation with explicit state-file inputs belongs in `default-in`
+- natural-language continuation such as `continue from HANDOFF.md` stays `guarded-in`
+
+This keeps the default lane narrow while still allowing explicit state-driven continuation to benefit from the phase-one runtime path.
+
 ## Optional Cleanup
 
 ```powershell

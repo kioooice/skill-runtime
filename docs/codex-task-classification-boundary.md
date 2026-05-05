@@ -49,6 +49,7 @@ All of the following should be true:
 - clean trailing whitespace in a folder of text files
 - convert JSON records into CSV
 - update `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md`
+- refresh a continuation brief when `handoff_path`, `tasks_path`, and similar state-file inputs are explicit
 - archive local files by a clear pattern
 - implement a dashboard/test/docs change with explicit output files, while silent reuse is disabled
 
@@ -72,6 +73,7 @@ They are not safe enough for broad default-in, but they are also not broad enoug
 - local code generation tasks with clear output paths
 - multi-step content reshaping with human-readable success criteria
 - local tasks that touch many files but still stay within one workspace
+- natural-language resume requests such as "continue from handoff" when the task is local and reusable but still branches on judgment
 
 ### Phase-one rule
 

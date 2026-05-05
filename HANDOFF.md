@@ -28,6 +28,8 @@
 
 最新主流程 runbook：已新增 `docs/maintainer-handoff-mainline-runbook.md`，用现有 handoff continuation demo 把第一条 maintainer mainline 写成可执行步骤。当前 runbook 已实际验证：demo JSON 输入可通过 `json.tool`，`capture-trajectory` 能在临时 runtime root 下产出 trajectory 并推荐 `distill_trajectory`；Codex-facing `codex-run` 对“continue from HANDOFF.md”这类请求当前会返回 `guarded-in` / `runtime_lane_status: skipped`，说明这条主线已经有明确的当前边界，而不是伪装成已经自动接管。
 
+最新 handoff 边界固化：已补回归测试和文档，明确 `handoff continuation` 不是“一刀切升成 default-in”。当前规则是：显式 state-file 输入的结构化 continuation 继续属于 `default-in` / `project-state-maintenance`，而自然语言的 `continue from HANDOFF.md` 继续保持 `guarded-in`。这条边界已写入 `docs/codex-task-classification-boundary.md` 和 handoff mainline runbook，并由快验中的新增分类测试覆盖。
+
 最新开源准备进展：用户确认采用 MIT。当前已新增 `LICENSE`，`pyproject.toml` 已补 license、author、project URLs、keywords 和 classifiers，README / README.zh-CN / README.en 已增加许可证说明。readiness audit 文档也已记录这项进展。剩余开源阻塞主要是 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`、README 顶部公开叙事和 maintainer workflow demo。
 
 最新阶段完成：Open Source readiness audit 已完成并写入 `docs/codex-open-source-readiness-audit.md`。结论：当前不适合直接申请。优势是仓库已公开、已有安装包元数据、CI、README、测试文档、隐私/provenance 文档和本地 demo；`LICENSE` 和基础 package metadata 已在审计后补齐；剩余主要阻塞是缺 `CONTRIBUTING.md`、`SECURITY.md`、`CODE_OF_CONDUCT.md`，README 顶部还不是面向新维护者的 60 秒价值叙事，缺 2-3 个真实 maintainer workflow demo，公开 GitHub traction 当前很弱。下一阶段应做项目定位和 README/application narrative，不要先堆新插件功能。

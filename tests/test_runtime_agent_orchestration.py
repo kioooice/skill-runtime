@@ -49,6 +49,43 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertIn("state-files", classification.matched_signals)
         self.assertIn("family:project-state-maintenance", classification.matched_signals)
 
+    def test_codex_task_classifier_keeps_structured_handoff_continuation_default_in(self) -> None:
+        from skill_runtime.api.host import classify_codex_task
+
+        classification = classify_codex_task(
+            AgentTaskRequest(
+                task_description="Refresh the continuation brief from HANDOFF, TASKS, and DECISIONS state files.",
+                known_inputs={
+                    "handoff_path": "HANDOFF.md",
+                    "tasks_path": "TASKS.md",
+                    "decisions_path": "DECISIONS.md",
+                },
+                expected_outputs=["continuation_brief.md"],
+                risk_level="low",
+                task_kind="workflow",
+            )
+        )
+
+        self.assertEqual("default-in", classification.bucket)
+        self.assertIn("state-files", classification.matched_signals)
+        self.assertIn("family:project-state-maintenance", classification.matched_signals)
+
+    def test_codex_task_classifier_keeps_natural_language_handoff_continuation_guarded_in(self) -> None:
+        from skill_runtime.api.host import classify_codex_task
+
+        classification = classify_codex_task(
+            AgentTaskRequest(
+                task_description="Continue from HANDOFF.md and produce a continuation brief for the next Codex session.",
+                working_directory=str(self.runtime_root),
+                risk_level="low",
+                task_kind="workflow",
+            )
+        )
+
+        self.assertEqual("guarded-in", classification.bucket)
+        self.assertIn("workspace-scoped", classification.matched_signals)
+        self.assertIn("state-files", classification.matched_signals)
+
     def test_codex_task_classifier_marks_structured_conversion_as_default_in(self) -> None:
         from skill_runtime.api.host import classify_codex_task
 

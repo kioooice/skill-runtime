@@ -628,6 +628,15 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the lane help: yes, because it exposed the exact current boundary instead of leaving handoff continuation in a vague "maybe runtime, maybe not" state
 - Follow-up: decide later whether handoff continuation should remain `guarded-in` or earn a stricter default-in family after acceptance-style proof
 
+### 2026-05-05 - Handoff continuation classification boundary
+
+- Task type: runtime classification boundary codification
+- Classified as: `default-out` / `skipped` by the Codex runtime gate for this docs-and-tests round
+- What happened: added regression coverage and docs to lock the current rule: structured handoff continuation with explicit state-file inputs stays `default-in`, while natural-language continuation such as `continue from HANDOFF.md` stays `guarded-in`
+- Did the behavior feel correct: yes; it keeps the automatic lane narrow without erasing the value of explicit state-driven continuation workflows
+- Did the lane help: yes, because the mainline now has a concrete, test-backed boundary instead of an informal judgment in chat
+- Follow-up: if later evidence justifies widening this family, add an acceptance-style test first, then change the classifier
+
 ### 2026-05-01 - Runtime observability dashboard implementation
 
 - Task type: Codex runtime lane observability
