@@ -2,6 +2,10 @@
 
 ## Current State
 
+最新 v0.2 release candidate gate 主线：已完成整轮 RC 判断、最小 release 文档补齐、proof/baseline/test 验证和版本入口收口。当前新增 `docs/v0.2-release-candidate-checklist.md`；`CHANGELOG.md` 已新增 `v0.2.0-rc1` 条目；`pyproject.toml` 版本已从 `0.1.0` 收口到 `0.2.0rc1`，development status classifier 同步从 alpha 调整为 beta；README 只新增了 1 行 RC checklist 链接。当前结论是：在不改 ranking、不扩大 `default-in`、不新增 active skill、不自动 promote/apply、不扩 CLI recommendation scope、也不做 dashboard 大改的前提下，当前仓库已经可以称为 `v0.2.0rc1` release candidate。当前仍然没有任何证据支持扩大 `default-in`。
+
+最新 RC gate 验证结果：`python scripts/check_mcp_architecture.py`、`python scripts/check_runtime_contracts.py`、`python -m unittest tests.test_runtime_fast -v`、`python scripts/evaluate_provider_quality.py --baseline docs/provider-quality-baseline.json --fail-on-regression`、`python scripts/evaluate_search_quality.py --baseline docs/search-quality-baseline.json --fail-on-regression`、`python scripts/evaluate_workflow_search_quality.py --baseline docs/workflow-search-quality-baseline.json --fail-on-regression`、`python scripts/run_v0_2_proof_bundle.py` 全部通过。proof bundle 仍然保持 governed boundary：有 recommendation、无自动 distill/promote/apply。当前 blocking gap 为无；non-blocking gaps 已固定到 `docs/v0.2-release-candidate-checklist.md`。
+
 最新 v0.2 maintainer-facing proof bundle：已新增 `docs/v0.2-maintainer-proof-bundle.md`，并新增 `scripts/run_v0_2_proof_bundle.py` 把已验收的 maintainer path 收成一条可复现实例：`capture-trajectory --render-recommendation text` + `maintainer_review_cleanup` observed task + 三条 baseline gate。当前已把 proof artifacts 固定到 `docs/fixtures/v0.2-proof-bundle/`，包括 `stdout.capture-trajectory.json`、`stderr.capture-trajectory.txt` 和 `summary.capture-trajectory.json`。当前结论是：这套 bundle 已经能向外部读者证明项目的主价值是 maintainer workflow capture、governed follow-up recommendation、auditable JSON payload 和 explicit non-automatic boundary，而不是本地 utility script 执行。当前没有执行 `distill_trajectory`、没有 promote、没有 apply，也没有改 runtime decision、search ranking、workflow query 或 `default-in`。README 只做了最小链接更新，指向 proof bundle 文档。当前仍然没有任何证据支持扩大 `default-in`。
 
 最新开发节奏记忆：后续默认切换为“较大步长的完整切片”。除非碰到高风险边界，否则单轮工作尽量一次完成：必要决策判断、最小但完整的实现、对应测试、相关文档/summary/runbook 更新、`HANDOFF.md / TASKS.md / DECISIONS.md` 状态更新、provider/search/workflow baseline gate 验证，以及 commit + push。默认不再把主线拆成“只做一个小文档、一个小验收点或一个很窄分析”的高频碎轮次。硬边界保持不变：不扩大 `default-in`、不自动 promote、不自动 apply evolution candidate、不把 expected gap 硬改成 pass、不把 lifecycle operation 包装成普通 active skill、不为了展示效果跳过 baseline、不做 dashboard 大改，除非已有明确 acceptance criteria。
@@ -930,6 +934,8 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 - 当前不再默认继续推进到自动 `distill/promote`
 
 ## Next Action
+
+如果继续 v0.2 release 主线，下一步优先做发布动作而不是继续扩功能：确认工作区只包含这轮 RC gate 的文档/元数据/state 更新，完成 commit + push；如果之后要正式 cut tag，再决定是否从 `0.2.0rc1` 进入最终 `v0.2.0`。不要借 RC 通过去改 ranking、扩大 `default-in`、把 expected gap 硬做成 pass、扩 CLI recommendation 到别的命令，或把 dashboard 继续包装成 release proof。
 
 如果继续 `v0.2-search-quality`，下一步不要回到 utility skill 过度优化，也不要调 ranking weight。优先判断是否需要补 workflow metadata 覆盖：重点看 `review cleanup` 和 `governed learning follow-up` 这两类 query 是否值得拥有真实 active workflow metadata，还是应继续作为 demo / host-follow-up 能力而保持 search expected gap。只有在这个产品边界明确之后，才考虑扩 workflow baseline query 集；不要把当前 workflow baseline 当成扩大 `default-in` 的证据。
 

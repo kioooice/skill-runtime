@@ -2,6 +2,34 @@
 
 ## Decision Log
 
+### 2026-05-06 - Call The Current Repository State v0.2.0rc1
+
+**Decision**
+
+After the release gate checks passed, package the current repository state as `v0.2.0rc1` and treat it as the valid v0.2 release candidate.
+
+**Reason**
+
+The repository now has all required release-candidate evidence in one place:
+
+- maintainer-facing proof bundle is checked in and reproducible
+- provider quality baseline passes
+- utility search baseline passes
+- workflow search baseline passes
+- architecture, runtime contract, and fast-suite verification all pass
+- changelog and version entry now expose a v0.2 RC surface
+
+The remaining gaps are real, but they are already documented as non-blocking and do not undermine the narrow maintainer-governance product claim for v0.2.
+
+**Impact**
+
+- added `docs/v0.2-release-candidate-checklist.md`
+- updated `CHANGELOG.md` with a `v0.2.0-rc1` section
+- updated `pyproject.toml` version to `0.2.0rc1`
+- added a minimal README link to the RC checklist
+- current blocking gap status for the RC gate is `none`
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Package The Accepted Capture-Trajectory Path As The v0.2 Maintainer Proof Bundle
 
 **Decision**

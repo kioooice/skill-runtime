@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新 v0.2 release candidate gate：已完成 RC 判断、最小 README/文档修正、release checklist、新版 changelog 入口、proof bundle / baseline / fast suite 验证，以及版本入口收口。当前新增 `docs/v0.2-release-candidate-checklist.md`，`CHANGELOG.md` 已新增 `v0.2.0-rc1` 条目，`pyproject.toml` 已更新为 `0.2.0rc1`。当前结论是：仓库可以称为 `v0.2.0rc1` release candidate；当前没有 blocking gap，且没有任何证据支持扩大 `default-in`。剩余动作只剩 commit + push 本轮 RC gate 结果。
+
 - 最新 v0.2 maintainer-facing proof bundle：已新增 `docs/v0.2-maintainer-proof-bundle.md`，并新增 `scripts/run_v0_2_proof_bundle.py` 来固定一条 maintainer-facing proof path。当前 bundle 只复用已验收路径：`capture-trajectory --render-recommendation text`、`demo/maintainer_review_cleanup/observed_task.json`、provider/search/workflow baseline gates。当前 artifacts 已固定到 `docs/fixtures/v0.2-proof-bundle/`，并证明 recommendation 被渲染出来但没有执行 `distill_trajectory`，也没有 promote/apply。README 只新增了 proof bundle 链接，没有重写叙事。下一步更应该补外部 reader/adoption 级证据，而不是继续扩 CLI flag、继续堆小文档，或者误把这条 proof 路径写成 production dashboard。当前仍然没有任何证据支持扩大 `default-in`。
 
 - 最新开发节奏记忆：后续默认采用“较大步长的完整切片”，不再优先拆成很多只做计划、只做总结或只做一个小验收点的轮次。除非存在高风险边界，否则单轮应尽量一次完成：必要决策、最小完整实现、对应测试、相关文档与 runbook 更新、`HANDOFF.md / TASKS.md / DECISIONS.md` 状态更新、provider/search/workflow baseline gate 验证，以及 commit + push。硬边界保持不变：不扩大 `default-in`、不自动 promote、不自动 apply evolution candidate、不把 expected gap 硬改成 pass、不把 lifecycle operation 包装成普通 active skill、不为展示跳过 baseline、不做无 acceptance criteria 的 dashboard 大改。

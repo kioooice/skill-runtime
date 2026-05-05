@@ -95,6 +95,7 @@ For one checked-in maintainer-facing proof bundle around this accepted path, see
 - [Code Of Conduct](./CODE_OF_CONDUCT.md)
 - [Changelog](./CHANGELOG.md)
 - [Open Source Release Readiness Checklist](./docs/open-source-release-readiness-checklist.md)
+- [v0.2 Release Candidate Checklist](./docs/v0.2-release-candidate-checklist.md)
 - [Codex Open Source Application Draft](./docs/codex-open-source-application-draft.md)
 
 ## Product Shape
