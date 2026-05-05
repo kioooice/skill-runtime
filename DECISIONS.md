@@ -2,6 +2,26 @@
 
 ## Decision Log
 
+### 2026-05-06 - Split Workflow Search Quality From The Utility Fixture Baseline
+
+**Decision**
+
+Create a separate workflow-focused search baseline instead of extending the existing utility-heavy search baseline in place.
+
+**Reason**
+
+Utility skills still matter as fixtures, smoke targets, and control cases, but they are no longer the main product proof. The real product value is whether maintainer workflow intents can find the right workflow skill or whether the system honestly shows that a workflow is still only represented as a demo or host follow-up path. Mixing those two goals into one baseline would blur the signal and encourage more utility optimization than the product needs.
+
+**Impact**
+
+- added `docs/workflow-search-quality-plan.md`
+- added `docs/workflow-search-quality-baseline.json`
+- added `scripts/evaluate_workflow_search_quality.py`
+- added workflow-search evaluator tests and wired them into `tests.test_runtime_fast` / `tests.test_runtime`
+- current workflow baseline records two real workflow matches and two honest expected gaps
+- utility skills remain in the repository as fixtures and controls, not the main workflow value proof
+- this still does not justify widening `default-in`
+
 ### 2026-05-05 - Prefer Metadata Tightening Before Search Weight Tuning
 
 **Decision**

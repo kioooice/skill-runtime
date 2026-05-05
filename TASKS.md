@@ -2,6 +2,7 @@
 
 ## Current Focus
 
+- 最新 workflow-focused search baseline：已新增 `docs/workflow-search-quality-plan.md`、`docs/workflow-search-quality-baseline.json` 和 `scripts/evaluate_workflow_search_quality.py`，把 search/reuse 主线拉回 workflow skills。当前 workflow-only fixture set 覆盖 `session_handoff_maintenance`、`pre_implementation_workflow_review`、`runtime_gate_workflow`、`runtime_verification_selector`、`repo_impact_analysis`、`deployment_strategy_review`、`auto_mode_stage_runner`、`nontechnical_stage_report`。第一轮 query 结果是：`handoff_continuation` 和 `pre_implementation_review` 真命中；`maintainer_review_cleanup` 与 `governed_learning_follow_up` 被诚实记录为 expected gap；utility 负例 `merge text files into markdown` 没有误命中 workflow skill。当前 workflow baseline 说明基础本地技能主要保留为测试夹具、执行 smoke 和现有 utility baseline 对照组，不再作为主展示或主要价值证明；仍然没有任何证据支持扩大 `default-in`。
 - 最新 search ranking diagnostics：已新增 `docs/search-ranking-diagnostics.md`，分析固定 baseline 下每个 query 的 top result、false neighbors、negative-query noise、alias boost 和 metadata 问题。当前判断是：false neighbor 主要来自 broad metadata，尤其是 `directory_text_cleanup_dogfood` 对 merge 类 query 的邻近干扰，以及 `json_to_csv_dogfood` 的弱 `text` 邻近项；negative queries 当前没有推荐噪音；alias boost 在现有 baseline 下不显得过强。下一步更应该先做 metadata 质量收紧，而不是直接调 ranking weights。search baseline 仍为 `matched=7`，provider baseline 仍为 `matched=8`，并且仍然没有任何证据支持扩大 `default-in`。
 - 最新 v0.2 search quality summary：已新增 `docs/v0.2-search-quality-summary.md`，把 completed capabilities、search limitations、alias-based recall improvement、baseline gate、当前 query 结果、证明边界、`default-in` 边界和下一条推荐主线集中记录。summary 明确写出当前 gate 命令 `python scripts/evaluate_search_quality.py --baseline docs/search-quality-baseline.json --fail-on-regression`，当前 baseline comparison 为 `matched=7`、其余计数全 0；中文支持只是显式 `search_aliases`，不是通用中文理解，也没有 embedding、外部服务或 LLM retrieval。当前仍然没有任何证据支持扩大 `default-in`。
 - 最新 search baseline gate：已新增 `docs/search-quality-baseline.json`，并让 `scripts/evaluate_search_quality.py` 支持 `--baseline` 与 `--fail-on-regression`。当前 report 在给 baseline 时会输出 `baseline_comparison`，包含 `matched / regressions / improvements / unexpected_failures / unexpected_passes / missing_queries / extra_queries`。当前 baseline 比较结果是 `matched=7`、其余计数全 0；`--fail-on-regression` 当前返回 0。对应测试已补齐：baseline JSON 可读取、当前 baseline 全 matched、坏 baseline 可检测 regression 或 unexpected failure。当前这只是本地可比较 retrieval-quality gate，不是 semantic retrieval，也没有任何证据支持扩大 `default-in`。
@@ -76,6 +77,7 @@
 - [x] 继续判断这条 operator-facing sequence 是否需要一个更窄的 host UI / CLI 展示层，而不是继续扩 dashboard
 - [x] 用 2-3 条真实 maintainer 流验证 raw JSON + runbook 是否已经够用；只有确认不够用时，才进入更窄的 host presentation 实现
 - [ ] 继续等待真实操作者/宿主集成中的 presentation 证据；没有明确痛点前不做新展示层
+- [ ] 如果继续 search/reuse 主线，优先决定 `review cleanup` 和 `governed learning follow-up` 是否需要真实 active workflow metadata；不要先调 ranking，也不要回到 utility skill 过度优化
 - [x] 做 Codex for Open Source readiness audit：公开状态、license、README、安装验证、demo、维护者 workflow、申请材料缺口
 - [x] 补 MIT License 和基础 package metadata
 - [x] 收敛项目的一句话定位和 README 顶部叙事：面向开源维护者的 Codex workflow/plugin layer，而不是泛泛的本地技能实验

@@ -24,6 +24,7 @@ from tests.test_runtime_platform_export import RuntimePlatformExportTestsMixin
 from tests.test_runtime_search_quality import RuntimeSearchQualityTestsMixin
 from tests.test_runtime_skill_import import RuntimeSkillImportTestsMixin
 from tests.test_runtime_trajectory_search import RuntimeTrajectorySearchTestsMixin
+from tests.test_runtime_workflow_search_quality import RuntimeWorkflowSearchQualityTestsMixin
 
 
 class RuntimeTests(
@@ -46,6 +47,7 @@ class RuntimeTests(
     RuntimePlatformInventoryTestsMixin,
     RuntimeSearchQualityTestsMixin,
     RuntimeSkillImportTestsMixin,
+    RuntimeWorkflowSearchQualityTestsMixin,
     RuntimeFileGeneratedSkillTestsMixin,
     RuntimeDirectoryGeneratedSkillTestsMixin,
     RuntimeGeneratedSkillRegressionTestsMixin,

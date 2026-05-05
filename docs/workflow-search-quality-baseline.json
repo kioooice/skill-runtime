@@ -1,0 +1,51 @@
+{
+  "baseline_date": "2026-05-06",
+  "description": "Machine-readable baseline for scripts/evaluate_workflow_search_quality.py query comparison.",
+  "queries": [
+    {
+      "query_id": "handoff_continuation",
+      "query_type": "positive_handoff_continuation",
+      "expectation_mode": "should_match",
+      "expected_top_skill": "session_handoff_maintenance",
+      "expected_matched": true,
+      "expected_expectation_met": true,
+      "expected_recommended_skill": "session_handoff_maintenance"
+    },
+    {
+      "query_id": "pre_implementation_review",
+      "query_type": "positive_pre_implementation_review",
+      "expectation_mode": "should_match",
+      "expected_top_skill": "pre_implementation_workflow_review",
+      "expected_matched": true,
+      "expected_expectation_met": true,
+      "expected_recommended_skill": "pre_implementation_workflow_review"
+    },
+    {
+      "query_id": "maintainer_review_cleanup",
+      "query_type": "positive_review_cleanup_expected_gap",
+      "expectation_mode": "expected_gap",
+      "expected_top_skill": null,
+      "expected_matched": false,
+      "expected_expectation_met": true,
+      "expected_recommended_skill": null
+    },
+    {
+      "query_id": "governed_learning_follow_up",
+      "query_type": "positive_governed_learning_expected_gap",
+      "expectation_mode": "expected_gap",
+      "expected_top_skill": null,
+      "expected_matched": false,
+      "expected_expectation_met": true,
+      "expected_recommended_skill": null
+    },
+    {
+      "query_id": "negative_utility_merge_markdown",
+      "query_type": "negative_utility_query",
+      "expectation_mode": "should_not_match",
+      "expected_top_skill": null,
+      "expected_matched": false,
+      "expected_expectation_met": true,
+      "expected_recommended_skill": null
+    }
+  ]
+}

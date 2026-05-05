@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新 workflow-focused search baseline：已新增 `docs/workflow-search-quality-plan.md`、`docs/workflow-search-quality-baseline.json` 和 `scripts/evaluate_workflow_search_quality.py`，把 `v0.2-search-quality` 主线从 utility-heavy 对照重新拉回 maintainer workflow。当前 workflow evaluator 只导入 workflow-oriented active fixtures（如 `session_handoff_maintenance`、`pre_implementation_workflow_review`、`runtime_gate_workflow` 等），并把 query 明确分成 `should_match`、`expected_gap`、`should_not_match`。第一轮结果是：`handoff_continuation` 命中 `session_handoff_maintenance`，`pre_implementation_review` 命中 `pre_implementation_workflow_review`；`maintainer_review_cleanup` 和 `governed_learning_follow_up` 当前都保持 honest expected gap，没有 recommended workflow skill；utility 负例 `merge text files into markdown` 没有误命中 workflow skill。当前 workflow baseline 汇总为 `query_count=5`、`matched_count=2`、`expectation_met_count=5`、`positive_matched_count=2`、`expected_gap_confirmed_count=2`。这说明基础本地技能现在主要保留为测试夹具、执行 smoke 和现有 utility search baseline 对照组，不再作为项目主展示或主要价值证明。当前仍然没有任何证据支持扩大 `default-in`。
+
 最新 search ranking diagnostics：已新增 `docs/search-ranking-diagnostics.md`，只分析当前固定 search baseline 的 `top_results / score / score_breakdown / why_matched / false neighbors`，不新增 query、不改检索算法、不调权重。当前结论是：negative queries 仍然没有推荐噪音；`alias boost` 在现有 baseline 下不显得过强；主要 false neighbors 都集中在 merge 查询，尤其是 `directory_text_cleanup_dogfood`，其次是 `json_to_csv_dogfood` 的弱邻近项，根因更像 broad metadata 而不是明显的权重失衡。当前更推荐下一步做 metadata 质量收紧，而不是马上调 ranking weights。baseline 结果仍然是 search `matched=7`、provider `matched=8`。当前仍然没有任何证据支持扩大 `default-in`。
 
 最新 v0.2 search quality 收口：已新增 `docs/v0.2-search-quality-summary.md`，把当前 search baseline、alias recall 和 baseline comparison gate 收成一页。summary 明确记录：当前 gate 命令是 `python scripts/evaluate_search_quality.py --baseline docs/search-quality-baseline.json --fail-on-regression`；当前 baseline comparison 结果为 `matched=7`、其余计数全 0；中文支持只来自显式 `search_aliases`，不是通用中文理解；当前没有 embedding、外部服务或 LLM retrieval。summary 也明确说明：这证明的是本地 retrieval-quality 行为已经可复现、可回归比较，不证明 semantic retrieval，也不证明应该扩大 `default-in`。当前仍然没有任何证据支持扩大 `default-in`。
@@ -904,6 +906,8 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 - 当前不再默认继续推进到自动 `distill/promote`
 
 ## Next Action
+
+如果继续 `v0.2-search-quality`，下一步不要回到 utility skill 过度优化，也不要调 ranking weight。优先判断是否需要补 workflow metadata 覆盖：重点看 `review cleanup` 和 `governed learning follow-up` 这两类 query 是否值得拥有真实 active workflow metadata，还是应继续作为 demo / host-follow-up 能力而保持 search expected gap。只有在这个产品边界明确之后，才考虑扩 workflow baseline query 集；不要把当前 workflow baseline 当成扩大 `default-in` 的证据。
 
 当前新战略目标是“开源申请后继续产品化主线”。申请表已提交，dashboard 当前已经够用，主线已收回到核心机制。当前 recommendation contract 已经统一，边界 dogfood 和顺序链验收也都完成，而且方向门已经给出 `manual_validation_first`：先拿 2-3 条真实 maintainer 流验证 raw JSON + runbook 是否已经够用；只有确认展示层真是缺口，才进入更窄的 host presentation 实现。不要回到继续堆 runtime 样本；也不要把观察面当成产品本体。
 
