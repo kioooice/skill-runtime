@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - State-file churn was removed from the default small-task workflow
+
+- Task type: workflow maintenance overhead reduction
+- Classified as: default-out / skipped
+- What happened: after fixing overuse of the repo-wide fast suite, the next repeated efficiency problem was updating `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md` after small localized tasks; the global handoff skill, workflow-error guard, and AGENTS rules were updated so those files change only when future-session state actually changed
+- Did the behavior feel correct: yes; it preserved durable memory for real boundaries while removing low-value process churn from routine local work
+- Did the lane help: yes, because the skip result kept the work framed as workflow policy correction instead of new runtime/product behavior
+- Follow-up: on future small tasks, skip state-file edits unless the next-session entry point or durable project state actually changed
+
 ### 2026-05-06 - Verification policy was corrected away from always running the repo-wide fast suite
 
 - Task type: workflow verification policy correction

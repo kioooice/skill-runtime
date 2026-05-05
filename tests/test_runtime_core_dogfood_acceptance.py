@@ -467,16 +467,34 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         ]:
             self.assertIn(phrase, content)
 
+    def test_global_session_handoff_maintenance_skips_state_file_updates_for_small_changes(self) -> None:
+        skill_path = (
+            Path("C:/Users/Administrator/.codex/skills")
+            / "session-handoff-maintenance"
+            / "SKILL.md"
+        )
+        self.assertTrue(skill_path.exists())
+        content = skill_path.read_text(encoding="utf-8")
+
+        for phrase in [
+            "Do not update these files for every localized, low-risk change.",
+            "If a task is small and does not change the next-session entry point",
+            "skip state-file edits",
+        ]:
+            self.assertIn(phrase, content)
+
     def test_workflow_error_correction_keeps_agents_lightweight(self) -> None:
         agents_content = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("workflow-error-correction", agents_content)
         self.assertIn("Do not default to `python -m unittest tests.test_runtime_fast -v` for every small change", agents_content)
+        self.assertIn("Do not update `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md` after every small change", agents_content)
         self.assertNotIn("Prefer the fast runtime suite for routine validation", agents_content)
         self.assertNotIn("Do not treat Skill Runtime, local skills", agents_content)
         self.assertNotIn("Do not continue adding or validating skills just because auto mode can keep going", agents_content)
         global_agents_content = Path("C:/Users/Administrator/.codex/AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("workflow-error-correction", global_agents_content)
         self.assertIn("Do not default to repository-wide test suites for every small change", global_agents_content)
+        self.assertIn("Do not update repository state files after every small change", global_agents_content)
         self.assertNotIn("Do not treat Skill Runtime, local skills", global_agents_content)
         self.assertNotIn(
             "Do not continue adding or validating skills just because auto mode can keep going",
@@ -495,6 +513,7 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
             "Before taking an action in a known risk area, apply the matching guard without waiting for the user to complain.",
             "Known Mistake Guards",
             "Validation escalation: do not run repository-wide fast or full suites for every localized change",
+            "State-file churn: do not update `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md` after every localized low-risk task",
             "If an existing guard applies, change the next action immediately.",
             "Record the mistake outside AGENTS.md",
             "Check existing correction records before creating a new one",

@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新状态文件策略纠偏：不要再把 `HANDOFF.md`、`TASKS.md`、`DECISIONS.md` 当成每次小改动都要刷新的默认动作。当前已把规则收成“只有 next-session entry point、durable decision、blocker、plan coordinate 或 long-context risk 真正变化时才更新”。全局 `session-handoff-maintenance`、全局 `workflow-error-correction`、全局 `AGENTS.md` 和项目 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 都已同步这条规则。
+
 - 最新验证策略纠偏：不要再把 `python -m unittest tests.test_runtime_fast -v` 当成每次小改动的默认第一验证。当前已把默认策略收成“按 blast radius 选最小有用验证”：localized changes 优先 `git diff --check`、`python -m py_compile <changed files>` 和定向测试；只有共享行为、多模块改动、或没有可信窄验证时，才上仓库级 fast suite。全局 `runtime-verification-selector`、全局 `workflow-error-correction`、全局 `AGENTS.md` 和项目 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 都已同步这条规则。
 
 - 最新 workflow 自动模式收口：当用户明确要求“先列长计划，然后自动推进，中间不要汇报，不要停下来，直到计划全部完成”时，当前应走全局 `auto-mode-stage-runner` 的 `full-auto finite-plan mode`，而不是把 operator-summary / dashboard 之类产品入口改成自动执行。全局技能定义已更新，仓库 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 也已同步路由语义。当前这仍是 workflow 层行为收口，不是产品功能改造。

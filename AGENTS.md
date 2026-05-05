@@ -15,6 +15,7 @@ This workspace is `vibe`.
 - Concrete project development tasks must call the Codex-facing Skill Runtime gate before substantive reads or edits.
 - Resume commands such as `继续`, `继续完成任务`, `继续 HANDOFF`, or `continue` must start from `HANDOFF.md`.
 - Do not default to `python -m unittest tests.test_runtime_fast -v` for every small change; use `runtime-verification-selector` and choose the smallest useful verification for the current blast radius.
+- Do not update `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md` after every small change; use `session-handoff-maintenance` only when the next-session entry point, durable decision, blocker, plan coordinate, or long-context risk actually changed.
 - After completing requested work and verification, commit and push by default unless the user explicitly says not to.
 - Deployment decisions must be based on inspected project files, not labels alone.
 - Do not change business code unless the current task requires it.

@@ -2,6 +2,10 @@
 
 ## Current State
 
+最新状态文件策略纠偏：在“不要每次小改动都跑仓库级快验”之后，第二个已收掉的效率问题是状态文件 churn。当前全局 `C:\Users\Administrator\.codex\skills\session-handoff-maintenance\SKILL.md` 已明确：不要对每个 localized low-risk change 都更新 `HANDOFF.md`、`TASKS.md`、`DECISIONS.md`。只有当 next-session entry point、durable decision、blocker、plan coordinate 或 long-context risk 真正变化时，才需要刷新这些文件。全局与项目 `AGENTS.md` 也都已同步这条规则。
+
+最新 durable guard：全局 `workflow-error-correction` 已新增 `State-file churn` guard。以后如果任务只是局部低风险修改，不要为了“流程完整”顺手刷一轮状态文件；这已经被视为需要直接避免的流程错误，而不是可反复讨论的做法。
+
 最新验证策略纠偏：用户明确指出“任何改动都默认跑整套 `tests.test_runtime_fast -v`”已经变成持续性流程问题，会把本来 2-3 分钟能完成的小任务拖成 5 分钟以上。这个判断成立。当前已把默认策略改成“按 blast radius 选最小有用验证”：全局 `C:\Users\Administrator\.codex\skills\runtime-verification-selector\SKILL.md` 现在明确区分 localized changes 和 shared-behavior changes；全局与项目 `AGENTS.md` 都不再把 repository-wide fast suite 当成每次小改动的默认动作。现在小改动默认应优先选 `git diff --check`、`python -m py_compile <changed files>` 和定向测试；只有共享行为、多模块改动或没有可信窄验证时，才上 `python -m unittest tests.test_runtime_fast -v`。
 
 最新 durable guard：这不是一次性偏好，而是已记录成可复用流程守卫。全局 `workflow-error-correction` 已新增 `Validation escalation` guard：不要对每个局部改动都跑仓库级 fast/full suite，必须先用 `runtime-verification-selector` 选当前改动真正需要的最小验证集。后续如果再碰到类似场景，不要重新讨论，直接按这条 guard 改行为。

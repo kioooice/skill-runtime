@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-06 - State Files Should Not Be Updated After Every Localized Low-Risk Change
+
+**Decision**
+
+Stop treating `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md` as mandatory update targets after every small task. Update them only when the next-session entry point, durable decision, blocker, plan coordinate, or long-context risk actually changed.
+
+**Reason**
+
+After fixing the overuse of the repo-wide fast suite, the next repeated efficiency drag was state-file churn. Small localized tasks were paying extra time to rewrite handoff and decision logs even when nothing meaningful changed for a future session. That is process overhead, not durable project memory.
+
+**Impact**
+
+- the authoritative global `session-handoff-maintenance` skill now explicitly skips state-file edits for localized low-risk changes
+- global and project `AGENTS.md` now say not to update state files after every small change
+- `workflow-error-correction` now carries a `State-file churn` guard so the pattern is prevented by default
+- durable state files are still required for real stage boundaries, actual decisions, blockers, and long-context handoff risk
+
 ### 2026-05-06 - Repository-Wide Fast Suite Should Not Be The Default For Every Small Change
 
 **Decision**
