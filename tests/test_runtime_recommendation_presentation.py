@@ -1,4 +1,11 @@
 from copy import deepcopy
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent.parent
 
 
 class RuntimeRecommendationPresentationTestsMixin:
@@ -124,3 +131,30 @@ class RuntimeRecommendationPresentationTestsMixin:
         format_recommendation_card(payload)
 
         self.assertEqual(original, payload)
+
+    def test_recommendation_presentation_demo_script_outputs_all_fixture_cards(self) -> None:
+        result = subprocess.run(
+            [sys.executable, "scripts/demo_recommendation_presentation.py"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        output = result.stdout
+        payload = json.loads(output)
+        titles = [item["card"]["title"] for item in payload["examples"]]
+
+        self.assertEqual(
+            [
+                "Keep as observation",
+                "Reuse candidate found",
+                "Distill captured workflow",
+                "Review existing-skill improvement",
+            ],
+            titles,
+        )
+        self.assertIn("not automatic", output)
+        self.assertIn("does not promote", output)
+        self.assertIn("does not apply", output)
+        self.assertIn("Human confirmation", output)
