@@ -2,6 +2,26 @@
 
 ## Decision Log
 
+### 2026-05-06 - Package The Accepted Capture-Trajectory Path As The v0.2 Maintainer Proof Bundle
+
+**Decision**
+
+Use the already accepted `capture-trajectory --render-recommendation text` path, with the `maintainer_review_cleanup` observed task and the existing provider/search/workflow baseline gates, as the official v0.2 maintainer-facing proof bundle.
+
+**Reason**
+
+The project needs one fast external proof that it is not just a local utility-script library. The accepted `capture-trajectory` path already has the right evidence shape: a maintainer workflow input, an auditable JSON output, an operator-readable governed recommendation, and an explicit non-automatic boundary. Packaging that path is lower risk and more honest than inventing a broader demo or claiming dashboard-level proof.
+
+**Impact**
+
+- added `docs/v0.2-maintainer-proof-bundle.md`
+- added `scripts/run_v0_2_proof_bundle.py`
+- added checked-in artifacts under `docs/fixtures/v0.2-proof-bundle/`
+- updated README with a narrow proof-bundle link only
+- no runtime decision logic changed
+- no follow-up operation was executed
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Prefer Larger Complete Slices Over Narrow Documentation-Only Rounds
 
 **Decision**

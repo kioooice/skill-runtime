@@ -403,6 +403,87 @@ class RuntimeRecommendationPresentationTestsMixin:
         }
         self.assertEqual(originals, after)
 
+    def test_v0_2_proof_bundle_script_outputs_summary_and_keeps_governed_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir) / "proof-bundle"
+            runtime_root = Path(tmp_dir) / "runtime-root"
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "scripts/run_v0_2_proof_bundle.py",
+                    "--output-dir",
+                    str(output_dir),
+                    "--runtime-root",
+                    str(runtime_root),
+                ],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            summary = json.loads(result.stdout)
+            self.assertEqual("distill_trajectory", summary["recommended_next_action"])
+            self.assertEqual(
+                "distill_trajectory",
+                summary["recommended_host_operation_tool_name"],
+            )
+            self.assertTrue(summary["stdout_json_parseable"])
+            self.assertTrue(summary["governed_boundary_visible"])
+            self.assertFalse(summary["executed_recommended_host_operation"])
+            self.assertTrue(summary["no_distill_executed"])
+            self.assertTrue(summary["no_promote_executed"])
+            self.assertTrue(summary["no_apply_executed"])
+
+            stdout_artifact = output_dir / "stdout.capture-trajectory.json"
+            stderr_artifact = output_dir / "stderr.capture-trajectory.txt"
+            summary_artifact = output_dir / "summary.capture-trajectory.json"
+
+            self.assertTrue(stdout_artifact.exists())
+            self.assertTrue(stderr_artifact.exists())
+            self.assertTrue(summary_artifact.exists())
+            stdout_payload = json.loads(stdout_artifact.read_text(encoding="utf-8"))
+            self.assertEqual("ok", stdout_payload["status"])
+            self.assertIn(
+                "Follow-up: Distill captured workflow",
+                stderr_artifact.read_text(encoding="utf-8"),
+            )
+            self.assertIn(
+                "does not promote",
+                stderr_artifact.read_text(encoding="utf-8"),
+            )
+            self.assertFalse(runtime_root.exists())
+
+    def test_v0_2_proof_bundle_script_does_not_create_staging_skill_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            output_dir = Path(tmp_dir) / "proof-bundle"
+            runtime_root = Path(tmp_dir) / "runtime-root"
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    "scripts/run_v0_2_proof_bundle.py",
+                    "--output-dir",
+                    str(output_dir),
+                    "--runtime-root",
+                    str(runtime_root),
+                ],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            summary = json.loads(
+                (output_dir / "summary.capture-trajectory.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertFalse(summary["staging_files_created"])
+            self.assertFalse(summary["active_files_created"])
+            self.assertFalse(summary["global_skill_files_created"])
+
 
 def _sample_recommendation_payload() -> dict[str, object]:
     return {

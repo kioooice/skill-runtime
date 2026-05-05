@@ -1,0 +1,6 @@
+Follow-up: Distill captured workflow
+Status: A successful workflow may be reusable.
+Why: The observed task has been captured into a trajectory and is ready for distillation.
+Recommended action: distill_trajectory
+Tool: distill_trajectory
+Boundary: This creates a staging candidate; it does not promote an active skill and is not automatic promotion.

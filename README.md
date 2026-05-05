@@ -86,6 +86,8 @@ If this is your first time in the repo, use this path:
 6. Clean up:
    Delete `./.tmp_quick_demo` when you are done.
 
+For one checked-in maintainer-facing proof bundle around this accepted path, see [v0.2 Maintainer Proof Bundle](./docs/v0.2-maintainer-proof-bundle.md).
+
 ## Open Source Participation
 
 - [Contributing Guide](./CONTRIBUTING.md)
