@@ -2,6 +2,32 @@
 
 ## Decision Log
 
+### 2026-05-06 - Treat PowerShell Chaining And Validation Timeouts As Durable Workflow Corrections
+
+**Decision**
+
+Record two repeated process mistakes as durable workflow corrections for this workspace:
+
+1. do not use `&&` when sending shell commands in the PowerShell environment
+2. do not describe a timed-out validation command as a failure until it has been rerun or otherwise verified
+
+**Reason**
+
+Both mistakes have now repeated across turns:
+
+- PowerShell in this environment rejects `&&`, so using it creates avoidable command failures during staging/commit flows
+- the fast runtime suite is long enough that a too-short timeout can expire even when the suite would pass, so treating timeout as failure produces a false status report
+
+These are workflow mistakes, not product behavior issues. They need durable guards so the next action changes before the mistake repeats.
+
+**Impact**
+
+- when using PowerShell shell commands, chain sequential commands with `;` or split them into separate tool calls
+- when long-running validation times out, report `timed out / not yet verified`, then rerun with a longer timeout before claiming failure
+- prefer a longer timeout up front for `python -m unittest tests.test_runtime_fast -v`
+- record the correction in state files instead of bloating `AGENTS.md`
+- next trigger: any commit/push shell command in PowerShell, and any long-running validation command whose timeout is close to prior observed duration
+
 ### 2026-05-06 - Let Existing Dashboard Collectors Consume Exported Operator Summary Before Any UI Change
 
 **Decision**

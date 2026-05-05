@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新 workflow correction：用户明确指出两类流程错误已经重复出现，需要 durable guard。当前已固定两条规则：第一，在当前 PowerShell 环境下不要再用 `&&` 串联命令，顺序命令统一改用 `;` 或拆成独立 tool call；第二，长时验证命令如果先撞到 timeout，只能先报告为 `timed out / not yet verified`，然后单独放宽超时重跑或补验证，不能直接口头归类为失败。当前这两条是 workflow guard，不是产品功能变更，因此只记录在状态文件与决策日志中，不加到 `AGENTS.md` 里做案例化历史。
+
 最新 v0.3 operator-summary / dashboard collector 接入：现有 collector 已经开始可选消费稳定导出的 operator summary，而不是只停在独立 export 脚本。当前 `skill_runtime.dashboard.collector.collect_dashboard_data(...)` 会在 `.skill_runtime/dashboard/operator-summary.json` 存在时读入 `operator_summary`；`collect_global_dashboard_data(...)` 会为每个已发现项目附带 `operator_summary_available`、`operator_summary_generated_at` 和三条 `operator_quality_gate_statuses` 元数据。当前仍然没有改 `skill_runtime/dashboard/render.py`、没有改 dashboard/global-dashboard 页面 HTML，也没有让页面直接依赖 full item lists 或底层散文件。collector 仍然只读取稳定字段，不执行 evaluator、不执行 host operation、不 promote、不 apply，也没有任何证据支持扩大 `default-in`。
 
 最新本轮测试与边界：已先补定向失败测试，再落 collector 接入实现。当前新增快验覆盖三件事：本地 dashboard collector 在 export 存在时返回 `operator_summary`、export 缺失时返回 `None`、global collector 会为项目汇总附带 operator-summary availability/gate-status 元数据。当前这些测试已通过，且专门保持 dashboard 页面文件不变。针对本轮任务跑的 Codex runtime gate 结果仍是 `guarded-in / skipped`，原因是这类 collector/data 层产品化切片还不属于 phase-one `default-in` 家族；该观察样本也应保留在默认 lane 观察日志中。下一步需要完成状态文件更新、全量 gate 验证、commit + push。
