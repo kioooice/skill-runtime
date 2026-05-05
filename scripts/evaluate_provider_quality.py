@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import json
 import os
@@ -25,12 +26,22 @@ from skill_runtime.retrieval.skill_index import SkillIndex  # noqa: E402
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Evaluate provider-backed governed learning quality across local fixtures."
+    )
+    parser.add_argument(
+        "--output",
+        help="Optional path to write the full JSON report. The report is still printed to stdout.",
+    )
+    args = parser.parse_args()
+
     fixtures = [
         _run_demo_local_success_fixture(),
         _run_mock_template_execute_failure_fixture(),
         _run_fake_deepseek_repair_success_fixture(),
         _run_fake_deepseek_semantic_block_fixture(),
         _run_fake_deepseek_generation_failure_fixture(),
+        _run_review_cleanup_provider_quality_fixture(),
     ]
     passed = sum(1 for item in fixtures if item["execution_smoke_status"] == "passed")
     failed = sum(1 for item in fixtures if item["failure_reason"])
@@ -43,7 +54,12 @@ def main() -> int:
             "fixtures_with_failures": failed,
         },
     }
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    rendered = json.dumps(payload, ensure_ascii=False, indent=2)
+    if args.output:
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(rendered, encoding="utf-8")
+    print(rendered)
     return 0
 
 
@@ -166,11 +182,38 @@ def _run_fake_deepseek_generation_failure_fixture() -> dict[str, Any]:
         )
 
 
+def _run_review_cleanup_provider_quality_fixture() -> dict[str, Any]:
+    observed_task = json.loads(
+        (ROOT / "demo" / "maintainer_review_cleanup" / "observed_task.json").read_text(encoding="utf-8")
+    )
+    return _evaluate_fixture(
+        fixture_name="review_cleanup_provider_quality",
+        configured_providers={
+            "fallback": "mock_fallback_provider",
+            "semantic": "mock_semantic_review_provider",
+        },
+        env_updates={
+            "SKILL_RUNTIME_FALLBACK_PROVIDER_CMD": None,
+            "SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD": None,
+        },
+        observed_task=observed_task,
+        execution_args={
+            "input_path": "demo/maintainer_review_cleanup/review_comments.json",
+            "output_path": "demo/maintainer_review_cleanup/generated_cleanup_plan.md",
+            "metadata_path": "demo/maintainer_review_cleanup/generated_cleanup_plan.json",
+        },
+        seed_callback=_seed_review_cleanup_fixture,
+    )
+
+
 def _evaluate_fixture(
     *,
     fixture_name: str,
     configured_providers: dict[str, str | None],
     env_updates: dict[str, str | None],
+    observed_task: dict[str, Any] | None = None,
+    execution_args: dict[str, str] | None = None,
+    seed_callback=None,
 ) -> dict[str, Any]:
     result = {
         "fixture_name": fixture_name,
@@ -182,6 +225,7 @@ def _evaluate_fixture(
         "audit_status": "skipped",
         "repair_attempted": False,
         "execution_smoke_status": "skipped",
+        "loop_stage": "generation_failed",
         "failure_reason": None,
         "recommended_next_action": None,
     }
@@ -189,14 +233,18 @@ def _evaluate_fixture(
     with tempfile.TemporaryDirectory(prefix=f"skill-runtime-provider-quality-{fixture_name}-") as temp_dir:
         sandbox_root = Path(temp_dir)
         _prepare_sandbox(sandbox_root)
-        _seed_execution_fixture(sandbox_root)
+        if seed_callback is None:
+            _seed_execution_fixture(sandbox_root)
+        else:
+            seed_callback(sandbox_root)
         service = RuntimeService(sandbox_root)
-        observed_task = _observed_task()
+        selected_observed_task = observed_task or _observed_task()
+        selected_execution_args = execution_args or _execution_args()
 
         with _patched_env(env_updates):
             try:
                 capture_result = service.capture_trajectory(
-                    observed_task=observed_task,
+                    observed_task=selected_observed_task,
                     task_id=f"{fixture_name}_task",
                     session_id="provider_quality_eval",
                 )
@@ -208,6 +256,7 @@ def _evaluate_fixture(
                 )
             except Exception as exc:  # noqa: BLE001
                 result["failure_reason"] = str(exc)
+                result["loop_stage"] = "generation_failed"
                 return result
 
             result["generated_candidate_status"] = "passed"
@@ -228,6 +277,7 @@ def _evaluate_fixture(
                 )
             except Exception as exc:  # noqa: BLE001
                 result["failure_reason"] = str(exc)
+                result["loop_stage"] = "audit_failed"
                 return result
 
             report = audit_result["report"]
@@ -239,15 +289,22 @@ def _evaluate_fixture(
 
             if report["status"] != "passed":
                 result["failure_reason"] = _audit_failure_reason(report)
+                result["loop_stage"] = "audit_failed"
                 return result
 
             execution_result = _execute_staging_candidate(
                 Path(distill_result["staging_file"]),
                 sandbox_root,
-                _execution_args(),
+                selected_execution_args,
             )
             result["execution_smoke_status"] = execution_result["status"]
             result["failure_reason"] = execution_result["failure_reason"]
+            if result["repair_attempted"]:
+                result["loop_stage"] = "repair_attempted"
+            elif execution_result["status"] == "passed":
+                result["loop_stage"] = "execution_passed"
+            else:
+                result["loop_stage"] = "execution_failed"
             return result
 
 
@@ -279,6 +336,13 @@ def _seed_execution_fixture(sandbox_root: Path) -> None:
     input_path = sandbox_root / "demo" / "input" / "provider_quality_source.txt"
     input_path.parent.mkdir(parents=True, exist_ok=True)
     input_path.write_text("provider quality source", encoding="utf-8")
+
+
+def _seed_review_cleanup_fixture(sandbox_root: Path) -> None:
+    review_comments = sandbox_root / "demo" / "maintainer_review_cleanup" / "review_comments.json"
+    review_comments.parent.mkdir(parents=True, exist_ok=True)
+    if not review_comments.exists():
+        review_comments.write_text("[]", encoding="utf-8")
 
 
 def _generate_candidate(
