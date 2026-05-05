@@ -2,6 +2,26 @@
 
 ## Decision Log
 
+### 2026-05-06 - Stabilize operator-summary v1 before any dashboard workbench integration
+
+**Decision**
+
+Treat `operator-summary` as the stable v1 Operator Workbench data source first, and keep the existing read-only dashboard unchanged until the summary contract is stable enough to consume.
+
+**Reason**
+
+The repository already has read-only dashboard and global-dashboard surfaces. Reworking those pages again would increase UI churn without solving the more important product problem: the runtime needs one stable, scriptable summary contract that operators and future surfaces can trust. Persisted gate status also belongs in that summary contract, not in ad hoc dashboard-only logic.
+
+**Impact**
+
+- added `docs/operator-summary-contract.md`
+- `operator-summary` v1 now documents stable top-level fields, allowed unavailable fields, and explicit non-automatic boundaries
+- provider/search/workflow evaluator scripts now support optional `--write-operator-status`
+- persisted gate status is stored only under `.skill_runtime/operator_status/*.json`
+- `RuntimeService.operator_summary()` now reads those files when present and otherwise stays `unavailable`
+- dashboard pages were not changed in this slice
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Pause Release Packaging And Start v0.3 Product Completeness With A Read-Only Operator Summary
 
 **Decision**

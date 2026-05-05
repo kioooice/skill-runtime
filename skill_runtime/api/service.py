@@ -822,9 +822,18 @@ class RuntimeService:
                 "count": len(recent_audits),
                 "items": recent_audits,
             },
-            "provider_quality": self._collect_optional_gate_status("provider-quality-report.json"),
-            "utility_search_quality": self._collect_optional_gate_status("search-quality-report.json"),
-            "workflow_search_quality": self._collect_optional_gate_status("workflow-search-quality-report.json"),
+            "provider_quality": self._collect_operator_gate_status(
+                label="provider_quality",
+                file_name="provider_quality.json",
+            ),
+            "utility_search_quality": self._collect_operator_gate_status(
+                label="utility_search_quality",
+                file_name="search_quality.json",
+            ),
+            "workflow_search_quality": self._collect_operator_gate_status(
+                label="workflow_search_quality",
+                file_name="workflow_search_quality.json",
+            ),
         }
         safe_next_steps = self._build_operator_safe_next_steps(
             trajectories=trajectories,
@@ -1744,28 +1753,46 @@ class RuntimeService:
         ]
         return {"count": len(items), "items": items}
 
-    def _collect_optional_gate_status(self, file_name: str) -> dict[str, Any]:
-        label = file_name.replace("-report.json", "").replace("-", "_")
-        for candidate in (
-            self.root / file_name,
-            self.root / ".skill_runtime" / file_name,
-        ):
-            if not candidate.exists():
-                continue
-            payload = _load_json_file(candidate)
-            if not isinstance(payload, dict):
-                continue
+    def _collect_operator_gate_status(self, *, label: str, file_name: str) -> dict[str, Any]:
+        candidate = self.root / ".skill_runtime" / "operator_status" / file_name
+        if not candidate.exists():
             return {
                 "label": label,
-                "status": "available",
-                "file_path": str(candidate.resolve()),
-                "summary": payload.get("summary") if isinstance(payload.get("summary"), dict) else None,
+                "status": "unavailable",
+                "reason": "No persisted local operator-status report found.",
+                "file_path": None,
+                "report_status": None,
+                "generated_at": None,
+                "command": None,
+                "summary": None,
+                "baseline_comparison": None,
             }
+
+        payload = _load_json_file(candidate)
+        if not isinstance(payload, dict):
+            return {
+                "label": label,
+                "status": "unavailable",
+                "reason": "Persisted local operator-status report is invalid.",
+                "file_path": str(candidate.resolve()),
+                "report_status": None,
+                "generated_at": None,
+                "command": None,
+                "summary": None,
+                "baseline_comparison": None,
+            }
+
         return {
             "label": label,
-            "status": "unavailable",
-            "reason": "No persisted local evaluation report found.",
-            "file_path": None,
+            "status": "available",
+            "file_path": str(candidate.resolve()),
+            "report_status": payload.get("status") if isinstance(payload.get("status"), str) else None,
+            "generated_at": payload.get("generated_at") if isinstance(payload.get("generated_at"), str) else None,
+            "command": payload.get("command") if isinstance(payload.get("command"), str) else None,
+            "summary": payload.get("summary") if isinstance(payload.get("summary"), dict) else None,
+            "baseline_comparison": payload.get("baseline_comparison")
+            if isinstance(payload.get("baseline_comparison"), dict)
+            else None,
         }
 
     def _build_operator_safe_next_steps(

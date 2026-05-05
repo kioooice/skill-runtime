@@ -123,6 +123,15 @@ def emit_recommendation_text_for_payload(
         print(text, file=sys.stderr)
 
 
+def _format_gate_metrics(metrics: dict | None) -> str | None:
+    if not isinstance(metrics, dict) or not metrics:
+        return None
+    parts = []
+    for key, value in metrics.items():
+        parts.append(f"{key}={value}")
+    return ", ".join(parts)
+
+
 def error(
     message: str,
     code: str,
@@ -364,9 +373,18 @@ def _render_operator_summary_text(payload: dict) -> str:
         gate = quality_gates.get(key, {})
         label = gate.get("label") or key
         status = gate.get("status") or "unavailable"
+        summary_text = _format_gate_metrics(gate.get("summary"))
+        comparison_text = _format_gate_metrics(gate.get("baseline_comparison"))
         reason = gate.get("reason")
+        detail_parts = []
+        if summary_text:
+            detail_parts.append(summary_text)
+        if comparison_text:
+            detail_parts.append(comparison_text)
         if reason:
-            lines.append(f"- {label}: {status} ({reason})")
+            detail_parts.append(reason)
+        if detail_parts:
+            lines.append(f"- {label}: {status} ({'; '.join(detail_parts)})")
         else:
             lines.append(f"- {label}: {status}")
 

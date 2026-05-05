@@ -15,6 +15,11 @@ if str(ROOT) not in sys.path:
 
 from skill_runtime.api.service import RuntimeService  # noqa: E402
 from skill_runtime.retrieval.skill_index import SkillIndex  # noqa: E402
+from scripts.operator_status_utils import (  # noqa: E402
+    build_operator_status_payload,
+    summarize_baseline_comparison,
+    write_operator_status,
+)
 
 
 FIXTURE_SKILLS = [
@@ -95,6 +100,15 @@ def main() -> int:
         "--output",
         help="Optional path to write the JSON report. The report is still printed to stdout.",
     )
+    parser.add_argument(
+        "--write-operator-status",
+        action="store_true",
+        help="Optionally write a local operator-status summary under .skill_runtime/operator_status without changing stdout output.",
+    )
+    parser.add_argument(
+        "--operator-status-root",
+        help="Optional root directory for persisted operator-status output. Defaults to --source-root.",
+    )
     args = parser.parse_args()
 
     payload = evaluate(Path(args.source_root), top_k=args.top_k)
@@ -111,6 +125,17 @@ def main() -> int:
         output_path = Path(args.output)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(rendered, encoding="utf-8")
+    if args.write_operator_status:
+        status_root = Path(args.operator_status_root).resolve() if args.operator_status_root else Path(args.source_root).resolve()
+        write_operator_status(
+            status_root,
+            "workflow_search_quality.json",
+            build_operator_status_payload(
+                report_status=str(payload.get("status") or "ok"),
+                summary=payload.get("summary") if isinstance(payload.get("summary"), dict) else None,
+                baseline_comparison=summarize_baseline_comparison(payload.get("baseline_comparison")),
+            ),
+        )
     print(rendered)
     return exit_code
 

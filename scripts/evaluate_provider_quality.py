@@ -24,6 +24,11 @@ from skill_runtime.distill.fallback.service import FallbackService  # noqa: E402
 from skill_runtime.execution.runtime_tools import RuntimeTools  # noqa: E402
 from skill_runtime.memory.trajectory_store import TrajectoryStore  # noqa: E402
 from skill_runtime.retrieval.skill_index import SkillIndex  # noqa: E402
+from scripts.operator_status_utils import (  # noqa: E402
+    build_operator_status_payload,
+    summarize_baseline_comparison,
+    write_operator_status,
+)
 
 
 def main() -> int:
@@ -42,6 +47,15 @@ def main() -> int:
         "--fail-on-regression",
         action="store_true",
         help="Return non-zero when baseline comparison finds a regression, unexpected failure, or missing fixture.",
+    )
+    parser.add_argument(
+        "--write-operator-status",
+        action="store_true",
+        help="Optionally write a local operator-status summary under .skill_runtime/operator_status without changing stdout output.",
+    )
+    parser.add_argument(
+        "--operator-status-root",
+        help="Optional root directory for persisted operator-status output. Defaults to the repository root.",
     )
     args = parser.parse_args()
 
@@ -79,6 +93,17 @@ def main() -> int:
         output_path = Path(args.output)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(rendered, encoding="utf-8")
+    if args.write_operator_status:
+        status_root = Path(args.operator_status_root).resolve() if args.operator_status_root else ROOT
+        write_operator_status(
+            status_root,
+            "provider_quality.json",
+            build_operator_status_payload(
+                report_status=str(payload.get("status") or "ok"),
+                summary=payload.get("summary") if isinstance(payload.get("summary"), dict) else None,
+                baseline_comparison=summarize_baseline_comparison(payload.get("baseline_comparison")),
+            ),
+        )
     print(rendered)
     return exit_code
 

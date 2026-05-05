@@ -2,6 +2,10 @@
 
 ## Current State
 
+最新 v0.3 product completeness 切片：`operator-summary` 已从“临时读取当前状态”推进到“有稳定 contract、且能读取本地持久化 gate status”的 Operator Workbench 数据源。现已新增 [docs/operator-summary-contract.md](/D:/02-Projects/vibe/docs/operator-summary-contract.md)，明确 v1 顶层字段、稳定字段、可 `unavailable` 的字段、未来 dashboard 如何消费、以及什么不会自动执行。当前 `operator-summary` 继续保持只读，不执行 host operation，不执行任何评估脚本，不 promote，不 apply evolution candidate，也不改 dashboard 页面。
+
+最新本地 gate-status 持久化：`scripts/evaluate_provider_quality.py`、`scripts/evaluate_search_quality.py`、`scripts/evaluate_workflow_search_quality.py` 现在都支持可选 `--write-operator-status`，并可将结果写到 `.skill_runtime/operator_status/provider_quality.json`、`.skill_runtime/operator_status/search_quality.json`、`.skill_runtime/operator_status/workflow_search_quality.json`。默认行为不变：不带这个 flag 时，脚本仍然只输出原来的 JSON report，不写 operator status 文件，也不改 baseline JSON。写出的状态只包含 operator 侧需要的稳定摘要，例如 `status`、`generated_at`、`command`、`summary` 和 `baseline_comparison` 计数；不写入 `skill_store`。
+
 最新主线已从 `v0.2 release readiness` 切到 `v0.3 product completeness`。当前第一条主线不是继续做 release tag / RC 包装，而是补一个最小但真实有用的 Operator Workbench summary。现已新增只读 CLI 命令 `python -m skill_runtime.cli --root . operator-summary`：默认输出 JSON，可选 `--format text`；当前能直接汇总 active skills、staging candidates、captured trajectories、recent runtime events、recommended host operations（若本地事件里存在）、recent audits、safe next steps，以及 `intentionally_not_automatic` 边界。当前实现明确不执行 host operation，不 promote，不 apply evolution candidate，也不改 runtime state。对于 provider/search/workflow baseline 状态，如果本地没有持久化评估报告，会诚实标记为 `unavailable`，不会伪造 pass。补充边界：当前仓库已经有 read-only dashboard / global-dashboard，这一轮不重做 dashboard；`operator-summary` 的定位应是未来 dashboard/operator workbench 的稳定数据源，现阶段只做最小接入点分析，不改 dashboard 页面。
 
 最新 v0.3 产品判断：`v0.2.0rc1` 已经证明了 governed maintainer-workflow MVP 和 release-candidate 证据链，但没有解决“日常 operator 一眼看清当前 runtime 状态”的问题。为此已新增 `docs/v0.3-product-completeness-plan.md`，明确为什么暂停 release/tag 主线、v0.2 已证明什么、v0.2 没解决什么、为什么 Operator Workbench 是第一条主线，以及为什么这不构成扩大 `default-in` 的证据。README 只新增了一个很小的 `v0.3 Product Completeness Direction` 段落，把 `operator-summary` 暴露出来，并明确 `v0.2 RC` 只是阶段证据，不是最终产品完成。当前仍然没有任何证据支持扩大 `default-in`。
@@ -938,6 +942,8 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 - 当前不再默认继续推进到自动 `distill/promote`
 
 ## Next Action
+
+如果继续当前 `v0.3 product completeness` 主线，下一步优先不是加 dashboard 页面，而是判断 `operator-summary` 的哪些子字段已经足够稳定，可以被现有 dashboard collector 安全消费。重点不是 UI，而是收口数据依赖：例如是否要让现有 collector 直接读取 `RuntimeService.operator_summary()` 的稳定字段，而不是继续散读多处底层文件。不要让 dashboard 直接依赖不稳定字段，也不要把这条线变成 dashboard 重写。当前仍然不要扩大 `default-in`，不要自动 promote，不要自动 apply evolution candidate，也不要把 expected gap 硬改成 pass。
 
 如果继续当前 `v0.3 product completeness` 主线，下一步优先不是继续写 release 材料，也不是扩 proof bundle，而是继续把 Operator Workbench 做成更完整但仍只读的 operator surface。优先补的应是：哪些 gate 状态值得持久化为本地状态索引、哪些 runtime event / governance event 应该被 summary 更稳定地消费，以及是否需要比 CLI text 更清楚的 maintainer-facing summary formatting。不要把这条线变成 dashboard 大改，也不要把 visibility 改造成自动 lifecycle 执行。当前仍然不要扩大 `default-in`，不要自动 promote，不要自动 apply evolution candidate，也不要把 expected gap 硬改成 pass。
 

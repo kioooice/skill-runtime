@@ -4,6 +4,9 @@ from pathlib import Path
 
 
 class RuntimeOperatorSummaryTestsMixin:
+    def _operator_status_dir(self) -> Path:
+        return self.runtime_root / ".skill_runtime" / "operator_status"
+
     def _snapshot_paths(self, *paths: Path) -> dict[str, str]:
         snapshot: dict[str, str] = {}
         for base in paths:
@@ -32,6 +35,142 @@ class RuntimeOperatorSummaryTestsMixin:
         self.assertIn("trajectories", payload["data"])
         self.assertIn("safe_next_steps", payload["data"])
         self.assertIn("intentionally_not_automatic", payload["data"])
+
+    def test_operator_summary_marks_gate_status_unavailable_without_persisted_operator_status(self) -> None:
+        payload = self._run_cli(
+            "operator-summary",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        quality_gates = payload["data"]["quality_gates"]
+        self.assertEqual("unavailable", quality_gates["provider_quality"]["status"])
+        self.assertEqual("unavailable", quality_gates["utility_search_quality"]["status"])
+        self.assertEqual("unavailable", quality_gates["workflow_search_quality"]["status"])
+        self.assertIn("provider_quality", payload["data"]["missing_or_unavailable"])
+        self.assertIn("utility_search_quality", payload["data"]["missing_or_unavailable"])
+        self.assertIn("workflow_search_quality", payload["data"]["missing_or_unavailable"])
+
+    def test_operator_summary_reads_persisted_operator_status_when_available(self) -> None:
+        operator_status_dir = self._operator_status_dir()
+        operator_status_dir.mkdir(parents=True, exist_ok=True)
+        self._write_json_file(
+            operator_status_dir / "provider_quality.json",
+            {
+                "status": "ok",
+                "generated_at": "2026-05-06T10:00:00+00:00",
+                "command": "python scripts/evaluate_provider_quality.py --baseline docs/provider-quality-baseline.json --fail-on-regression --write-operator-status",
+                "summary": {
+                    "fixture_count": 8,
+                    "execution_smoke_passed": 4,
+                    "fixtures_with_failures": 4,
+                },
+                "baseline_comparison": {
+                    "matched": 8,
+                    "regressions": 0,
+                    "improvements": 0,
+                    "unexpected_failures": 0,
+                    "unexpected_passes": 0,
+                    "missing_fixtures": 0,
+                    "extra_fixtures": 0,
+                },
+            },
+        )
+        self._write_json_file(
+            operator_status_dir / "search_quality.json",
+            {
+                "status": "ok",
+                "generated_at": "2026-05-06T10:01:00+00:00",
+                "command": "python scripts/evaluate_search_quality.py --baseline docs/search-quality-baseline.json --fail-on-regression --write-operator-status",
+                "summary": {
+                    "query_count": 7,
+                    "matched_count": 7,
+                    "positive_matched_count": 5,
+                    "negative_matched_count": 2,
+                },
+                "baseline_comparison": {
+                    "matched": 7,
+                    "regressions": 0,
+                    "improvements": 0,
+                    "unexpected_failures": 0,
+                    "unexpected_passes": 0,
+                    "missing_queries": 0,
+                    "extra_queries": 0,
+                },
+            },
+        )
+        self._write_json_file(
+            operator_status_dir / "workflow_search_quality.json",
+            {
+                "status": "ok",
+                "generated_at": "2026-05-06T10:02:00+00:00",
+                "command": "python scripts/evaluate_workflow_search_quality.py --baseline docs/workflow-search-quality-baseline.json --fail-on-regression --write-operator-status",
+                "summary": {
+                    "query_count": 5,
+                    "matched_count": 2,
+                    "expectation_met_count": 5,
+                    "expected_gap_confirmed_count": 2,
+                },
+                "baseline_comparison": {
+                    "matched": 5,
+                    "regressions": 0,
+                    "improvements": 0,
+                    "unexpected_failures": 0,
+                    "unexpected_passes": 0,
+                    "missing_queries": 0,
+                    "extra_queries": 0,
+                },
+            },
+        )
+
+        payload = self._run_cli(
+            "operator-summary",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        quality_gates = payload["data"]["quality_gates"]
+        self.assertEqual("available", quality_gates["provider_quality"]["status"])
+        self.assertEqual("ok", quality_gates["provider_quality"]["report_status"])
+        self.assertEqual(8, quality_gates["provider_quality"]["summary"]["fixture_count"])
+        self.assertEqual(8, quality_gates["provider_quality"]["baseline_comparison"]["matched"])
+        self.assertEqual("available", quality_gates["utility_search_quality"]["status"])
+        self.assertEqual(7, quality_gates["utility_search_quality"]["summary"]["matched_count"])
+        self.assertEqual("available", quality_gates["workflow_search_quality"]["status"])
+        self.assertEqual(5, quality_gates["workflow_search_quality"]["summary"]["expectation_met_count"])
+        self.assertEqual([], payload["data"]["missing_or_unavailable"])
+
+    def test_operator_summary_text_reflects_available_operator_status(self) -> None:
+        operator_status_dir = self._operator_status_dir()
+        operator_status_dir.mkdir(parents=True, exist_ok=True)
+        self._write_json_file(
+            operator_status_dir / "provider_quality.json",
+            {
+                "status": "ok",
+                "generated_at": "2026-05-06T10:00:00+00:00",
+                "command": "python scripts/evaluate_provider_quality.py --write-operator-status",
+                "summary": {
+                    "fixture_count": 8,
+                    "execution_smoke_passed": 4,
+                },
+                "baseline_comparison": {
+                    "matched": 8,
+                    "regressions": 0,
+                },
+            },
+        )
+
+        result = self._run_cli(
+            "operator-summary",
+            "--format",
+            "text",
+            root=self.runtime_root,
+            expect_json=False,
+        )
+
+        self.assertIn("provider_quality: available", result.stdout)
+        self.assertIn("fixture_count=8", result.stdout)
+        self.assertIn("matched=8", result.stdout)
 
     def test_operator_summary_cli_lists_active_skills(self) -> None:
         payload = self._run_cli(
@@ -113,4 +252,5 @@ class RuntimeOperatorSummaryTestsMixin:
         self.assertIn("Recent runtime events", result.stdout)
         self.assertIn("Recent audits", result.stdout)
         self.assertIn("Quality gates", result.stdout)
+        self.assertIn("unavailable", result.stdout)
         self.assertIn("Boundary:", result.stdout)

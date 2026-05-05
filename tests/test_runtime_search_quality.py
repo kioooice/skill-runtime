@@ -9,6 +9,67 @@ from tests.runtime_test_support import ROOT
 
 
 class RuntimeSearchQualityTestsMixin:
+    def test_search_quality_evaluation_script_does_not_write_operator_status_by_default(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="search-quality-operator-status-default-") as temp_dir:
+            status_root = Path(temp_dir)
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "evaluate_search_quality.py"),
+                    "--source-root",
+                    str(ROOT),
+                    "--operator-status-root",
+                    str(status_root),
+                ],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                cwd=str(ROOT),
+                timeout=120,
+                check=False,
+            )
+
+            self.assertEqual(0, result.returncode, msg=result.stderr or result.stdout)
+            self.assertFalse(
+                (status_root / ".skill_runtime" / "operator_status" / "search_quality.json").exists()
+            )
+
+    def test_search_quality_evaluation_script_can_write_operator_status(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="search-quality-operator-status-") as temp_dir:
+            status_root = Path(temp_dir)
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts" / "evaluate_search_quality.py"),
+                    "--source-root",
+                    str(ROOT),
+                    "--baseline",
+                    str(ROOT / "docs" / "search-quality-baseline.json"),
+                    "--write-operator-status",
+                    "--operator-status-root",
+                    str(status_root),
+                ],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                cwd=str(ROOT),
+                timeout=120,
+                check=False,
+            )
+
+            self.assertEqual(0, result.returncode, msg=result.stderr or result.stdout)
+            status_file = status_root / ".skill_runtime" / "operator_status" / "search_quality.json"
+            self.assertTrue(status_file.exists())
+            payload = json.loads(status_file.read_text(encoding="utf-8"))
+            self.assertEqual("ok", payload["status"])
+            self.assertIn("generated_at", payload)
+            self.assertIn("command", payload)
+            self.assertIn("summary", payload)
+            self.assertIn("baseline_comparison", payload)
+            self.assertEqual(7, payload["summary"]["query_count"])
+            self.assertEqual(7, payload["baseline_comparison"]["matched"])
+            self.assertEqual(0, payload["baseline_comparison"]["regressions"])
+
     def test_active_skill_search_quality_report_contains_required_fields(self) -> None:
         payload = evaluate(self.runtime_root)
 

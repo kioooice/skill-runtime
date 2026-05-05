@@ -2,6 +2,10 @@
 
 ## Current Focus
 
+- 最新 v0.3 product completeness 切片：已新增 `docs/operator-summary-contract.md`，把 `operator-summary` 收成 v1 稳定 contract。当前明确稳定的是顶层 summary 字段和 gate-status availability shape；明确允许 `unavailable` 的是本地尚未持久化的 gate 状态。当前 `operator-summary` 定位仍是只读 Operator Workbench 数据源，而不是 dashboard 页面本身；不会执行 host operation、不会跑 evaluator、不会 promote/apply，也不会改 dashboard。当前仍然没有任何证据支持扩大 `default-in`。
+
+- 最新本地 gate-status 持久化：provider / utility search / workflow search 三个 evaluator 脚本都已支持可选 `--write-operator-status`，会把稳定摘要写到 `.skill_runtime/operator_status/*.json`；默认行为保持不变，不带 flag 时不写文件。`operator-summary` 现在优先读取这些本地持久化状态；如果没有，就继续诚实显示 `unavailable`。下一步更应该判断哪些 `operator-summary` 字段已足够稳定，可以被现有 dashboard collector 消费，而不是去改 dashboard UI。当前仍然没有任何证据支持扩大 `default-in`。
+
 - 最新主线已切到 `v0.3 product completeness`。当前第一条产品化切片是最小 Operator Workbench / lifecycle visibility，而不是继续推进 release tag、proof bundle 包装或更多 release 材料。当前已实现只读 CLI `python -m skill_runtime.cli --root . operator-summary`：默认 JSON，可选 `--format text`，当前可见 active skills、staging candidates、captured trajectories、recent runtime events、recommended host operations（若事件存在）、recent audits、safe next steps 和 intentionally-not-automatic 边界。当前实现不执行 host operation、不 promote、不 apply，也不修改 runtime state。补充边界：现有 read-only dashboard / global-dashboard 继续保留，不从零重做；`operator-summary` 应优先成为未来 dashboard/operator workbench 的稳定数据源。下一步更应该补真实缺失的状态索引，而不是扩自动化边界。当前仍然没有任何证据支持扩大 `default-in`。
 
 - 最新 v0.3 方向文档：已新增 `docs/v0.3-product-completeness-plan.md`。当前判断是：`v0.2.0rc1` 已证明 governed maintainer-workflow MVP 和 release-candidate 证据，但没有解决日常 operator 的 runtime 可见性问题。为此 v0.3 先优先做 Operator Workbench，而不是继续堆 release/tag/proof 文档，也不是先做复杂 dashboard。README 只新增了一个很小的 `v0.3 Product Completeness Direction` 段落，把 `operator-summary` 作为 operator 入口暴露出来，并明确 v0.2 RC 只是阶段证据，不是最终产品完成。当前仍然没有任何证据支持扩大 `default-in`。
@@ -408,7 +412,7 @@
 - [x] 新增 `rollback_evolution_candidate` 确认回滚流程：必须显式确认，根据 apply 记录恢复备份并记录 `rolled_back` 状态
 - [x] 新增 CLI `rollback-evolution-candidate --confirm-rollback` 和 MCP tool `rollback_evolution_candidate`
 - [x] 验证未确认不能回滚、目标文件在 apply 后变更会拒绝覆盖、确认后会恢复备份
-- [ ] 下一阶段：继续补 operator workbench 的只读可见性，而不是回到 release/tag 包装；优先考虑是否需要本地持久化 provider / utility search / workflow search gate 状态索引，以便 `operator-summary` 能显示真实最近状态而不是 `unavailable`
+- [ ] 下一阶段：在不改 dashboard 页面的前提下，判断现有 dashboard collector 应该最小接 `operator-summary` 的哪些稳定字段；如果要接，只接稳定字段，不直接依赖不稳定低层文件形状
 
 ## Blocked
 
