@@ -224,6 +224,7 @@ def _evaluate_fixture(
         "generated_candidate_status": "failed",
         "audit_status": "skipped",
         "repair_attempted": False,
+        "repair_status": "not_attempted",
         "execution_smoke_status": "skipped",
         "loop_stage": "generation_failed",
         "failure_reason": None,
@@ -269,6 +270,8 @@ def _evaluate_fixture(
                     fallback_response.get("provider_name") or result["provider_used"]["fallback"]
                 )
                 result["repair_attempted"] = _repair_attempted(fallback_response)
+                if result["repair_attempted"]:
+                    result["repair_status"] = "attempted"
 
             try:
                 audit_result = service.audit(
@@ -299,9 +302,7 @@ def _evaluate_fixture(
             )
             result["execution_smoke_status"] = execution_result["status"]
             result["failure_reason"] = execution_result["failure_reason"]
-            if result["repair_attempted"]:
-                result["loop_stage"] = "repair_attempted"
-            elif execution_result["status"] == "passed":
+            if execution_result["status"] == "passed":
                 result["loop_stage"] = "execution_passed"
             else:
                 result["loop_stage"] = "execution_failed"

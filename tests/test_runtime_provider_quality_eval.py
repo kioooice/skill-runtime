@@ -42,7 +42,8 @@ class RuntimeProviderQualityEvalTestsMixin:
         self.assertIn("fake_deepseek_repair_success", fixtures)
         self.assertEqual("passed", fixtures["fake_deepseek_repair_success"]["generated_candidate_status"])
         self.assertTrue(fixtures["fake_deepseek_repair_success"]["repair_attempted"])
-        self.assertEqual("repair_attempted", fixtures["fake_deepseek_repair_success"]["loop_stage"])
+        self.assertEqual("attempted", fixtures["fake_deepseek_repair_success"]["repair_status"])
+        self.assertEqual("execution_passed", fixtures["fake_deepseek_repair_success"]["loop_stage"])
 
         self.assertIn("fake_deepseek_semantic_block", fixtures)
         self.assertEqual("needs_fix", fixtures["fake_deepseek_semantic_block"]["audit_status"])
@@ -59,6 +60,9 @@ class RuntimeProviderQualityEvalTestsMixin:
 
         self.assertIn("review_cleanup_provider_quality", fixtures)
         self.assertIn("loop_stage", fixtures["review_cleanup_provider_quality"])
+        self.assertTrue(
+            isinstance(fixtures["review_cleanup_provider_quality"]["repair_attempted"], bool)
+        )
         self.assertTrue(fixtures["review_cleanup_provider_quality"]["failure_reason"])
 
     def test_provider_quality_evaluation_script_writes_output_file(self) -> None:
