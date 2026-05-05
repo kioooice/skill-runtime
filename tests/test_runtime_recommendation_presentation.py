@@ -2,6 +2,7 @@ from copy import deepcopy
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -158,3 +159,137 @@ class RuntimeRecommendationPresentationTestsMixin:
         self.assertIn("does not promote", output)
         self.assertIn("does not apply", output)
         self.assertIn("Human confirmation", output)
+
+    def test_render_recommendation_presentation_text_from_payload_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            payload_path = Path(tmp_dir) / "payload.json"
+            original = json.dumps(_sample_recommendation_payload(), indent=2)
+            payload_path.write_text(original, encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "scripts/render_recommendation_presentation.py",
+                    "--input",
+                    str(payload_path),
+                    "--format",
+                    "text",
+                ],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertIn("Follow-up: Distill captured workflow", result.stdout)
+            self.assertIn("does not promote", result.stdout)
+            self.assertEqual(original, payload_path.read_text(encoding="utf-8"))
+
+    def test_render_recommendation_presentation_json_from_payload_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            payload_path = Path(tmp_dir) / "payload.json"
+            original = json.dumps(_sample_recommendation_payload(), indent=2)
+            payload_path.write_text(original, encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "scripts/render_recommendation_presentation.py",
+                    "--input",
+                    str(payload_path),
+                    "--format",
+                    "json",
+                ],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            rendered = json.loads(result.stdout)
+            self.assertIn("card", rendered)
+            self.assertEqual("Distill captured workflow", rendered["card"]["title"])
+            self.assertEqual(
+                "distill_trajectory",
+                rendered["card"]["recommended_action"],
+            )
+            self.assertEqual(original, payload_path.read_text(encoding="utf-8"))
+
+    def test_render_recommendation_presentation_missing_file_returns_error(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/render_recommendation_presentation.py",
+                "--input",
+                "does-not-exist.json",
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("Input file not found", result.stderr)
+
+    def test_render_recommendation_presentation_non_object_json_returns_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            payload_path = Path(tmp_dir) / "payload.json"
+            original = "[1, 2, 3]"
+            payload_path.write_text(original, encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "scripts/render_recommendation_presentation.py",
+                    "--input",
+                    str(payload_path),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("Payload must be a JSON object", result.stderr)
+            self.assertEqual(original, payload_path.read_text(encoding="utf-8"))
+
+    def test_render_recommendation_presentation_invalid_json_returns_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            payload_path = Path(tmp_dir) / "payload.json"
+            original = "{not valid json"
+            payload_path.write_text(original, encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "scripts/render_recommendation_presentation.py",
+                    "--input",
+                    str(payload_path),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("Invalid JSON", result.stderr)
+            self.assertEqual(original, payload_path.read_text(encoding="utf-8"))
+
+
+def _sample_recommendation_payload() -> dict[str, object]:
+    return {
+        "learning_decision": {
+            "decision": "new_skill_candidate",
+            "reason": "task succeeded with a concrete under-covered workflow pattern",
+        },
+        "learning_capture_payload": {"trajectory_path": "trajectories/task.json"},
+        "recommended_next_action": "distill_trajectory",
+        "recommended_host_operation": {
+            "tool_name": "distill_trajectory",
+            "display_label": "Distill trajectory",
+            "risk_level": "low",
+            "requires_confirmation": False,
+            "arguments": {"trajectory_path": "trajectories/task.json"},
+        },
+        "available_host_operations": [],
+    }

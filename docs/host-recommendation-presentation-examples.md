@@ -19,6 +19,30 @@ python scripts/demo_recommendation_presentation.py
 
 The script constructs four fixture payloads and prints JSON containing both a structured card and plain text for each example.
 
+## Render A Real Payload File
+
+Use `scripts/render_recommendation_presentation.py` when a host or operator already has a real recommendation payload file and only needs to render it for display.
+
+Text output:
+
+```powershell
+python scripts/render_recommendation_presentation.py --input payload.json --format text
+```
+
+JSON output:
+
+```powershell
+python scripts/render_recommendation_presentation.py --input payload.json --format json
+```
+
+`--format text` is the default, so this is equivalent:
+
+```powershell
+python scripts/render_recommendation_presentation.py --input payload.json
+```
+
+The renderer only reads the input payload and calls `format_recommendation_card` / `format_recommendation_text`. It does not call `RuntimeService`, execute a host operation, promote a skill, apply an evolution candidate, or modify the input file.
+
 ## Example 1 - `observed_only`
 
 Plain text output:
