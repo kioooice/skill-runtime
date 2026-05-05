@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新流程包裹策略纠偏：不要再把目标明确、范围局部、实现路径明显的小执行任务送进 `pre-implementation-workflow-review`。当前规则已改成：方向审核只用于真实新方向、路线变更、MVP framing 和 “该不该做”；小执行任务直接 `inspect/change/verify`。全局 `pre-implementation-workflow-review`、全局 `workflow-error-correction`、全局 `AGENTS.md` 和项目 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 都已同步。
+
 - 最新发布策略纠偏：不要再把 commit + push 当成每次小改动后的默认收尾。当前规则已经改成：只有 meaningful stage completion、合适 batching 点、或用户明确要求发布当前改动时，才执行 publish。全局与项目 `AGENTS.md` 已同步，全局 `workflow-error-correction` 也已新增 `Publish churn` guard。
 
 - 最新状态文件策略纠偏：不要再把 `HANDOFF.md`、`TASKS.md`、`DECISIONS.md` 当成每次小改动都要刷新的默认动作。当前已把规则收成“只有 next-session entry point、durable decision、blocker、plan coordinate 或 long-context risk 真正变化时才更新”。全局 `session-handoff-maintenance`、全局 `workflow-error-correction`、全局 `AGENTS.md` 和项目 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 都已同步这条规则。

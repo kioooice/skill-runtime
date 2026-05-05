@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-06 - Clear Small Execution Tasks Should Bypass Heavy Direction-Review Wrapping
+
+**Decision**
+
+Do not send clear small execution tasks through `pre-implementation-workflow-review` or similar heavy workflow wrapping. Reserve direction review for real new directions, route changes, MVP framing, and should-we-build-this decisions; let obvious localized execution tasks go straight to inspect/change/verify.
+
+**Reason**
+
+After removing default over-verification, state-file churn, and publish churn, the next remaining workflow drag was process overwrap. Small tasks with a fixed goal and obvious route were still at risk of being slowed by direction-review framing that exists for a different class of problem. That is not rigor; it is routing overhead.
+
+**Impact**
+
+- the authoritative global `pre-implementation-workflow-review` skill now explicitly excludes clear small execution tasks
+- global and project `AGENTS.md` now say not to send those tasks through direction review
+- `workflow-error-correction` now includes a durable `Process overwrap` guard
+- direction review remains mandatory for actual direction/value questions, but no longer wraps obvious implementation tasks by default
+
 ### 2026-05-06 - Commit And Push Should Not Be The Default After Every Small Task
 
 **Decision**

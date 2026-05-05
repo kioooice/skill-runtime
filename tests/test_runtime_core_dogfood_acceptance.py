@@ -419,12 +419,16 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
 
         for phrase in [
             "Do not start implementation until the workflow reaches a build-now verdict.",
+            "Do not route clear small execution tasks through this workflow.",
+            "go straight to inspect/change/verify",
             "`build_now`",
             "`manual_validation_first`",
             "`revise_direction`",
             "`do_not_build_now`",
             "smallest closed-loop validation",
             "Do not treat Skill Runtime, local skills, entered/used samples, dashboard events, or trigger validation as the product goal.",
+            "Do not use it for:",
+            "- targeted bug fixes",
         ]:
             self.assertIn(phrase, content)
 
@@ -486,6 +490,7 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
     def test_workflow_error_correction_keeps_agents_lightweight(self) -> None:
         agents_content = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("workflow-error-correction", agents_content)
+        self.assertIn("Do not send clear small execution tasks through direction review", agents_content)
         self.assertIn("Do not default to `python -m unittest tests.test_runtime_fast -v` for every small change", agents_content)
         self.assertIn("Do not update `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md` after every small change", agents_content)
         self.assertIn("Do not default to commit and push after every small change", agents_content)
@@ -494,6 +499,7 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         self.assertNotIn("Do not continue adding or validating skills just because auto mode can keep going", agents_content)
         global_agents_content = Path("C:/Users/Administrator/.codex/AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("workflow-error-correction", global_agents_content)
+        self.assertIn("Do not send clear small execution tasks through direction review", global_agents_content)
         self.assertIn("Do not default to repository-wide test suites for every small change", global_agents_content)
         self.assertIn("Do not update repository state files after every small change", global_agents_content)
         self.assertIn("Do not default to commit and push after every small change", global_agents_content)
@@ -517,6 +523,7 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
             "Validation escalation: do not run repository-wide fast or full suites for every localized change",
             "State-file churn: do not update `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md` after every localized low-risk task",
             "Publish churn: do not commit and push after every localized low-risk task",
+            "Process overwrap: do not send clear small execution tasks through `pre-implementation-workflow-review`",
             "If an existing guard applies, change the next action immediately.",
             "Record the mistake outside AGENTS.md",
             "Check existing correction records before creating a new one",

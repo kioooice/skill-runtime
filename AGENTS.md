@@ -11,6 +11,7 @@ This workspace is `vibe`.
 ## Standing Rules
 
 - New development directions must pass the development direction value gate before implementation; only a `build_now` verdict permits same-flow implementation.
+- Do not send clear small execution tasks through direction review; reserve `pre-implementation-workflow-review` for real new directions, route changes, MVP framing, or should-we-build-this decisions.
 - Keep `AGENTS.md` lightweight; record recurring workflow mistakes through `workflow-error-correction` instead of adding case-specific history here.
 - Concrete project development tasks must call the Codex-facing Skill Runtime gate before substantive reads or edits.
 - Resume commands such as `继续`, `继续完成任务`, `继续 HANDOFF`, or `continue` must start from `HANDOFF.md`.

@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Process overwrap was removed from clear small execution tasks
+
+- Task type: workflow routing overhead reduction
+- Classified as: default-out / skipped
+- What happened: the direction-review workflow and AGENTS routing were tightened so clear localized execution tasks no longer get sent through heavy value/route review; that review is now reserved for real new directions, route changes, MVP framing, and should-we-build-this questions
+- Did the behavior feel correct: yes; it preserved the build gate for actual direction work while removing unnecessary wrapping from straightforward implementation tasks
+- Did the lane help: yes, because the skip result kept the change focused on workflow routing instead of pretending this was a runtime/product capability issue
+- Follow-up: on future obvious local execution tasks, go straight to inspect/change/verify unless the user is actually asking for a route or value decision
+
 ### 2026-05-06 - Publish churn was removed from the default small-task workflow
 
 - Task type: workflow publication overhead reduction

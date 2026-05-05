@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新流程包裹策略纠偏：第四个已收掉的效率问题是 process overwrap。当前全局 `C:\Users\Administrator\.codex\skills\pre-implementation-workflow-review\SKILL.md` 已明确：目标明确、范围局部、实现路径明显的小执行任务，不要再走方向审核流程，直接 `inspect/change/verify`。全局与项目 `AGENTS.md` 都已同步这条规则；全局 `workflow-error-correction` 也已新增 `Process overwrap` guard。现在方向审核只保留给真实的新方向、路线变更、MVP framing 和 “该不该做” 这类问题。
+
 最新发布策略纠偏：第三个已收掉的效率问题是 publish churn。当前全局与项目 `AGENTS.md` 都不再要求“小改动做完就默认 commit + push”。新的默认规则是：只有当一个 meaningful stage 真正完成、适合 batching、或者用户明确要求发布当前改动时，才执行 publish。全局 `workflow-error-correction` 也已新增 `Publish churn` guard，后续遇到局部低风险小任务时，不要再把立即发一笔 commit/push 当作默认流程动作。
 
 最新状态文件策略纠偏：在“不要每次小改动都跑仓库级快验”之后，第二个已收掉的效率问题是状态文件 churn。当前全局 `C:\Users\Administrator\.codex\skills\session-handoff-maintenance\SKILL.md` 已明确：不要对每个 localized low-risk change 都更新 `HANDOFF.md`、`TASKS.md`、`DECISIONS.md`。只有当 next-session entry point、durable decision、blocker、plan coordinate 或 long-context risk 真正变化时，才需要刷新这些文件。全局与项目 `AGENTS.md` 也都已同步这条规则。
