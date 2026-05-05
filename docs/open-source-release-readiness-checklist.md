@@ -4,6 +4,10 @@ Date: 2026-05-05
 
 This checklist defines the docs-first readiness release for Skill Runtime. It is meant to prepare the repository for external review before any Codex plugin path or broader packaging work.
 
+See also:
+
+- `docs/v0.1.0-alpha-release-plan.md`
+
 ## Completed In This Stage
 
 - MIT `LICENSE` added.

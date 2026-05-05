@@ -394,7 +394,7 @@ python scripts/skill_mcp_server.py
 Or from any directory:
 
 ```bash
-python D:/02-Projects/vibe/scripts/skill_mcp_server.py --root D:/02-Projects/vibe
+python /path/to/skill-runtime/scripts/skill_mcp_server.py --root /path/to/skill-runtime
 ```
 
 Current MCP tools:
@@ -587,14 +587,14 @@ The dashboard is static local HTML. It reads the current runtime root and shows 
 To inspect runtime lane records across sibling projects:
 
 ```bash
-python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open
+python -m skill_runtime.cli dashboard --global --scan-root /path/to/projects-root --open
 ```
 
 To inspect the same runtime lane records as read-only JSON without opening HTML:
 
 ```bash
 python -m skill_runtime.cli runtime-events --limit 20
-python -m skill_runtime.cli runtime-events --global --scan-root D:\02-Projects --limit 20
+python -m skill_runtime.cli runtime-events --global --scan-root /path/to/projects-root --limit 20
 ```
 
 `runtime-events` returns recent events, `used / entered / skipped` counts, and finalizer follow-up fields such as `recommended_next_action` and available operation labels.
