@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新 v0.3 主线切片：`operator-summary` 现在除了 `--refresh-dashboard-export`，还支持显式 `--refresh-operator-status`。这会在返回 summary 前刷新 `.skill_runtime/operator_status/provider_quality.json`、`search_quality.json` 和 `workflow_search_quality.json`，解决“summary 读得到 contract，但 gate status 仍要手工跑三条脚本才能变得有用”的实际缺口。当前返回 payload 也新增 `operator_status_refresh`，会标明这次是否刷新、刷新了哪些 gate、以及刷新时间；并且可以和 `--refresh-dashboard-export` 组合成一条显式 operator 路径。当前仍然没有执行 host operation、promote、apply evolution candidate，也没有新增第四个 operator 入口。
+
 最新流程包裹策略纠偏：第四个已收掉的效率问题是 process overwrap。当前全局 `C:\Users\Administrator\.codex\skills\pre-implementation-workflow-review\SKILL.md` 已明确：目标明确、范围局部、实现路径明显的小执行任务，不要再走方向审核流程，直接 `inspect/change/verify`。全局与项目 `AGENTS.md` 都已同步这条规则；全局 `workflow-error-correction` 也已新增 `Process overwrap` guard。现在方向审核只保留给真实的新方向、路线变更、MVP framing 和 “该不该做” 这类问题。
 
 最新发布策略纠偏：第三个已收掉的效率问题是 publish churn。当前全局与项目 `AGENTS.md` 都不再要求“小改动做完就默认 commit + push”。新的默认规则是：只有当一个 meaningful stage 真正完成、适合 batching、或者用户明确要求发布当前改动时，才执行 publish。全局 `workflow-error-correction` 也已新增 `Publish churn` guard，后续遇到局部低风险小任务时，不要再把立即发一笔 commit/push 当作默认流程动作。

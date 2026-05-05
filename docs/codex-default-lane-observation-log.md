@@ -23,6 +23,14 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Operator summary gained an explicit gate-status refresh step
+
+- Task type: operator visibility mainline continuation
+- Classified as: default-out / skipped
+- What happened: the existing `operator-summary` command was extended with `--refresh-operator-status`, which refreshes the persisted provider/search/workflow gate snapshots before returning the summary; the same command can now refresh gate status and the stable dashboard export together without adding a fourth operator entry
+- Did the behavior feel correct: yes; it closed a real operator gap without turning visibility into hidden lifecycle automation
+- Did the lane help: yes, because the skip result kept this as a local operator-surface slice instead of pretending it was a reusable workflow-family task
+- Follow-up: dogfood whether the explicit combined path `operator-summary --refresh-operator-status --refresh-dashboard-export` is already enough, instead of adding another surface
 ### 2026-05-06 - Process overwrap was removed from clear small execution tasks
 
 - Task type: workflow routing overhead reduction

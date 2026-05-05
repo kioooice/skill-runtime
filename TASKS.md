@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新 v0.3 主线切片：`operator-summary` 现在支持显式 `--refresh-operator-status`，会先刷新 `.skill_runtime/operator_status/*.json` 再返回 summary；payload 也新增 `operator_status_refresh`，用于报告这次是否刷新、刷新了哪些 gate、以及刷新时间。这样 provider / utility-search / workflow-search status 不再需要靠三条手工 evaluator 命令分别更新。当前也可以与 `--refresh-dashboard-export` 组合成一条显式 operator 路径，仍然不执行 host operation、promote 或 apply。
+
 - 最新流程包裹策略纠偏：不要再把目标明确、范围局部、实现路径明显的小执行任务送进 `pre-implementation-workflow-review`。当前规则已改成：方向审核只用于真实新方向、路线变更、MVP framing 和 “该不该做”；小执行任务直接 `inspect/change/verify`。全局 `pre-implementation-workflow-review`、全局 `workflow-error-correction`、全局 `AGENTS.md` 和项目 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 都已同步。
 
 - 最新发布策略纠偏：不要再把 commit + push 当成每次小改动后的默认收尾。当前规则已经改成：只有 meaningful stage completion、合适 batching 点、或用户明确要求发布当前改动时，才执行 publish。全局与项目 `AGENTS.md` 已同步，全局 `workflow-error-correction` 也已新增 `Publish churn` guard。
@@ -20,7 +22,7 @@
 
 - 最新 dashboard 文案收口：现有 read-only dashboard 第一屏已经从“内部术语”收口到更专业、克制的产品语言。当前导航与页头统一为 `运行状态总览` / `总览` / `可复用流程` / `待审核项` / `近期记录` / `系统状态` / `数据来源`；overview 指标为 `现有流程` / `自动处理` / `观察中` / `常规处理`。`operator-summary` 也已收口为 `系统摘要`、`现有流程`、`待审核候选`、`任务轨迹`、`建议操作`，并显示 `提供器状态`、`基础检索状态`、`工作流检索状态`。当前仍然只消费稳定字段，不绑定 full item lists，不执行 host operation，不 promote/apply，也没有任何证据支持扩大 `default-in`。
 
-- 下一步主线：这条 operator visibility 主线已经完成，下一步不该继续扩 dashboard 字段、再造第四个入口，或让 dashboard 执行 evaluator / lifecycle operation。更合理的是先做真实使用验证，判断现有 `operator-summary` / `dashboard` / `runtime-events` 三条路径是否已经足够。当前仍然没有任何证据支持扩大 `default-in`。
+- 下一步主线：这条 operator visibility 主线现在已经补到“摘要 inspect + gate-status refresh + export refresh + dashboard render + runtime-events evidence”的完整显式路径。下一步不该继续扩 dashboard 字段、再造第四个入口，或继续堆 refresh flag；更合理的是先做真实使用验证，判断现有 `operator-summary` / `dashboard` / `runtime-events` 三条路径再加上显式 gate-status refresh 是否已经足够。当前仍然没有任何证据支持扩大 `default-in`。
 
 - 最新 workflow correction：已记录两条需要复用的流程 guard。其一，在当前 PowerShell 环境下不要再用 `&&` 串 shell 命令，顺序命令改用 `;` 或拆成独立 tool call；其二，长时验证命令超时只能先记为 `timed out / not yet verified`，必须先放宽超时或单独重跑，再判断是否失败。下一次触发点分别是 commit/push shell 流程，以及 `python -m unittest tests.test_runtime_fast -v` 这类已知接近数分钟的验证。当前仍然没有任何证据支持扩大 `default-in`。
 

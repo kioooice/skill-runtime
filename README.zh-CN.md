@@ -587,10 +587,22 @@ python -m skill_runtime.cli dashboard --open
 python -m skill_runtime.cli operator-summary
 ```
 
+先刷新本地持久化的 gate status，再返回 operator summary：
+
+```bash
+python -m skill_runtime.cli operator-summary --refresh-operator-status
+```
+
 只刷新稳定的 dashboard 摘要导出、不生成 HTML：
 
 ```bash
 python -m skill_runtime.cli operator-summary --refresh-dashboard-export
+```
+
+如果希望把 gate status 和稳定导出一起刷新：
+
+```bash
+python -m skill_runtime.cli operator-summary --refresh-operator-status --refresh-dashboard-export
 ```
 
 如果希望在生成前顺手刷新稳定的 operator-summary 导出：

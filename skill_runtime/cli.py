@@ -1,8 +1,10 @@
 import argparse
 import json
+import subprocess
 import sys
 import webbrowser
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 from skill_runtime.api.models import (
@@ -36,6 +38,27 @@ EXIT_ARGUMENT_ERROR = 2
 EXIT_NOT_FOUND = 3
 EXIT_VALIDATION_ERROR = 4
 EXIT_POLICY_BLOCKED = 5
+
+OPERATOR_STATUS_REFRESH_SPECS = (
+    {
+        "label": "provider_quality",
+        "script": ROOT / "scripts" / "evaluate_provider_quality.py",
+        "baseline": ROOT / "docs" / "provider-quality-baseline.json",
+        "uses_source_root": False,
+    },
+    {
+        "label": "utility_search_quality",
+        "script": ROOT / "scripts" / "evaluate_search_quality.py",
+        "baseline": ROOT / "docs" / "search-quality-baseline.json",
+        "uses_source_root": True,
+    },
+    {
+        "label": "workflow_search_quality",
+        "script": ROOT / "scripts" / "evaluate_workflow_search_quality.py",
+        "baseline": ROOT / "docs" / "workflow-search-quality-baseline.json",
+        "uses_source_root": True,
+    },
+)
 
 
 def service_for_args(args: argparse.Namespace) -> RuntimeService:
@@ -410,6 +433,11 @@ def _render_operator_summary_text(payload: dict) -> str:
     explanation = payload.get("non_automatic_explanation")
     if explanation:
         lines.extend(["", f"Boundary: {explanation}"])
+    operator_status_refresh = payload.get("operator_status_refresh")
+    if isinstance(operator_status_refresh, dict) and operator_status_refresh.get("refreshed"):
+        gates = ", ".join(str(item) for item in operator_status_refresh.get("gates") or [])
+        refresh_detail = gates or "quality gates"
+        lines.extend(["", f"Operator status refresh: refreshed ({refresh_detail})"])
     dashboard_export = payload.get("dashboard_export")
     if isinstance(dashboard_export, dict):
         status = "available" if dashboard_export.get("available") else "unavailable"
@@ -449,8 +477,49 @@ def _operator_summary_export_status(
     }
 
 
+def _refresh_operator_status(root: Path) -> list[str]:
+    refreshed_gates: list[str] = []
+    for spec in OPERATOR_STATUS_REFRESH_SPECS:
+        command = [sys.executable, str(spec["script"])]
+        if spec["uses_source_root"]:
+            command.extend(["--source-root", str(root)])
+        command.extend(
+            [
+                "--baseline",
+                str(spec["baseline"]),
+                "--write-operator-status",
+                "--operator-status-root",
+                str(root),
+            ]
+        )
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            cwd=str(ROOT),
+        )
+        if result.returncode != 0:
+            stderr = (result.stderr or "").strip()
+            stdout = (result.stdout or "").strip()
+            detail = stderr or stdout or "no output"
+            raise RuntimeError(f"{spec['label']} refresh failed: {detail}")
+        refreshed_gates.append(str(spec["label"]))
+    return refreshed_gates
+
+
 def cmd_operator_summary(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
+    refreshed_gates: list[str] = []
+    if getattr(args, "refresh_operator_status", False):
+        try:
+            refreshed_gates = _refresh_operator_status(root)
+        except RuntimeError as exc:
+            return error(
+                "failed to refresh operator status",
+                "OPERATOR_STATUS_REFRESH_FAILED",
+                details={"reason": str(exc)},
+                exit_code=EXIT_RUNTIME_ERROR,
+            )
     payload = service_for_args(args).operator_summary(
         active_limit=args.active_limit,
         staging_limit=args.staging_limit,
@@ -458,6 +527,11 @@ def cmd_operator_summary(args: argparse.Namespace) -> int:
         audit_limit=args.audit_limit,
         event_limit=args.event_limit,
     )
+    payload["operator_status_refresh"] = {
+        "refreshed": bool(refreshed_gates),
+        "gates": refreshed_gates,
+        "generated_at": datetime.now(timezone.utc).isoformat() if refreshed_gates else None,
+    }
     dashboard_export_payload = None
     dashboard_export_output_path = None
     if getattr(args, "refresh_dashboard_export", False):
@@ -1041,6 +1115,11 @@ def build_parser() -> argparse.ArgumentParser:
     operator_summary_parser.add_argument("--trajectory-limit", type=int, default=20)
     operator_summary_parser.add_argument("--audit-limit", type=int, default=10)
     operator_summary_parser.add_argument("--event-limit", type=int, default=10)
+    operator_summary_parser.add_argument(
+        "--refresh-operator-status",
+        action="store_true",
+        help="Refresh the persisted local operator-status summaries before returning the operator summary",
+    )
     operator_summary_parser.add_argument(
         "--refresh-dashboard-export",
         action="store_true",

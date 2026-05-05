@@ -17,6 +17,7 @@ Use these commands for different jobs:
 - `operator-summary`
   - summary-first local inspection
   - returns the full local operator summary
+  - can explicitly refresh persisted local gate-status snapshots
   - also reports the current dashboard export state under `dashboard_export`
 - `dashboard`
   - visual read-only inspection
@@ -39,6 +40,9 @@ python -m skill_runtime.cli operator-summary
 This returns:
 
 - the current local summary payload
+- `operator_status_refresh.refreshed`
+- `operator_status_refresh.gates`
+- `operator_status_refresh.generated_at`
 - `dashboard_export.available`
 - `dashboard_export.freshness_status`
 - `dashboard_export.output_path`
@@ -47,7 +51,21 @@ This returns:
 
 Use this first when you want a scriptable answer and do not need HTML.
 
-### 2. Refresh The Stable Dashboard Export Without Rendering HTML
+### 2. Refresh Persisted Gate Status Before Returning The Summary
+
+```bash
+python -m skill_runtime.cli operator-summary --refresh-operator-status
+```
+
+Use this when:
+
+- provider, utility-search, or workflow-search status is unavailable or stale
+- you want `.skill_runtime/operator_status/*.json` refreshed from the current evaluator baselines
+- you want the returned summary to reflect those refreshed gate snapshots immediately
+
+This is explicit. It does not promote skills, apply evolution candidates, or execute recommended host operations.
+
+### 3. Refresh The Stable Dashboard Export Without Rendering HTML
 
 ```bash
 python -m skill_runtime.cli operator-summary --refresh-dashboard-export
@@ -60,7 +78,15 @@ Use this when:
 
 This remains read-only with respect to runtime lifecycle actions. It only refreshes the stable dashboard summary export.
 
-### 3. Render The Dashboard
+### 4. Refresh Gate Status And Dashboard Export Together
+
+```bash
+python -m skill_runtime.cli operator-summary --refresh-operator-status --refresh-dashboard-export
+```
+
+Use this when you want the summary command itself to refresh both the local gate-status index and the stable dashboard export before returning.
+
+### 5. Render The Dashboard
 
 ```bash
 python -m skill_runtime.cli dashboard --open
@@ -68,7 +94,7 @@ python -m skill_runtime.cli dashboard --open
 
 Use this when you want the visual read-only surface and the current export is already good enough.
 
-### 4. Refresh Then Render The Dashboard
+### 6. Refresh Then Render The Dashboard
 
 ```bash
 python -m skill_runtime.cli dashboard --refresh-operator-summary --open
@@ -103,18 +129,19 @@ Use the global dashboard when the question is cross-workspace visibility rather 
 For local operator checks, use this order:
 
 1. `operator-summary`
-2. `operator-summary --refresh-dashboard-export` if the export is missing or stale
-3. `dashboard --open` or `dashboard --refresh-operator-summary --open`
-4. `runtime-events` only when you need event-level evidence
+2. `operator-summary --refresh-operator-status` if gate status is missing or stale
+3. `operator-summary --refresh-dashboard-export` if the export is missing or stale
+4. `operator-summary --refresh-operator-status --refresh-dashboard-export` if you want both refreshed in one command
+5. `dashboard --open` or `dashboard --refresh-operator-summary --open`
+6. `runtime-events` only when you need event-level evidence
 
 ## Boundary
 
 This runbook does not:
 
-- run evaluator scripts
 - execute host operations
 - promote skills
 - apply evolution candidates
 - turn dashboard into a control plane
 
-It standardizes visibility only.
+It standardizes visibility and explicit local status refresh only.

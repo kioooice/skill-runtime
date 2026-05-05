@@ -90,7 +90,7 @@ For one checked-in maintainer-facing proof bundle around this accepted path, see
 
 ## v0.3 Product Completeness Direction
 
-`v0.2.0rc1` is stage evidence, not final product completeness. The current v0.3 mainline is operator usability: start with `python -m skill_runtime.cli --root . operator-summary` for a read-only view of active skills, captured trajectories, staging candidates, visible follow-up operations, intentionally non-automatic boundaries, and any locally persisted gate status under `.skill_runtime/operator_status/`. For dashboard/operator workbench collector use, you can export the stable subset with `python scripts/export_operator_summary_for_dashboard.py --root .`; the existing collector can now read that export and compute availability/freshness metadata without changing dashboard pages. If you want the dashboard command to refresh that stable export first, use `python -m skill_runtime.cli dashboard --refresh-operator-summary`.
+`v0.2.0rc1` is stage evidence, not final product completeness. The current v0.3 mainline is operator usability: start with `python -m skill_runtime.cli --root . operator-summary` for a read-only view of active skills, captured trajectories, staging candidates, visible follow-up operations, intentionally non-automatic boundaries, and any locally persisted gate status under `.skill_runtime/operator_status/`. If those persisted gate summaries are missing or stale, refresh them explicitly with `python -m skill_runtime.cli --root . operator-summary --refresh-operator-status`. For dashboard/operator workbench collector use, you can export the stable subset with `python scripts/export_operator_summary_for_dashboard.py --root .`; the existing collector can now read that export and compute availability/freshness metadata without changing dashboard pages. If you want one explicit operator path that refreshes both gate status and the dashboard export first, use `python -m skill_runtime.cli operator-summary --refresh-operator-status --refresh-dashboard-export`.
 
 ## Open Source Participation
 
@@ -606,10 +606,22 @@ Inspect the current local operator summary and the current dashboard export stat
 python -m skill_runtime.cli operator-summary
 ```
 
+Refresh the persisted local gate-status summaries before returning the operator summary:
+
+```bash
+python -m skill_runtime.cli operator-summary --refresh-operator-status
+```
+
 Refresh the stable dashboard export without rendering HTML:
 
 ```bash
 python -m skill_runtime.cli operator-summary --refresh-dashboard-export
+```
+
+Refresh the local gate-status summaries and the stable dashboard export together:
+
+```bash
+python -m skill_runtime.cli operator-summary --refresh-operator-status --refresh-dashboard-export
 ```
 
 Refresh the stable operator summary export before rendering:

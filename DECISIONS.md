@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-06 - Operator Summary Should Also Be The Explicit Gate-Status Refresh Path
+
+**Decision**
+
+Extend `operator-summary` with an explicit `--refresh-operator-status` option that refreshes the persisted local gate-status snapshots before returning the summary. Keep this on the existing summary-first command instead of adding a fourth operator entry.
+
+**Reason**
+
+The operator-visibility slice already made summary inspection and dashboard-export refresh explicit, but one real daily-product gap remained: provider, utility-search, and workflow-search status still required three separate manual evaluator commands before the summary became fully useful. That is repeated operator friction, not a proof-only gap. The smallest useful move is to keep the existing `operator-summary` path and give it one explicit gate-status refresh step.
+
+**Impact**
+
+- `operator-summary --refresh-operator-status` now refreshes `.skill_runtime/operator_status/*.json` before building the summary
+- the summary now reports `operator_status_refresh` metadata so callers can tell whether this invocation refreshed gate status
+- the command can be combined with `--refresh-dashboard-export` to update both the local gate-status index and the stable dashboard export in one explicit step
+- this improves daily operator usability without adding a new operator entry or widening lifecycle automation
 ### 2026-05-06 - Clear Small Execution Tasks Should Bypass Heavy Direction-Review Wrapping
 
 **Decision**

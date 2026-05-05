@@ -36,6 +36,9 @@ class RuntimeOperatorSummaryTestsMixin:
         self.assertIn("safe_next_steps", payload["data"])
         self.assertIn("intentionally_not_automatic", payload["data"])
         self.assertIn("dashboard_export", payload["data"])
+        self.assertIn("operator_status_refresh", payload["data"])
+        self.assertFalse(payload["data"]["operator_status_refresh"]["refreshed"])
+        self.assertEqual([], payload["data"]["operator_status_refresh"]["gates"])
 
     def test_operator_summary_marks_gate_status_unavailable_without_persisted_operator_status(self) -> None:
         payload = self._run_cli(
@@ -248,6 +251,42 @@ class RuntimeOperatorSummaryTestsMixin:
             expect_json=True,
             root=self.runtime_root,
         )
+
+        dashboard_export = payload["data"]["dashboard_export"]
+        self.assertTrue(dashboard_export["refreshed"])
+        self.assertTrue(dashboard_export["available"])
+        self.assertEqual("fresh", dashboard_export["freshness_status"])
+        self.assertEqual(str(export_path.resolve()), dashboard_export["output_path"])
+        self.assertTrue(export_path.exists())
+
+    def test_operator_summary_can_refresh_operator_status_and_dashboard_export(self) -> None:
+        export_path = self.runtime_root / ".skill_runtime" / "dashboard" / "operator-summary.json"
+
+        payload = self._run_cli(
+            "operator-summary",
+            "--refresh-operator-status",
+            "--refresh-dashboard-export",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        refresh = payload["data"]["operator_status_refresh"]
+        self.assertTrue(refresh["refreshed"])
+        self.assertEqual(
+            ["provider_quality", "utility_search_quality", "workflow_search_quality"],
+            refresh["gates"],
+        )
+        self.assertIsInstance(refresh["generated_at"], str)
+
+        quality_gates = payload["data"]["quality_gates"]
+        self.assertEqual("available", quality_gates["provider_quality"]["status"])
+        self.assertEqual("available", quality_gates["utility_search_quality"]["status"])
+        self.assertEqual("available", quality_gates["workflow_search_quality"]["status"])
+        self.assertEqual([], payload["data"]["missing_or_unavailable"])
+
+        self.assertTrue((self._operator_status_dir() / "provider_quality.json").exists())
+        self.assertTrue((self._operator_status_dir() / "search_quality.json").exists())
+        self.assertTrue((self._operator_status_dir() / "workflow_search_quality.json").exists())
 
         dashboard_export = payload["data"]["dashboard_export"]
         self.assertTrue(dashboard_export["refreshed"])

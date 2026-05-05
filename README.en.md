@@ -570,10 +570,22 @@ Inspect the current local operator summary and the current dashboard export stat
 python -m skill_runtime.cli operator-summary
 ```
 
+Refresh the persisted local gate-status summaries before returning the operator summary:
+
+```bash
+python -m skill_runtime.cli operator-summary --refresh-operator-status
+```
+
 Refresh the stable dashboard export without rendering HTML:
 
 ```bash
 python -m skill_runtime.cli operator-summary --refresh-dashboard-export
+```
+
+Refresh the local gate-status summaries and the stable dashboard export together:
+
+```bash
+python -m skill_runtime.cli operator-summary --refresh-operator-status --refresh-dashboard-export
 ```
 
 Refresh the stable operator-summary export before rendering:

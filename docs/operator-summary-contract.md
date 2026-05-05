@@ -10,6 +10,12 @@ Primary command:
 python -m skill_runtime.cli --root . operator-summary
 ```
 
+Optional persisted gate-status refresh:
+
+```bash
+python -m skill_runtime.cli --root . operator-summary --refresh-operator-status
+```
+
 Optional export refresh:
 
 ```bash
@@ -46,6 +52,7 @@ The export is intentionally narrower than the full CLI/service `operator-summary
 - `intentionally_not_automatic`
 - `missing_or_unavailable`
 - `non_automatic_explanation`
+- `operator_status_refresh`
 - `dashboard_export`
 
 ## Stable v1 Fields
@@ -72,7 +79,14 @@ These fields should be treated as stable for v1 consumers:
 - `intentionally_not_automatic`
 - `missing_or_unavailable`
 - `non_automatic_explanation`
+- `operator_status_refresh`
 - `dashboard_export`
+
+Stable `operator_status_refresh` fields are:
+
+- `refreshed`
+- `gates`
+- `generated_at`
 
 Stable `dashboard_export` fields are:
 
@@ -244,7 +258,9 @@ It will not:
 - apply an evolution candidate
 - archive duplicate candidates
 
-Refreshing the dashboard export does not change that boundary. `--refresh-dashboard-export` writes only the stable `.skill_runtime/dashboard/operator-summary.json` snapshot for downstream read-only consumers.
+`--refresh-operator-status` is the one explicit exception to the fully passive path: it refreshes only the persisted local gate-status files under `.skill_runtime/operator_status/` so the summary can show current gate status without requiring three separate manual script invocations.
+
+Refreshing the dashboard export does not change the lifecycle boundary. `--refresh-dashboard-export` writes only the stable `.skill_runtime/dashboard/operator-summary.json` snapshot for downstream read-only consumers.
 
 It is a visibility surface, not a lifecycle executor.
 
