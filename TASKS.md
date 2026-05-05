@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-- 最新主线已切到 `v0.3 product completeness`。当前第一条产品化切片是最小 Operator Workbench / lifecycle visibility，而不是继续推进 release tag、proof bundle 包装或更多 release 材料。当前已实现只读 CLI `python -m skill_runtime.cli --root . operator-summary`：默认 JSON，可选 `--format text`，当前可见 active skills、staging candidates、captured trajectories、recent runtime events、recommended host operations（若事件存在）、recent audits、safe next steps 和 intentionally-not-automatic 边界。当前实现不执行 host operation、不 promote、不 apply，也不修改 runtime state。下一步更应该补真实缺失的状态索引，而不是扩自动化边界。当前仍然没有任何证据支持扩大 `default-in`。
+- 最新主线已切到 `v0.3 product completeness`。当前第一条产品化切片是最小 Operator Workbench / lifecycle visibility，而不是继续推进 release tag、proof bundle 包装或更多 release 材料。当前已实现只读 CLI `python -m skill_runtime.cli --root . operator-summary`：默认 JSON，可选 `--format text`，当前可见 active skills、staging candidates、captured trajectories、recent runtime events、recommended host operations（若事件存在）、recent audits、safe next steps 和 intentionally-not-automatic 边界。当前实现不执行 host operation、不 promote、不 apply，也不修改 runtime state。补充边界：现有 read-only dashboard / global-dashboard 继续保留，不从零重做；`operator-summary` 应优先成为未来 dashboard/operator workbench 的稳定数据源。下一步更应该补真实缺失的状态索引，而不是扩自动化边界。当前仍然没有任何证据支持扩大 `default-in`。
 
 - 最新 v0.3 方向文档：已新增 `docs/v0.3-product-completeness-plan.md`。当前判断是：`v0.2.0rc1` 已证明 governed maintainer-workflow MVP 和 release-candidate 证据，但没有解决日常 operator 的 runtime 可见性问题。为此 v0.3 先优先做 Operator Workbench，而不是继续堆 release/tag/proof 文档，也不是先做复杂 dashboard。README 只新增了一个很小的 `v0.3 Product Completeness Direction` 段落，把 `operator-summary` 作为 operator 入口暴露出来，并明确 v0.2 RC 只是阶段证据，不是最终产品完成。当前仍然没有任何证据支持扩大 `default-in`。
 

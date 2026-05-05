@@ -19,7 +19,10 @@ The right next slice is therefore not more release packaging. It is a single rea
 - added `docs/v0.3-product-completeness-plan.md`
 - added `operator-summary` CLI support with default JSON and optional text rendering
 - `operator-summary` surfaces active skills, staging candidates, captured trajectories, recent audits, recent runtime events, safe next steps, and intentionally non-automatic actions
+- text rendering is expected to express the same state groups as the JSON summary, not a separate prose-only view
 - provider/search/workflow baseline status is shown only when a local persisted report exists; otherwise it is marked `unavailable`
+- existing read-only dashboard/global-dashboard stays in place; this slice does not rewrite dashboard pages
+- the intended future connection is for dashboard/operator workbench to consume `operator-summary` as a stable data source once the summary contract settles
 - no host operation is executed
 - no skill is promoted
 - no evolution candidate is applied

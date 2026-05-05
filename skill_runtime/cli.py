@@ -327,6 +327,7 @@ def _render_operator_summary_text(payload: dict) -> str:
     lines = [
         "Operator Summary",
         f"Root: {payload['root']}",
+        f"Generated at: {payload['generated_at']}",
         "",
         f"Active skills: {payload['active_skills']['count']}",
     ]
@@ -342,10 +343,32 @@ def _render_operator_summary_text(payload: dict) -> str:
     for item in payload["trajectories"]["items"][:5]:
         lines.append(f"- {item['task_id']}: {item['task_description'] or 'No description.'}")
 
+    lines.extend(["", f"Recent runtime events: {payload['recent_runtime_events']['count']}"])
+    for item in payload["recent_runtime_events"]["items"][:5]:
+        status = item.get("runtime_lane_status") or "unknown"
+        lines.append(f"- {status}: {item.get('task_description') or 'No task description.'}")
+
     lines.extend(["", f"Recommended host operations: {payload['recommended_host_operations']['count']}"])
     for item in payload["recommended_host_operations"]["items"][:5]:
         action = item.get("recommended_next_action") or "unavailable"
         lines.append(f"- {action}: {item.get('task_description') or 'No task description.'}")
+
+    quality_gates = payload.get("quality_gates", {})
+    recent_audits = quality_gates.get("recent_audits", {})
+    lines.extend(["", f"Recent audits: {recent_audits.get('count', 0)}"])
+    for item in recent_audits.get("items", [])[:5]:
+        lines.append(f"- {item['skill_name']}: {item.get('status') or 'unknown'}")
+
+    lines.extend(["", "Quality gates:"])
+    for key in ("provider_quality", "utility_search_quality", "workflow_search_quality"):
+        gate = quality_gates.get(key, {})
+        label = gate.get("label") or key
+        status = gate.get("status") or "unavailable"
+        reason = gate.get("reason")
+        if reason:
+            lines.append(f"- {label}: {status} ({reason})")
+        else:
+            lines.append(f"- {label}: {status}")
 
     lines.extend(["", "Safe next steps:"])
     for item in payload["safe_next_steps"]:
@@ -360,6 +383,10 @@ def _render_operator_summary_text(payload: dict) -> str:
         lines.extend(["", "Unavailable status sources:"])
         for item in missing:
             lines.append(f"- {item}")
+
+    explanation = payload.get("non_automatic_explanation")
+    if explanation:
+        lines.extend(["", f"Boundary: {explanation}"])
     return "\n".join(lines)
 
 

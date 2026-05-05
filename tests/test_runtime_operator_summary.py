@@ -110,3 +110,7 @@ class RuntimeOperatorSummaryTestsMixin:
         self.assertIn("Operator Summary", result.stdout)
         self.assertIn("Active skills", result.stdout)
         self.assertIn("Trajectories", result.stdout)
+        self.assertIn("Recent runtime events", result.stdout)
+        self.assertIn("Recent audits", result.stdout)
+        self.assertIn("Quality gates", result.stdout)
+        self.assertIn("Boundary:", result.stdout)
