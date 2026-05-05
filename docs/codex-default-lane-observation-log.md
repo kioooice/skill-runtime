@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-05 - Review cleanup provider guidance wiring
+
+- Task type: provider-fidelity request hardening
+- Classified as: default-out / skipped
+- What happened: wired the minimal review-cleanup provider guidance into the fallback provider request and prompt so fallback providers receive explicit constraints about executable workflow code, matching runtime tools, kwargs-parameterized paths, and review-cleanup-specific non-automation boundaries
+- Did the behavior feel correct: yes; this improved provider-side context without changing audit thresholds, changing fixture roles, or widening runtime entry
+- Did the lane help: yes, because the skipped result reinforced that this remains a governed-learning quality change rather than default-lane evidence
+- Follow-up: keep using the existing fixture set and baseline gate; only revisit broader entry policy if real maintainer evidence appears, not because guidance text improved
+
 ### 2026-05-05 - Review cleanup provider gap analysis
 
 - Task type: provider-fidelity gap analysis

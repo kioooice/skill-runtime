@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-05 - Carry Minimal Provider Guidance In The Fallback Request
+
+**Decision**
+
+Carry a dedicated `provider_guidance` field in the fallback provider request and embed the same guidance into the fallback prompt.
+
+**Reason**
+
+The review-cleanup gap analysis showed that the negative fixture fails mainly because the mock fallback path produces template-like summaries instead of executable planning workflows. The narrowest useful intervention is to strengthen the provider-side request contract with explicit guidance, without changing audit thresholds, widening runtime entry, or forcing the mock negative control to pass.
+
+**Impact**
+
+- fallback requests now carry explicit provider guidance alongside summary, docstring, input schema, trajectory, and prompt
+- the guidance emphasizes executable workflow code, matching runtime tools, kwargs-based path parameterization, and avoiding hardcoded demo artifact names
+- review-cleanup requests also state that providers should write a cleanup plan artifact and should not modify source code, auto-resolve review comments, infer merge approval, or bypass maintainer judgment
+- deterministic rule matches still bypass the fallback path
+- this is a provider-fidelity prompt/request improvement only; it is not evidence for widening `default-in`
+
 ### 2026-05-05 - Promote Provider Quality Baseline To A Machine-Readable Check
 
 **Decision**

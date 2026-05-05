@@ -119,6 +119,13 @@ That guidance would reduce the gap because it targets the exact audit failures s
 - weak runtime alignment
 - hardcoded artifact names
 
+This guidance is now wired into the fallback provider request path:
+
+- fallback providers receive a dedicated `provider_guidance` field
+- the same guidance is also embedded into the fallback prompt
+
+That improves provider-side context without changing audit thresholds and without forcing the mock negative fixture to pass.
+
 ## What Should Not Be Automated
 
 This workflow should still avoid automatic code-edit execution in the provider-quality path.

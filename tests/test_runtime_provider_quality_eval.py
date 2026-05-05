@@ -6,9 +6,73 @@ import tempfile
 from pathlib import Path
 
 from tests.runtime_test_support import ROOT
+from skill_runtime.distill.fallback.service import FallbackService
+from skill_runtime.memory.trajectory_store import TrajectoryStore
 
 
 class RuntimeProviderQualityEvalTestsMixin:
+    def test_fallback_service_includes_provider_guidance_in_request_artifact(self) -> None:
+        artifact_dir = self.runtime_root / "skill_store" / "staging"
+        trajectory = TrajectoryStore(self.service.trajectories_dir).load_file(
+            self.service.capture_trajectory(
+                observed_task={
+                    "task": "Convert pull request review comments into a grouped maintainer cleanup plan.",
+                    "actions": [
+                        {
+                            "tool": "read_json",
+                            "input": {"path": "demo/maintainer_review_cleanup/review_comments.json"},
+                            "result": "Read review comments.",
+                        },
+                        {
+                            "tool": "write_text",
+                            "input": {"path": "demo/maintainer_review_cleanup/generated_cleanup_plan.md"},
+                            "result": "Wrote the cleanup plan.",
+                        },
+                    ],
+                    "outputs": ["demo/maintainer_review_cleanup/generated_cleanup_plan.md"],
+                },
+                task_id="provider_quality_guidance_request",
+                session_id="provider_quality_eval_tests",
+            )["trajectory_path"]
+        )
+        _, _, artifact_path = FallbackService(artifact_dir).generate(
+            "provider_quality_guidance_request",
+            "Read review comments and write a grouped maintainer cleanup plan.",
+            (
+                "功能描述:\n"
+                "    Read review comments and write a grouped maintainer cleanup plan.\n\n"
+                "输入参数:\n"
+                "    - input_path: str\n"
+                "    - output_path: str\n"
+                "    - metadata_path: str\n\n"
+                "输出结果:\n"
+                "    - status: str\n"
+                "    - artifacts: list[str]\n"
+                "    - steps_executed: int"
+            ),
+            trajectory,
+            {
+                "input_path": "str",
+                "output_path": "str",
+                "metadata_path": "str",
+            },
+        )
+        artifact = self._read_json_file(Path(artifact_path))
+        guidance = artifact["request"]["provider_guidance"]
+
+        self.assertIn("Generate executable workflow code", guidance)
+        self.assertIn("not a template summary", guidance)
+        self.assertIn("tools.read_json", guidance)
+        self.assertIn("tools.write_text", guidance)
+        self.assertIn("tools.write_json", guidance)
+        self.assertIn("Parameterize input/output paths through kwargs", guidance)
+        self.assertIn("Avoid hardcoding demo artifact names", guidance)
+        self.assertIn("write a cleanup plan artifact", guidance)
+        self.assertIn("rather than modifying source code", guidance)
+        self.assertIn("Do not auto-resolve review comments", guidance)
+        self.assertIn("Do not infer merge approval", guidance)
+        self.assertIn("Do not bypass maintainer judgment", guidance)
+
     def test_single_file_copy_rule_still_matches_pure_copy_workflow(self) -> None:
         capture = self.service.capture_trajectory(
             observed_task={

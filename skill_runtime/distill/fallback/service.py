@@ -6,7 +6,10 @@ from pathlib import Path
 from skill_runtime.api.models import Trajectory
 from skill_runtime.distill.fallback.command_provider import CommandFallbackProvider
 from skill_runtime.distill.fallback.mock_provider import MockFallbackProvider
-from skill_runtime.distill.fallback.prompt_builder import build_fallback_prompt
+from skill_runtime.distill.fallback.prompt_builder import (
+    build_fallback_prompt,
+    build_provider_guidance,
+)
 from skill_runtime.distill.fallback.provider import FallbackRequest, FallbackResponse
 
 
@@ -30,13 +33,22 @@ class FallbackService:
         trajectory: Trajectory,
         input_schema: dict[str, str],
     ) -> tuple[str, str, str]:
-        prompt = build_fallback_prompt(skill_name, summary, docstring, trajectory, input_schema)
+        provider_guidance = build_provider_guidance(summary, trajectory)
+        prompt = build_fallback_prompt(
+            skill_name,
+            summary,
+            docstring,
+            trajectory,
+            input_schema,
+            provider_guidance,
+        )
         request = FallbackRequest(
             skill_name=skill_name,
             summary=summary,
             docstring=docstring,
             trajectory=trajectory,
             input_schema=input_schema,
+            provider_guidance=provider_guidance,
             prompt=prompt,
         )
         response = self.provider.generate(request)
@@ -56,6 +68,7 @@ class FallbackService:
                 "summary": request.summary,
                 "docstring": request.docstring,
                 "input_schema": request.input_schema,
+                "provider_guidance": request.provider_guidance,
                 "trajectory_task_id": request.trajectory.task_id,
                 "prompt": request.prompt,
             },

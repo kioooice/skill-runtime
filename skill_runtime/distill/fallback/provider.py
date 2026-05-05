@@ -11,6 +11,7 @@ class FallbackRequest:
     docstring: str
     trajectory: Trajectory
     input_schema: dict[str, str]
+    provider_guidance: str
     prompt: str
 
 

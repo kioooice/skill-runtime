@@ -86,3 +86,39 @@ class RuntimeGeneratedSkillRegressionTestsMixin:
         artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
         self.assertEqual("mock_fallback_provider", artifact["response"]["provider_name"])
         self.assertIn("Skill name: fallback_rule_test", artifact["request"]["prompt"])
+        self.assertIn("provider_guidance", artifact["request"])
+        self.assertIn("Generate executable workflow code", artifact["request"]["provider_guidance"])
+        self.assertIn("not a template summary", artifact["request"]["provider_guidance"])
+        self.assertIn("Parameterize input/output paths through kwargs", artifact["request"]["provider_guidance"])
+        self.assertIn("Avoid hardcoding demo artifact names", artifact["request"]["provider_guidance"])
+        self.assertIn("Provider guidance:", artifact["request"]["prompt"])
+
+    def test_deterministic_rule_distillation_does_not_emit_fallback_guidance_artifact(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+        generated = SkillGenerator(sandbox_root / "skill_store" / "staging").generate(
+            Trajectory(
+                task_id="deterministic_rule_demo",
+                session_id="session_rule_demo",
+                task_description="Copy one text file into a new output file.",
+                steps=[
+                    TrajectoryStep(
+                        step_id="1",
+                        tool_name="copy_file",
+                        tool_input={
+                            "source_file": "demo/input/a.txt",
+                            "destination_file": "demo/output/copied_a.txt",
+                        },
+                        observation="Copied the source file.",
+                        status="success",
+                    )
+                ],
+                final_status="success",
+                artifacts=["demo/output/copied_a.txt"],
+                started_at="2026-05-05T12:00:00",
+                ended_at="2026-05-05T12:01:00",
+            ),
+            skill_name="deterministic_rule_guidance_test",
+        )
+
+        self.assertEqual("single_file_copy", generated["metadata"].rule_name)
+        self.assertIsNone(generated["fallback_artifact"])

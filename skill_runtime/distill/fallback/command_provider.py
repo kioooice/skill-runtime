@@ -22,6 +22,7 @@ class CommandFallbackProvider:
             "summary": request.summary,
             "docstring": request.docstring,
             "input_schema": request.input_schema,
+            "provider_guidance": request.provider_guidance,
             "trajectory": asdict(request.trajectory),
             "prompt": request.prompt,
         }
