@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新 v0.2 provider quality 收口：已新增 `docs/v0.2-provider-quality-summary.md`，把这一条主线的 completed capabilities、fidelity fixes、baseline gate、expected pass/failure、remaining gaps 和下一条推荐主线收成一页。当前 `skill_store/index.json` 的未暂存 diff 已确认只是本地 index rebuild / 序列化噪音：内容上只是给现有索引项补 `schema_source: null`，没有对应 active metadata 变化，也不代表真实 skill 更新，现已恢复为干净状态。最新验证也已完成：`python scripts/check_mcp_architecture.py`、`python scripts/check_runtime_contracts.py`、`python -m unittest tests.test_runtime_fast -v` 和 `python scripts/evaluate_provider_quality.py --baseline docs/provider-quality-baseline.json --fail-on-regression` 全部通过，baseline comparison 结果为 `matched=8`、其余计数全 0。当前仍然没有任何证据支持扩大 `default-in`。
+
 最新 provider quality baseline gate：`docs/provider-quality-baseline.json` 已作为机器可读 baseline 落地，和 `docs/provider-quality-baseline.md` 放在一起。`scripts/evaluate_provider_quality.py` 现在支持 `--baseline PATH`，会继续输出完整 JSON report 并额外增加 `baseline_comparison`；`--fail-on-regression` 只在 regression、unexpected failure 或 missing fixture 时返回非 0。当前这仍是 provider-loop 质量门禁候选，不是 dashboard、不是扩大 `default-in` 的证据，也不会自动 promote 或 apply evolution candidate。
 
 最新 dogfood 收口：已新增 `docs/host-follow-up-recommendation-dogfood.md`，用三条真实边界验证顶层 recommendation contract。当前已确认：缺输入的强匹配复用会停在 `background_hint`，但顶层直接给 `execute_skill`；`capture-trajectory` 顶层直接给 `distill_trajectory`；明确 existing-skill gap 的 finalizer 顶层直接给 `review_evolution_candidate`。这意味着宿主现在可以统一消费顶层 recommendation 字段，把嵌套 recommendation 只当 provenance。验证中还看到当前会话内 MCP 工具返回的结构可能没有立刻反映新字段，因此本轮结论以本地 CLI / 当前代码导入路径为准。
