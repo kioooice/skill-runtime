@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Operator-summary freshness semantics for collector integration
+
+- Task type: operator workbench collector/data-layer hardening
+- Classified as: guarded-in / skipped
+- What happened: added stable freshness-policy fields to the dashboard export and taught local/global collectors to evaluate exported operator-summary and gate snapshots as `fresh`, `stale`, or `unknown` without changing dashboard pages
+- Did the behavior feel correct: yes; this improves operator trust in visible runtime state, but it is still read-only visibility work rather than a phase-one default-in expansion
+- Did the lane help: yes, because the skipped result reinforced that better staleness visibility is not evidence for broader automatic runtime entry
+- Follow-up: if this line continues, keep the next slice on stable presentation-ready summary fields, not on page rewrites or automatic refresh behavior
+
 ### 2026-05-06 - Dashboard collector consumption of exported operator summary
 
 - Task type: collector/data-layer integration for operator workbench visibility

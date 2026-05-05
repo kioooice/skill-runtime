@@ -110,14 +110,29 @@ class RuntimeDashboardTestsMixin:
             json.dumps(
                 {
                     "generated_at": "2026-05-06T12:00:00+00:00",
+                    "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 86400},
                     "active_skills": {"count": 14},
                     "staging_candidates": {"count": 20},
                     "trajectories": {"count": 20},
                     "recommended_host_operations": {"count": 1},
                     "quality_gates": {
-                        "provider_quality": {"label": "provider_quality", "status": "available"},
-                        "utility_search_quality": {"label": "utility_search_quality", "status": "available"},
-                        "workflow_search_quality": {"label": "workflow_search_quality", "status": "unavailable"},
+                        "provider_quality": {
+                            "label": "provider_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-06T11:30:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                        },
+                        "utility_search_quality": {
+                            "label": "utility_search_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-06T11:35:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                        },
+                        "workflow_search_quality": {
+                            "label": "workflow_search_quality",
+                            "status": "unavailable",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                        },
                     },
                     "safe_next_steps": [{"action": "distill_trajectory", "automatic": False, "reason": "explicit"}],
                     "intentionally_not_automatic": ["promote_skill", "apply_evolution_candidate"],
@@ -136,7 +151,63 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual("2026-05-06T12:00:00+00:00", data["operator_summary"]["generated_at"])
         self.assertEqual(14, data["operator_summary"]["active_skills"]["count"])
         self.assertEqual("available", data["operator_summary"]["quality_gates"]["provider_quality"]["status"])
+        self.assertEqual("fresh", data["operator_summary"]["freshness"]["status"])
+        self.assertEqual("fresh", data["operator_summary"]["quality_gates"]["provider_quality"]["freshness"]["status"])
         self.assertIn("workflow_search_quality", data["operator_summary"]["missing_or_unavailable"])
+
+    def test_dashboard_collector_marks_exported_operator_summary_stale_when_generated_at_is_old(self) -> None:
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+
+        export_dir = self.runtime_root / ".skill_runtime" / "dashboard"
+        export_dir.mkdir(parents=True, exist_ok=True)
+        (export_dir / "operator-summary.json").write_text(
+            json.dumps(
+                {
+                    "generated_at": "2026-05-01T12:00:00+00:00",
+                    "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 3600},
+                    "active_skills": {"count": 14},
+                    "staging_candidates": {"count": 20},
+                    "trajectories": {"count": 20},
+                    "recommended_host_operations": {"count": 1},
+                    "quality_gates": {
+                        "provider_quality": {
+                            "label": "provider_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-01T12:00:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 3600},
+                        },
+                        "utility_search_quality": {
+                            "label": "utility_search_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-06T11:45:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 86400},
+                        },
+                        "workflow_search_quality": {
+                            "label": "workflow_search_quality",
+                            "status": "unavailable",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 86400},
+                        },
+                    },
+                    "safe_next_steps": [],
+                    "intentionally_not_automatic": ["promote_skill", "apply_evolution_candidate"],
+                    "missing_or_unavailable": ["workflow_search_quality"],
+                    "non_automatic_explanation": "read-only export",
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        data = collect_dashboard_data(self.runtime_root)
+
+        self.assertEqual("stale", data["operator_summary"]["freshness"]["status"])
+        self.assertEqual("stale", data["operator_summary"]["quality_gates"]["provider_quality"]["freshness"]["status"])
+        self.assertEqual("fresh", data["operator_summary"]["quality_gates"]["utility_search_quality"]["freshness"]["status"])
+        self.assertEqual(
+            "unknown",
+            data["operator_summary"]["quality_gates"]["workflow_search_quality"]["freshness"]["status"],
+        )
 
     def test_dashboard_collector_leaves_operator_summary_empty_without_export(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
@@ -289,14 +360,30 @@ class RuntimeDashboardTestsMixin:
             json.dumps(
                 {
                     "generated_at": "2026-05-06T12:05:00+00:00",
+                    "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 86400},
                     "active_skills": {"count": 8},
                     "staging_candidates": {"count": 3},
                     "trajectories": {"count": 11},
                     "recommended_host_operations": {"count": 0},
                     "quality_gates": {
-                        "provider_quality": {"label": "provider_quality", "status": "available"},
-                        "utility_search_quality": {"label": "utility_search_quality", "status": "available"},
-                        "workflow_search_quality": {"label": "workflow_search_quality", "status": "available"},
+                        "provider_quality": {
+                            "label": "provider_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-06T12:04:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                        },
+                        "utility_search_quality": {
+                            "label": "utility_search_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-01T12:04:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 3600},
+                        },
+                        "workflow_search_quality": {
+                            "label": "workflow_search_quality",
+                            "status": "available",
+                            "generated_at": "2026-05-06T12:03:00+00:00",
+                            "freshness_policy": {"basis": "generated_at", "stale_after_seconds": 259200},
+                        },
                     },
                     "safe_next_steps": [],
                     "intentionally_not_automatic": ["promote_skill"],
@@ -314,7 +401,10 @@ class RuntimeDashboardTestsMixin:
         alpha = next(project for project in data["projects"] if project["project_name"] == "alpha")
         self.assertTrue(alpha["operator_summary_available"])
         self.assertEqual("2026-05-06T12:05:00+00:00", alpha["operator_summary_generated_at"])
+        self.assertEqual("fresh", alpha["operator_summary_freshness_status"])
         self.assertEqual("available", alpha["operator_quality_gate_statuses"]["provider_quality"])
+        self.assertEqual("fresh", alpha["operator_quality_gate_freshness_statuses"]["provider_quality"])
+        self.assertEqual("stale", alpha["operator_quality_gate_freshness_statuses"]["utility_search_quality"])
 
     def test_global_dashboard_renderer_includes_local_and_global_views(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data, collect_global_dashboard_data

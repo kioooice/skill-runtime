@@ -90,7 +90,7 @@ For one checked-in maintainer-facing proof bundle around this accepted path, see
 
 ## v0.3 Product Completeness Direction
 
-`v0.2.0rc1` is stage evidence, not final product completeness. The current v0.3 mainline is operator usability: start with `python -m skill_runtime.cli --root . operator-summary` for a read-only view of active skills, captured trajectories, staging candidates, visible follow-up operations, intentionally non-automatic boundaries, and any locally persisted gate status under `.skill_runtime/operator_status/`. For dashboard/operator workbench collector use, you can export the stable subset with `python scripts/export_operator_summary_for_dashboard.py --root .`; the existing collector can now read that export without changing dashboard pages.
+`v0.2.0rc1` is stage evidence, not final product completeness. The current v0.3 mainline is operator usability: start with `python -m skill_runtime.cli --root . operator-summary` for a read-only view of active skills, captured trajectories, staging candidates, visible follow-up operations, intentionally non-automatic boundaries, and any locally persisted gate status under `.skill_runtime/operator_status/`. For dashboard/operator workbench collector use, you can export the stable subset with `python scripts/export_operator_summary_for_dashboard.py --root .`; the existing collector can now read that export and compute availability/freshness metadata without changing dashboard pages.
 
 ## Open Source Participation
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,9 @@ from skill_runtime.evolution.candidates import EvolutionCandidateStore
 from skill_runtime.observability.events import RUNTIME_LANE_EVENTS_FILE, read_runtime_lane_events
 from skill_runtime.platforms.discovery import collect_platform_inventory
 from skill_runtime.retrieval.skill_index import SkillIndex, SkillIndexError
+
+OPERATOR_SUMMARY_STALE_AFTER_SECONDS = 24 * 60 * 60
+OPERATOR_QUALITY_GATE_STALE_AFTER_SECONDS = 3 * 24 * 60 * 60
 
 
 def collect_dashboard_data(root: str | Path, *, event_limit: int = 50) -> dict[str, Any]:
@@ -46,6 +50,7 @@ def collect_dashboard_operator_summary_data(root: str | Path) -> dict[str, Any]:
     quality_gates = summary.get("quality_gates") if isinstance(summary.get("quality_gates"), dict) else {}
     return {
         "generated_at": summary.get("generated_at") if isinstance(summary.get("generated_at"), str) else None,
+        "freshness_policy": _freshness_policy_export(OPERATOR_SUMMARY_STALE_AFTER_SECONDS),
         "active_skills": {"count": _summary_count(summary.get("active_skills"))},
         "staging_candidates": {"count": _summary_count(summary.get("staging_candidates"))},
         "trajectories": {"count": _summary_count(summary.get("trajectories"))},
@@ -123,7 +128,9 @@ def collect_global_dashboard_data(
                     if isinstance(operator_summary, dict) and isinstance(operator_summary.get("generated_at"), str)
                     else None
                 ),
+                "operator_summary_freshness_status": _operator_summary_freshness_status(operator_summary),
                 "operator_quality_gate_statuses": _operator_quality_gate_statuses(operator_summary),
+                "operator_quality_gate_freshness_statuses": _operator_quality_gate_freshness_statuses(operator_summary),
             }
         )
 
@@ -381,7 +388,7 @@ def _load_exported_operator_summary(root: Path, diagnostics: list[str] | None) -
         return None
     bucket = diagnostics if diagnostics is not None else []
     payload = _read_json(path, bucket)
-    return payload if isinstance(payload, dict) else None
+    return _enrich_operator_summary_freshness(payload) if isinstance(payload, dict) else None
 
 
 def _summary_count(payload: Any) -> int:
@@ -413,6 +420,7 @@ def _operator_gate_export(payload: Any, *, fallback_label: str) -> dict[str, Any
             "summary": None,
             "baseline_comparison": None,
             "reason": "Operator summary gate payload is unavailable.",
+            "freshness_policy": _freshness_policy_export(OPERATOR_QUALITY_GATE_STALE_AFTER_SECONDS),
         }
     return {
         "label": payload.get("label") if isinstance(payload.get("label"), str) else fallback_label,
@@ -424,6 +432,10 @@ def _operator_gate_export(payload: Any, *, fallback_label: str) -> dict[str, Any
         if isinstance(payload.get("baseline_comparison"), dict)
         else None,
         "reason": payload.get("reason") if isinstance(payload.get("reason"), str) else None,
+        "freshness_policy": _coerce_freshness_policy(
+            payload.get("freshness_policy"),
+            default_stale_after_seconds=OPERATOR_QUALITY_GATE_STALE_AFTER_SECONDS,
+        ),
     }
 
 
@@ -439,6 +451,31 @@ def _operator_quality_gate_statuses(payload: dict[str, Any] | None) -> dict[str,
         if isinstance(gate, dict) and isinstance(gate.get("status"), str):
             statuses[key] = gate["status"]
     return statuses
+
+
+def _operator_quality_gate_freshness_statuses(payload: dict[str, Any] | None) -> dict[str, str]:
+    if not isinstance(payload, dict):
+        return {}
+    quality_gates = payload.get("quality_gates")
+    if not isinstance(quality_gates, dict):
+        return {}
+    statuses: dict[str, str] = {}
+    for key in ("provider_quality", "utility_search_quality", "workflow_search_quality"):
+        gate = quality_gates.get(key)
+        freshness = gate.get("freshness") if isinstance(gate, dict) else None
+        if isinstance(freshness, dict) and isinstance(freshness.get("status"), str):
+            statuses[key] = freshness["status"]
+    return statuses
+
+
+def _operator_summary_freshness_status(payload: dict[str, Any] | None) -> str | None:
+    if not isinstance(payload, dict):
+        return None
+    freshness = payload.get("freshness")
+    if not isinstance(freshness, dict):
+        return None
+    status = freshness.get("status")
+    return status if isinstance(status, str) else None
 
 
 def _build_overview(
@@ -485,6 +522,107 @@ def _build_global_overview(projects: list[dict[str, Any]], events: list[dict[str
         "latest_event_time": events[0].get("timestamp") if events else None,
         "recent_event_counts": counts,
     }
+
+
+def _enrich_operator_summary_freshness(payload: dict[str, Any]) -> dict[str, Any]:
+    enriched = dict(payload)
+    enriched["freshness_policy"] = _coerce_freshness_policy(
+        enriched.get("freshness_policy"),
+        default_stale_after_seconds=OPERATOR_SUMMARY_STALE_AFTER_SECONDS,
+    )
+    enriched["freshness"] = _evaluate_freshness(
+        enriched.get("generated_at"),
+        enriched["freshness_policy"],
+    )
+    quality_gates = enriched.get("quality_gates")
+    if not isinstance(quality_gates, dict):
+        return enriched
+    enriched_quality_gates: dict[str, Any] = {}
+    for key, value in quality_gates.items():
+        if not isinstance(value, dict):
+            enriched_quality_gates[key] = value
+            continue
+        gate = dict(value)
+        gate["freshness_policy"] = _coerce_freshness_policy(
+            gate.get("freshness_policy"),
+            default_stale_after_seconds=OPERATOR_QUALITY_GATE_STALE_AFTER_SECONDS,
+        )
+        gate["freshness"] = _evaluate_freshness(
+            gate.get("generated_at"),
+            gate["freshness_policy"],
+        )
+        enriched_quality_gates[key] = gate
+    enriched["quality_gates"] = enriched_quality_gates
+    return enriched
+
+
+def _freshness_policy_export(stale_after_seconds: int) -> dict[str, Any]:
+    return {
+        "basis": "generated_at",
+        "stale_after_seconds": int(stale_after_seconds),
+    }
+
+
+def _coerce_freshness_policy(payload: Any, *, default_stale_after_seconds: int) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        return _freshness_policy_export(default_stale_after_seconds)
+    basis = payload.get("basis") if isinstance(payload.get("basis"), str) else "generated_at"
+    stale_after_seconds = payload.get("stale_after_seconds")
+    if not isinstance(stale_after_seconds, int) or stale_after_seconds <= 0:
+        stale_after_seconds = default_stale_after_seconds
+    return {
+        "basis": basis,
+        "stale_after_seconds": stale_after_seconds,
+    }
+
+
+def _evaluate_freshness(generated_at: Any, policy: dict[str, Any]) -> dict[str, Any]:
+    stale_after_seconds = policy.get("stale_after_seconds")
+    stale_after_seconds = stale_after_seconds if isinstance(stale_after_seconds, int) else None
+    parsed_generated_at = _parse_timestamp(generated_at)
+    if parsed_generated_at is None:
+        return {
+            "status": "unknown",
+            "age_seconds": None,
+            "stale_after_seconds": stale_after_seconds,
+            "reason": "Freshness cannot be evaluated without a valid generated_at timestamp.",
+        }
+    if stale_after_seconds is None or stale_after_seconds <= 0:
+        return {
+            "status": "unknown",
+            "age_seconds": None,
+            "stale_after_seconds": None,
+            "reason": "Freshness cannot be evaluated without a valid stale_after_seconds policy.",
+        }
+    age_seconds = max(0, int((datetime.now(timezone.utc) - parsed_generated_at).total_seconds()))
+    if age_seconds > stale_after_seconds:
+        return {
+            "status": "stale",
+            "age_seconds": age_seconds,
+            "stale_after_seconds": stale_after_seconds,
+            "reason": "Generated timestamp is older than the freshness policy threshold.",
+        }
+    return {
+        "status": "fresh",
+        "age_seconds": age_seconds,
+        "stale_after_seconds": stale_after_seconds,
+        "reason": "Generated timestamp is within the freshness policy threshold.",
+    }
+
+
+def _parse_timestamp(raw_value: Any) -> datetime | None:
+    if not isinstance(raw_value, str) or not raw_value.strip():
+        return None
+    normalized = raw_value.strip()
+    if normalized.endswith("Z"):
+        normalized = normalized[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 def _read_json(path: Path, diagnostics: list[str]) -> object | None:

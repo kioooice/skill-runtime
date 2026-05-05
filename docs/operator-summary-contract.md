@@ -12,6 +12,18 @@ python -m skill_runtime.cli --root . operator-summary
 
 It is designed to be a stable data source for future operator surfaces, including the existing read-only dashboard, without requiring the dashboard to depend on ad hoc or unstable runtime files directly.
 
+## Dashboard Export Subset
+
+The repository also exposes a stable dashboard-oriented subset through:
+
+```bash
+python scripts/export_operator_summary_for_dashboard.py --root .
+```
+
+This export writes `.skill_runtime/dashboard/operator-summary.json`.
+
+The export is intentionally narrower than the full CLI/service `operator-summary` payload. It keeps stable summary fields only and adds explicit freshness-policy metadata so downstream collectors can evaluate whether the exported summary is still current enough to trust.
+
 ## v1 Top-Level Fields
 
 `operator-summary` v1 returns these top-level fields:
@@ -144,6 +156,64 @@ In practice, the lowest-risk future connection is:
 - dashboard collector calls or merges `RuntimeService.operator_summary()`
 - page rendering consumes the stable v1 fields above
 - dashboard pages remain unchanged until the summary contract is stable enough to rely on
+
+The current collector/export path is even narrower:
+
+- `export_operator_summary_for_dashboard.py` writes a stable subset to `.skill_runtime/dashboard/operator-summary.json`
+- `collect_dashboard_data(...)` reads that file when present
+- `collect_global_dashboard_data(...)` reads that file per project when present
+- collector code computes freshness from `generated_at` plus exported policy fields instead of letting page code infer staleness ad hoc
+
+## Freshness Semantics For The Dashboard Export
+
+The dashboard export now carries stable freshness-policy inputs:
+
+- top-level `generated_at`
+- top-level `freshness_policy`
+- per-gate `generated_at`
+- per-gate `freshness_policy`
+
+Stable `freshness_policy` fields are:
+
+- `basis`
+- `stale_after_seconds`
+
+Current policy values:
+
+- exported operator-summary snapshot: `stale_after_seconds = 86400`
+- persisted quality-gate snapshots: `stale_after_seconds = 259200`
+
+These policy values are exported so collector/data consumers can compute freshness without relying on hidden constants.
+
+## Collector-Computed Freshness Metadata
+
+When the existing collector layer reads the dashboard export, it computes freshness metadata in memory.
+
+Stable collector-facing freshness fields are:
+
+- top-level `freshness.status`
+- top-level `freshness.age_seconds`
+- top-level `freshness.stale_after_seconds`
+- top-level `freshness.reason`
+- per-gate `freshness.status`
+- per-gate `freshness.age_seconds`
+- per-gate `freshness.stale_after_seconds`
+- per-gate `freshness.reason`
+
+Current freshness states are:
+
+- `fresh`
+- `stale`
+- `unknown`
+
+`unknown` is used when freshness cannot be evaluated honestly, for example when `generated_at` is missing or invalid.
+
+The global collector also exposes project-level freshness summary metadata:
+
+- `operator_summary_freshness_status`
+- `operator_quality_gate_freshness_statuses`
+
+This remains collector/data-layer state only. Dashboard pages still do not render it yet.
 
 ## What Will Not Execute Automatically
 

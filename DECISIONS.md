@@ -2,6 +2,30 @@
 
 ## Decision Log
 
+### 2026-05-06 - Add Freshness Semantics At The Export And Collector Layer Before Any Dashboard UI Change
+
+**Decision**
+
+Add explicit freshness-policy fields to the dashboard-oriented `operator-summary` export, and let existing collectors compute `fresh / stale / unknown` summary metadata from those fields, without changing dashboard page rendering.
+
+**Reason**
+
+The collector can now consume the exported operator summary, but availability alone is not enough for an operator workbench. The next missing product answer is whether a visible summary or persisted quality-gate snapshot is still current enough to trust. This belongs in the collector/data layer first, not in page templates and not in ad hoc consumer logic.
+
+**Impact**
+
+- exported `.skill_runtime/dashboard/operator-summary.json` now includes top-level `freshness_policy`
+- exported gate objects now include per-gate `freshness_policy`
+- local collector enriches imported operator-summary payloads with top-level and per-gate `freshness`
+- global collector now reports `operator_summary_freshness_status` and `operator_quality_gate_freshness_statuses`
+- stale/missing timestamps remain honest as `stale` or `unknown`; nothing is coerced into `fresh`
+- dashboard page rendering remains unchanged
+- no evaluator runs were added
+- no host operation is executed
+- no skill is promoted
+- no evolution candidate is applied
+- this still does not justify widening `default-in`
+
 ### 2026-05-06 - Treat PowerShell Chaining And Validation Timeouts As Durable Workflow Corrections
 
 **Decision**

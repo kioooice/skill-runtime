@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新 freshness/staleness 语义：`operator-summary` dashboard export 现在会带稳定 freshness policy，collector 读取时会补出 top-level/per-gate freshness 元数据，global collector 也会汇总项目级 freshness status。下一步更应该判断这些 freshness 摘要是否已经足够稳定，值得未来页面只读显示；不应该跳回页面重写，也不应该让模板自己解释时间戳。当前仍然没有任何证据支持扩大 `default-in`。
+
 - 最新 workflow correction：已记录两条需要复用的流程 guard。其一，在当前 PowerShell 环境下不要再用 `&&` 串 shell 命令，顺序命令改用 `;` 或拆成独立 tool call；其二，长时验证命令超时只能先记为 `timed out / not yet verified`，必须先放宽超时或单独重跑，再判断是否失败。下一次触发点分别是 commit/push shell 流程，以及 `python -m unittest tests.test_runtime_fast -v` 这类已知接近数分钟的验证。当前仍然没有任何证据支持扩大 `default-in`。
 
 - 最新 collector 消费稳定 export：现有 `collect_dashboard_data(...)` 与 `collect_global_dashboard_data(...)` 现在都能只读读取 `.skill_runtime/dashboard/operator-summary.json` 的稳定子集。当前 local collector 可返回 `operator_summary`，global collector 可为项目卡片附带 operator-summary availability / generated_at / gate-status metadata；页面 UI 仍未改动。下一步更应该判断 render 层未来是否要显示这些稳定摘要，而不是直接绑定 full item lists 或重写 dashboard。当前仍然没有任何证据支持扩大 `default-in`。
@@ -104,6 +106,8 @@
 
 ## Todo
 
+- [x] 为 dashboard export 和 collector 加上稳定 freshness/staleness 语义，不改页面 UI
+- [ ] 如果继续这条主线，先决定 freshness 摘要是否已经足够稳定和值得显示，再考虑只读页面入口
 - [x] 记录并复用 PowerShell `&&` 禁用 guard：顺序命令改用 `;` 或拆成独立 tool call
 - [x] 记录并复用长时验证 timeout guard：timeout 先视为未验证，重跑后再判定失败
 - [x] 让现有 dashboard/global-dashboard collector 可选消费稳定导出的 operator-summary，而不改页面 UI

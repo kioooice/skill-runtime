@@ -2,6 +2,10 @@
 
 ## Current State
 
+最新 v0.3 freshness 语义切片：`operator-summary` 的 dashboard export 和现有 collector 之间，已经新增稳定的 freshness/staleness 语义，但仍然没有改 dashboard 页面。当前 `.skill_runtime/dashboard/operator-summary.json` 会显式写出 top-level `freshness_policy`，并给每个 quality gate 写出自己的 `freshness_policy`；现有 collector 读取 export 后，会在内存里补出 top-level `freshness` 和 per-gate `freshness`。global collector 现在还会为每个项目附带 `operator_summary_freshness_status` 和 `operator_quality_gate_freshness_statuses`。当前 freshness 状态只有 `fresh / stale / unknown` 三种；缺失或无效 `generated_at` 时会诚实给 `unknown`，不会伪造 fresh。当前仍然没有改 `skill_runtime/dashboard/render.py`，也没有让页面模板自己去推断时间戳。
+
+最新 freshness policy 边界：dashboard export 的 top-level summary 当前默认 `stale_after_seconds = 86400`；persisted quality-gate snapshots 当前默认 `stale_after_seconds = 259200`。这些值都作为稳定 policy 字段写进 export，而不是只藏在 collector 实现里。这样后续 dashboard/operator workbench 可以继续走 collector/data 层复用，不需要在页面或别的 consumer 里硬编码时效规则。当前这一轮仍然不执行 evaluator、不执行 host operation、不 promote、不 apply，也没有任何证据支持扩大 `default-in`。
+
 最新 workflow correction：用户明确指出两类流程错误已经重复出现，需要 durable guard。当前已固定两条规则：第一，在当前 PowerShell 环境下不要再用 `&&` 串联命令，顺序命令统一改用 `;` 或拆成独立 tool call；第二，长时验证命令如果先撞到 timeout，只能先报告为 `timed out / not yet verified`，然后单独放宽超时重跑或补验证，不能直接口头归类为失败。当前这两条是 workflow guard，不是产品功能变更，因此只记录在状态文件与决策日志中，不加到 `AGENTS.md` 里做案例化历史。
 
 最新 v0.3 operator-summary / dashboard collector 接入：现有 collector 已经开始可选消费稳定导出的 operator summary，而不是只停在独立 export 脚本。当前 `skill_runtime.dashboard.collector.collect_dashboard_data(...)` 会在 `.skill_runtime/dashboard/operator-summary.json` 存在时读入 `operator_summary`；`collect_global_dashboard_data(...)` 会为每个已发现项目附带 `operator_summary_available`、`operator_summary_generated_at` 和三条 `operator_quality_gate_statuses` 元数据。当前仍然没有改 `skill_runtime/dashboard/render.py`、没有改 dashboard/global-dashboard 页面 HTML，也没有让页面直接依赖 full item lists 或底层散文件。collector 仍然只读取稳定字段，不执行 evaluator、不执行 host operation、不 promote、不 apply，也没有任何证据支持扩大 `default-in`。

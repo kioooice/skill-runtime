@@ -25,6 +25,7 @@ The current HTML pages render that collector output directly. They still do not 
 Stable fields relevant to dashboard integration are:
 
 - `generated_at`
+- `freshness_policy`
 - `active_skills.count`
 - `staging_candidates.count`
 - `trajectories.count`
@@ -44,8 +45,10 @@ These are stable enough for a collector-level export because they express operat
 The lowest-risk dashboard-facing subset is:
 
 - `generated_at`
+- top-level freshness-policy inputs for the exported summary
 - count-only inventory summaries for active / staging / trajectories / recommended host operations
 - quality-gate availability and persisted report summaries
+- quality-gate freshness-policy inputs
 - `safe_next_steps`
 - `intentionally_not_automatic`
 - `missing_or_unavailable`
@@ -100,6 +103,14 @@ The current collector implementation now does two read-only things:
 
 - `collect_dashboard_data(...)` includes `operator_summary` when `.skill_runtime/dashboard/operator-summary.json` exists
 - `collect_global_dashboard_data(...)` annotates discovered projects with exported operator-summary availability and gate-status metadata when present
+
+It now also computes freshness metadata at the collector layer:
+
+- local collector enriches `operator_summary` with top-level and per-gate `freshness`
+- global collector adds `operator_summary_freshness_status`
+- global collector adds `operator_quality_gate_freshness_statuses`
+
+This keeps freshness semantics out of page templates and avoids forcing UI code to interpret timestamps on its own.
 
 ## Consumption Direction
 

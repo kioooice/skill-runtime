@@ -43,6 +43,7 @@ class RuntimeDashboardOperatorSummaryExportTestsMixin:
         self.assertEqual(
             {
                 "generated_at",
+                "freshness_policy",
                 "active_skills",
                 "staging_candidates",
                 "trajectories",
@@ -59,9 +60,19 @@ class RuntimeDashboardOperatorSummaryExportTestsMixin:
         self.assertEqual({"count"}, set(exported["staging_candidates"].keys()))
         self.assertEqual({"count"}, set(exported["trajectories"].keys()))
         self.assertEqual({"count"}, set(exported["recommended_host_operations"].keys()))
+        self.assertEqual("generated_at", exported["freshness_policy"]["basis"])
+        self.assertIsInstance(exported["freshness_policy"]["stale_after_seconds"], int)
         self.assertIn("provider_quality", exported["quality_gates"])
         self.assertIn("utility_search_quality", exported["quality_gates"])
         self.assertIn("workflow_search_quality", exported["quality_gates"])
+        self.assertEqual(
+            "generated_at",
+            exported["quality_gates"]["provider_quality"]["freshness_policy"]["basis"],
+        )
+        self.assertIsInstance(
+            exported["quality_gates"]["provider_quality"]["freshness_policy"]["stale_after_seconds"],
+            int,
+        )
 
     def test_dashboard_operator_summary_export_keeps_gate_status_unavailable_without_persisted_reports(self) -> None:
         operator_status_dir = self.runtime_root / ".skill_runtime" / "operator_status"
