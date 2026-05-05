@@ -1,8 +1,8 @@
 {
   "skill_name": "directory_text_cleanup_dogfood",
   "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_text_cleanup_dogfood.py",
-  "summary": "Clean and normalize text files in a directory or folder by trimming trailing whitespace.",
-  "docstring": "功能描述:\n    Clean and normalize text files in a directory or folder by trimming trailing whitespace.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n        - suffix: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+  "summary": "Batch clean directory-scoped plain-text entries by trimming trailing whitespace and normalizing whitespace.",
+  "docstring": "功能描述:\n    Batch clean directory-scoped plain-text entries by trimming trailing whitespace and normalizing whitespace.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n        - suffix: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
   "input_schema": {
     "input_dir": "str",
     "output_dir": "str",
@@ -24,10 +24,11 @@
   "audit_score": 100,
   "rule_name": "directory_text_transform",
   "rule_priority": 50,
-  "rule_reason": "Matched directory_text_transform because the trajectory lists files, reads text files, and writes transformed text files into an output directory.",
+  "rule_reason": "Matched directory_text_transform because the trajectory enumerates a directory, reads matched plain-text entries, trims trailing whitespace, and writes normalized outputs.",
   "tags": [
     "clean",
     "cleanup",
+    "batch",
     "directory",
     "files",
     "folder",
@@ -37,8 +38,8 @@
     "pattern",
     "suffix",
     "text",
+    "trim",
     "trailing",
-    "txt",
     "whitespace"
   ],
   "scope_policy": null

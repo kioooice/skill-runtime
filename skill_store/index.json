@@ -26,6 +26,8 @@
       "rule_name": "directory_move",
       "rule_priority": 85,
       "rule_reason": "Matched directory_move because the trajectory lists files, moves paths, and targets input_dir/output_dir.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "all",
         "archive",
@@ -70,6 +72,8 @@
       "rule_name": "auto_mode_stage_runner",
       "rule_priority": 82,
       "rule_reason": "Extracted from AGENTS.md Auto Mode Protocol to reduce persistent instruction weight.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "auto",
         "autonomous",
@@ -108,6 +112,8 @@
       "rule_name": "deployment_strategy_review",
       "rule_priority": 82,
       "rule_reason": "Extracted deployment and Docker selection rules from AGENTS.md into a reusable workflow.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "deployment",
         "docker",
@@ -146,6 +152,8 @@
       "rule_name": "directory_json_to_csv",
       "rule_priority": 74,
       "rule_reason": "Matched directory_json_to_csv because the trajectory lists files, reads JSON files, writes CSV text files, and the task description mentions JSON and CSV.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "all",
         "batch",
@@ -167,8 +175,8 @@
     {
       "skill_name": "directory_text_cleanup_dogfood",
       "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\directory_text_cleanup_dogfood.py",
-      "summary": "Clean and normalize text files in a directory or folder by trimming trailing whitespace.",
-      "docstring": "功能描述:\n    Clean and normalize text files in a directory or folder by trimming trailing whitespace.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n        - suffix: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "summary": "Batch clean directory-scoped plain-text entries by trimming trailing whitespace and normalizing whitespace.",
+      "docstring": "功能描述:\n    Batch clean directory-scoped plain-text entries by trimming trailing whitespace and normalizing whitespace.\n\n输入参数:\n        - input_dir: str\n        - output_dir: str\n        - pattern: str\n        - suffix: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
       "input_schema": {
         "input_dir": "str",
         "output_dir": "str",
@@ -190,10 +198,13 @@
       "audit_score": 100,
       "rule_name": "directory_text_transform",
       "rule_priority": 50,
-      "rule_reason": "Matched directory_text_transform because the trajectory lists files, reads text files, and writes transformed text files into an output directory.",
+      "rule_reason": "Matched directory_text_transform because the trajectory enumerates a directory, reads matched plain-text entries, trims trailing whitespace, and writes normalized outputs.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "clean",
         "cleanup",
+        "batch",
         "directory",
         "files",
         "folder",
@@ -203,8 +214,8 @@
         "pattern",
         "suffix",
         "text",
+        "trim",
         "trailing",
-        "txt",
         "whitespace"
       ],
       "scope_policy": null
@@ -212,8 +223,8 @@
     {
       "skill_name": "json_to_csv_dogfood",
       "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\json_to_csv_dogfood.py",
-      "summary": "Convert a JSON list of records into a CSV file.",
-      "docstring": "功能描述:\n    Convert a JSON list of records into a CSV file.\n\n输入参数:\n        - delimiter: str\n        - input_path: str\n        - output_path: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+      "summary": "Convert JSON records into CSV tabular output.",
+      "docstring": "功能描述:\n    Convert JSON records into CSV tabular output.\n\n输入参数:\n        - delimiter: str\n        - input_path: str\n        - output_path: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
       "input_schema": {
         "delimiter": "str",
         "input_path": "str",
@@ -234,17 +245,19 @@
       "audit_score": 100,
       "rule_name": "json_to_csv",
       "rule_priority": 75,
-      "rule_reason": "Matched json_to_csv because the trajectory reads JSON, writes text, and the task description mentions JSON and CSV.",
+      "rule_reason": "Matched json_to_csv because the trajectory reads JSON records and writes CSV output.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "convert",
         "csv",
         "delimiter",
-        "file",
         "input_path",
         "json",
-        "list",
         "output_path",
-        "records"
+        "records",
+        "structured",
+        "tabular"
       ],
       "scope_policy": null
     },
@@ -271,6 +284,7 @@
       "rule_name": "text_merge",
       "rule_priority": 70,
       "rule_reason": "Backfilled text_merge because the skill source lists files, reads text, and writes merged output.",
+      "schema_source": null,
       "search_aliases": [
         "合并 文本 文件 文档",
         "把多个文本文件合并成一个文档",
@@ -314,6 +328,8 @@
       "rule_name": "nontechnical_stage_report",
       "rule_priority": 82,
       "rule_reason": "Extracted non-technical stage report format from AGENTS.md Auto Mode Protocol.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "nontechnical",
         "stage",
@@ -356,6 +372,8 @@
       "rule_name": "pre_implementation_review",
       "rule_priority": 88,
       "rule_reason": "Added as a human-approved direction value gate after local basic skill work proved lower value than default runtime lane integration.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "audit",
         "before",
@@ -402,6 +420,8 @@
       "rule_name": "repo_impact_analysis",
       "rule_priority": 82,
       "rule_reason": "Extracted GitNexus preference and fallback analysis rules from AGENTS.md.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "repo",
         "impact",
@@ -443,6 +463,8 @@
       "rule_name": "runtime_gate_workflow",
       "rule_priority": 82,
       "rule_reason": "Extracted Skill Runtime gate instructions from AGENTS.md.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "runtime",
         "gate",
@@ -480,6 +502,8 @@
       "rule_name": "runtime_verification_selector",
       "rule_priority": 82,
       "rule_reason": "Extracted verification command selection rules from AGENTS.md.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "verification",
         "fast",
@@ -520,6 +544,8 @@
       "rule_name": "session_handoff_maintenance",
       "rule_priority": 82,
       "rule_reason": "Extracted session resume and state-file maintenance rules from AGENTS.md.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "handoff",
         "session",
@@ -558,6 +584,8 @@
       "rule_name": "text_replace",
       "rule_priority": 90,
       "rule_reason": "Matched text_replace because the trajectory reads and writes one file, includes old_text/new_text inputs, and the task description mentions replacement.",
+      "schema_source": null,
+      "search_aliases": [],
       "tags": [
         "file",
         "input_path",

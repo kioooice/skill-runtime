@@ -1,8 +1,8 @@
 {
   "skill_name": "json_to_csv_dogfood",
   "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\json_to_csv_dogfood.py",
-  "summary": "Convert a JSON list of records into a CSV file.",
-  "docstring": "功能描述:\n    Convert a JSON list of records into a CSV file.\n\n输入参数:\n        - delimiter: str\n        - input_path: str\n        - output_path: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
+  "summary": "Convert JSON records into CSV tabular output.",
+  "docstring": "功能描述:\n    Convert JSON records into CSV tabular output.\n\n输入参数:\n        - delimiter: str\n        - input_path: str\n        - output_path: str\n\n输出结果:\n        - status: str\n        - artifacts: list[str]\n        - steps_executed: int",
   "input_schema": {
     "delimiter": "str",
     "input_path": "str",
@@ -23,17 +23,17 @@
   "audit_score": 100,
   "rule_name": "json_to_csv",
   "rule_priority": 75,
-  "rule_reason": "Matched json_to_csv because the trajectory reads JSON, writes text, and the task description mentions JSON and CSV.",
+  "rule_reason": "Matched json_to_csv because the trajectory reads JSON records and writes CSV output.",
   "tags": [
     "convert",
     "csv",
     "delimiter",
-    "file",
     "input_path",
     "json",
-    "list",
     "output_path",
-    "records"
+    "records",
+    "structured",
+    "tabular"
   ],
   "scope_policy": null
 }
