@@ -2,6 +2,24 @@
 
 ## Decision Log
 
+### 2026-05-06 - Repository-Wide Fast Suite Should Not Be The Default For Every Small Change
+
+**Decision**
+
+Stop treating `python -m unittest tests.test_runtime_fast -v` as the universal default verification command for routine work. Use scoped verification first, and reserve the repository-wide fast suite for shared-behavior changes, multi-module changes, or cases where no narrower trustworthy check exists.
+
+**Reason**
+
+The user called out a real repeated workflow failure: small 2-3 minute tasks were being stretched by automatically paying the 5-minute cost of a repository-wide regression suite. That is verification policy drift, not engineering rigor. The right default is risk-scaled verification, not one suite for everything.
+
+**Impact**
+
+- the authoritative global `runtime-verification-selector` skill now distinguishes localized changes from shared-behavior changes
+- localized changes should default to `git diff --check`, `py_compile`, and targeted tests when available
+- `tests.test_runtime_fast -v` is now justified only when the blast radius is broader or narrower checks are not enough
+- global and project `AGENTS.md` now forbid defaulting to repository-wide suites for every small change
+- `workflow-error-correction` now includes this as a durable known guard so the pattern does not need to be rediscovered again
+
 ### 2026-05-06 - Full-Auto Finite-Plan Requests Belong To The Auto-Mode Workflow Skill, Not To Product Surfaces
 
 **Decision**

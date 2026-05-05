@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Verification policy was corrected away from always running the repo-wide fast suite
+
+- Task type: workflow verification policy correction
+- Classified as: default-out / skipped
+- What happened: user pointed out that always defaulting to `python -m unittest tests.test_runtime_fast -v` was stretching small tasks by several minutes; the global verification skill, global AGENTS, project AGENTS, and workflow-error correction guard were updated so localized changes use scoped verification first and the repo-wide fast suite is reserved for broader blast radius
+- Did the behavior feel correct: yes; this removed a costly default that had become validation theater instead of useful risk control
+- Did the lane help: yes, because the skip result kept the fix focused on workflow policy rather than inventing new runtime product behavior
+- Follow-up: on future small changes, apply the scoped verification rule directly instead of relitigating whether the full fast suite is necessary
+
 ### 2026-05-06 - Full-auto finite-plan requests were folded into the auto-mode workflow skill
 
 - Task type: workflow-skill behavior correction

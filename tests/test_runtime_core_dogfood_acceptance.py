@@ -448,13 +448,35 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         ]:
             self.assertIn(phrase, content)
 
+    def test_global_runtime_verification_selector_prefers_scoped_checks_before_fast_suite(self) -> None:
+        skill_path = (
+            Path("C:/Users/Administrator/.codex/skills")
+            / "runtime-verification-selector"
+            / "SKILL.md"
+        )
+        self.assertTrue(skill_path.exists())
+        content = skill_path.read_text(encoding="utf-8")
+
+        for phrase in [
+            "Do not default to `python -m unittest tests.test_runtime_fast -v` for every change.",
+            "For a single file or tightly scoped change, prefer:",
+            "python -m py_compile <changed python files>",
+            "python -m unittest <targeted test cases> -v",
+            "Use `tests.test_runtime_fast` when the change touches shared behavior",
+            "When you do not run `tests.test_runtime_fast`, say what narrower commands you ran and why they were enough",
+        ]:
+            self.assertIn(phrase, content)
+
     def test_workflow_error_correction_keeps_agents_lightweight(self) -> None:
         agents_content = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("workflow-error-correction", agents_content)
+        self.assertIn("Do not default to `python -m unittest tests.test_runtime_fast -v` for every small change", agents_content)
+        self.assertNotIn("Prefer the fast runtime suite for routine validation", agents_content)
         self.assertNotIn("Do not treat Skill Runtime, local skills", agents_content)
         self.assertNotIn("Do not continue adding or validating skills just because auto mode can keep going", agents_content)
         global_agents_content = Path("C:/Users/Administrator/.codex/AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("workflow-error-correction", global_agents_content)
+        self.assertIn("Do not default to repository-wide test suites for every small change", global_agents_content)
         self.assertNotIn("Do not treat Skill Runtime, local skills", global_agents_content)
         self.assertNotIn(
             "Do not continue adding or validating skills just because auto mode can keep going",
@@ -472,6 +494,7 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
             "The primary outcome is fewer repeated mistakes, not a better error log.",
             "Before taking an action in a known risk area, apply the matching guard without waiting for the user to complain.",
             "Known Mistake Guards",
+            "Validation escalation: do not run repository-wide fast or full suites for every localized change",
             "If an existing guard applies, change the next action immediately.",
             "Record the mistake outside AGENTS.md",
             "Check existing correction records before creating a new one",

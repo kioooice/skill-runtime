@@ -14,7 +14,7 @@ This workspace is `vibe`.
 - Keep `AGENTS.md` lightweight; record recurring workflow mistakes through `workflow-error-correction` instead of adding case-specific history here.
 - Concrete project development tasks must call the Codex-facing Skill Runtime gate before substantive reads or edits.
 - Resume commands such as `继续`, `继续完成任务`, `继续 HANDOFF`, or `continue` must start from `HANDOFF.md`.
-- Prefer the fast runtime suite for routine validation: `python -m unittest tests.test_runtime_fast -v`.
+- Do not default to `python -m unittest tests.test_runtime_fast -v` for every small change; use `runtime-verification-selector` and choose the smallest useful verification for the current blast radius.
 - After completing requested work and verification, commit and push by default unless the user explicitly says not to.
 - Deployment decisions must be based on inspected project files, not labels alone.
 - Do not change business code unless the current task requires it.
