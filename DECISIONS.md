@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-06 - Full-Auto Mode Must Continue Across Planned Stages, Not Stop At The First Stage Boundary
+
+**Decision**
+
+Treat explicit `完全自动模式` / full-auto finite-plan requests as meaningfully different from normal auto mode. In full-auto mode, Codex must keep going across successive meaningful stages until the declared plan stop condition is met, instead of stopping after the first completed stage.
+
+**Reason**
+
+The previous behavior collapsed full-auto mode into ordinary stage-based auto mode. That defeated the user-visible purpose of asking for a long uninterrupted run: there was no practical difference between "自动模式" and "完全自动模式". The correct distinction is whether stage boundaries remain user-visible stopping points or become internal progress markers.
+
+**Impact**
+
+- the authoritative global `auto-mode-stage-runner` skill now states that full-auto finite-plan mode continues across successive meaningful stages until the declared plan is complete
+- full-auto mode now explicitly says not to stop just because one meaningful stage finished
+- global/project `AGENTS.md` now route explicit full-auto requests with this stronger semantics
+- `workflow-error-correction` now includes a durable `Full-auto collapse` guard so this mistake should not recur
 ### 2026-05-06 - Operator Summary Must Surface Gate Freshness Directly, Not Only Through Dashboard Export
 
 **Decision**

@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新 workflow 语义纠偏：`完全自动模式` 不能再等同于普通自动模式。当前全局 `C:\Users\Administrator\.codex\skills\auto-mode-stage-runner\SKILL.md` 已明确：full-auto finite-plan mode 必须跨越连续的 meaningful stages 一直执行到声明的计划停止条件达成，而不是在第一个阶段完成后就停下来汇报。阶段边界在 full-auto 模式下只作为内部进度坐标，不是默认停点。全局 `workflow-error-correction` 也已新增 `Full-auto collapse` guard；全局与项目 `AGENTS.md` 的路由语义都已同步这条区别。
+
 最新 v0.3 主线切片：`operator-summary` 现在会直接给每个 persisted gate-status 对象附带 `freshness_policy` 和计算后的 `freshness`，而不是只在 dashboard export / collector 里才知道 stale/fresh。这样 provider / utility-search / workflow-search 的状态即使不切到 dashboard 也能从 summary JSON / text 直接判断是否过期。当前 `skill_runtime/operator_visibility.py` 已成为共享 freshness 语义的权威实现，service 与 dashboard collector 都复用它；`unavailable` 或无效持久化状态会诚实返回 `freshness.status = unknown`。
 
 最新 v0.3 主线切片：`operator-summary` 现在除了 `--refresh-dashboard-export`，还支持显式 `--refresh-operator-status`。这会在返回 summary 前刷新 `.skill_runtime/operator_status/provider_quality.json`、`search_quality.json` 和 `workflow_search_quality.json`，解决“summary 读得到 contract，但 gate status 仍要手工跑三条脚本才能变得有用”的实际缺口。当前返回 payload 也新增 `operator_status_refresh`，会标明这次是否刷新、刷新了哪些 gate、以及刷新时间；并且可以和 `--refresh-dashboard-export` 组合成一条显式 operator 路径。当前仍然没有执行 host operation、promote、apply evolution candidate，也没有新增第四个 operator 入口。

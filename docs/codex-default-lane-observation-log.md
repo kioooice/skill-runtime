@@ -23,6 +23,14 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Full-auto mode was corrected to continue past the first stage boundary
+
+- Task type: workflow semantics correction
+- Classified as: default-out / skipped
+- What happened: after the user pointed out that "完全自动模式" was behaving the same as ordinary auto mode, the authoritative global auto-mode skill was tightened so full-auto finite-plan mode now continues across successive meaningful stages until the declared plan stop condition is met; a matching `Full-auto collapse` guard was added to workflow-error-correction
+- Did the behavior feel correct: yes; it restored a real semantic difference between stage-based auto mode and uninterrupted full-auto execution
+- Did the lane help: yes, because the skip result kept the work on workflow semantics instead of pretending it was a reusable runtime-lane family task
+- Follow-up: the next explicit full-auto request should continue through multiple planned stages before reporting, unless a real blocker appears
 ### 2026-05-06 - Operator summary now reports gate freshness directly
 
 - Task type: operator visibility mainline continuation

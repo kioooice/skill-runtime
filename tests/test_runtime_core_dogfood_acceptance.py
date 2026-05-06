@@ -447,6 +447,9 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
             "中间不要汇报",
             "不要停下来",
             "直到计划全部完成",
+            "continue across successive meaningful stages until the declared plan is complete",
+            "do not stop just because one meaningful stage finished",
+            "normal auto mode may stop at the next meaningful stage boundary and report",
             "send one consolidated final report after the plan is finished",
             "Skip intermediate stage reports in full-auto finite-plan mode.",
         ]:
@@ -524,6 +527,7 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
             "State-file churn: do not update `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md` after every localized low-risk task",
             "Publish churn: do not commit and push after every localized low-risk task",
             "Process overwrap: do not send clear small execution tasks through `pre-implementation-workflow-review`",
+            "Full-auto collapse: when the user explicitly requests full-auto finite-plan mode, do not stop after the first meaningful stage boundary",
             "If an existing guard applies, change the next action immediately.",
             "Record the mistake outside AGENTS.md",
             "Check existing correction records before creating a new one",
