@@ -2,6 +2,43 @@
 
 ## Decision Log
 
+### 2026-05-06 - Development Feedback Should Surface Learned Workflow Rules At Task Start
+
+**Decision**
+
+Add a first small `development_feedback` field to Codex-facing runtime results so past workflow corrections can affect the next development task before Codex starts acting.
+
+**Reason**
+
+The user identified the core product gap: the runtime looked like it was accumulating proof artifacts, not growing through development and feeding that experience back into future work. The smallest valuable correction is not another fixture or dashboard field. It is task-start feedback that tells Codex which already learned workflow rules should change this specific run.
+
+**Impact**
+
+- `AgentOrchestrationResult` now includes `development_feedback`
+- Codex-facing `run_codex_task` / `start_codex_task` results populate it for development-like tasks
+- runtime lane events persist the same feedback list
+- the first feedback source is the stable `workflow-error-correction` guard set
+- this does not execute lifecycle operations, promote skills, apply evolution candidates, or widen `default-in`
+- success should now be judged by whether Codex actually changes behavior at the start of future development tasks
+
+### 2026-05-06 - Review Cleanup Repeat-Use Evidence Supports Narrow Ownership, Not Default-In
+
+**Decision**
+
+Treat the second checked-in review-cleanup fixture as repeat-use evidence for the bounded `maintainer_review_cleanup` workflow, while keeping the runtime and automation boundary unchanged.
+
+**Reason**
+
+The first demo and workflow-search baseline proved that the workflow could exist and be found. The next useful question was whether the same shape works on another maintainer artifact. The new provider-quality review fixture shows the workflow can again produce grouped required fixes, follow-up documentation, source comment linkage, verification guidance, and an explicit maintainer decision without mutating code or review state.
+
+**Impact**
+
+- new repeat-use fixture: `demo/maintainer_review_cleanup_repeat/`
+- new validation note: `docs/maintainer-review-cleanup-repeat-use-validation.md`
+- README / DEMO / review-cleanup demo docs now link to the repeat-use validation
+- captured repeat-use observed task still recommends explicit `distill_trajectory`
+- this does not widen `default-in`, resolve review comments, apply fixes, infer merge approval, or justify open-ended review automation
+
 ### 2026-05-06 - Review Cleanup Is Now Approved For Narrow Active Workflow Ownership
 
 **Decision**

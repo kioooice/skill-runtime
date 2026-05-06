@@ -2,6 +2,10 @@
 
 ## Current State
 
+最新主线纠偏：用户明确指出现在的系统不像“在开发过程中慢慢成长并反馈到开发”，而是偏向内部 proof 和 fixture。当前已落第一版最小开发反馈闭环：Codex-facing `run_codex_task` 结果新增 `development_feedback`，会在任务开始时返回最多 3 条已学流程经验（当前来自 `workflow-error-correction` guard），并同步写入 runtime lane event。第一版已能对本地 docs/fixture/dev workflow 返回 `scoped-verification`、`state-file-churn`、`publish-churn`，让 Codex 开始任务前就知道“本轮应该少跑大验证、少刷状态文件、不要自动 commit/push”。这不执行 lifecycle operation、不 promote、不 apply、不扩大 `default-in`；目标是让过去经验直接改变下一次开发行为。
+
+最新产品价值验证：`maintainer_review_cleanup` 已补上第二个真实使用 fixture，不再只靠首个 dashboard-export demo 或 workflow-search proof。新增 `demo/maintainer_review_cleanup_repeat/`，覆盖 provider-quality baseline review comments，并产出 maintainer-facing cleanup plan、metadata 和 observed-task record；新增 `docs/maintainer-review-cleanup-repeat-use-validation.md` 记录结论。验证已跑通 JSON 校验与临时 runtime root 的 `capture-trajectory`，结果仍推荐显式 `distill_trajectory`，没有 promote、没有 apply、没有 code mutation，也没有扩大 `default-in`。下一步若继续这条线，应看真实使用摩擦：全局 Codex skill 说明和 thin adapter 在实际 PR cleanup 中是否足够自然，而不是继续只补 search 证明。
+
 最新产品价值主线：`maintainer_review_cleanup` 已不再只是 bounded positive control。当前已基于 provider-backed generated-skill 正控，正式批准它进入 **narrow active workflow ownership**：全局权威 skill 现在是 `C:\Users\Administrator\.codex\skills\maintainer-review-cleanup\SKILL.md`，仓库内新增 thin adapter `skill_store/active/maintainer_review_cleanup.py` 与 metadata，workflow-search baseline 也已从 `expected_gap` 改成 `should_match`。边界仍然很窄：它只负责“从 structured review comments 生成 maintainer cleanup artifact”，不写代码、不做 review resolution、不做 merge judgment，也不扩大 `default-in`。最新边界验证已补进基线：`apply fixes for review comments automatically` 现在被固定为负向 query，确保这条 active ownership 不会滑向自动修评论。
 
 最新 v0.3 主线狗食结论：现有 `operator-summary` / `dashboard` / `runtime-events` 三条路径，在补完 dashboard 本地 gate-status refresh 之后，已经基本形成足够顺手的显式 operator path。这一轮真实使用只暴露出一个剩余歧义：`dashboard --global` 配合 refresh flags 时，实际只刷新当前 `--root`，不是刷新所有扫描到的项目。当前已把这条边界显式写进 CLI help、runbook 和 README，多项目 global 视图仍保持 read-only 聚合，不扩大 side effect。

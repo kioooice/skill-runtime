@@ -3,6 +3,7 @@
 Open-source maintainer workflow demos:
 
 - [Maintainer Review Cleanup Demo](./docs/maintainer-review-cleanup-demo.md)
+- [Maintainer Review Cleanup Repeat-Use Validation](./docs/maintainer-review-cleanup-repeat-use-validation.md)
 - [Maintainer Release Readiness Demo](./docs/maintainer-release-readiness-demo.md)
 - [Maintainer Handoff Continuation Demo](./docs/maintainer-handoff-continuation-demo.md)
 

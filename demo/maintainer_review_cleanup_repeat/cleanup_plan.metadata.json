@@ -1,0 +1,32 @@
+{
+  "workflow": "maintainer_review_cleanup",
+  "source_role": "repeat_use_validation_fixture",
+  "pull_request": {
+    "number": 58,
+    "title": "Normalize provider quality report schema"
+  },
+  "counts": {
+    "review_comments": 4,
+    "required_fixes": 2,
+    "follow_up_items": 2
+  },
+  "required_fix_comment_ids": [
+    "RC-201",
+    "RC-202"
+  ],
+  "follow_up_comment_ids": [
+    "RC-203",
+    "RC-204"
+  ],
+  "suggested_verification": [
+    "python -m unittest tests.test_runtime_provider_quality_eval -v",
+    "python scripts/evaluate_provider_quality.py --baseline docs/provider-quality-baseline.json --fail-on-regression",
+    "git diff --check"
+  ],
+  "boundaries": {
+    "source_mutations_performed": false,
+    "review_comments_resolved": false,
+    "merge_approval_inferred": false,
+    "default_in_widened": false
+  }
+}

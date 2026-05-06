@@ -15,6 +15,7 @@ from skill_runtime.api.models import (
     ReuseDecision,
 )
 from skill_runtime.api.orchestration import AgentOrchestrationService
+from skill_runtime.api.development_feedback import record_development_feedback_review
 from skill_runtime.api.host import classify_codex_task, finalize_codex_task, run_codex_task, start_codex_task
 from skill_runtime.api.service import RuntimeService, RuntimeServiceError
 from skill_runtime.dashboard.collector import (
@@ -635,6 +636,20 @@ def cmd_archive_fixture_skills(args: argparse.Namespace) -> int:
     return ok(service_for_args(args).archive_fixture_skills(skill_names=args.skill_name, dry_run=args.dry_run))
 
 
+def cmd_review_development_feedback(args: argparse.Namespace) -> int:
+    try:
+        record = record_development_feedback_review(
+            Path(args.root).resolve(),
+            feedback_id=args.feedback_id,
+            status=args.status,
+            note=args.note or "",
+            reviewer=args.reviewer or "local",
+        )
+    except ValueError as exc:
+        return error(str(exc), "INVALID_DEVELOPMENT_FEEDBACK_REVIEW", exit_code=EXIT_ARGUMENT_ERROR)
+    return ok(record)
+
+
 def _build_agent_task_request(args: argparse.Namespace) -> AgentTaskRequest:
     task_description = getattr(args, "task_description", None)
     if not isinstance(task_description, str) or not task_description.strip():
@@ -714,6 +729,9 @@ def _build_agent_orchestration_result(raw_plan: object) -> AgentOrchestrationRes
         learning_decision=learning_decision,
         runtime_lane_status=runtime_lane_status if isinstance(runtime_lane_status, str) else None,
         runtime_lane_reason=runtime_lane_reason if isinstance(runtime_lane_reason, str) else None,
+        development_feedback=[
+            item for item in raw_plan.get("development_feedback", []) if isinstance(item, dict)
+        ],
         selected_skill_name=selected_skill_name if isinstance(selected_skill_name, str) else None,
         selected_skill_args=selected_skill_args,
         execution_payload=execution_payload if isinstance(execution_payload, dict) else None,
@@ -777,6 +795,7 @@ def _build_codex_orchestration_result(raw_plan: object) -> AgentOrchestrationRes
         task_classification=classification,
         runtime_lane_status=plan.runtime_lane_status,
         runtime_lane_reason=plan.runtime_lane_reason,
+        development_feedback=list(plan.development_feedback),
         selected_skill_name=plan.selected_skill_name,
         selected_skill_args=dict(plan.selected_skill_args),
         execution_payload=plan.execution_payload,
@@ -1172,6 +1191,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory whose immediate child projects should be scanned for runtime lane events",
     )
     dashboard_parser.set_defaults(func=cmd_dashboard)
+
+    review_development_feedback_parser = subparsers.add_parser("review-development-feedback")
+    review_development_feedback_parser.add_argument("--feedback-id", required=True)
+    review_development_feedback_parser.add_argument(
+        "--status",
+        required=True,
+        choices=("needs_review", "accepted", "applied", "dismissed"),
+    )
+    review_development_feedback_parser.add_argument("--note")
+    review_development_feedback_parser.add_argument("--reviewer", default="local")
+    review_development_feedback_parser.set_defaults(func=cmd_review_development_feedback)
 
     runtime_events_parser = subparsers.add_parser("runtime-events")
     runtime_events_parser.add_argument("--limit", type=int, default=20)

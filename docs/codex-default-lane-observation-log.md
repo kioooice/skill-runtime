@@ -23,6 +23,24 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Development feedback surfaced at task start
+
+- Task type: product-direction correction and runtime gate behavior
+- Classified as: guarded-in / skipped for the direction-design gate, then default-in / entered for the implementation dogfood through host API
+- What happened: added `development_feedback` to Codex-facing runtime results and runtime lane events; the first source is stable `workflow-error-correction` guards, and a real host API run for this implementation returned `scoped-verification`, `state-file-churn`, and `publish-churn`
+- Did the behavior feel correct: yes; this directly addresses the user's concern that learning should feed back into development behavior instead of only producing artifacts
+- Did the lane help: yes; the feedback changed this round's verification behavior, because scoped checks were used instead of the full repository fast suite
+- Follow-up: dogfood this in the next real development task by explicitly stating the returned feedback before acting and checking whether the actual behavior follows it
+
+### 2026-05-06 - Review cleanup repeat-use validation
+
+- Task type: product-value validation
+- Classified as: default-in / entered by the Codex runtime gate for this workspace continuation task
+- What happened: added a second checked-in review-cleanup fixture under `demo/maintainer_review_cleanup_repeat/`, covering provider-quality baseline review comments; the fixture includes structured input, a maintainer-facing cleanup plan, metadata, and an observed-task record, the capture command returned explicit `distill_trajectory` follow-up without promoting anything, and the Codex finalizer returned `observed_only`
+- Did the behavior feel correct: yes; the runtime lane recorded the continuation work, while the validation itself stayed focused on bounded maintainer value rather than automatic review resolution
+- Did the lane help: yes; it confirmed this local documentation/fixture slice entered observation, but did not replace the maintainer judgment or widen runtime automation
+- Follow-up: validate adoption friction in real PR cleanup usage, especially whether the global Codex skill instructions and thin adapter are natural enough for repeated use
+
 ### 2026-05-06 - Review cleanup moved from positive control to narrow active ownership
 
 - Task type: product-value boundary decision

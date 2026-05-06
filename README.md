@@ -65,6 +65,7 @@ That means a host AI can:
 
 - [Main demo walkthrough](./docs/main-demo-walkthrough.md)
 - [Review cleanup](./docs/maintainer-review-cleanup-demo.md)
+- [Review cleanup repeat-use validation](./docs/maintainer-review-cleanup-repeat-use-validation.md)
 - [Release readiness](./docs/maintainer-release-readiness-demo.md)
 - [Handoff continuation](./docs/maintainer-handoff-continuation-demo.md)
 

@@ -97,6 +97,7 @@ def _event_from_result(root: Path, result: AgentOrchestrationResult) -> dict[str
         "classification_bucket": classification.bucket if classification else None,
         "classification_reason": classification.reason if classification else None,
         "matched_signals": list(classification.matched_signals) if classification else [],
+        "development_feedback": list(result.development_feedback),
         "reuse_decision": result.reuse_decision.decision,
         "learning_decision": result.learning_decision.decision if result.learning_decision else None,
         "selected_skill_name": result.selected_skill_name,

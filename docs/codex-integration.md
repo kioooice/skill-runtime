@@ -129,6 +129,28 @@ or reuse / learning decision when useful.
 This is the operator-facing check for "did Skill Runtime actually participate?".
 Normal Codex work should not require manual skill lookup just to answer that question.
 
+Codex-facing results can also include `development_feedback`.
+
+This is the task-start feedback loop for development work. It surfaces a short list of
+already learned workflow rules that should change the next Codex action. For example,
+localized docs or fixture work can return feedback to use scoped verification, avoid
+state-file churn, and avoid automatic commit/push churn.
+CLI or Codex command work can return feedback to avoid PowerShell inline JSON and use
+file-backed JSON arguments or direct host API calls instead.
+
+`development_feedback` is advisory but action-oriented:
+
+- `id`: stable rule id for logs and tests
+- `title`: short label for the host or Codex response
+- `source`: where the learned rule came from
+- `why`: why it applies to this task
+- `behavior_change`: what Codex should do differently now
+
+This field is not a lifecycle operation. It does not execute tools, promote skills, apply
+evolution candidates, or widen `default-in`. Its purpose is to make previous development
+experience visible at the start of the next task, before Codex repeats avoidable workflow
+mistakes.
+
 For scriptable local inspection, use:
 
 ```bash

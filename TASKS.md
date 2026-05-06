@@ -2,6 +2,10 @@
 
 ## Current Focus
 
+- 最新主线纠偏：第一版 development feedback loop 已落地。`AgentOrchestrationResult` 现在带 `development_feedback`，Codex-facing gate 会在任务开始时把相关已学流程经验返回给 Codex；runtime event 也会记录同一字段。当前第一版只从稳定的 `workflow-error-correction` guard 派生反馈，已验证本地 docs/fixture 开发任务会返回 `scoped-verification`、`state-file-churn`、`publish-churn`。下一步不要继续堆 fixture proof；应狗食这个字段是否真的改变每轮开发开头的行为说明和实际验证选择。
+
+- 最新产品价值验证：`maintainer_review_cleanup` 现在有第二个真实使用 fixture。新增 `demo/maintainer_review_cleanup_repeat/`，用 provider-quality baseline review comments 生成 cleanup plan、metadata 和 observed-task record；新增 `docs/maintainer-review-cleanup-repeat-use-validation.md` 记录 repeat-use 结论。当前验证结果是：重复场景仍能产出 grouped required fixes / follow-up docs / suggested verification / explicit maintainer decision，并且 `capture-trajectory` 仍只推荐显式 `distill_trajectory`，不自动 promote、不改源码、不 resolve review comments、不扩大 `default-in`。
+
 - 最新产品价值主线：`maintainer_review_cleanup` 已从 bounded positive control 进入 narrow active workflow ownership。当前已新增全局权威 skill `C:\Users\Administrator\.codex\skills\maintainer-review-cleanup\SKILL.md`、仓库 thin adapter `skill_store/active/maintainer_review_cleanup.py`、对应 metadata，以及更新后的 workflow-search baseline。当前它已经能作为正式 active workflow-search surface 被检索和执行，但边界仍保持在“structured review comments -> cleanup artifact”，不写代码、不做 review resolution、不做 merge judgment，也不扩大 `default-in`。
 
 - 最新 ownership 边界验证：workflow-search baseline 现在额外覆盖了一条负向边界 query：`apply fixes for review comments automatically`。当前 `maintainer_review_cleanup` metadata 已收紧，基线会验证它不再把自动修评论误当成自己的职责，同时仍然保持 `turn review comments into a cleanup plan` 的正向命中。
@@ -464,7 +468,10 @@
 - [x] 验证未确认不能回滚、目标文件在 apply 后变更会拒绝覆盖、确认后会恢复备份
 - [x] 下一阶段：在不改 dashboard 页面的前提下，判断现有 dashboard collector 应该最小接 `operator-summary` 的哪些稳定字段；如果要接，只接稳定字段，不直接依赖不稳定低层文件形状
 - [x] 将 dashboard 第一屏和 operator-summary 从内部实现名词改为用户可读信息架构，并把 quality gates 下沉为 `系统检查`
-- [ ] 下一阶段：继续做 `maintainer_review_cleanup` 的真实使用验证；重点从“query/metadata 是否越界”推进到“真实 maintainer 是否会重复使用这条 active workflow”，而不是继续只做 search proof
+- [x] 已完成 `maintainer_review_cleanup` 的第二个真实使用验证 fixture；重点已从“query/metadata 是否越界”推进到“同一 bounded workflow 是否能在第二个 maintainer review artifact 上重复产生有用 cleanup plan”
+- [x] 已完成第一版 development feedback loop：Codex-facing gate 会在开发任务开始时返回可执行的已学经验反馈，并写入 runtime lane event
+- [ ] 下一阶段：真实狗食 development_feedback；每轮开发开始时先展示“本次会应用的已学经验”，并检查实际行为是否跟反馈一致
+- [ ] 下一阶段：继续看 `maintainer_review_cleanup` 的真实采用摩擦；重点是全局 Codex skill 说明和 thin adapter 在实际 PR cleanup 中是否足够自然，而不是继续只补 search proof 或扩大 `default-in`
 
 ## Blocked
 

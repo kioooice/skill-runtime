@@ -12,6 +12,8 @@ It is intentionally local-only. It does not require API keys, GitHub access, or 
 - Expected maintainer output: `demo/maintainer_review_cleanup/expected_cleanup_plan.md`
 - Observed task record: `demo/maintainer_review_cleanup/observed_task.json`
 
+Repeat-use evidence lives in [Maintainer Review Cleanup Repeat-Use Validation](./maintainer-review-cleanup-repeat-use-validation.md).
+
 ## What It Demonstrates
 
 - Review comments can be normalized into required fixes and follow-up work.

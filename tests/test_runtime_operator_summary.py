@@ -150,7 +150,7 @@ class RuntimeOperatorSummaryTestsMixin:
         self.assertEqual(7, quality_gates["utility_search_quality"]["summary"]["matched_count"])
         self.assertEqual("fresh", quality_gates["utility_search_quality"]["freshness"]["status"])
         self.assertEqual("available", quality_gates["workflow_search_quality"]["status"])
-        self.assertEqual(5, quality_gates["workflow_search_quality"]["summary"]["expectation_met_count"])
+        self.assertEqual(6, quality_gates["workflow_search_quality"]["summary"]["expectation_met_count"])
         self.assertEqual("fresh", quality_gates["workflow_search_quality"]["freshness"]["status"])
         self.assertEqual([], payload["data"]["missing_or_unavailable"])
 

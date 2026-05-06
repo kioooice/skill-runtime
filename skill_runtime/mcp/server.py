@@ -75,6 +75,9 @@ def _agent_result_from_payload(raw_plan: dict[str, Any]) -> AgentOrchestrationRe
         runtime_lane_reason=raw_plan.get("runtime_lane_reason")
         if isinstance(raw_plan.get("runtime_lane_reason"), str)
         else None,
+        development_feedback=[
+            item for item in raw_plan.get("development_feedback", []) if isinstance(item, dict)
+        ],
         selected_skill_name=raw_plan.get("selected_skill_name")
         if isinstance(raw_plan.get("selected_skill_name"), str)
         else None,

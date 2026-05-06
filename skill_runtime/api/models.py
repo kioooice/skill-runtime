@@ -109,6 +109,7 @@ class AgentOrchestrationResult:
     task_classification: CodexTaskClassification | None = None
     runtime_lane_status: str | None = None
     runtime_lane_reason: str | None = None
+    development_feedback: list[dict[str, str]] = field(default_factory=list)
     selected_skill_name: str | None = None
     selected_skill_args: dict[str, Any] = field(default_factory=dict)
     execution_payload: dict[str, Any] | None = None

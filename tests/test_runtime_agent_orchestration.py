@@ -236,6 +236,92 @@ class RuntimeAgentOrchestrationTestsMixin:
         self.assertEqual("default-in", events[-1]["classification_bucket"])
         self.assertIn("family:development-workflow-observation", events[-1]["matched_signals"])
 
+    def test_codex_host_api_run_task_surfaces_development_feedback_for_docs_fixture_work(self) -> None:
+        from skill_runtime.api.host import run_codex_task
+
+        request = AgentTaskRequest(
+            task_description="Add a local docs fixture and update the validation note for a development workflow.",
+            working_directory=str(self.runtime_root),
+            expected_outputs=[
+                "docs/development-feedback-loop.md",
+                "demo/development_feedback/example.json",
+            ],
+            risk_level="medium",
+            task_kind="workflow",
+            allow_silent_reuse=False,
+        )
+
+        result = run_codex_task(self.runtime_root, request)
+
+        feedback_by_id = {item["id"]: item for item in result.development_feedback}
+        self.assertIn("scoped-verification", feedback_by_id)
+        self.assertIn("state-file-churn", feedback_by_id)
+        self.assertIn("git diff --check", feedback_by_id["scoped-verification"]["behavior_change"])
+        self.assertIn("only if the next-session entry point changes", feedback_by_id["state-file-churn"]["behavior_change"])
+
+        event_path = self.runtime_root / ".skill_runtime" / "runtime_lane_events.jsonl"
+        events = [
+            json.loads(line)
+            for line in event_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        event_feedback = {item["id"]: item for item in events[-1]["development_feedback"]}
+        self.assertIn("scoped-verification", event_feedback)
+        self.assertIn("state-file-churn", event_feedback)
+
+    def test_codex_host_api_run_task_surfaces_powershell_safe_cli_feedback(self) -> None:
+        from skill_runtime.api.host import run_codex_task
+
+        request = AgentTaskRequest(
+            task_description="Update codex-run CLI JSON handling and document the PowerShell command path.",
+            working_directory=str(self.runtime_root),
+            expected_outputs=[
+                "skill_runtime/cli.py",
+                "tests/test_runtime_agent_orchestration.py",
+                "docs/codex-integration.md",
+            ],
+            risk_level="medium",
+            task_kind="workflow",
+            allow_silent_reuse=False,
+        )
+
+        result = run_codex_task(self.runtime_root, request)
+
+        feedback_by_id = {item["id"]: item for item in result.development_feedback}
+        self.assertIn("powershell-safe-cli-json", feedback_by_id)
+        self.assertIn("--known-inputs-json-file", feedback_by_id["powershell-safe-cli-json"]["behavior_change"])
+        self.assertIn("avoid PowerShell inline JSON", feedback_by_id["powershell-safe-cli-json"]["why"])
+
+    def test_codex_host_api_run_task_merges_local_development_feedback_review_state(self) -> None:
+        from skill_runtime.api.development_feedback import record_development_feedback_review
+        from skill_runtime.api.host import run_codex_task
+
+        record_development_feedback_review(
+            self.runtime_root,
+            feedback_id="scoped-verification",
+            status="accepted",
+            note="Keep using scoped checks for docs and dashboard slices.",
+            reviewer="maintainer",
+        )
+        request = AgentTaskRequest(
+            task_description="Update a dashboard view and targeted docs for development feedback.",
+            working_directory=str(self.runtime_root),
+            expected_outputs=[
+                "skill_runtime/dashboard/render.py",
+                "tests/test_runtime_dashboard.py",
+            ],
+            risk_level="medium",
+            task_kind="workflow",
+            allow_silent_reuse=False,
+        )
+
+        result = run_codex_task(self.runtime_root, request)
+
+        feedback_by_id = {item["id"]: item for item in result.development_feedback}
+        self.assertEqual("accepted", feedback_by_id["scoped-verification"]["review_status"])
+        self.assertEqual("maintainer", feedback_by_id["scoped-verification"]["reviewer"])
+        self.assertIn("scoped checks", feedback_by_id["scoped-verification"]["review_note"])
+
     def test_codex_host_api_run_task_bubbles_background_hint_recommendation(self) -> None:
         from skill_runtime.api.host import run_codex_task
 

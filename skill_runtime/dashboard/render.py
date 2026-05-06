@@ -221,6 +221,7 @@ def render_dashboard_html(data: dict[str, Any]) -> str:
         )}
         {_skill_tree(data.get("skills", []), data.get("capability_collections", []))}
         {_evolution_candidates(data.get("evolution_candidates", []))}
+        {_development_feedback_page(data.get("development_feedback", {}))}
         {_trigger_log(
             global_data.get("events", []) if global_data else data.get("events", []),
             include_project=bool(global_data),
@@ -256,6 +257,11 @@ def _view_headers(title: str, subtitle: str, read_only_text: str, *, global_enab
             "skill-evolution",
             "待审核项",
             "待审核的候选、改进提案与人工决策项。",
+        ),
+        _view_header(
+            "development-feedback",
+            "开发反馈",
+            "查看任务开始时返回的经验提示和本地 review 状态。",
         ),
         _view_header(
             "trigger-log",
@@ -413,6 +419,7 @@ def _view_nav(overview: dict[str, Any] | None = None, *, global_enabled: bool = 
         <button class="view-link is-active" type="button" data-view-target="overview" aria-controls="dashboard-page-overview" aria-current="page">{_icon("radar")}<span>总览</span></button>
         <button class="view-link" type="button" data-view-target="skill-tree" aria-controls="dashboard-page-skill-tree" aria-current="false">{_icon("blocks")}<span>可复用流程</span>{_nav_count(overview.get("active_count", 0))}</button>
         <button class="view-link" type="button" data-view-target="skill-evolution" aria-controls="dashboard-page-skill-evolution" aria-current="false">{_icon("spark")}<span>待审核项</span>{_nav_count(overview.get("evolution_candidate_count", 0))}</button>
+        <button class="view-link" type="button" data-view-target="development-feedback" aria-controls="dashboard-page-development-feedback" aria-current="false">{_icon("activity")}<span>开发反馈</span>{_nav_count(overview.get("development_feedback_needs_review_count", 0))}</button>
         <button class="view-link" type="button" data-view-target="trigger-log" aria-controls="dashboard-page-trigger-log" aria-current="false">{_icon("activity")}<span>近期记录</span>{_nav_count(counts.get("used", 0) + counts.get("entered", 0))}</button>
         <button class="view-link" type="button" data-view-target="governance" aria-controls="dashboard-page-governance" aria-current="false">{_icon("shield")}<span>系统状态</span></button>
         <button class="view-link" type="button" data-view-target="platforms" aria-controls="dashboard-page-platforms" aria-current="false">{_icon("platform")}<span>数据来源</span></button>
@@ -1172,6 +1179,57 @@ def _audit_status_label(value: Any) -> str:
         "failed": "审核未通过",
     }
     return labels.get(str(value or ""), str(value or "未记录审核状态"))
+
+
+def _development_feedback_page(payload: dict[str, Any]) -> str:
+    items = payload.get("items") if isinstance(payload, dict) and isinstance(payload.get("items"), list) else []
+    status_counts = (
+        payload.get("status_counts")
+        if isinstance(payload, dict) and isinstance(payload.get("status_counts"), dict)
+        else {}
+    )
+    if items:
+        body = '<div class="feedback-grid">' + "\n".join(_development_feedback_card(item) for item in items[:40]) + "</div>"
+    else:
+        body = '<p class="muted">暂无开发反馈记录。</p>'
+    return f"""<section id="dashboard-page-development-feedback" class="panel view-panel dashboard-view-page" data-view-page="development-feedback" hidden>
+  <div class="grid metric-grid">
+    {_metric("待审反馈", status_counts.get("needs_review", 0), "尚未人工确认")}
+    {_metric("已采纳", status_counts.get("accepted", 0), "后续任务应继续应用")}
+    {_metric("已应用", status_counts.get("applied", 0), "已转成实际流程约束")}
+    {_metric("已忽略", status_counts.get("dismissed", 0), "暂不作为开发约束")}
+  </div>
+  <p class="section-note">本地记录：{text(payload.get("record_path") if isinstance(payload, dict) else "")}</p>
+  {body}
+</section>"""
+
+
+def _development_feedback_card(item: dict[str, Any]) -> str:
+    status = str(item.get("review_status") or "needs_review")
+    note = str(item.get("review_note") or "").strip()
+    note_html = f"<p>Review：{text(note)}</p>" if note else ""
+    return f"""<article class="feedback-card">
+  <div class="feedback-card-head">
+    <div>
+      <h3>{text(item.get("title") or item.get("id"))}</h3>
+      <div class="feedback-meta">
+        <span>{text(item.get("id"))}</span>
+        <span>来源：{text(item.get("source") or "未记录")}</span>
+        <span>出现 {text(item.get("occurrence_count", 0))} 次</span>
+      </div>
+    </div>
+    {badge(status)}
+  </div>
+  <p>{text(item.get("why") or "未记录原因。")}</p>
+  <p>{text(item.get("behavior_change") or "未记录行为变化。")}</p>
+  {note_html}
+  <div class="feedback-meta">
+    <span>最近任务：{text(_event_task_label(item.get("latest_task_description")))}</span>
+    <span>最近时间：{text(item.get("latest_seen_at") or "未记录")}</span>
+    <span>审核人：{text(item.get("reviewer") or "未记录")}</span>
+    <span>审核时间：{text(item.get("reviewed_at") or "未记录")}</span>
+  </div>
+</article>"""
 
 
 def _trigger_log(

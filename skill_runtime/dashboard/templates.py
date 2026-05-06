@@ -212,6 +212,7 @@ h3 { color: var(--foreground); font-size: 18px; font-weight: 900; letter-spacing
 .dashboard-view-page { display: none; }
 body[data-active-view="skill-tree"] [data-view-page="skill-tree"],
 body[data-active-view="skill-evolution"] [data-view-page="skill-evolution"],
+body[data-active-view="development-feedback"] [data-view-page="development-feedback"],
 body[data-active-view="overview"] [data-view-page="overview"],
 body[data-active-view="trigger-log"] [data-view-page="trigger-log"],
 body[data-active-view="governance"] [data-view-page="governance"],
@@ -310,12 +311,12 @@ body[data-active-view="global-projects"] [data-view-page="global-projects"] { di
 }
 .section-title-row p { margin-top: 4px; }
 .section-note { font-size: 13px; margin-bottom: 16px; }
-.skill-card-grid, .project-grid, .collection-grid, .platform-card-grid, .evolution-grid {
+.skill-card-grid, .project-grid, .collection-grid, .platform-card-grid, .evolution-grid, .feedback-grid {
   display: grid;
   gap: 18px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.skill-card, .project-card, .collection-card, .platform-skill-card, .evolution-card {
+.skill-card, .project-card, .collection-card, .platform-skill-card, .evolution-card, .feedback-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -339,6 +340,12 @@ body[data-active-view="global-projects"] [data-view-page="global-projects"] { di
 .platform-skill-card { display: flex; flex-direction: column; gap: 13px; min-height: 150px; }
 .evolution-card { cursor: pointer; display: flex; flex-direction: column; gap: 14px; min-height: 210px; text-align: left; }
 .evolution-card:hover, .evolution-card:focus-visible { border-color: rgba(114, 135, 253, .72); box-shadow: 0 10px 24px rgba(76, 79, 105, .16); outline: none; }
+.feedback-card { display: grid; gap: 11px; min-height: 0; }
+.feedback-card-head { align-items: flex-start; display: flex; gap: 12px; justify-content: space-between; }
+.feedback-card h3 { font-size: 16px; }
+.feedback-card p { color: var(--muted-foreground); line-height: 1.55; }
+.feedback-meta { color: var(--muted-foreground); display: flex; flex-wrap: wrap; font-size: 12px; gap: 8px; }
+.feedback-meta span { background: rgba(204, 208, 218, .46); border-radius: 999px; padding: 5px 9px; }
 .evolution-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .evolution-detail-grid dd { overflow-wrap: anywhere; }
 .evolution-empty-state {
@@ -420,12 +427,14 @@ body[data-active-view="global-projects"] [data-view-page="global-projects"] { di
   padding: 5px 9px;
 }
 .badge.used, .badge.active { background: var(--green); }
+.badge.accepted { background: var(--green); }
 .badge.applied { background: var(--green); }
 .badge.rolled_back { background: var(--muted-foreground); }
 .badge.entered, .badge.staging { background: var(--yellow); }
+.badge.needs_review { background: var(--yellow); }
 .badge.proposed { background: var(--yellow); }
 .badge.reviewed, .badge.needs_more_evidence { background: var(--yellow); }
-.badge.skipped, .badge.archived { background: var(--muted-foreground); }
+.badge.skipped, .badge.archived, .badge.dismissed { background: var(--muted-foreground); }
 .badge.rejected { background: var(--red); }
 .event-filter {
   align-items: center;
@@ -643,7 +652,7 @@ pre {
   .content-header { align-items: flex-start; flex-direction: column; gap: 14px; padding: 20px; }
   .header-actions { align-items: flex-start; text-align: left; }
   .search-row, .panel { padding: 16px 20px; }
-  .grid, .metric-grid, .skill-card-grid, .project-grid, .collection-grid, .platform-card-grid, .evolution-grid { grid-template-columns: 1fr; }
+  .grid, .metric-grid, .skill-card-grid, .project-grid, .collection-grid, .platform-card-grid, .evolution-grid, .feedback-grid { grid-template-columns: 1fr; }
   .evolution-flow { grid-template-columns: 1fr; }
   .overview-section-head { align-items: flex-start; flex-direction: column; gap: 5px; }
   .overview-section-head p { text-align: left; }
@@ -660,6 +669,7 @@ SCRIPT = """
     "overview": "#overview-view",
     "skill-tree": "#skill-tree-view",
     "skill-evolution": "#skill-evolution-view",
+    "development-feedback": "#development-feedback-view",
     "trigger-log": "#trigger-log-view",
     "governance": "#governance-view",
     "platforms": "#platforms-view",
@@ -893,6 +903,9 @@ STATUS_LABELS = {
     "staging": "候选",
     "archived": "归档",
     "rejected": "拒绝",
+    "needs_review": "待审",
+    "accepted": "已采纳",
+    "dismissed": "已忽略",
     "proposed": "待审核",
     "reviewed": "已审核",
     "needs_more_evidence": "需补证据",
@@ -908,5 +921,5 @@ def status_label(status: Any) -> str:
 
 def badge(status: Any) -> str:
     raw = str(status or "skipped")
-    css = raw if raw in {"used", "entered", "skipped", "active", "staging", "archived", "rejected", "proposed", "reviewed", "needs_more_evidence", "applied", "rolled_back"} else "skipped"
+    css = raw if raw in {"used", "entered", "skipped", "active", "staging", "archived", "rejected", "proposed", "reviewed", "needs_more_evidence", "applied", "rolled_back", "needs_review", "accepted", "dismissed"} else "skipped"
     return f'<span class="badge {css}">{text(status_label(raw))}</span>'

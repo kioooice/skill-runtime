@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from skill_runtime.api.classification import CodexTaskClassifier
+from skill_runtime.api.development_feedback import build_development_feedback
 from skill_runtime.api.models import (
     AgentOrchestrationResult,
     AgentTaskRequest,
@@ -37,11 +38,12 @@ def run_agent_task(root: str | Path, request: AgentTaskRequest) -> AgentOrchestr
 def start_codex_task(root: str | Path, request: AgentTaskRequest) -> AgentOrchestrationResult:
     classification = classify_codex_task(request)
     if classification.bucket != "default-in":
-        return _record_runtime_lane_event(root, _blocked_codex_result(request, classification))
+        return _record_runtime_lane_event(root, _blocked_codex_result(root, request, classification))
     result = AgentOrchestrationService(root).start_task(request)
     return _record_runtime_lane_event(
         root,
         _with_classification(
+            root,
             result,
             classification,
             runtime_lane_status="entered",
@@ -69,6 +71,7 @@ def finalize_codex_task(
                 task_classification=classification,
                 selected_skill_name=plan.selected_skill_name,
                 selected_skill_args=dict(plan.selected_skill_args),
+                development_feedback=list(plan.development_feedback),
                 execution_payload=execution_payload,
                 learning_capture_payload=None,
                 runtime_lane_status="skipped",
@@ -86,6 +89,7 @@ def finalize_codex_task(
     return _record_runtime_lane_event(
         root,
         _with_classification(
+            root,
             result,
             classification,
             runtime_lane_status="used" if result.learning_capture_payload else "entered",
@@ -97,11 +101,12 @@ def finalize_codex_task(
 def run_codex_task(root: str | Path, request: AgentTaskRequest) -> AgentOrchestrationResult:
     classification = classify_codex_task(request)
     if classification.bucket != "default-in":
-        return _record_runtime_lane_event(root, _blocked_codex_result(request, classification))
+        return _record_runtime_lane_event(root, _blocked_codex_result(root, request, classification))
     result = AgentOrchestrationService(root).run_task(request)
     return _record_runtime_lane_event(
         root,
         _with_classification(
+            root,
             result,
             classification,
             runtime_lane_status="used" if result.execution_payload or result.learning_capture_payload else "entered",
@@ -111,6 +116,7 @@ def run_codex_task(root: str | Path, request: AgentTaskRequest) -> AgentOrchestr
 
 
 def _blocked_codex_result(
+    root: str | Path,
     request: AgentTaskRequest,
     classification: CodexTaskClassification,
 ) -> AgentOrchestrationResult:
@@ -125,6 +131,7 @@ def _blocked_codex_result(
         learning_capture_payload=None,
         runtime_lane_status="skipped",
         runtime_lane_reason=f"task bucket {classification.bucket} skipped Codex runtime lane: {classification.reason}",
+        development_feedback=build_development_feedback(request, classification, root=root),
         recommended_next_action=None,
         recommended_reason=None,
         recommended_host_operation=None,
@@ -133,6 +140,7 @@ def _blocked_codex_result(
 
 
 def _with_classification(
+    root: str | Path,
     result: AgentOrchestrationResult,
     classification: CodexTaskClassification,
     *,
@@ -146,6 +154,7 @@ def _with_classification(
         task_classification=classification,
         runtime_lane_status=runtime_lane_status or result.runtime_lane_status,
         runtime_lane_reason=runtime_lane_reason or result.runtime_lane_reason,
+        development_feedback=build_development_feedback(result.request, classification, root=root),
         selected_skill_name=result.selected_skill_name,
         selected_skill_args=dict(result.selected_skill_args),
         execution_payload=result.execution_payload,

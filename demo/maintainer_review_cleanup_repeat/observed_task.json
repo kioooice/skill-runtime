@@ -1,0 +1,67 @@
+{
+  "task": "Convert a second pull request's provider-quality review comments into a grouped maintainer cleanup plan.",
+  "task_id": "maintainer_review_cleanup_repeat_use",
+  "session_id": "demo_review_cleanup_repeat",
+  "skill_args": {
+    "input_path": "demo/maintainer_review_cleanup_repeat/review_comments.json",
+    "output_path": "demo/maintainer_review_cleanup_repeat/expected_cleanup_plan.md",
+    "metadata_path": "demo/maintainer_review_cleanup_repeat/cleanup_plan.metadata.json"
+  },
+  "actions": [
+    {
+      "tool_name": "read_json",
+      "tool_input": {
+        "path": "demo/maintainer_review_cleanup_repeat/review_comments.json"
+      },
+      "observation": "Read 4 pull request review comments for PR #58.",
+      "status": "success"
+    },
+    {
+      "tool_name": "group_review_comments",
+      "tool_input": {
+        "group_by": [
+          "severity",
+          "merge_blocking"
+        ],
+        "required_severity": "must_fix",
+        "follow_up_severity": "follow_up"
+      },
+      "observation": "Grouped 2 required fixes and 2 follow-up documentation items.",
+      "status": "success"
+    },
+    {
+      "tool_name": "write_text",
+      "tool_input": {
+        "path": "demo/maintainer_review_cleanup_repeat/expected_cleanup_plan.md"
+      },
+      "observation": "Wrote a maintainer cleanup plan with required fixes, follow-up documentation, verification commands, and merge decision guidance.",
+      "status": "success",
+      "artifacts": [
+        "demo/maintainer_review_cleanup_repeat/expected_cleanup_plan.md"
+      ]
+    },
+    {
+      "tool_name": "write_json",
+      "tool_input": {
+        "path": "demo/maintainer_review_cleanup_repeat/cleanup_plan.metadata.json"
+      },
+      "observation": "Wrote structured cleanup-plan metadata with counts, source comment ids, suggested verification, and non-automation boundaries.",
+      "status": "success",
+      "artifacts": [
+        "demo/maintainer_review_cleanup_repeat/cleanup_plan.metadata.json"
+      ]
+    }
+  ],
+  "result": {
+    "status": "completed",
+    "outputs": [
+      "demo/maintainer_review_cleanup_repeat/expected_cleanup_plan.md",
+      "demo/maintainer_review_cleanup_repeat/cleanup_plan.metadata.json"
+    ]
+  },
+  "final_status": "success",
+  "artifacts": [
+    "demo/maintainer_review_cleanup_repeat/expected_cleanup_plan.md",
+    "demo/maintainer_review_cleanup_repeat/cleanup_plan.metadata.json"
+  ]
+}

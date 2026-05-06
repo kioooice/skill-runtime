@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from skill_runtime.api.development_feedback import DEVELOPMENT_FEEDBACK_REVIEW_FILE, load_development_feedback_reviews
 from skill_runtime.api.models import SkillMetadata
 from skill_runtime.api.service import RuntimeService
 from skill_runtime.collections.store import load_capability_collections
@@ -28,16 +29,18 @@ def collect_dashboard_data(root: str | Path, *, event_limit: int = 50) -> dict[s
     operator_summary = _load_exported_operator_summary(runtime_root, diagnostics)
     all_events = list(reversed(read_runtime_lane_events(runtime_root)))
     events = _balanced_recent_events(all_events, per_status_limit=event_limit)
+    development_feedback = _collect_development_feedback(runtime_root, all_events)
     governance = _collect_governance(runtime_root, diagnostics)
     platform_inventory = collect_platform_inventory(runtime_root)
     capability_collections = load_capability_collections(runtime_root, skills, diagnostics)
     evolution_candidates = EvolutionCandidateStore(runtime_root).list_candidates(limit=50)
-    overview = _build_overview(skills, all_events, governance, evolution_candidates)
+    overview = _build_overview(skills, all_events, governance, evolution_candidates, development_feedback)
     return {
         "root": str(runtime_root),
         "overview": overview,
         "skills": skills,
         "events": events,
+        "development_feedback": development_feedback,
         "governance": governance,
         "evolution_candidates": evolution_candidates,
         "operator_summary": operator_summary,
@@ -376,6 +379,85 @@ def _skill_md_description(content: str) -> str:
     return ""
 
 
+def _collect_development_feedback(root: Path, events: list[dict[str, Any]]) -> dict[str, Any]:
+    reviews = load_development_feedback_reviews(root)
+    by_id: dict[str, dict[str, Any]] = {}
+    for event in events:
+        feedback_items = event.get("development_feedback")
+        if not isinstance(feedback_items, list):
+            continue
+        for raw_item in feedback_items:
+            if not isinstance(raw_item, dict):
+                continue
+            feedback_id = raw_item.get("id")
+            if not isinstance(feedback_id, str) or not feedback_id.strip():
+                continue
+            item = by_id.setdefault(
+                feedback_id,
+                {
+                    "id": feedback_id,
+                    "title": _string_value(raw_item.get("title")),
+                    "source": _string_value(raw_item.get("source")),
+                    "why": _string_value(raw_item.get("why")),
+                    "behavior_change": _string_value(raw_item.get("behavior_change")),
+                    "review_status": _string_value(raw_item.get("review_status")) or "needs_review",
+                    "review_note": _string_value(raw_item.get("review_note")),
+                    "reviewer": _string_value(raw_item.get("reviewer")),
+                    "reviewed_at": _string_value(raw_item.get("reviewed_at")),
+                    "latest_task_description": _string_value(event.get("task_description")),
+                    "latest_seen_at": _string_value(event.get("timestamp")),
+                    "occurrence_count": 0,
+                },
+            )
+            item["occurrence_count"] = int(item.get("occurrence_count", 0)) + 1
+            if not item.get("latest_seen_at"):
+                item["latest_seen_at"] = _string_value(event.get("timestamp"))
+
+    for feedback_id, review in reviews.items():
+        item = by_id.setdefault(
+            feedback_id,
+            {
+                "id": feedback_id,
+                "title": feedback_id,
+                "source": "local-review",
+                "why": "",
+                "behavior_change": "",
+                "latest_task_description": "",
+                "latest_seen_at": "",
+                "occurrence_count": 0,
+            },
+        )
+        item["review_status"] = review.get("status", "needs_review")
+        item["review_note"] = review.get("note", "")
+        item["reviewer"] = review.get("reviewer", "")
+        item["reviewed_at"] = review.get("reviewed_at", "")
+
+    for item in by_id.values():
+        review = reviews.get(str(item.get("id") or ""), {})
+        item.setdefault("review_status", review.get("status", "needs_review"))
+        item.setdefault("review_note", review.get("note", ""))
+        item.setdefault("reviewer", review.get("reviewer", ""))
+        item.setdefault("reviewed_at", review.get("reviewed_at", ""))
+
+    items = sorted(
+        by_id.values(),
+        key=lambda item: (str(item.get("review_status") or ""), str(item.get("latest_seen_at") or "")),
+        reverse=True,
+    )
+    status_counts = {"needs_review": 0, "accepted": 0, "applied": 0, "dismissed": 0}
+    for item in items:
+        status = str(item.get("review_status") or "needs_review")
+        if status not in status_counts:
+            status = "needs_review"
+        status_counts[status] += 1
+    return {
+        "record_path": str((root / DEVELOPMENT_FEEDBACK_REVIEW_FILE).resolve()),
+        "items": items,
+        "review_records": list(reviews.values()),
+        "status_counts": status_counts,
+    }
+
+
 def _collect_governance(root: Path, diagnostics: list[str]) -> dict[str, Any]:
     try:
         report = RuntimeService(root).governance_report()
@@ -415,6 +497,10 @@ def _string_list(payload: Any) -> list[str]:
     if not isinstance(payload, list):
         return []
     return [str(item) for item in payload if str(item).strip()]
+
+
+def _string_value(value: Any) -> str:
+    return value if isinstance(value, str) else ""
 
 
 def _operator_gate_export(payload: Any, *, fallback_label: str) -> dict[str, Any]:
@@ -490,6 +576,7 @@ def _build_overview(
     events: list[dict[str, Any]],
     governance: dict[str, Any],
     evolution_candidates: list[dict[str, Any]] | None = None,
+    development_feedback: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     status_counts = {"active": 0, "staging": 0, "archived": 0, "rejected": 0}
     workflow_active_count = 0
@@ -509,6 +596,11 @@ def _build_overview(
     proposed_evolution_count = sum(
         1 for candidate in evolution_candidates or [] if candidate.get("status") == "proposed"
     )
+    feedback_status_counts = (
+        development_feedback.get("status_counts")
+        if isinstance(development_feedback, dict) and isinstance(development_feedback.get("status_counts"), dict)
+        else {}
+    )
     return {
         "active_count": workflow_active_count,
         "staging_count": status_counts["staging"],
@@ -518,6 +610,7 @@ def _build_overview(
         "recent_event_counts": event_counts,
         "governance_warning_count": governance_warning_count,
         "evolution_candidate_count": proposed_evolution_count,
+        "development_feedback_needs_review_count": feedback_status_counts.get("needs_review", 0),
     }
 
 

@@ -1,0 +1,42 @@
+{
+  "pull_request": {
+    "number": 58,
+    "title": "Normalize provider quality report schema",
+    "branch": "feature/provider-quality-schema"
+  },
+  "review_comments": [
+    {
+      "id": "RC-201",
+      "file": "scripts/evaluate_provider_quality.py",
+      "line": 214,
+      "author": "reviewer-a",
+      "severity": "must_fix",
+      "comment": "The baseline comparison includes generated_at, so a clean re-run can look different even when provider quality did not regress."
+    },
+    {
+      "id": "RC-202",
+      "file": "tests/test_runtime_provider_quality_eval.py",
+      "line": 121,
+      "author": "reviewer-b",
+      "severity": "must_fix",
+      "comment": "Please add a regression test that the normalized report omits volatile timestamps before comparing to the baseline."
+    },
+    {
+      "id": "RC-203",
+      "file": "docs/provider-quality-baseline.md",
+      "line": 30,
+      "author": "reviewer-c",
+      "severity": "follow_up",
+      "comment": "The baseline document should briefly say which fields are intentionally excluded from regression comparison."
+    },
+    {
+      "id": "RC-204",
+      "file": "README.md",
+      "line": 230,
+      "author": "reviewer-d",
+      "severity": "follow_up",
+      "comment": "Consider linking the provider-quality baseline docs near the release validation commands."
+    }
+  ],
+  "maintainer_goal": "Turn the review into a merge-focused cleanup plan that separates required schema fixes from documentation follow-ups."
+}

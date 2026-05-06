@@ -155,6 +155,85 @@ class RuntimeDashboardTestsMixin:
         self.assertEqual("fresh", data["operator_summary"]["quality_gates"]["provider_quality"]["freshness"]["status"])
         self.assertIn("workflow_search_quality", data["operator_summary"]["missing_or_unavailable"])
 
+    def test_dashboard_renders_development_feedback_review_page(self) -> None:
+        from skill_runtime.api.development_feedback import record_development_feedback_review
+        from skill_runtime.dashboard.collector import collect_dashboard_data
+        from skill_runtime.dashboard.render import render_dashboard_html
+
+        event_dir = self.runtime_root / ".skill_runtime"
+        event_dir.mkdir(parents=True, exist_ok=True)
+        (event_dir / "runtime_lane_events.jsonl").write_text(
+            json.dumps(
+                {
+                    "timestamp": "2026-05-06T12:10:00+00:00",
+                    "working_directory": str(self.runtime_root),
+                    "task_description": "Update dashboard development feedback view.",
+                    "runtime_lane_status": "entered",
+                    "runtime_lane_reason": "default lane observation",
+                    "classification_bucket": "default-in",
+                    "reuse_decision": "skip",
+                    "learning_decision": None,
+                    "selected_skill_name": None,
+                    "observed_task_record": None,
+                    "development_feedback": [
+                        {
+                            "id": "scoped-verification",
+                            "title": "Use scoped verification",
+                            "source": "workflow-error-correction",
+                            "why": "Localized changes should use the smallest useful verification.",
+                            "behavior_change": "Run git diff --check and targeted tests.",
+                            "review_status": "needs_review",
+                        }
+                    ],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        record_development_feedback_review(
+            self.runtime_root,
+            feedback_id="scoped-verification",
+            status="accepted",
+            note="Keep this visible at task start.",
+            reviewer="maintainer",
+        )
+
+        data = collect_dashboard_data(self.runtime_root)
+        html = render_dashboard_html(data)
+
+        feedback = data["development_feedback"]
+        self.assertEqual(1, feedback["status_counts"]["accepted"])
+        self.assertEqual(0, feedback["status_counts"]["needs_review"])
+        self.assertEqual("accepted", feedback["items"][0]["review_status"])
+        self.assertIn("开发反馈", html)
+        self.assertIn('data-view-target="development-feedback"', html)
+        self.assertIn("Use scoped verification", html)
+        self.assertIn("已采纳", html)
+        self.assertIn("Keep this visible at task start.", html)
+
+    def test_review_development_feedback_cli_writes_local_record(self) -> None:
+        payload = self._run_cli(
+            "review-development-feedback",
+            "--feedback-id",
+            "scoped-verification",
+            "--status",
+            "dismissed",
+            "--note",
+            "Not useful for this workflow.",
+            "--reviewer",
+            "maintainer",
+            root=self.runtime_root,
+            expect_json=True,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        record_path = self.runtime_root / ".skill_runtime" / "development_feedback_reviews.json"
+        self.assertTrue(record_path.exists())
+        reviews = json.loads(record_path.read_text(encoding="utf-8"))["reviews"]
+        self.assertEqual("dismissed", reviews["scoped-verification"]["status"])
+        self.assertEqual("maintainer", reviews["scoped-verification"]["reviewer"])
+
     def test_dashboard_collector_marks_exported_operator_summary_stale_when_generated_at_is_old(self) -> None:
         from skill_runtime.dashboard.collector import collect_dashboard_data
 
