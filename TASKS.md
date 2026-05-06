@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新 v0.3 主线切片：`dashboard` 现在支持显式 `--refresh-operator-status`，会在渲染前先刷新 `.skill_runtime/operator_status/*.json`，然后再配合既有 `--refresh-operator-summary` 刷新稳定导出。当前 visual path 已经闭合成一条明确命令：`python -m skill_runtime.cli dashboard --refresh-operator-status --refresh-operator-summary --open`。CLI payload 也新增 `operator_status_refresh`，用于报告这次是否刷新、刷新了哪些 gate、以及刷新时间。当前 runbook、README 和定向 CLI 回归都已同步。
+
 - 最新 workflow 语义纠偏：`完全自动模式` 现在明确为“两段式”：先展示较长计划供用户看一眼，再在用户明确同意后自动推进到计划完成。它不该一上来直接执行，也不该在第一个阶段边界就停成普通自动模式。全局 `auto-mode-stage-runner`、全局 `workflow-error-correction`、全局 `AGENTS.md` 和项目 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 都已同步。
 
 - 最新 workflow 语义纠偏：`完全自动模式` 现在明确要求跨越连续的 meaningful stages 一直执行到声明的计划停止条件成立，不能在第一个阶段完成后就停成普通自动模式。全局 `auto-mode-stage-runner`、全局 `workflow-error-correction`、全局 `AGENTS.md` 和项目 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 都已同步这条区别。

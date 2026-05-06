@@ -22,7 +22,7 @@ Use these commands for different jobs:
 - `dashboard`
   - visual read-only inspection
   - renders local or global HTML
-  - may refresh the stable export first when explicitly asked
+  - may refresh persisted gate-status snapshots and the stable export first when explicitly asked
 - `runtime-events`
   - raw event-log inspection
   - answers whether the runtime lane participated and what follow-up it suggested
@@ -105,6 +105,14 @@ python -m skill_runtime.cli dashboard --refresh-operator-summary --open
 
 Use this when you want the visual surface and also want the stable export refreshed in the same step.
 
+### 7. Refresh Gate Status, Refresh Export, Then Render The Dashboard
+
+```bash
+python -m skill_runtime.cli dashboard --refresh-operator-status --refresh-operator-summary --open
+```
+
+Use this when you want the visual path itself to refresh both the persisted gate-status snapshots and the stable export before rendering HTML.
+
 ## Runtime Event Path
 
 Use `runtime-events` when the question is about lane participation rather than inventory or freshness:
@@ -135,8 +143,9 @@ For local operator checks, use this order:
 2. `operator-summary --refresh-operator-status` if gate status is missing or stale
 3. `operator-summary --refresh-dashboard-export` if the export is missing or stale
 4. `operator-summary --refresh-operator-status --refresh-dashboard-export` if you want both refreshed in one command
-5. `dashboard --open` or `dashboard --refresh-operator-summary --open`
-6. `runtime-events` only when you need event-level evidence
+5. `dashboard --open` if current status is already good enough
+6. `dashboard --refresh-operator-status --refresh-operator-summary --open` if you want one visual refresh path
+7. `runtime-events` only when you need event-level evidence
 
 ## Boundary
 

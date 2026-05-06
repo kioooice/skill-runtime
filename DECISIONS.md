@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-06 - Dashboard Visual Path Should Refresh Gate Status Explicitly, Not Rely On A Hidden Summary Step
+
+**Decision**
+
+Add `--refresh-operator-status` to the `dashboard` CLI so the visual operator path can refresh persisted gate-status snapshots before rendering, instead of forcing the operator to know they must run `operator-summary --refresh-operator-status` first.
+
+**Reason**
+
+Real dogfooding showed one concrete friction gap in the current v0.3 operator-usability path. `operator-summary` already had an explicit gate-status refresh path, and `dashboard` already had an explicit export refresh path, but the visual route still was not self-contained. An operator who wanted a truly fresh dashboard had to remember an extra summary-first command before opening the visual surface. That is avoidable friction, and the smallest fix is to make the existing visual path able to refresh gate snapshots explicitly too, without creating a new command family or widening lifecycle automation.
+
+**Impact**
+
+- `dashboard` now supports `--refresh-operator-status`
+- the visual closed loop is now `dashboard --refresh-operator-status --refresh-operator-summary --open`
+- dashboard CLI payloads now report `operator_status_refresh` just like the summary path
+- operator visibility still stays read-only with respect to host operations, promotion, and evolution application
+
 ### 2026-05-06 - Full-Auto Mode Must Be Plan-First, Then Uninterrupted Execution
 
 **Decision**

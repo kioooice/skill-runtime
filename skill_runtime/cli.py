@@ -908,6 +908,17 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
     if not output_path.is_absolute():
         output_path = root / output_path
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    refreshed_gates: list[str] = []
+    if getattr(args, "refresh_operator_status", False):
+        try:
+            refreshed_gates = _refresh_operator_status(root)
+        except RuntimeError as exc:
+            return error(
+                "failed to refresh operator status",
+                "OPERATOR_STATUS_REFRESH_FAILED",
+                details={"reason": str(exc)},
+                exit_code=EXIT_RUNTIME_ERROR,
+            )
     operator_summary_payload = None
     operator_summary_output_path = None
     if getattr(args, "refresh_operator_summary", False):
@@ -937,6 +948,11 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
         "operator_summary_freshness_status": operator_summary_status["freshness_status"],
         "operator_summary_output_path": operator_summary_status["output_path"],
         "operator_summary_generated_at": operator_summary_status["generated_at"],
+        "operator_status_refresh": {
+            "refreshed": bool(refreshed_gates),
+            "gates": refreshed_gates,
+            "generated_at": datetime.now(timezone.utc).isoformat() if refreshed_gates else None,
+        },
     }
     if global_view:
         payload["project_count"] = data["global"]["overview"]["project_count"]
@@ -1134,6 +1150,11 @@ def build_parser() -> argparse.ArgumentParser:
     dashboard_parser = subparsers.add_parser("dashboard")
     dashboard_parser.add_argument("--output")
     dashboard_parser.add_argument("--open", action="store_true", help="Open the generated dashboard in the default browser")
+    dashboard_parser.add_argument(
+        "--refresh-operator-status",
+        action="store_true",
+        help="Refresh operator status snapshots before rendering the dashboard",
+    )
     dashboard_parser.add_argument(
         "--refresh-operator-summary",
         action="store_true",

@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Dashboard visual path now refreshes gate status explicitly
+
+- Task type: operator-usability dogfood follow-up
+- Classified as: default-out / skipped
+- What happened: real dogfood of the current operator-summary/dashboard/runtime-events path exposed one concrete friction gap: the dashboard visual path could refresh the stable export, but not the underlying gate-status snapshots, so a fully fresh dashboard still depended on remembering a separate summary-first refresh step; the dashboard CLI now supports `--refresh-operator-status` so the visual path can refresh gate status and export in one explicit command
+- Did the behavior feel correct: yes; this was a narrow product gap with a bounded fix, not a reason to add a new entry point
+- Did the lane help: partially; the lane classification remained visible, but the real value came from explicit dogfooding of the operator path itself
+- Follow-up: next do real usage validation on whether the summary-first path and the visual path are now sufficient without adding more flags
+
 ### 2026-05-06 - Full-auto mode now requires plan review before autonomous execution
 
 - Task type: workflow semantics correction

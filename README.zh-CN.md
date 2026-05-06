@@ -613,6 +613,12 @@ python -m skill_runtime.cli operator-summary --refresh-operator-status --refresh
 python -m skill_runtime.cli dashboard --refresh-operator-summary --open
 ```
 
+如果希望在生成前把 gate status 和稳定导出一起刷新：
+
+```bash
+python -m skill_runtime.cli dashboard --refresh-operator-status --refresh-operator-summary --open
+```
+
 如果已安装命令入口，也可以运行：
 
 ```bash

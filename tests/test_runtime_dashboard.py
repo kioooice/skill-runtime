@@ -1016,6 +1016,41 @@ class RuntimeDashboardTestsMixin:
         self.assertIn("generated_at", summary_payload)
         self.assertIn("quality_gates", summary_payload)
         self.assertEqual(summary_payload["generated_at"], payload["data"]["operator_summary_generated_at"])
+        self.assertIn("operator_status_refresh", payload["data"])
+        self.assertFalse(payload["data"]["operator_status_refresh"]["refreshed"])
+        self.assertEqual([], payload["data"]["operator_status_refresh"]["gates"])
+
+    def test_dashboard_cli_can_refresh_operator_status_and_summary_export_before_render(self) -> None:
+        output_path = self.runtime_root / ".skill_runtime" / "dashboard.html"
+        export_path = self.runtime_root / ".skill_runtime" / "dashboard" / "operator-summary.json"
+
+        payload = self._run_cli(
+            "dashboard",
+            "--refresh-operator-status",
+            "--refresh-operator-summary",
+            "--output",
+            str(output_path),
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        self.assertEqual("ok", payload["status"])
+        refresh = payload["data"]["operator_status_refresh"]
+        self.assertTrue(refresh["refreshed"])
+        self.assertEqual(
+            ["provider_quality", "utility_search_quality", "workflow_search_quality"],
+            refresh["gates"],
+        )
+        self.assertIsInstance(refresh["generated_at"], str)
+        self.assertTrue(payload["data"]["operator_summary_refreshed"])
+        self.assertTrue(payload["data"]["operator_summary_available"])
+        self.assertEqual("fresh", payload["data"]["operator_summary_freshness_status"])
+        self.assertEqual(str(export_path.resolve()), payload["data"]["operator_summary_output_path"])
+        self.assertTrue(export_path.exists())
+        summary_payload = json.loads(export_path.read_text(encoding="utf-8"))
+        self.assertEqual("available", summary_payload["quality_gates"]["provider_quality"]["status"])
+        self.assertEqual("available", summary_payload["quality_gates"]["utility_search_quality"]["status"])
+        self.assertEqual("available", summary_payload["quality_gates"]["workflow_search_quality"]["status"])
 
     def test_dashboard_cli_does_not_refresh_operator_summary_export_by_default(self) -> None:
         output_path = self.runtime_root / ".skill_runtime" / "dashboard.html"
@@ -1036,6 +1071,9 @@ class RuntimeDashboardTestsMixin:
         self.assertIsNone(payload["data"]["operator_summary_freshness_status"])
         self.assertIsNone(payload["data"]["operator_summary_output_path"])
         self.assertIsNone(payload["data"]["operator_summary_generated_at"])
+        self.assertIn("operator_status_refresh", payload["data"])
+        self.assertFalse(payload["data"]["operator_status_refresh"]["refreshed"])
+        self.assertEqual([], payload["data"]["operator_status_refresh"]["gates"])
         self.assertFalse(export_path.exists())
 
     def test_dashboard_cli_reports_existing_operator_summary_status_without_refresh(self) -> None:
