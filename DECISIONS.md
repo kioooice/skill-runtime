@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-06 - Global Dashboard Refresh Flags Should Stay Current-Root Only And Say So Explicitly
+
+**Decision**
+
+Keep `dashboard --global` refresh behavior scoped to the current `--root`, and clarify that scope explicitly in CLI help and operator-facing docs instead of trying to refresh every scanned sibling project.
+
+**Reason**
+
+Real dogfooding showed one remaining ambiguity after the latest operator-visibility work: when `dashboard --global` is combined with `--refresh-operator-status` or `--refresh-operator-summary`, the current implementation refreshes only the current root but the wording was loose enough to suggest a wider cross-project refresh. Automatically refreshing every scanned project would widen side effects, add hidden work, and complicate the read-only visibility boundary. The smaller and better fix is to keep behavior narrow and make the scope unmistakable.
+
+**Impact**
+
+- `dashboard --help` now says refresh flags apply to the current root
+- the operator visibility runbook and README variants now document the same scope
+- the global dashboard remains an aggregated read-only surface, not a cross-project refresh executor
+
 ### 2026-05-06 - Dashboard Visual Path Should Refresh Gate Status Explicitly, Not Rely On A Hidden Summary Step
 
 **Decision**

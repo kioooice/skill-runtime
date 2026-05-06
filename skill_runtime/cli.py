@@ -1153,18 +1153,18 @@ def build_parser() -> argparse.ArgumentParser:
     dashboard_parser.add_argument(
         "--refresh-operator-status",
         action="store_true",
-        help="Refresh operator status snapshots before rendering the dashboard",
+        help="Refresh current-root operator status snapshots before rendering the dashboard",
     )
     dashboard_parser.add_argument(
         "--refresh-operator-summary",
         action="store_true",
-        help="Refresh the stable operator-summary export before rendering the dashboard",
+        help="Refresh the current-root stable operator-summary export before rendering the dashboard",
     )
     dashboard_parser.add_argument(
         "--global",
         dest="global_view",
         action="store_true",
-        help="Render the normal read-only dashboard plus aggregated runtime lane events across project roots",
+        help="Render the current-root read-only dashboard plus aggregated runtime lane events across project roots",
     )
     dashboard_parser.add_argument(
         "--scan-root",

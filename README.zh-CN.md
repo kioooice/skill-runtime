@@ -619,6 +619,8 @@ python -m skill_runtime.cli dashboard --refresh-operator-summary --open
 python -m skill_runtime.cli dashboard --refresh-operator-status --refresh-operator-summary --open
 ```
 
+如果与 `dashboard --global` 组合使用，这两个 refresh flag 仍然只作用于当前 `--root`，不会顺手刷新扫描到的其他项目；其他项目仍然按各自已有的本地导出或事件文件只读展示。
+
 如果已安装命令入口，也可以运行：
 
 ```bash

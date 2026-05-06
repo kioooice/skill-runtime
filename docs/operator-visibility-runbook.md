@@ -135,6 +135,8 @@ python -m skill_runtime.cli dashboard --global --scan-root D:\02-Projects --open
 
 Use the global dashboard when the question is cross-workspace visibility rather than local runtime state.
 
+When `--global` is combined with `--refresh-operator-status` or `--refresh-operator-summary`, those refreshes still apply only to the current root passed through `--root`. Scanned sibling projects are rendered from whatever local files they already expose.
+
 ## Recommended Default Order
 
 For local operator checks, use this order:

@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Global dashboard refresh scope clarified as current-root only
+
+- Task type: operator-usability dogfood clarification
+- Classified as: default-out / skipped
+- What happened: after running the current summary-first, visual, and global operator paths again, the only remaining ambiguity was that `dashboard --global` could sound like its refresh flags would update every scanned project; the actual behavior stayed narrow, so the fix was to make CLI help and operator docs explicitly say refresh remains current-root only
+- Did the behavior feel correct: yes; keeping side effects local is the right boundary for a read-only aggregated view
+- Did the lane help: slightly; lane visibility remained available, but the real value came from validating the operator path against real command usage
+- Follow-up: next focus should be longer-horizon real usage validation, not more flags or more dashboard fields
+
 ### 2026-05-06 - Dashboard visual path now refreshes gate status explicitly
 
 - Task type: operator-usability dogfood follow-up

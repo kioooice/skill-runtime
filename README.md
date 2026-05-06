@@ -636,6 +636,8 @@ Refresh gate status and the stable operator summary export before rendering:
 python -m skill_runtime.cli dashboard --refresh-operator-status --refresh-operator-summary --open
 ```
 
+With `dashboard --global`, these refresh flags still apply only to the current `--root`. Scanned sibling projects remain read-only and are rendered from their existing local exports or event files.
+
 The dashboard is static local HTML. It reads the current runtime root and shows the skill tree, capability collections, runtime lane trigger log, governance snapshot, and platform inventory as separate views. Capability collections are read-only organization overlays and do not change execution, audit, promotion, or archive semantics.
 
 To inspect runtime lane records across sibling projects:
