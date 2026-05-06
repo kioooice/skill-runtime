@@ -2,7 +2,7 @@
 
 ## Current State
 
-最新产品价值正控：用户指出“到现在一条自动生成的工作流技能都没看见”，这个质疑成立。当前已把它收成一个可重复的一键正控：`python scripts/smoke_review_cleanup_provider_loop.py`。这条 smoke path 会在隔离 sandbox 里使用本地 `review_cleanup_fallback_provider` 和 `pass_semantic_review_provider`，把 `demo/maintainer_review_cleanup/observed_task.json` 走完整个 `distill -> audit -> promote -> reuse` 闭环，并真实产出一条 `maintainer_review_cleanup_generated` workflow skill、对应 promoted active 文件、以及复用后的 cleanup plan artifact。当前这证明系统已经能生成一条真实 maintainer-facing workflow skill，不再只是停在 `capture -> recommendation`。但这仍然只是 bounded positive control，不等于它已经应该成为仓库默认 active workflow-search skill。
+最新产品价值主线：`maintainer_review_cleanup` 已不再只是 bounded positive control。当前已基于 provider-backed generated-skill 正控，正式批准它进入 **narrow active workflow ownership**：全局权威 skill 现在是 `C:\Users\Administrator\.codex\skills\maintainer-review-cleanup\SKILL.md`，仓库内新增 thin adapter `skill_store/active/maintainer_review_cleanup.py` 与 metadata，workflow-search baseline 也已从 `expected_gap` 改成 `should_match`。边界仍然很窄：它只负责“从 structured review comments 生成 maintainer cleanup artifact”，不写代码、不做 review resolution、不做 merge judgment，也不扩大 `default-in`。
 
 最新 v0.3 主线狗食结论：现有 `operator-summary` / `dashboard` / `runtime-events` 三条路径，在补完 dashboard 本地 gate-status refresh 之后，已经基本形成足够顺手的显式 operator path。这一轮真实使用只暴露出一个剩余歧义：`dashboard --global` 配合 refresh flags 时，实际只刷新当前 `--root`，不是刷新所有扫描到的项目。当前已把这条边界显式写进 CLI help、runbook 和 README，多项目 global 视图仍保持 read-only 聚合，不扩大 side effect。
 
@@ -1005,7 +1005,7 @@ GitNexus 当前结论：之前“一直没效果”不是因为没安装，也�
 
 如果继续当前 `v0.3 product completeness` 主线，下一步优先不是再加新的 dashboard 版块，也不是继续堆 refresh flag。当前 summary-first path 和 visual path 都已经闭合：`operator-summary --refresh-operator-status --refresh-dashboard-export` 负责显式摘要刷新，`dashboard --refresh-operator-status --refresh-operator-summary --open` 负责显式可视化刷新；`dashboard --global` 的 refresh scope 也已经澄清为 current-root only。下一步更值得做更长周期的真实使用验证，确认这两条主路径是否已经足够顺手，而不是继续扩入口。不要让 dashboard 直接依赖不稳定字段，也不要让它执行 evaluator、promote、apply 或其他 lifecycle operation。当前仍然不要扩大 `default-in`，不要自动 promote，不要自动 apply evolution candidate，也不要把 expected gap 硬改成 pass。
 
-如果继续当前“产品是否真的有用”的主线，下一步优先不是再证明外围可见性，而是判断这条 `review_cleanup` 正控是否足以支持更进一步的产品动作。最值得判断的是：要不要把它保持为 provider-backed bounded smoke path，还是已经有足够证据为它定义正式的 active workflow skill ownership / global skill boundary。不要因为这次正控通过，就直接把 `maintainer_review_cleanup` 塞进默认 workflow search、扩大 `default-in`，或者把 provider 正控误写成“开放式 review automation 已解决”。当前仍然要保持 narrow cleanup-plan boundary。
+如果继续当前“产品是否真的有用”的主线，下一步优先不是再证明 `review_cleanup` 能不能生成，而是做真实使用验证：当前它已经有正式 active ownership，但仍然只是 **narrow cleanup-plan workflow**。更值得判断的是：这条 active ownership 在真实 maintainer 使用里是否足够顺手、metadata/query 是否还需要更细的收口、以及是否需要第二条同等级 maintainer workflow 才能证明“不是单点巧合”。不要把这次 active ownership 误写成“开放式 review automation 已解决”，也不要借机扩大 `default-in`。
 
 如果继续当前 `v0.3 product completeness` 主线，下一步优先不是继续写 release 材料，也不是扩 proof bundle，而是继续把 Operator Workbench 做成更完整但仍只读的 operator surface。优先补的应是：哪些 gate 状态值得持久化为本地状态索引、哪些 runtime event / governance event 应该被 summary 更稳定地消费，以及是否需要比 CLI text 更清楚的 maintainer-facing summary formatting。不要把这条线变成 dashboard 大改，也不要把 visibility 改造成自动 lifecycle 执行。当前仍然不要扩大 `default-in`，不要自动 promote，不要自动 apply evolution candidate，也不要把 expected gap 硬改成 pass。
 

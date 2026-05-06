@@ -1,0 +1,52 @@
+{
+  "skill_name": "maintainer_review_cleanup",
+  "file_path": "D:\\02-Projects\\vibe\\skill_store\\active\\maintainer_review_cleanup.py",
+  "summary": "Thin runtime adapter that points to the global maintainer review-comments cleanup Codex skill.",
+  "docstring": "Runtime adapter only. The authoritative workflow lives in the global Codex skill maintainer-review-cleanup. Inputs are preserved for routing and traceability; execution writes an adapter report with global_skill_name, global_skill_path, source_role, and next_action.",
+  "input_schema": {
+    "input_path": "str",
+    "output_path": "str",
+    "metadata_path": "str"
+  },
+  "output_schema": {
+    "status": "str",
+    "artifacts": "list[str]",
+    "adapter_role": "str",
+    "global_skill_name": "str",
+    "global_skill_path": "str",
+    "source_role": "str",
+    "next_action": "str"
+  },
+  "source_trajectory_ids": [],
+  "created_at": "2026-05-06T00:00:00+00:00",
+  "last_used_at": null,
+  "usage_count": 0,
+  "status": "active",
+  "audit_score": 100,
+  "rule_name": "maintainer_review_cleanup",
+  "rule_priority": 86,
+  "rule_reason": "Manually approved as a bounded maintainer workflow that converts structured review comments into a cleanup artifact without mutating code or review state.",
+  "tags": [
+    "cleanup",
+    "comments",
+    "maintainer",
+    "pull-request",
+    "review",
+    "workflow"
+  ],
+  "scope_policy": {
+    "reads": [
+      "explicit structured review input path"
+    ],
+    "writes": [
+      "explicit cleanup plan output path",
+      "explicit optional metadata path"
+    ],
+    "forbidden": [
+      "repository source mutation",
+      "review resolution",
+      "merge judgment",
+      "silent automation"
+    ]
+  }
+}

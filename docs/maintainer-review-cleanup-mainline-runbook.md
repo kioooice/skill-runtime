@@ -144,8 +144,8 @@ Expected result:
 Interpretation:
 
 - this proves the repository can generate one real maintainer-facing workflow skill instead of only stopping at `capture -> recommendation`
-- it still does **not** mean `maintainer_review_cleanup` should automatically become a default active workflow-search skill in the repository
-- it remains a bounded positive control for a useful generated workflow
+- it supports active ownership only for the bounded cleanup-plan workflow
+- it still does **not** justify silent review automation or widening `default-in`
 
 ## What A Failure Looks Like
 

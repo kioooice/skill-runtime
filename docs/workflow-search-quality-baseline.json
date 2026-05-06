@@ -22,12 +22,12 @@
     },
     {
       "query_id": "maintainer_review_cleanup",
-      "query_type": "positive_review_cleanup_expected_gap",
-      "expectation_mode": "expected_gap",
-      "expected_top_skill": null,
-      "expected_matched": false,
+      "query_type": "positive_review_cleanup",
+      "expectation_mode": "should_match",
+      "expected_top_skill": "maintainer_review_cleanup",
+      "expected_matched": true,
       "expected_expectation_met": true,
-      "expected_recommended_skill": null
+      "expected_recommended_skill": "maintainer_review_cleanup"
     },
     {
       "query_id": "governed_learning_follow_up",

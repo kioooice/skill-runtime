@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Review cleanup moved from positive control to narrow active ownership
+
+- Task type: product-value boundary decision
+- Classified as: default-out / skipped
+- What happened: after proving that the provider-backed loop could really generate, audit, promote, and reuse a maintainer review-cleanup workflow skill, the repository stopped treating `maintainer_review_cleanup` as an expected gap; a global authoritative skill, a thin runtime adapter, and a new workflow-search baseline were added so this bounded workflow now has formal active ownership
+- Did the behavior feel correct: yes; the promotion path stayed narrow and architecture-consistent instead of pretending open-ended review automation was solved
+- Did the lane help: indirectly; the lane stayed visible, but the decisive signal came from the generated-skill proof plus the global-skill adapter architecture
+- Follow-up: use the new active ownership in real maintainer tasks and check whether the query/metadata boundary remains stable without widening `default-in`
+
 ### 2026-05-06 - Review cleanup now has a repeatable generated-skill positive control
 
 - Task type: product-value validation

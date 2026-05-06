@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-- 最新产品价值正控：现在已经有一条可重复的一键 smoke path，能证明仓库不只是停在 `capture -> recommendation`。`python scripts/smoke_review_cleanup_provider_loop.py` 会在隔离 sandbox 里使用本地 `review_cleanup_fallback_provider` 和 `pass_semantic_review_provider`，把 `demo/maintainer_review_cleanup/observed_task.json` 走完整个 `distill -> audit -> promote -> reuse` 闭环，并真实产出 `maintainer_review_cleanup_generated` workflow skill、promoted active skill 文件，以及复用后的 cleanup plan artifact。当前这证明“真实自动生成 workflow skill”已经存在，但仍然是 bounded positive control，不等于它已经应该成为仓库默认 active workflow-search skill。
+- 最新产品价值主线：`maintainer_review_cleanup` 已从 bounded positive control 进入 narrow active workflow ownership。当前已新增全局权威 skill `C:\Users\Administrator\.codex\skills\maintainer-review-cleanup\SKILL.md`、仓库 thin adapter `skill_store/active/maintainer_review_cleanup.py`、对应 metadata，以及更新后的 workflow-search baseline。当前它已经能作为正式 active workflow-search surface 被检索和执行，但边界仍保持在“structured review comments -> cleanup artifact”，不写代码、不做 review resolution、不做 merge judgment，也不扩大 `default-in`。
 
 - 最新 v0.3 主线狗食结论：在补完 `dashboard --refresh-operator-status` 后，现有 `operator-summary` / `dashboard` / `runtime-events` 三条路径已经基本够用。这一轮真实使用只暴露出一个剩余歧义：`dashboard --global` 与 refresh flags 组合时，刷新范围实际上只覆盖当前 `--root`。当前已把这条边界写进 CLI help、runbook 和 README；global 视图继续保持跨项目只读聚合，不变成跨项目 refresh executor。
 
@@ -462,7 +462,7 @@
 - [x] 验证未确认不能回滚、目标文件在 apply 后变更会拒绝覆盖、确认后会恢复备份
 - [x] 下一阶段：在不改 dashboard 页面的前提下，判断现有 dashboard collector 应该最小接 `operator-summary` 的哪些稳定字段；如果要接，只接稳定字段，不直接依赖不稳定低层文件形状
 - [x] 将 dashboard 第一屏和 operator-summary 从内部实现名词改为用户可读信息架构，并把 quality gates 下沉为 `系统检查`
-- [ ] 下一阶段：判断 `dashboard` / `global-dashboard` 的 operator-summary export 刷新入口是否要更顺手；重点是 operator 闭环，不是继续扩页面字段，也不是让 dashboard 执行 evaluator 或 lifecycle operation
+- [ ] 下一阶段：对新批准的 `maintainer_review_cleanup` active ownership 做真实使用验证；重点看 query/metadata 是否稳定、thin adapter 边界是否够清楚，以及这条 maintainer workflow 是否真的会被重复使用，而不是继续只停在 smoke proof
 
 ## Blocked
 

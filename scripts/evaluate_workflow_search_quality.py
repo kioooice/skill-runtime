@@ -25,6 +25,7 @@ from scripts.operator_status_utils import (  # noqa: E402
 FIXTURE_SKILLS = [
     "session_handoff_maintenance",
     "pre_implementation_workflow_review",
+    "maintainer_review_cleanup",
     "runtime_gate_workflow",
     "runtime_verification_selector",
     "repo_impact_analysis",
@@ -53,10 +54,10 @@ QUERY_CASES = [
     {
         "query_id": "maintainer_review_cleanup",
         "query": "turn review comments into a cleanup plan",
-        "expected_top_skill": None,
-        "query_type": "positive_review_cleanup_expected_gap",
-        "expectation_mode": "expected_gap",
-        "expectation_note": "Review cleanup is a real maintainer workflow, but there is no active workflow search skill that should own this intent yet.",
+        "expected_top_skill": "maintainer_review_cleanup",
+        "query_type": "positive_review_cleanup",
+        "expectation_mode": "should_match",
+        "expectation_note": "Structured review cleanup planning should route to the bounded maintainer review cleanup workflow.",
     },
     {
         "query_id": "governed_learning_follow_up",
@@ -168,7 +169,7 @@ def evaluate(source_root: Path, *, top_k: int = 5) -> dict[str, Any]:
         "current_limitations": [
             "Search is lexical and local only; no embeddings or external retrieval are used.",
             "This workflow baseline imports workflow adapters only; utility skills remain separate fixtures for smoke coverage and the existing utility search baseline.",
-            "Maintainer review cleanup and governed learning follow-up are not yet represented as active workflow search skills, so this evaluator can record honest expected gaps without changing ranking.",
+            "Governed learning follow-up remains a host-operation surface rather than an active workflow-search skill.",
         ],
     }
 

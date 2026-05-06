@@ -101,6 +101,19 @@ class RuntimeWorkflowSearchQualityTestsMixin:
         self.assertTrue(positive_queries)
         self.assertTrue(any(item["matched"] for item in positive_queries), payload)
 
+    def test_workflow_search_quality_routes_review_cleanup_to_active_workflow(self) -> None:
+        payload = evaluate(self.runtime_root)
+        review_cleanup = next(
+            item for item in payload["queries"] if item["query_id"] == "maintainer_review_cleanup"
+        )
+
+        self.assertEqual("positive_review_cleanup", review_cleanup["query_type"])
+        self.assertEqual("should_match", review_cleanup["expectation_mode"])
+        self.assertEqual("maintainer_review_cleanup", review_cleanup["expected_top_skill"])
+        self.assertEqual("maintainer_review_cleanup", review_cleanup["actual_recommended_skill"])
+        self.assertTrue(review_cleanup["matched"])
+        self.assertTrue(review_cleanup["expectation_met"])
+
     def test_workflow_search_quality_negative_utility_query_is_not_fake_workflow_pass(self) -> None:
         payload = evaluate(self.runtime_root)
         negative_query = next(

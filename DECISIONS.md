@@ -2,6 +2,25 @@
 
 ## Decision Log
 
+### 2026-05-06 - Review Cleanup Is Now Approved For Narrow Active Workflow Ownership
+
+**Decision**
+
+Approve `maintainer_review_cleanup` as an active workflow-search surface now, but only for the narrow cleanup-artifact workflow boundary.
+
+**Reason**
+
+The earlier "needs more evidence" position is no longer accurate. The repository now has a repeatable provider-backed positive control that really generates, audits, promotes, and reuses a maintainer-facing review-cleanup workflow skill. That is enough evidence to approve ownership, provided the boundary stays strict and the architecture follows the existing global-skill source-of-truth policy.
+
+**Impact**
+
+- new authoritative global Codex skill: `C:\Users\Administrator\.codex\skills\maintainer-review-cleanup`
+- new project thin adapter: `skill_store/active/maintainer_review_cleanup.py`
+- new active metadata: `skill_store/active/maintainer_review_cleanup.metadata.json`
+- workflow-search baseline now expects `maintainer_review_cleanup` to match instead of treating it as an expected gap
+- `governed_learning_follow_up` remains an expected gap and host-follow-up surface
+- this still does not widen `default-in`, enable silent review automation, or justify code mutation
+
 ### 2026-05-06 - Review Cleanup Now Has A Repeatable Generated-Skill Positive Control
 
 **Decision**

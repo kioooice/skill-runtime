@@ -118,9 +118,9 @@ class RuntimeOperatorSummaryTestsMixin:
                 "command": "python scripts/evaluate_workflow_search_quality.py --baseline docs/workflow-search-quality-baseline.json --fail-on-regression --write-operator-status",
                 "summary": {
                     "query_count": 5,
-                    "matched_count": 2,
+                    "matched_count": 3,
                     "expectation_met_count": 5,
-                    "expected_gap_confirmed_count": 2,
+                    "expected_gap_confirmed_count": 1,
                 },
                 "baseline_comparison": {
                     "matched": 5,

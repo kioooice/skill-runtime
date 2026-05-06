@@ -408,6 +408,39 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
         self.assertIn("C:\\Users\\Administrator\\.codex\\skills", review_payload["global_skill_path"])
         self.assertIn("Use the global Codex skill", review_payload["next_action"])
 
+    def test_maintainer_review_cleanup_runtime_skill_points_to_global_authority(self) -> None:
+        sandbox_root, _, _ = self._make_runtime_sandbox()
+
+        search_payload = self._call_mcp_tool(
+            "search_skill",
+            {"query": "turn review comments into a cleanup plan", "top_k": 5},
+            root=sandbox_root,
+        )
+        search_data = search_payload["data"]
+        self.assertEqual("maintainer_review_cleanup", search_data["recommended_skill_name"])
+
+        execute_args = dict(search_data["recommended_host_operation"]["arguments"])
+        execute_args["args"] = {
+            "input_path": "demo/maintainer_review_cleanup/review_comments.json",
+            "output_path": "demo/output/maintainer_review_cleanup_adapter.json",
+            "metadata_path": "demo/output/maintainer_review_cleanup_metadata.json",
+        }
+        execute_payload = self._call_mcp_tool(
+            search_data["recommended_host_operation"]["tool_name"],
+            execute_args,
+            root=sandbox_root,
+        )
+        output_path = sandbox_root / "demo" / "output" / "maintainer_review_cleanup_adapter.json"
+        review_payload = self._read_json_file(output_path)
+
+        self.assertEqual("completed", execute_payload["data"]["result"]["status"])
+        self.assertEqual("maintainer_review_cleanup", execute_payload["data"]["skill_name"])
+        self.assertEqual("global_codex_skill_adapter", review_payload["adapter_role"])
+        self.assertEqual("maintainer-review-cleanup", review_payload["global_skill_name"])
+        self.assertEqual("authoritative_global_skill", review_payload["source_role"])
+        self.assertIn("C:\\Users\\Administrator\\.codex\\skills", review_payload["global_skill_path"])
+        self.assertIn("Use the global Codex skill", review_payload["next_action"])
+
     def test_global_pre_implementation_workflow_review_defines_main_process_guardrails(self) -> None:
         skill_path = (
             Path("C:/Users/Administrator/.codex/skills")
@@ -455,6 +488,28 @@ class RuntimeCoreDogfoodAcceptanceTestsMixin:
             "normal auto mode may stop at the next meaningful stage boundary and report",
             "send one consolidated final report after the plan is finished",
             "Skip intermediate stage reports in full-auto finite-plan mode.",
+        ]:
+            self.assertIn(phrase, content)
+
+    def test_global_maintainer_review_cleanup_skill_defines_bounded_review_planning(self) -> None:
+        skill_path = (
+            Path("C:/Users/Administrator/.codex/skills")
+            / "maintainer-review-cleanup"
+            / "SKILL.md"
+        )
+        self.assertTrue(skill_path.exists())
+        content = skill_path.read_text(encoding="utf-8")
+
+        for phrase in [
+            "structured review comments",
+            "bounded planning workflow",
+            "required fixes",
+            "follow-up work",
+            "must not:",
+            "rewrite repository source files",
+            "apply code fixes",
+            "infer merge approval",
+            "widen `default-in`",
         ]:
             self.assertIn(phrase, content)
 
