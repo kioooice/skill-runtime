@@ -26,7 +26,7 @@ This workspace is `vibe`.
 - Use `pre-implementation-workflow-review` as the main process for new development directions, product ideas, route changes, and value checks before coding.
 - Use `workflow-error-correction` when a repeated process mistake or route drift should be recorded without bloating `AGENTS.md`.
 - Use `runtime-gate-workflow` for Skill Runtime gate/finalizer setup, fallback, and event visibility.
-- Use `auto-mode-stage-runner` for `自动模式开始`, autonomous stage execution, stage reports, auto-mode stopping rules, and explicit full-auto finite-plan requests such as “列个长计划，然后自动推进，中间不要汇报，不要停下来，直到计划全部完成”; in that mode, continue across successive meaningful stages until the declared plan is complete rather than stopping at the first stage boundary.
+- Use `auto-mode-stage-runner` for `自动模式开始`, autonomous stage execution, stage reports, auto-mode stopping rules, and explicit full-auto finite-plan requests such as “列个长计划，然后自动推进，中间不要汇报，不要停下来，直到计划全部完成”; in that mode, first show the longer plan for review, then after user approval continue across successive meaningful stages until the declared plan is complete rather than stopping at the first stage boundary.
 - Use `plan-progress-tracker` for multi-stage plans so progress always shows the current stage, completed stages, next action, and drift risk.
 - Use `nontechnical-stage-report` when a stage report must be understandable to a non-technical user.
 - Use `session-handoff-maintenance` for resume flow and updates to `HANDOFF.md`, `TASKS.md`, and `DECISIONS.md`.

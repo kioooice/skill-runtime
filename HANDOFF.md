@@ -2,6 +2,8 @@
 
 ## Current State
 
+最新 workflow 语义纠偏：`完全自动模式` 现在被明确成“两段式”而不是单纯“不停汇报”。第一段必须先给用户看一眼较长计划；第二段只有在用户明确同意后，才跨越连续的 meaningful stages 一直自动推进到计划停止条件达成。也就是说，full-auto mode 既不能跳过最初的 plan-review checkpoint，也不能在第一个阶段边界就退化成普通自动模式。全局 `auto-mode-stage-runner`、`workflow-error-correction`、全局 `AGENTS.md` 和项目 `AGENTS.md` 都已同步这条语义。
+
 最新 workflow 语义纠偏：`完全自动模式` 不能再等同于普通自动模式。当前全局 `C:\Users\Administrator\.codex\skills\auto-mode-stage-runner\SKILL.md` 已明确：full-auto finite-plan mode 必须跨越连续的 meaningful stages 一直执行到声明的计划停止条件达成，而不是在第一个阶段完成后就停下来汇报。阶段边界在 full-auto 模式下只作为内部进度坐标，不是默认停点。全局 `workflow-error-correction` 也已新增 `Full-auto collapse` guard；全局与项目 `AGENTS.md` 的路由语义都已同步这条区别。
 
 最新 v0.3 主线切片：`operator-summary` 现在会直接给每个 persisted gate-status 对象附带 `freshness_policy` 和计算后的 `freshness`，而不是只在 dashboard export / collector 里才知道 stale/fresh。这样 provider / utility-search / workflow-search 的状态即使不切到 dashboard 也能从 summary JSON / text 直接判断是否过期。当前 `skill_runtime/operator_visibility.py` 已成为共享 freshness 语义的权威实现，service 与 dashboard collector 都复用它；`unavailable` 或无效持久化状态会诚实返回 `freshness.status = unknown`。

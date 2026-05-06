@@ -23,6 +23,14 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Full-auto mode now requires plan review before autonomous execution
+
+- Task type: workflow semantics correction
+- Classified as: default-out / skipped
+- What happened: after the user clarified that full-auto mode should first show a longer plan for inspection and only then auto-run to completion, the authoritative global auto-mode skill and routing were tightened again; full-auto mode now has both a plan-review checkpoint and cross-stage uninterrupted execution after approval
+- Did the behavior feel correct: yes; it now has a real user-visible difference from both ordinary auto mode and from immediate fire-and-forget execution
+- Did the lane help: yes, because the skipped runtime result kept the change focused on workflow semantics rather than turning it into a runtime-lane feature
+- Follow-up: on the next explicit full-auto request, first present the long plan and wait for approval instead of starting implementation immediately
 ### 2026-05-06 - Full-auto mode was corrected to continue past the first stage boundary
 
 - Task type: workflow semantics correction

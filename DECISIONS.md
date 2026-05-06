@@ -2,6 +2,21 @@
 
 ## Decision Log
 
+### 2026-05-06 - Full-Auto Mode Must Be Plan-First, Then Uninterrupted Execution
+
+**Decision**
+
+Refine full-auto mode again: it must begin by showing the user a longer plan, then wait for explicit approval, and only after that continue autonomously across successive planned stages until the declared stop condition is met.
+
+**Reason**
+
+Simply making full-auto mode continue past the first stage boundary was not enough. The user still wants one visible checkpoint before execution starts, so they can inspect the plan once and then hand over control. Without that checkpoint, full-auto mode skips a useful review step; without the cross-stage continuation, it collapses back into ordinary auto mode. The correct semantics need both halves.
+
+**Impact**
+
+- the authoritative global `auto-mode-stage-runner` skill now defines full-auto mode as plan-first, approval-gated, then uninterrupted execution
+- global/project `AGENTS.md` route explicit full-auto requests with this two-step semantics
+- `workflow-error-correction` now treats both mistakes as one guard: skipping the initial plan review or stopping after the first stage boundary
 ### 2026-05-06 - Full-Auto Mode Must Continue Across Planned Stages, Not Stop At The First Stage Boundary
 
 **Decision**

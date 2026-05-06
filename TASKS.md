@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新 workflow 语义纠偏：`完全自动模式` 现在明确为“两段式”：先展示较长计划供用户看一眼，再在用户明确同意后自动推进到计划完成。它不该一上来直接执行，也不该在第一个阶段边界就停成普通自动模式。全局 `auto-mode-stage-runner`、全局 `workflow-error-correction`、全局 `AGENTS.md` 和项目 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 都已同步。
+
 - 最新 workflow 语义纠偏：`完全自动模式` 现在明确要求跨越连续的 meaningful stages 一直执行到声明的计划停止条件成立，不能在第一个阶段完成后就停成普通自动模式。全局 `auto-mode-stage-runner`、全局 `workflow-error-correction`、全局 `AGENTS.md` 和项目 [AGENTS.md](/D:/02-Projects/vibe/AGENTS.md) 都已同步这条区别。
 
 - 最新 v0.3 主线切片：`operator-summary` 现在直接暴露 persisted gate status 的 `freshness_policy` 和 `freshness`。这意味着 provider / utility-search / workflow-search status 是否 stale，不再只能靠 dashboard export / collector 判断；CLI JSON 和 text 输出都能直接回答。当前 freshness 语义已抽到共享实现，service 与 dashboard collector 对同一份 gate status 会给出一致的 `fresh / stale / unknown` 判断。
