@@ -117,8 +117,8 @@ class RuntimeDashboardOperatorSummaryExportTestsMixin:
                 "status": "ok",
                 "generated_at": "2026-05-06T10:02:00+00:00",
                 "command": "python scripts/evaluate_workflow_search_quality.py --write-operator-status",
-                "summary": {"query_count": 5, "expectation_met_count": 5},
-                "baseline_comparison": {"matched": 5, "regressions": 0},
+                "summary": {"query_count": 6, "expectation_met_count": 6},
+                "baseline_comparison": {"matched": 6, "regressions": 0},
             },
         )
 

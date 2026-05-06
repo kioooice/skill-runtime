@@ -66,8 +66,8 @@ class RuntimeWorkflowSearchQualityTestsMixin:
             self.assertIn("command", payload)
             self.assertIn("summary", payload)
             self.assertIn("baseline_comparison", payload)
-            self.assertEqual(5, payload["summary"]["query_count"])
-            self.assertEqual(5, payload["baseline_comparison"]["matched"])
+            self.assertEqual(6, payload["summary"]["query_count"])
+            self.assertEqual(6, payload["baseline_comparison"]["matched"])
             self.assertEqual(0, payload["baseline_comparison"]["regressions"])
 
     def test_workflow_search_quality_report_contains_required_fields(self) -> None:
@@ -126,6 +126,18 @@ class RuntimeWorkflowSearchQualityTestsMixin:
         self.assertTrue(negative_query["expectation_met"])
         self.assertIsNone(negative_query["actual_recommended_skill"])
 
+    def test_workflow_search_quality_review_cleanup_does_not_expand_to_auto_fix(self) -> None:
+        payload = evaluate(self.runtime_root)
+        boundary_query = next(
+            item for item in payload["queries"] if item["query_id"] == "negative_review_cleanup_auto_apply"
+        )
+
+        self.assertEqual("negative_review_cleanup_boundary", boundary_query["query_type"])
+        self.assertEqual("should_not_match", boundary_query["expectation_mode"])
+        self.assertFalse(boundary_query["matched"])
+        self.assertTrue(boundary_query["expectation_met"])
+        self.assertIsNone(boundary_query["actual_recommended_skill"])
+
     def test_workflow_search_quality_script_runs(self) -> None:
         result = subprocess.run(
             [
@@ -177,7 +189,7 @@ class RuntimeWorkflowSearchQualityTestsMixin:
         self.assertEqual(0, result.returncode, msg=result.stderr or result.stdout)
         payload = json.loads(result.stdout)
         comparison = payload["baseline_comparison"]
-        self.assertEqual(5, len(comparison["matched"]))
+        self.assertEqual(6, len(comparison["matched"]))
         self.assertEqual([], comparison["regressions"])
         self.assertEqual([], comparison["improvements"])
         self.assertEqual([], comparison["unexpected_failures"])

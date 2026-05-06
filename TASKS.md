@@ -4,6 +4,8 @@
 
 - 最新产品价值主线：`maintainer_review_cleanup` 已从 bounded positive control 进入 narrow active workflow ownership。当前已新增全局权威 skill `C:\Users\Administrator\.codex\skills\maintainer-review-cleanup\SKILL.md`、仓库 thin adapter `skill_store/active/maintainer_review_cleanup.py`、对应 metadata，以及更新后的 workflow-search baseline。当前它已经能作为正式 active workflow-search surface 被检索和执行，但边界仍保持在“structured review comments -> cleanup artifact”，不写代码、不做 review resolution、不做 merge judgment，也不扩大 `default-in`。
 
+- 最新 ownership 边界验证：workflow-search baseline 现在额外覆盖了一条负向边界 query：`apply fixes for review comments automatically`。当前 `maintainer_review_cleanup` metadata 已收紧，基线会验证它不再把自动修评论误当成自己的职责，同时仍然保持 `turn review comments into a cleanup plan` 的正向命中。
+
 - 最新 v0.3 主线狗食结论：在补完 `dashboard --refresh-operator-status` 后，现有 `operator-summary` / `dashboard` / `runtime-events` 三条路径已经基本够用。这一轮真实使用只暴露出一个剩余歧义：`dashboard --global` 与 refresh flags 组合时，刷新范围实际上只覆盖当前 `--root`。当前已把这条边界写进 CLI help、runbook 和 README；global 视图继续保持跨项目只读聚合，不变成跨项目 refresh executor。
 
 - 最新 v0.3 主线切片：`dashboard` 现在支持显式 `--refresh-operator-status`，会在渲染前先刷新 `.skill_runtime/operator_status/*.json`，然后再配合既有 `--refresh-operator-summary` 刷新稳定导出。当前 visual path 已经闭合成一条明确命令：`python -m skill_runtime.cli dashboard --refresh-operator-status --refresh-operator-summary --open`。CLI payload 也新增 `operator_status_refresh`，用于报告这次是否刷新、刷新了哪些 gate、以及刷新时间。当前 runbook、README 和定向 CLI 回归都已同步。
@@ -462,7 +464,7 @@
 - [x] 验证未确认不能回滚、目标文件在 apply 后变更会拒绝覆盖、确认后会恢复备份
 - [x] 下一阶段：在不改 dashboard 页面的前提下，判断现有 dashboard collector 应该最小接 `operator-summary` 的哪些稳定字段；如果要接，只接稳定字段，不直接依赖不稳定低层文件形状
 - [x] 将 dashboard 第一屏和 operator-summary 从内部实现名词改为用户可读信息架构，并把 quality gates 下沉为 `系统检查`
-- [ ] 下一阶段：对新批准的 `maintainer_review_cleanup` active ownership 做真实使用验证；重点看 query/metadata 是否稳定、thin adapter 边界是否够清楚，以及这条 maintainer workflow 是否真的会被重复使用，而不是继续只停在 smoke proof
+- [ ] 下一阶段：继续做 `maintainer_review_cleanup` 的真实使用验证；重点从“query/metadata 是否越界”推进到“真实 maintainer 是否会重复使用这条 active workflow”，而不是继续只做 search proof
 
 ## Blocked
 

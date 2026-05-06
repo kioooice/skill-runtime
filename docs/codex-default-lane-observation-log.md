@@ -32,6 +32,15 @@ It only exists so the widening decision can be based on real use instead of memo
 - Did the lane help: indirectly; the lane stayed visible, but the decisive signal came from the generated-skill proof plus the global-skill adapter architecture
 - Follow-up: use the new active ownership in real maintainer tasks and check whether the query/metadata boundary remains stable without widening `default-in`
 
+### 2026-05-06 - Review cleanup boundary now rejects auto-fix intent
+
+- Task type: active-ownership boundary hardening
+- Classified as: default-out / skipped
+- What happened: the first active-ownership baseline exposed a real drift case: `apply fixes for review comments automatically` was being recommended as `maintainer_review_cleanup`; metadata was tightened and the negative query was added to the workflow-search baseline so the cleanup-plan workflow no longer looks like automatic code-fix execution
+- Did the behavior feel correct: yes; this keeps the new active ownership narrow enough to be honest
+- Did the lane help: slightly; the lane stayed visible, but the real value came from using the workflow-search baseline as a product-boundary test instead of a pure retrieval smoke
+- Follow-up: the next check should move from search proof to real repeated maintainer usage
+
 ### 2026-05-06 - Review cleanup now has a repeatable generated-skill positive control
 
 - Task type: product-value validation

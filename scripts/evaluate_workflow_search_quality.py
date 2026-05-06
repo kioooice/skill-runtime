@@ -68,6 +68,14 @@ QUERY_CASES = [
         "expectation_note": "Distill and evolution review are current host follow-up operations, not active workflow search skills.",
     },
     {
+        "query_id": "negative_review_cleanup_auto_apply",
+        "query": "apply fixes for review comments automatically",
+        "expected_top_skill": None,
+        "query_type": "negative_review_cleanup_boundary",
+        "expectation_mode": "should_not_match",
+        "expectation_note": "The bounded review-cleanup workflow must not look like automatic code-fix execution.",
+    },
+    {
         "query_id": "negative_utility_merge_markdown",
         "query": "merge text files into markdown",
         "expected_top_skill": None,

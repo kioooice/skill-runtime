@@ -21,6 +21,23 @@ The earlier "needs more evidence" position is no longer accurate. The repository
 - `governed_learning_follow_up` remains an expected gap and host-follow-up surface
 - this still does not widen `default-in`, enable silent review automation, or justify code mutation
 
+### 2026-05-06 - Review Cleanup Active Ownership Must Fail The Auto-Fix Boundary Query
+
+**Decision**
+
+Keep `maintainer_review_cleanup` active, but tighten its search metadata so it does not cross the boundary into automatic code-fix intent.
+
+**Reason**
+
+The first active-ownership baseline exposed a real misuse case: `apply fixes for review comments automatically` was being recommended as `maintainer_review_cleanup`. That is the wrong product boundary. The workflow is for generating a cleanup artifact from structured comments, not for silently applying fixes. The smallest correction is metadata tightening plus a permanent negative workflow-search query.
+
+**Impact**
+
+- `maintainer_review_cleanup` metadata no longer leans on broad `review` wording
+- workflow-search baseline now includes a negative boundary query for `apply fixes for review comments automatically`
+- the bounded workflow still matches the intended cleanup-plan query
+- active ownership is now better protected against accidental drift into review-resolution semantics
+
 ### 2026-05-06 - Review Cleanup Now Has A Repeatable Generated-Skill Positive Control
 
 **Decision**
