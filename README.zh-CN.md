@@ -667,6 +667,14 @@ $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_se
 
 这两个 provider 是很窄的本地示例，不是通用 LLM 后端。它们用于验证真实 provider hook 可以在不临时写脚本的情况下完成生成、审核、入库和复用。
 
+如果想直接验证一条 maintainer-facing 的真实 review-cleanup workflow skill 可以被生成、审核、提升并复用，可以运行：
+
+```powershell
+python scripts/smoke_review_cleanup_provider_loop.py
+```
+
+它会创建一个临时 sandbox，使用本地 review-cleanup fallback provider 和本地 pass semantic provider，在 sandbox 里生成并提升一条 `maintainer_review_cleanup` 风格的 workflow skill，然后再执行一次证明可复用。除非你手动把产物拷出来，否则它不会写入仓库当前真实 active library。
+
 使用 DeepSeek 作为真实 provider：
 
 ```bash

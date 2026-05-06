@@ -2,6 +2,8 @@
 
 ## Current Focus
 
+- 最新产品价值正控：现在已经有一条可重复的一键 smoke path，能证明仓库不只是停在 `capture -> recommendation`。`python scripts/smoke_review_cleanup_provider_loop.py` 会在隔离 sandbox 里使用本地 `review_cleanup_fallback_provider` 和 `pass_semantic_review_provider`，把 `demo/maintainer_review_cleanup/observed_task.json` 走完整个 `distill -> audit -> promote -> reuse` 闭环，并真实产出 `maintainer_review_cleanup_generated` workflow skill、promoted active skill 文件，以及复用后的 cleanup plan artifact。当前这证明“真实自动生成 workflow skill”已经存在，但仍然是 bounded positive control，不等于它已经应该成为仓库默认 active workflow-search skill。
+
 - 最新 v0.3 主线狗食结论：在补完 `dashboard --refresh-operator-status` 后，现有 `operator-summary` / `dashboard` / `runtime-events` 三条路径已经基本够用。这一轮真实使用只暴露出一个剩余歧义：`dashboard --global` 与 refresh flags 组合时，刷新范围实际上只覆盖当前 `--root`。当前已把这条边界写进 CLI help、runbook 和 README；global 视图继续保持跨项目只读聚合，不变成跨项目 refresh executor。
 
 - 最新 v0.3 主线切片：`dashboard` 现在支持显式 `--refresh-operator-status`，会在渲染前先刷新 `.skill_runtime/operator_status/*.json`，然后再配合既有 `--refresh-operator-summary` 刷新稳定导出。当前 visual path 已经闭合成一条明确命令：`python -m skill_runtime.cli dashboard --refresh-operator-status --refresh-operator-summary --open`。CLI payload 也新增 `operator_status_refresh`，用于报告这次是否刷新、刷新了哪些 gate、以及刷新时间。当前 runbook、README 和定向 CLI 回归都已同步。

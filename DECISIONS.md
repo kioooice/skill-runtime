@@ -2,6 +2,23 @@
 
 ## Decision Log
 
+### 2026-05-06 - Review Cleanup Now Has A Repeatable Generated-Skill Positive Control
+
+**Decision**
+
+Keep `maintainer_review_cleanup` outside active workflow-search ownership for now, but add a first-class local smoke path that proves the system can already generate, audit, promote, and reuse one real maintainer-facing workflow skill for that task.
+
+**Reason**
+
+The user's value challenge was correct: operator visibility alone does not prove the product is useful if no genuinely useful auto-generated workflow skill has been seen. Real validation showed that the current provider-backed loop can already produce a bounded review-cleanup skill in a sandbox using the local review-cleanup fallback provider and local pass semantic provider. The right move is to make that proof path visible and repeatable, not to pretend the capability is absent or to prematurely promote it into active workflow search ownership.
+
+**Impact**
+
+- the repository now has `python scripts/smoke_review_cleanup_provider_loop.py`
+- the maintainer review-cleanup runbook and README variants now expose a one-command proof path
+- this proves one real generated maintainer workflow skill exists as a repeatable positive control
+- this still does not automatically make `maintainer_review_cleanup` an approved active workflow-search skill in the main repository
+
 ### 2026-05-06 - Global Dashboard Refresh Flags Should Stay Current-Root Only And Say So Explicitly
 
 **Decision**

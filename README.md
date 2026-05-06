@@ -685,6 +685,14 @@ $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_se
 
 These providers are narrow local examples, not a general LLM backend. They are useful for verifying that the real provider hook can generate, audit, promote, and reuse an executable skill without writing ad-hoc scripts.
 
+For a maintainer-facing positive control that generates a real review-cleanup workflow skill, run:
+
+```powershell
+python scripts/smoke_review_cleanup_provider_loop.py
+```
+
+This creates a temporary sandbox, uses the local review-cleanup fallback provider plus the local pass semantic provider, promotes a generated `maintainer_review_cleanup`-style skill inside that sandbox, and executes it again to prove reuse. It does not write generated skills into the repository's real active library unless you copy them out yourself.
+
 Use DeepSeek as the real provider by setting local environment variables:
 
 ```bash

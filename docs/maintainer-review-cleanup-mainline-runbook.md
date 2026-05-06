@@ -118,6 +118,35 @@ This runbook passes if all of these are true:
 4. The observed task can be captured into a trajectory.
 5. The follow-up remains explicit instead of silently mutating the library.
 
+## Optional Step 6 - Prove A Generated Workflow Skill, Not Only A Captured Trajectory
+
+If you want to verify that the current provider-backed loop can go all the way to a generated, promoted, and reusable workflow skill for this maintainer task, run:
+
+```powershell
+python scripts/smoke_review_cleanup_provider_loop.py
+```
+
+Expected result:
+
+- command exits successfully
+- output JSON includes:
+  - `"promoted": true`
+  - `"audit_status": "passed"`
+  - `"execute_status": "completed"`
+  - `active_skill_file`
+  - `reuse_output_path`
+- the sandbox contains:
+  - generated staging skill
+  - promoted active skill
+  - reused cleanup-plan artifact
+  - reused metadata artifact
+
+Interpretation:
+
+- this proves the repository can generate one real maintainer-facing workflow skill instead of only stopping at `capture -> recommendation`
+- it still does **not** mean `maintainer_review_cleanup` should automatically become a default active workflow-search skill in the repository
+- it remains a bounded positive control for a useful generated workflow
+
 ## What A Failure Looks Like
 
 Treat the run as failed if any of these happen:

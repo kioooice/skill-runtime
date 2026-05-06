@@ -23,6 +23,15 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Review cleanup now has a repeatable generated-skill positive control
+
+- Task type: product-value validation
+- Classified as: default-out / skipped
+- What happened: the user challenged whether the project was useful at all because no real auto-generated workflow skill had been seen; in response, the current provider-backed loop was run against `maintainer_review_cleanup` and then codified as `python scripts/smoke_review_cleanup_provider_loop.py`, which now generates, audits, promotes, and reuses a bounded maintainer workflow skill inside a sandbox
+- Did the behavior feel correct: yes; this directly tests the product-value claim instead of proving more surrounding infrastructure
+- Did the lane help: only indirectly; the lane remained visible, but the decisive signal came from the provider-backed distill/promote/reuse loop itself
+- Follow-up: decide whether this evidence is enough to define active ownership for review-cleanup, or whether it should remain a bounded smoke-only positive control
+
 ### 2026-05-06 - Global dashboard refresh scope clarified as current-root only
 
 - Task type: operator-usability dogfood clarification

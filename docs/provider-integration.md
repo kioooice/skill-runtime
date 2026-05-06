@@ -25,6 +25,14 @@ $env:SKILL_RUNTIME_SEMANTIC_PROVIDER_CMD='["python", "examples/providers/pass_se
 
 These demo providers are intentionally narrow. They prove the provider contract and host loop are runnable from a fresh clone, but they are not a general LLM backend.
 
+Maintainer workflow positive control:
+
+```powershell
+python scripts/smoke_review_cleanup_provider_loop.py
+```
+
+This local smoke path creates a temporary sandbox, configures the included review-cleanup fallback provider plus the pass semantic provider, runs `distill_and_promote` on `demo/maintainer_review_cleanup/observed_task.json`, and executes the promoted skill once to prove reuse. It is a bounded positive control for generated maintainer workflow skills, not a claim that open-ended review automation is solved.
+
 ## DeepSeek Providers
 
 This repository also includes DeepSeek command providers backed by the OpenAI-compatible Chat Completions API:
