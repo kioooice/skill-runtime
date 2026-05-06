@@ -587,6 +587,8 @@ python -m skill_runtime.cli dashboard --open
 python -m skill_runtime.cli operator-summary
 ```
 
+返回结果现在也会给出每个 gate status 自己的 freshness，便于先判断 provider / 基础检索 / 工作流检索状态是否已经过期，再决定要不要刷新。
+
 先刷新本地持久化的 gate status，再返回 operator summary：
 
 ```bash

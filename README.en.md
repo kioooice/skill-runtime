@@ -570,6 +570,8 @@ Inspect the current local operator summary and the current dashboard export stat
 python -m skill_runtime.cli operator-summary
 ```
 
+The returned summary now includes per-gate freshness so you can tell whether persisted provider, utility-search, or workflow-search status is still current before refreshing it.
+
 Refresh the persisted local gate-status summaries before returning the operator summary:
 
 ```bash

@@ -106,6 +106,8 @@ For each persisted gate-status object under `quality_gates.*`, these fields are 
 - `command`
 - `summary`
 - `baseline_comparison`
+- `freshness_policy`
+- `freshness`
 - `reason`
 
 `status` is the availability state for operator consumption:
@@ -114,6 +116,12 @@ For each persisted gate-status object under `quality_gates.*`, these fields are 
 - `unavailable`
 
 `report_status` is the persisted evaluation result currently written by the evaluator scripts, such as `ok`.
+
+`freshness` is the operator-facing staleness evaluation for that persisted gate snapshot. Current values are:
+
+- `fresh`
+- `stale`
+- `unknown`
 
 ## Fields That May Be Unavailable
 

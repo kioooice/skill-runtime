@@ -23,6 +23,14 @@ It only exists so the widening decision can be based on real use instead of memo
 
 ## Current Entries
 
+### 2026-05-06 - Operator summary now reports gate freshness directly
+
+- Task type: operator visibility mainline continuation
+- Classified as: default-out / skipped
+- What happened: after dogfooding the current summary path, the remaining gap was that persisted gate status could be refreshed from `operator-summary` but its stale/fresh state was still only visible through dashboard-export semantics; the summary contract now exposes per-gate `freshness_policy` and `freshness`, and the service/collector share one implementation
+- Did the behavior feel correct: yes; it closed a real scriptable operator gap without introducing a new command surface
+- Did the lane help: yes, because the skipped runtime result kept the work focused on the product boundary of the existing operator path instead of turning it into a workflow-lane experiment
+- Follow-up: use the current path in real operator checks and only revisit the surface if repeated usage still shows friction
 ### 2026-05-06 - Operator summary gained an explicit gate-status refresh step
 
 - Task type: operator visibility mainline continuation

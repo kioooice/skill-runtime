@@ -1,5 +1,6 @@
 import hashlib
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -51,6 +52,9 @@ class RuntimeOperatorSummaryTestsMixin:
         self.assertEqual("unavailable", quality_gates["provider_quality"]["status"])
         self.assertEqual("unavailable", quality_gates["utility_search_quality"]["status"])
         self.assertEqual("unavailable", quality_gates["workflow_search_quality"]["status"])
+        self.assertEqual("unknown", quality_gates["provider_quality"]["freshness"]["status"])
+        self.assertEqual("unknown", quality_gates["utility_search_quality"]["freshness"]["status"])
+        self.assertEqual("unknown", quality_gates["workflow_search_quality"]["freshness"]["status"])
         self.assertIn("provider_quality", payload["data"]["missing_or_unavailable"])
         self.assertIn("utility_search_quality", payload["data"]["missing_or_unavailable"])
         self.assertIn("workflow_search_quality", payload["data"]["missing_or_unavailable"])
@@ -58,11 +62,14 @@ class RuntimeOperatorSummaryTestsMixin:
     def test_operator_summary_reads_persisted_operator_status_when_available(self) -> None:
         operator_status_dir = self._operator_status_dir()
         operator_status_dir.mkdir(parents=True, exist_ok=True)
+        provider_generated_at = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+        utility_generated_at = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+        workflow_generated_at = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
         self._write_json_file(
             operator_status_dir / "provider_quality.json",
             {
                 "status": "ok",
-                "generated_at": "2026-05-06T10:00:00+00:00",
+                "generated_at": provider_generated_at,
                 "command": "python scripts/evaluate_provider_quality.py --baseline docs/provider-quality-baseline.json --fail-on-regression --write-operator-status",
                 "summary": {
                     "fixture_count": 8,
@@ -84,7 +91,7 @@ class RuntimeOperatorSummaryTestsMixin:
             operator_status_dir / "search_quality.json",
             {
                 "status": "ok",
-                "generated_at": "2026-05-06T10:01:00+00:00",
+                "generated_at": utility_generated_at,
                 "command": "python scripts/evaluate_search_quality.py --baseline docs/search-quality-baseline.json --fail-on-regression --write-operator-status",
                 "summary": {
                     "query_count": 7,
@@ -107,7 +114,7 @@ class RuntimeOperatorSummaryTestsMixin:
             operator_status_dir / "workflow_search_quality.json",
             {
                 "status": "ok",
-                "generated_at": "2026-05-06T10:02:00+00:00",
+                "generated_at": workflow_generated_at,
                 "command": "python scripts/evaluate_workflow_search_quality.py --baseline docs/workflow-search-quality-baseline.json --fail-on-regression --write-operator-status",
                 "summary": {
                     "query_count": 5,
@@ -138,11 +145,40 @@ class RuntimeOperatorSummaryTestsMixin:
         self.assertEqual("ok", quality_gates["provider_quality"]["report_status"])
         self.assertEqual(8, quality_gates["provider_quality"]["summary"]["fixture_count"])
         self.assertEqual(8, quality_gates["provider_quality"]["baseline_comparison"]["matched"])
+        self.assertEqual("fresh", quality_gates["provider_quality"]["freshness"]["status"])
         self.assertEqual("available", quality_gates["utility_search_quality"]["status"])
         self.assertEqual(7, quality_gates["utility_search_quality"]["summary"]["matched_count"])
+        self.assertEqual("fresh", quality_gates["utility_search_quality"]["freshness"]["status"])
         self.assertEqual("available", quality_gates["workflow_search_quality"]["status"])
         self.assertEqual(5, quality_gates["workflow_search_quality"]["summary"]["expectation_met_count"])
+        self.assertEqual("fresh", quality_gates["workflow_search_quality"]["freshness"]["status"])
         self.assertEqual([], payload["data"]["missing_or_unavailable"])
+
+    def test_operator_summary_marks_persisted_operator_status_stale_when_old(self) -> None:
+        operator_status_dir = self._operator_status_dir()
+        operator_status_dir.mkdir(parents=True, exist_ok=True)
+        self._write_json_file(
+            operator_status_dir / "provider_quality.json",
+            {
+                "status": "ok",
+                "generated_at": "2020-01-01T00:00:00+00:00",
+                "command": "python scripts/evaluate_provider_quality.py --write-operator-status",
+                "summary": {"fixture_count": 8},
+                "baseline_comparison": {"matched": 8},
+            },
+        )
+
+        payload = self._run_cli(
+            "operator-summary",
+            expect_json=True,
+            root=self.runtime_root,
+        )
+
+        quality_gates = payload["data"]["quality_gates"]
+        self.assertEqual("available", quality_gates["provider_quality"]["status"])
+        self.assertEqual("stale", quality_gates["provider_quality"]["freshness"]["status"])
+        self.assertEqual("unknown", quality_gates["utility_search_quality"]["freshness"]["status"])
+        self.assertEqual("unknown", quality_gates["workflow_search_quality"]["freshness"]["status"])
 
     def test_operator_summary_text_reflects_available_operator_status(self) -> None:
         operator_status_dir = self._operator_status_dir()

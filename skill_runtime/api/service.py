@@ -44,6 +44,12 @@ from skill_runtime.mcp.host_operations import (
 from skill_runtime.memory.trajectory_capture import TrajectoryCapture, TrajectoryCaptureError
 from skill_runtime.memory.trajectory_store import TrajectoryStore, TrajectoryValidationError
 from skill_runtime.observability.events import read_runtime_lane_events
+from skill_runtime.operator_visibility import (
+    OPERATOR_QUALITY_GATE_STALE_AFTER_SECONDS,
+    coerce_freshness_policy,
+    evaluate_freshness,
+    freshness_policy_export,
+)
 from skill_runtime.retrieval.skill_index import SkillIndex, SkillIndexError
 
 
@@ -1756,6 +1762,7 @@ class RuntimeService:
     def _collect_operator_gate_status(self, *, label: str, file_name: str) -> dict[str, Any]:
         candidate = self.root / ".skill_runtime" / "operator_status" / file_name
         if not candidate.exists():
+            freshness_policy = freshness_policy_export(OPERATOR_QUALITY_GATE_STALE_AFTER_SECONDS)
             return {
                 "label": label,
                 "status": "unavailable",
@@ -1766,10 +1773,13 @@ class RuntimeService:
                 "command": None,
                 "summary": None,
                 "baseline_comparison": None,
+                "freshness_policy": freshness_policy,
+                "freshness": evaluate_freshness(None, freshness_policy),
             }
 
         payload = _load_json_file(candidate)
         if not isinstance(payload, dict):
+            freshness_policy = freshness_policy_export(OPERATOR_QUALITY_GATE_STALE_AFTER_SECONDS)
             return {
                 "label": label,
                 "status": "unavailable",
@@ -1780,8 +1790,14 @@ class RuntimeService:
                 "command": None,
                 "summary": None,
                 "baseline_comparison": None,
+                "freshness_policy": freshness_policy,
+                "freshness": evaluate_freshness(None, freshness_policy),
             }
 
+        freshness_policy = coerce_freshness_policy(
+            payload.get("freshness_policy"),
+            default_stale_after_seconds=OPERATOR_QUALITY_GATE_STALE_AFTER_SECONDS,
+        )
         return {
             "label": label,
             "status": "available",
@@ -1793,6 +1809,8 @@ class RuntimeService:
             "baseline_comparison": payload.get("baseline_comparison")
             if isinstance(payload.get("baseline_comparison"), dict)
             else None,
+            "freshness_policy": freshness_policy,
+            "freshness": evaluate_freshness(payload.get("generated_at"), freshness_policy),
         }
 
     def _build_operator_safe_next_steps(

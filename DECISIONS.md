@@ -2,6 +2,22 @@
 
 ## Decision Log
 
+### 2026-05-06 - Operator Summary Must Surface Gate Freshness Directly, Not Only Through Dashboard Export
+
+**Decision**
+
+Extend the operator-summary payload itself so each persisted gate-status object carries `freshness_policy` and computed `freshness`, using the same semantics as the dashboard export collector.
+
+**Reason**
+
+After adding `--refresh-operator-status`, a real dogfood gap remained: a scriptable operator could now refresh gate status from one command, but still could not tell whether an existing gate snapshot was stale without switching to dashboard-export semantics. That split made the summary path less complete than the export path. The fix is to make freshness a first-class part of the summary contract.
+
+**Impact**
+
+- `quality_gates.provider_quality`, `utility_search_quality`, and `workflow_search_quality` now include `freshness_policy` and `freshness`
+- unavailable or invalid persisted gate snapshots now report `freshness.status = unknown`
+- stale persisted gate snapshots are visible directly from `operator-summary` JSON and text output
+- dashboard collector and service now share one operator-visibility freshness implementation instead of carrying separate logic
 ### 2026-05-06 - Operator Summary Should Also Be The Explicit Gate-Status Refresh Path
 
 **Decision**

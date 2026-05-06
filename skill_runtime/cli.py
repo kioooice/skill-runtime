@@ -401,10 +401,14 @@ def _render_operator_summary_text(payload: dict) -> str:
         gate = quality_gates.get(key, {})
         label = gate.get("label") or key
         status = gate.get("status") or "unavailable"
+        freshness = gate.get("freshness") if isinstance(gate.get("freshness"), dict) else {}
+        freshness_status = freshness.get("status") if isinstance(freshness.get("status"), str) else None
         summary_text = _format_gate_metrics(gate.get("summary"))
         comparison_text = _format_gate_metrics(gate.get("baseline_comparison"))
         reason = gate.get("reason")
         detail_parts = []
+        if freshness_status:
+            detail_parts.append(f"freshness={freshness_status}")
         if summary_text:
             detail_parts.append(summary_text)
         if comparison_text:

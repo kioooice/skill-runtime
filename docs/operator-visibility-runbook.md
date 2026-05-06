@@ -43,6 +43,7 @@ This returns:
 - `operator_status_refresh.refreshed`
 - `operator_status_refresh.gates`
 - `operator_status_refresh.generated_at`
+- `quality_gates.*.freshness.status`
 - `dashboard_export.available`
 - `dashboard_export.freshness_status`
 - `dashboard_export.output_path`
@@ -50,6 +51,8 @@ This returns:
 - `dashboard_export.refreshed`
 
 Use this first when you want a scriptable answer and do not need HTML.
+
+If a persisted gate snapshot is already present, use `quality_gates.provider_quality.freshness.status`, `quality_gates.utility_search_quality.freshness.status`, and `quality_gates.workflow_search_quality.freshness.status` to decide whether a gate-status refresh is actually needed.
 
 ### 2. Refresh Persisted Gate Status Before Returning The Summary
 
